@@ -16,7 +16,7 @@ internal static class Program
 		{
 			try
 			{
-				LegalCommandLine.TryHandle(args, LegalCatalog.Load(LegalProfile.Capture),
+				LegalCommandLine.TryHandle(args, LegalCatalog.Load(LegalProfile.ClaudeCapture),
 					LegalAcceptanceStore.CreateDefault, out int legalExitCode);
 				return legalExitCode;
 			}
@@ -32,7 +32,7 @@ internal static class Program
 		try
 		{
 			int legalExitCode = LegalCallbackGate.CheckAcceptance(
-				() => LegalCatalog.Load(LegalProfile.Capture), LegalAcceptanceStore.CreateDefault);
+				() => LegalCatalog.Load(LegalProfile.ClaudeCapture), LegalAcceptanceStore.CreateDefault);
 			if (legalExitCode != 0)
 			{
 				return legalExitCode;

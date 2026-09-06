@@ -29,7 +29,7 @@
   <!-- Setup 與 App 會合併至同一個 self-contained runtime 目錄，這些套件版本必須一致。 -->
   <ItemGroup>
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.2" />
-    <PackageReference Include="System.Text.Json" Version="10.0.2" />
+    <PackageReference Include="System.Text.Json" Version="10.0.11" />
   </ItemGroup>
 
   <ItemGroup>

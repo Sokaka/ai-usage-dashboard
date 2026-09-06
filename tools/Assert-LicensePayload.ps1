@@ -4,7 +4,7 @@ param(
 	[string] $ExecutablePath,
 
 	[Parameter(Mandatory = $true)]
-	[ValidateSet('app', 'setup', 'updater', 'capture', 'installer')]
+	[ValidateSet('app', 'setup', 'updater', 'capture', 'installer', 'claude-capture')]
 	[string] $Profile,
 
 	[Parameter(Mandatory = $true)]

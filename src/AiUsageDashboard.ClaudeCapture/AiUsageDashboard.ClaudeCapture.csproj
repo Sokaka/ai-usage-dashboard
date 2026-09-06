@@ -9,6 +9,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- ClaudeCapture 與 App、Setup 共用 self-contained runtime 目錄，JSON 套件版本必須一致。 -->
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="10.0.11" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\AiUsageDashboard.Core\AiUsageDashboard.Core.csproj" />
   </ItemGroup>

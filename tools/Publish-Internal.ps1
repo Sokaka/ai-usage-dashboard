@@ -687,6 +687,11 @@ try {
 		-Profile setup `
 		-ExpectedManifestPath $legalManifestPath `
 		-SelfContained
+	& (Join-Path $PSScriptRoot 'Assert-LicenseDependencies.ps1') `
+		-DepsPath (Join-Path $appRoot 'AiUsageDashboard.ClaudeCapture.deps.json') `
+		-Profile claude-capture `
+		-ExpectedManifestPath $legalManifestPath `
+		-SelfContained
 	foreach ($document in $legalManifest.documents) {
 		$noticePath = [IO.Path]::GetFullPath((Join-Path $appRoot $document.path))
 		$appPrefix = [IO.Path]::GetFullPath($appRoot) + [IO.Path]::DirectorySeparatorChar
@@ -704,7 +709,7 @@ try {
 		@('AiUsageDashboard.App.exe', 'app'),
 		@('AiUsageDashboard.Antigravity.Setup.exe', 'setup'),
 		@('AiUsageDashboard.AntigravityCapture.exe', 'capture'),
-		@('AiUsageDashboard.ClaudeCapture.exe', 'capture')
+		@('AiUsageDashboard.ClaudeCapture.exe', 'claude-capture')
 	)) {
 		& (Join-Path $PSScriptRoot 'Assert-LicensePayload.ps1') `
 			-ExecutablePath (Join-Path $appRoot $entry[0]) `

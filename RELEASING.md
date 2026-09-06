@@ -8,6 +8,8 @@
 
 .NET 8.0.30 是目前固定的 runtime；依 [Microsoft 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)，.NET 8 於 2026-11-10 結束支援。每次候選重新核對 patch 與 advisory；逾期或出現未處理風險時先修正，再建候選。
 
+`Microsoft.Extensions.AI.Abstractions` 固定為 10.9.0，適用另行更新的 [Platform Extensions 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/extensions)。App、Setup 與 ClaudeCapture 共用的 `System.Text.Json` 固定為 10.0.11；各自的 dependency manifest 必須涵蓋相同版本及其依賴，並通過合併成品的實際離線授權匯出。
+
 private repo 的 Actions 額度由 owner 共用。首次 push 前關閉新 repo Actions 並回讀；按 [GitHub 計費規則](https://docs.github.com/en/billing/concepts/product-billing/github-actions)核對帳號額度、已用量、artifact/cache 儲存、預定成功／失敗執行量及超額停止措施，再受控啟用。無法確認免費範圍時只做本機驗證，不啟用付費 runner 或更動全帳號預算。候選 artifact 與失敗 diagnostics 的 retention 也計入前檢。
 
 ## 版本、序號與信任鍵
@@ -27,6 +29,8 @@ feed 使用 [固定簽章格式](docs/UPDATE_FEED_FORMAT.md)。正式 build 從�
 所有 workflow、版本、條款及簽章變更先完成，再建立候選。候選 workflow 必須綁定指定 main SHA、原始 build run 與 attempt；原 workflow 檔名保留為相容入口，實際參數以 repository 中的 workflow 為準。
 
 封裝順序固定為：最終 binaries → App ZIP → ZIP／Updater EXE 的 size 與 SHA256 → 帶正式 stable URL 與完整版本／sequence 的 feed → 簽署 → 最終 feed 的 SHA256。任何受簽欄位改變都須重簽。
+
+封裝工具會建立多層暫存目錄，請使用較短的 `OutputRoot`。未啟用 long paths 的 Windows 若使用過深目錄，可能在 Copilot 成品檢查時失敗；先縮短輸出路徑，不移除缺件檢查或要求使用者變更全機設定。
 
 正式候選只有六件，全部來自同 source/run/attempt：
 

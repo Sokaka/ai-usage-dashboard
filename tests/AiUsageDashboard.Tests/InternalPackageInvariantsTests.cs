@@ -246,7 +246,11 @@ public sealed class InternalPackageInvariantsTests
 
 		foreach (string packageName in packageNames)
 		{
-			string[] versions = projectPaths
+			string expectedVersion = packageName == "System.Text.Json" ? "10.0.11" : "10.0.2";
+			string[] sharingProjectPaths = packageName == "System.Text.Json"
+				? [.. projectPaths, Path.Combine(repositoryRoot, "src", "AiUsageDashboard.ClaudeCapture", "AiUsageDashboard.ClaudeCapture.csproj")]
+				: projectPaths;
+			string[] versions = sharingProjectPaths
 				.Select(XDocument.Load)
 				.Select(document => document
 					.Descendants("PackageReference")
@@ -259,8 +263,8 @@ public sealed class InternalPackageInvariantsTests
 				.Select(static version => version!)
 				.ToArray();
 
-			Assert.Equal(projectPaths.Length, versions.Length);
-			Assert.All(versions, version => Assert.Equal("10.0.2", version));
+			Assert.Equal(sharingProjectPaths.Length, versions.Length);
+			Assert.All(versions, version => Assert.Equal(expectedVersion, version));
 		}
 	}
 

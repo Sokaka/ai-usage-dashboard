@@ -33,9 +33,10 @@
 
   <ItemGroup>
     <PackageReference Include="GitHub.Copilot.SDK" Version="1.0.11" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.9.0" />
     <!-- App 與 Setup 會合併至同一個 self-contained runtime 目錄，這些套件版本必須一致。 -->
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.2" />
-    <PackageReference Include="System.Text.Json" Version="10.0.2" />
+    <PackageReference Include="System.Text.Json" Version="10.0.11" />
   </ItemGroup>
 
   <ItemGroup>

@@ -26,6 +26,35 @@ public sealed class LegalAcceptanceTests : IDisposable
 		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Updater)));
 		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Capture)));
 		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Installer)));
+		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.ClaudeCapture)));
+	}
+
+	[Theory]
+	[InlineData(LegalProfile.Capture)]
+	[InlineData(LegalProfile.Updater)]
+	public void CoreRuntimeAcceptanceDoesNotAuthorizeClaudeSharedJsonDependencies(LegalProfile acceptedProfile)
+	{
+		LegalAcceptanceStore store = CreateStore("S-1-5-21-test-user-a");
+		LegalCatalog accepted = LegalCatalog.Load(acceptedProfile);
+		store.Accept(accepted, accepted.Digest);
+		LegalCatalog claude = LegalCatalog.Load(LegalProfile.ClaudeCapture);
+
+		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Capture)));
+		Assert.False(store.IsAccepted(claude));
+		Assert.Equal(LegalCommandLine.AcceptanceRequiredExitCode,
+			LegalCallbackGate.CheckAcceptance(() => claude, () => store));
+	}
+
+	[Fact]
+	public void ClaudeCaptureTermsCoverJsonDependenciesWithoutDesktopOrCopilotComponents()
+	{
+		LegalCatalog claude = LegalCatalog.Load(LegalProfile.ClaudeCapture);
+		string[] componentIds = claude.Components.Select(component => component.Id)
+			.Order(StringComparer.Ordinal).ToArray();
+
+		Assert.Equal(["dashboard", "dotnet8", "microsoft-terms", "system.io.pipelines",
+			"system.text.encodings.web", "system.text.json"], componentIds);
+		Assert.Contains("claude-capture", claude.GetReadableText(), StringComparison.Ordinal);
 	}
 
 	[Fact]

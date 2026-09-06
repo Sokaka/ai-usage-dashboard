@@ -4,7 +4,7 @@ param(
 	[string] $DepsPath,
 
 	[Parameter(Mandatory = $true)]
-	[ValidateSet('app', 'setup')]
+	[ValidateSet('app', 'setup', 'claude-capture')]
 	[string] $Profile,
 
 	[Parameter(Mandatory = $true)]

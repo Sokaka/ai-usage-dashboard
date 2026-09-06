@@ -158,6 +158,7 @@ public sealed class LegalCatalog
 		LegalProfile.Updater => "updater",
 		LegalProfile.Capture => "capture",
 		LegalProfile.Installer => "installer",
+		LegalProfile.ClaudeCapture => "claude-capture",
 		_ => throw new ArgumentOutOfRangeException(nameof(profile), profile, "Unsupported license profile.")
 	};
 

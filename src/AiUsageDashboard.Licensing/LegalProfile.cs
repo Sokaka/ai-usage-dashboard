@@ -6,5 +6,6 @@ public enum LegalProfile
 	Setup,
 	Updater,
 	Capture,
-	Installer
+	Installer,
+	ClaudeCapture
 }
