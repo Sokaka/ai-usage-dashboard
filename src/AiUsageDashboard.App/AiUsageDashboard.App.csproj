@@ -1,0 +1,116 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>Assets\AiUsageDashboard.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- This is a WPF app; process DPI awareness must be set before its first HWND exists. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\使用說明.md"
+             Link="README.md"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\third-party-notices\GitHub-Copilot-CLI-LICENSE.md"
+             Link="third-party-notices\GitHub-Copilot-CLI-LICENSE.md"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\third-party-notices\GitHub-Copilot-SDK-LICENSE.md"
+             Link="third-party-notices\GitHub-Copilot-SDK-LICENSE.md"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\third-party-notices\*"
+             Exclude="..\..\third-party-notices\GitHub-Copilot-CLI-LICENSE.md;..\..\third-party-notices\GitHub-Copilot-SDK-LICENSE.md"
+             Link="third-party-notices\%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Resource Include="Assets\AppIcon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GitHub.Copilot.SDK" Version="1.0.11" />
+    <!-- App 與 Setup 會合併至同一個 self-contained runtime 目錄，這些套件版本必須一致。 -->
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.2" />
+    <PackageReference Include="System.Text.Json" Version="10.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AiUsageDashboard.Antigravity\AiUsageDashboard.Antigravity.csproj" />
+    <ProjectReference Include="..\AiUsageDashboard.AntigravityCapture\AiUsageDashboard.AntigravityCapture.csproj"
+                      ReferenceOutputAssembly="false"
+                      Private="false" />
+    <ProjectReference Include="..\AiUsageDashboard.ClaudeCapture\AiUsageDashboard.ClaudeCapture.csproj" />
+    <ProjectReference Include="..\AiUsageDashboard.Core\AiUsageDashboard.Core.csproj" />
+    <ProjectReference Include="..\AiUsageDashboard.Updater.Core\AiUsageDashboard.Updater.Core.csproj" />
+  </ItemGroup>
+
+  <Target Name="StageAntigravityCaptureHelper"
+          AfterTargets="Build"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <AntigravityCaptureProjectPath>$(MSBuildProjectDirectory)\..\AiUsageDashboard.AntigravityCapture\AiUsageDashboard.AntigravityCapture.csproj</AntigravityCaptureProjectPath>
+      <AntigravityCapturePublishDirectory>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'antigravity-capture-publish'))</AntigravityCapturePublishDirectory>
+      <AntigravityCapturePublishedExecutable>$(AntigravityCapturePublishDirectory)AiUsageDashboard.AntigravityCapture.exe</AntigravityCapturePublishedExecutable>
+      <AntigravityCaptureOutputExecutable>$(TargetDir)AiUsageDashboard.AntigravityCapture.exe</AntigravityCaptureOutputExecutable>
+    </PropertyGroup>
+    <MSBuild Projects="$(AntigravityCaptureProjectPath)"
+             Targets="Publish"
+             BuildInParallel="false"
+             Properties="Configuration=$(Configuration);RuntimeIdentifier=win-x64;SelfContained=true;RuntimeFrameworkVersion=8.0.30;TargetLatestRuntimePatch=false;PublishSingleFile=true;IncludeNativeLibrariesForSelfExtract=true;EnableCompressionInSingleFile=true;PublishTrimmed=true;TrimMode=full;SuppressTrimAnalysisWarnings=false;DebugType=None;DebugSymbols=false;BuildProjectReferences=false;PublishDir=$(AntigravityCapturePublishDirectory)" />
+    <Error Condition="!Exists('$(AntigravityCapturePublishedExecutable)')"
+           Text="The standalone AGY capture helper was not produced." />
+    <Copy SourceFiles="$(AntigravityCapturePublishedExecutable)"
+          DestinationFiles="$(AntigravityCaptureOutputExecutable)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="RemoveUnusedCopilotFfiRuntimeFromCopyItems"
+          AfterTargets="_RegisterCopilotCliForCopy">
+    <ItemGroup>
+      <_UnusedCopilotFfiRuntime Include="@(ContentWithTargetPath)"
+                                Condition="'%(ContentWithTargetPath.TargetPath)' == 'runtimes\$(_CopilotRid)\native\$(_CopilotRuntimeLib)'" />
+      <ContentWithTargetPath Remove="@(_UnusedCopilotFfiRuntime)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="RemoveUnusedCopilotFfiRuntimeFromOutput"
+          AfterTargets="_CopyCopilotCliToOutput">
+    <PropertyGroup>
+      <_CopilotNativeOutputDirectory>$(OutDir)runtimes\$(_CopilotRid)\native</_CopilotNativeOutputDirectory>
+    </PropertyGroup>
+    <Delete Files="$(_CopilotNativeOutputDirectory)\$(_CopilotRuntimeLib)" />
+    <Error Condition="Exists('$(_CopilotNativeOutputDirectory)\$(_CopilotRuntimeLib)')"
+           Text="The unused Copilot FFI runtime must not be present in stdio build output." />
+    <Error Condition="!Exists('$(_CopilotNativeOutputDirectory)\$(_CopilotBinary)')"
+           Text="The Copilot stdio executable was not produced." />
+  </Target>
+
+  <Target Name="RemoveUnusedCopilotFfiRuntimeFromPublish"
+          AfterTargets="Publish"
+          Condition="'$(PublishDir)' != ''">
+    <PropertyGroup>
+      <_CopilotNativeBuildDirectory>$(OutDir)runtimes\$(_CopilotRid)\native</_CopilotNativeBuildDirectory>
+      <_CopilotNativePublishDirectory>$(PublishDir)runtimes\$(_CopilotRid)\native</_CopilotNativePublishDirectory>
+    </PropertyGroup>
+    <MakeDir Directories="$(_CopilotNativePublishDirectory)" />
+    <Copy SourceFiles="$(_CopilotNativeBuildDirectory)\$(_CopilotBinary)"
+          DestinationFiles="$(_CopilotNativePublishDirectory)\$(_CopilotBinary)"
+          SkipUnchangedFiles="true"
+          Condition="!Exists('$(_CopilotNativePublishDirectory)\$(_CopilotBinary)') And Exists('$(_CopilotNativeBuildDirectory)\$(_CopilotBinary)')" />
+    <Delete Files="$(_CopilotNativePublishDirectory)\$(_CopilotRuntimeLib)" />
+    <Error Condition="Exists('$(_CopilotNativePublishDirectory)\$(_CopilotRuntimeLib)')"
+           Text="The unused Copilot FFI runtime must not be present in stdio publish output." />
+    <Error Condition="!Exists('$(_CopilotNativePublishDirectory)\$(_CopilotBinary)')"
+           Text="The Copilot stdio executable was not published." />
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AiUsageDashboard.Licensing\AiUsageDashboard.Licensing.csproj" />
+    <Compile Include="..\Shared\Licensing\LegalTermsDialog.cs" Link="LegalTermsDialog.cs" />
+  </ItemGroup>
+
+</Project>

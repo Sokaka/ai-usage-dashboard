@@ -1,0 +1,80 @@
+AI Usage Dashboard — Microsoft component terms
+Version: 2026-09-06.1
+Copyright (c) 2026 Sokaka
+
+1. Scope and agreement
+
+These supplemental terms apply only to the Microsoft components identified
+in the accompanying component-manifest.json for the application or helper
+you are using. They do not replace the MIT license for AI Usage Dashboard's
+own source code, or the separate licenses of other third-party components.
+By choosing to accept this identified version and component scope, you agree
+to the applicable component terms below. If you decline, do not use or install
+the affected components. Viewing/exporting the terms, uninstalling, and
+recovering an interrupted installation remain available without accepting.
+
+2. Component use and redistribution
+
+You may use the identified Microsoft components with AI Usage Dashboard.
+The Microsoft .NET Library terms supplied with .NET 8.0.30 apply to coreclr.dll,
+the runtime included in single-file binaries, Microsoft.DiaSymReader.Native
+binaries, and the WPF native binaries identified in the component manifest.
+The accompanying Windows SDK license and redistribution list apply to
+D3DCompiler_47_cor3.dll. The latter may be redistributed only with Classic
+Windows applications on Microsoft operating systems.
+
+The complete, applicable Microsoft terms are incorporated here for the
+identified Microsoft components. References to the software in those terms
+refer to those components, not to AI Usage Dashboard's own MIT-licensed code.
+Use and redistribution rights are limited to those granted by the applicable
+terms. Any further distribution must keep the components with the application,
+preserve the applicable licenses, copyright, trademark, patent, attribution
+and third-party notices, and require distributors and external end users to
+agree to terms protecting those components at least as much as the applicable
+Microsoft agreement. Do not separately relicense Microsoft components as MIT.
+
+3. Retained protections and legal exceptions
+
+All applicable Microsoft restrictions and reserved rights remain effective,
+including restrictions on circumventing technical limitations, reverse
+engineering, decompilation and disassembly, subject to the exceptions and
+additional rights expressly preserved by applicable law. Preserve the
+restrictions on redistribution, platform use, trademarks, unlawful programs,
+and Excluded Licenses. Comply with applicable export laws and restrictions.
+No provision here removes statutory consumer rights or other rights that
+the applicable Microsoft terms or local law preserve.
+
+The supplied Microsoft terms also govern applicable data and Internet-based
+features. The .NET Library privacy reference is
+https://go.microsoft.com/fwlink/?LinkId=528096. The Windows SDK privacy
+reference is https://go.microsoft.com/fwlink/?LinkId=521839. These references
+are disclosures of the component terms, not a representation that every
+feature described in a full SDK agreement is used by AI Usage Dashboard.
+
+4. Warranty, liability and publisher responsibilities
+
+Microsoft is not the publisher of AI Usage Dashboard and does not endorse it.
+The complete Microsoft warranty disclaimers, limits on remedies and damages,
+legal exceptions, and governing-law provisions remain applicable to the
+identified Microsoft components. No warranty, support statement or other
+promise by the application publisher imposes an additional duty on Microsoft.
+
+The publisher's obligations under the Microsoft distribution requirements,
+including indemnifying, defending and holding Microsoft harmless for claims
+related to the distribution or use of the publisher's programs, remain the
+publisher's responsibility. Accepting these terms as an end user does not
+make you indemnify the publisher for the publisher's distribution. A person
+who independently exercises redistribution rights remains responsible for
+the conditions applicable to that person's distribution.
+
+5. Offline material and local acceptance record
+
+The application displays and can export its applicable original licenses,
+notices and this supplement without Internet access. The acceptance record
+is local to the current Windows user. It records the user's Windows SID,
+accepted component versions and document digests, and acceptance time; it
+is not linked to provider accounts or uploaded. An acceptance for another
+Windows user or a changed component/terms digest is not treated as acceptance.
+The component-manifest.json names the applicable versions and original
+sources. These supplemental terms are the application's arrangement for
+downstream protection; they are not a Microsoft-approved contract template.

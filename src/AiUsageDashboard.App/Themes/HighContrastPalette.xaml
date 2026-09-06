@@ -1,0 +1,196 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System.Windows;assembly=PresentationFramework">
+    <x:Static x:Key="WindowBackgroundColor" Member="system:SystemColors.WindowColor" />
+    <x:Static x:Key="CardBackgroundColor" Member="system:SystemColors.WindowColor" />
+    <x:Static x:Key="SurfaceRaisedColor" Member="system:SystemColors.ControlColor" />
+    <x:Static x:Key="SurfaceOverlayColor" Member="system:SystemColors.ControlColor" />
+    <x:Static x:Key="ControlBackgroundColor" Member="system:SystemColors.ControlColor" />
+    <x:Static x:Key="ControlHoverBackgroundColor" Member="system:SystemColors.HighlightColor" />
+    <x:Static x:Key="ControlPressedBackgroundColor" Member="system:SystemColors.HighlightColor" />
+    <x:Static x:Key="ProgressTrackColor" Member="system:SystemColors.HighlightColor" />
+
+    <x:Static x:Key="PrimaryTextColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="SecondaryTextColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="MutedTextColor" Member="system:SystemColors.GrayTextColor" />
+    <x:Static x:Key="DisabledTextColor" Member="system:SystemColors.GrayTextColor" />
+    <x:Static x:Key="BorderColor" Member="system:SystemColors.ActiveBorderColor" />
+    <x:Static x:Key="BorderStrongColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="InputBorderColor" Member="system:SystemColors.ActiveBorderColor" />
+    <x:Static x:Key="InputBorderStrongColor" Member="system:SystemColors.WindowTextColor" />
+
+    <x:Static x:Key="AccentColor" Member="system:SystemColors.HighlightColor" />
+    <x:Static x:Key="AccentHoverColor" Member="system:SystemColors.HighlightColor" />
+    <x:Static x:Key="AccentPressedColor" Member="system:SystemColors.HighlightColor" />
+    <x:Static x:Key="AccentTextColor" Member="system:SystemColors.HighlightTextColor" />
+    <x:Static x:Key="FocusColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="AccentFocusColor" Member="system:SystemColors.HighlightTextColor" />
+    <x:Static x:Key="SuccessColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="WarningColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="WarningTextColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="DangerColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="DangerTextColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="InfoColor" Member="system:SystemColors.WindowTextColor" />
+
+    <x:Static x:Key="LogoSurfaceColor" Member="system:SystemColors.WindowColor" />
+    <x:Static x:Key="LogoBorderColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="LogoPrimaryColor" Member="system:SystemColors.HighlightColor" />
+    <x:Static x:Key="LogoSecondaryColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="LogoSparkColor" Member="system:SystemColors.WindowTextColor" />
+    <Color x:Key="ThemeDecorationColor">#00FFFFFF</Color>
+
+    <x:Static x:Key="ClaudeProviderAccentColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="CodexProviderAccentColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="CopilotProviderAccentColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="AntigravityProviderAccentColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="GrokProviderAccentColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="DefaultProviderAccentColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="ClaudeProviderTextColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="CodexProviderTextColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="CopilotProviderTextColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="AntigravityProviderTextColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="GrokProviderTextColor" Member="system:SystemColors.WindowTextColor" />
+
+    <x:Static x:Key="AccentSurfaceColor" Member="system:SystemColors.ControlColor" />
+    <x:Static x:Key="SuccessSurfaceColor" Member="system:SystemColors.ControlColor" />
+    <x:Static x:Key="WarningSurfaceColor" Member="system:SystemColors.ControlColor" />
+    <x:Static x:Key="DangerSurfaceColor" Member="system:SystemColors.ControlColor" />
+    <x:Static x:Key="DangerHoverSurfaceColor" Member="system:SystemColors.HighlightColor" />
+    <x:Static x:Key="DangerPressedSurfaceColor" Member="system:SystemColors.HighlightColor" />
+    <x:Static x:Key="InfoSurfaceColor" Member="system:SystemColors.ControlColor" />
+
+    <x:Static x:Key="ScrollBarThumbColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="ScrollBarThumbHoverColor" Member="system:SystemColors.HighlightColor" />
+    <x:Static x:Key="ScrollBarThumbPressedColor" Member="system:SystemColors.HighlightColor" />
+    <x:Static x:Key="SelectionColor" Member="system:SystemColors.HighlightColor" />
+
+    <SolidColorBrush x:Key="WindowBackgroundBrush"
+                     Color="{DynamicResource WindowBackgroundColor}" />
+    <SolidColorBrush x:Key="CardBackgroundBrush"
+                     Color="{DynamicResource CardBackgroundColor}" />
+    <SolidColorBrush x:Key="SurfaceRaisedBrush"
+                     Color="{DynamicResource SurfaceRaisedColor}" />
+    <SolidColorBrush x:Key="SurfaceOverlayBrush"
+                     Color="{DynamicResource SurfaceOverlayColor}" />
+    <SolidColorBrush x:Key="ControlBackgroundBrush"
+                     Color="{DynamicResource ControlBackgroundColor}" />
+    <SolidColorBrush x:Key="ControlHoverBackgroundBrush"
+                     Color="{DynamicResource ControlHoverBackgroundColor}" />
+    <SolidColorBrush x:Key="ControlPressedBackgroundBrush"
+                     Color="{DynamicResource ControlPressedBackgroundColor}" />
+    <SolidColorBrush x:Key="ProgressTrackBrush"
+                     Color="{DynamicResource ProgressTrackColor}" />
+
+    <SolidColorBrush x:Key="PrimaryTextBrush"
+                     Color="{DynamicResource PrimaryTextColor}" />
+    <SolidColorBrush x:Key="SecondaryTextBrush"
+                     Color="{DynamicResource SecondaryTextColor}" />
+    <SolidColorBrush x:Key="MutedTextBrush"
+                     Color="{DynamicResource MutedTextColor}" />
+    <SolidColorBrush x:Key="DisabledTextBrush"
+                     Color="{DynamicResource DisabledTextColor}" />
+    <SolidColorBrush x:Key="BorderBrush"
+                     Color="{DynamicResource BorderColor}" />
+    <SolidColorBrush x:Key="BorderStrongBrush"
+                     Color="{DynamicResource BorderStrongColor}" />
+    <SolidColorBrush x:Key="InputBorderBrush"
+                     Color="{DynamicResource InputBorderColor}" />
+    <SolidColorBrush x:Key="InputBorderStrongBrush"
+                     Color="{DynamicResource InputBorderStrongColor}" />
+
+    <SolidColorBrush x:Key="AccentBrush"
+                     Color="{DynamicResource AccentColor}" />
+    <SolidColorBrush x:Key="AccentHoverBrush"
+                     Color="{DynamicResource AccentHoverColor}" />
+    <SolidColorBrush x:Key="AccentPressedBrush"
+                     Color="{DynamicResource AccentPressedColor}" />
+    <SolidColorBrush x:Key="AccentTextBrush"
+                     Color="{DynamicResource AccentTextColor}" />
+    <SolidColorBrush x:Key="FocusBrush"
+                     Color="{DynamicResource FocusColor}" />
+    <SolidColorBrush x:Key="AccentFocusBrush"
+                     Color="{DynamicResource AccentFocusColor}" />
+    <SolidColorBrush x:Key="SuccessBrush"
+                     Color="{DynamicResource SuccessColor}" />
+    <SolidColorBrush x:Key="WarningBrush"
+                     Color="{DynamicResource WarningColor}" />
+    <SolidColorBrush x:Key="WarningTextBrush"
+                     Color="{DynamicResource WarningTextColor}" />
+    <SolidColorBrush x:Key="DangerBrush"
+                     Color="{DynamicResource DangerColor}" />
+    <SolidColorBrush x:Key="DangerTextBrush"
+                     Color="{DynamicResource DangerTextColor}" />
+    <SolidColorBrush x:Key="InfoBrush"
+                     Color="{DynamicResource InfoColor}" />
+
+    <SolidColorBrush x:Key="LogoSurfaceBrush"
+                     Color="{DynamicResource LogoSurfaceColor}" />
+    <SolidColorBrush x:Key="LogoBorderBrush"
+                     Color="{DynamicResource LogoBorderColor}" />
+    <SolidColorBrush x:Key="LogoPrimaryBrush"
+                     Color="{DynamicResource LogoPrimaryColor}" />
+    <SolidColorBrush x:Key="LogoSecondaryBrush"
+                     Color="{DynamicResource LogoSecondaryColor}" />
+    <SolidColorBrush x:Key="LogoSparkBrush"
+                     Color="{DynamicResource LogoSparkColor}" />
+    <SolidColorBrush x:Key="ThemeDecorationBrush"
+                     Color="{DynamicResource ThemeDecorationColor}" />
+    <LinearGradientBrush x:Key="LogoOrbitBrush"
+                         StartPoint="0,0"
+                         EndPoint="1,1">
+        <GradientStop Offset="0"
+                      Color="{StaticResource LogoPrimaryColor}" />
+        <GradientStop Offset="1"
+                      Color="{StaticResource LogoSecondaryColor}" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="ClaudeProviderAccentBrush"
+                     Color="{DynamicResource ClaudeProviderAccentColor}" />
+    <SolidColorBrush x:Key="CodexProviderAccentBrush"
+                     Color="{DynamicResource CodexProviderAccentColor}" />
+    <SolidColorBrush x:Key="CopilotProviderAccentBrush"
+                     Color="{DynamicResource CopilotProviderAccentColor}" />
+    <SolidColorBrush x:Key="AntigravityProviderAccentBrush"
+                     Color="{DynamicResource AntigravityProviderAccentColor}" />
+    <SolidColorBrush x:Key="GrokProviderAccentBrush"
+                     Color="{DynamicResource GrokProviderAccentColor}" />
+    <SolidColorBrush x:Key="ClaudeProviderTextBrush"
+                     Color="{DynamicResource ClaudeProviderTextColor}" />
+    <SolidColorBrush x:Key="CodexProviderTextBrush"
+                     Color="{DynamicResource CodexProviderTextColor}" />
+    <SolidColorBrush x:Key="CopilotProviderTextBrush"
+                     Color="{DynamicResource CopilotProviderTextColor}" />
+    <SolidColorBrush x:Key="AntigravityProviderTextBrush"
+                     Color="{DynamicResource AntigravityProviderTextColor}" />
+    <SolidColorBrush x:Key="GrokProviderTextBrush"
+                     Color="{DynamicResource GrokProviderTextColor}" />
+
+    <SolidColorBrush x:Key="DefaultProviderAccentBrush"
+                     Color="{DynamicResource DefaultProviderAccentColor}" />
+
+    <SolidColorBrush x:Key="AccentSurfaceBrush"
+                     Color="{DynamicResource AccentSurfaceColor}" />
+    <SolidColorBrush x:Key="SuccessSurfaceBrush"
+                     Color="{DynamicResource SuccessSurfaceColor}" />
+    <SolidColorBrush x:Key="WarningSurfaceBrush"
+                     Color="{DynamicResource WarningSurfaceColor}" />
+    <SolidColorBrush x:Key="DangerSurfaceBrush"
+                     Color="{DynamicResource DangerSurfaceColor}" />
+    <SolidColorBrush x:Key="DangerHoverSurfaceBrush"
+                     Color="{DynamicResource DangerHoverSurfaceColor}" />
+    <SolidColorBrush x:Key="DangerPressedSurfaceBrush"
+                     Color="{DynamicResource DangerPressedSurfaceColor}" />
+    <SolidColorBrush x:Key="InfoSurfaceBrush"
+                     Color="{DynamicResource InfoSurfaceColor}" />
+
+    <SolidColorBrush x:Key="ScrollBarThumbBrush"
+                     Color="{DynamicResource ScrollBarThumbColor}" />
+    <SolidColorBrush x:Key="ScrollBarThumbHoverBrush"
+                     Color="{DynamicResource ScrollBarThumbHoverColor}" />
+    <SolidColorBrush x:Key="ScrollBarThumbPressedBrush"
+                     Color="{DynamicResource ScrollBarThumbPressedColor}" />
+    <SolidColorBrush x:Key="SelectionBrush"
+                     Color="{DynamicResource SelectionColor}" />
+    <SolidColorBrush x:Key="TransparentBrush"
+                     Color="Transparent" />
+</ResourceDictionary>

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>AiUsageDashboard.Updater</AssemblyName>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <UpdateFeedUrl Condition="'$(UpdateFeedUrl)' == ''">https://github.com/Sokaka/ai-usage-dashboard/releases/latest/download/AiUsageDashboard-update-stable.json</UpdateFeedUrl>
+    <UpdateChannel Condition="'$(UpdateChannel)' == ''">stable</UpdateChannel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AiUsageDashboard.Updater.Core\AiUsageDashboard.Updater.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AiUsageDashboard.Tests" />
+    <AssemblyMetadata Include="AiUsageDashboard.UpdateFeedUrl" Value="$(UpdateFeedUrl)" />
+    <AssemblyMetadata Include="AiUsageDashboard.UpdateChannel" Value="$(UpdateChannel)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UpdateTrustedKeysFile)' != ''">
+    <EmbeddedResource Include="$(UpdateTrustedKeysFile)" LogicalName="AiUsageDashboard.UpdateTrustedKeys.json" />
+  </ItemGroup>
+
+  <Target Name="RequireUpdateFeedTrustForPublish" BeforeTargets="PrepareForPublish">
+    <Error Condition="'$(UpdateTrustedKeysFile)' == '' Or !Exists('$(UpdateTrustedKeysFile)')"
+           Text="Publishing the updater requires an externally supplied UpdateTrustedKeysFile containing production public trust keys." />
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AiUsageDashboard.Licensing\AiUsageDashboard.Licensing.csproj" />
+  </ItemGroup>
+
+</Project>

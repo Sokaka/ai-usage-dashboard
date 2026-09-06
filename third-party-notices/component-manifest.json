@@ -1,0 +1,397 @@
+{
+  "schemaVersion": 1,
+  "termsVersion": "2026-09-06.1",
+  "documents": [
+    {
+      "id": "own-mit",
+      "path": "LICENSE",
+      "sha256": "967aac058930992b81e33594fb3fa2837460da54e009c14bd0604dbc546a1801",
+      "source": "https://github.com/Sokaka/ai-usage-dashboard",
+      "readable": true
+    },
+    {
+      "id": "supplemental",
+      "path": "third-party-notices/MICROSOFT-SUPPLEMENTAL-TERMS.txt",
+      "sha256": "d56453588e68b50aae7cb3f45cc6b290e1715b725f7ede3d40e1794072ad440e",
+      "source": "https://github.com/Sokaka/ai-usage-dashboard",
+      "readable": true
+    },
+    {
+      "id": "dotnet8-mit",
+      "path": "third-party-notices/DOTNET-8-MIT-LICENSE.txt",
+      "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+      "source": "https://www.nuget.org/packages/Microsoft.NETCore.App.Runtime.win-x64/8.0.30",
+      "readable": true
+    },
+    {
+      "id": "dotnet8-notices",
+      "path": "third-party-notices/DOTNET-8-THIRD-PARTY-NOTICES.txt",
+      "sha256": "b60b2912da28eaa6518593c9e2efb5334ee062d3c42e80d8fdfa806b3dc52977",
+      "source": "https://www.nuget.org/packages/Microsoft.NETCore.App.Runtime.win-x64/8.0.30",
+      "readable": true
+    },
+    {
+      "id": "dotnet8-library",
+      "path": "third-party-notices/DOTNET-8-LIBRARY-LICENSE.txt",
+      "sha256": "7f6839a61ce892b79c6549e2dc5a81fdbd240a0b260f8881216b45b7fda8b45d",
+      "source": "https://builds.dotnet.microsoft.com/dotnet/Runtime/8.0.30/dotnet-runtime-8.0.30-win-x64.zip",
+      "readable": true
+    },
+    {
+      "id": "dotnet10-mit",
+      "path": "third-party-notices/DOTNET-10-MIT-LICENSE.txt",
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+      "source": "https://raw.githubusercontent.com/dotnet/dotnet/44525024595742ebe09023abe709df51de65009b/src/runtime/LICENSE.TXT",
+      "readable": true
+    },
+    {
+      "id": "dotnet10-notices",
+      "path": "third-party-notices/DOTNET-10-THIRD-PARTY-NOTICES.txt",
+      "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+      "source": "https://www.nuget.org/packages/System.Text.Json/10.0.2",
+      "readable": true
+    },
+    {
+      "id": "extensions-ai-mit",
+      "path": "third-party-notices/EXTENSIONS-AI-MIT-LICENSE.txt",
+      "sha256": "47f0ad8ba753eae5de6178291cd8f38bbb42d2368b177f8e11714ad17c701275",
+      "source": "https://raw.githubusercontent.com/dotnet/extensions/7c82ecb60925d76e53b65e290a33bef46f285cae/LICENSE",
+      "readable": true
+    },
+    {
+      "id": "extensions-ai-notices",
+      "path": "third-party-notices/EXTENSIONS-AI-THIRD-PARTY-NOTICES.txt",
+      "sha256": "07f3e74329ed32ac9229a75ae994b98b30aadb1d9947eee926eed3d3fc4cf0c6",
+      "source": "https://raw.githubusercontent.com/dotnet/extensions/7c82ecb60925d76e53b65e290a33bef46f285cae/THIRD-PARTY-NOTICES.TXT",
+      "readable": true
+    },
+    {
+      "id": "windows-sdk-license",
+      "path": "third-party-notices/WINDOWS-SDK-LICENSE.txt",
+      "sha256": "c18999fcf1830cdd951a0597d15495b69fe577aad3eacf1215c356cf87bb6a21",
+      "source": "https://learn.microsoft.com/en-us/legal/windows-sdk/license",
+      "readable": true
+    },
+    {
+      "id": "windows-sdk-license-original",
+      "path": "third-party-notices/WINDOWS-SDK-LICENSE.html",
+      "sha256": "d5e8a4db4df67d04b328aed551725a82512490ecc2998c1bf446ed9a266ecf11",
+      "source": "https://learn.microsoft.com/en-us/legal/windows-sdk/license",
+      "readable": false
+    },
+    {
+      "id": "windows-sdk-redist",
+      "path": "third-party-notices/WINDOWS-SDK-REDIST.txt",
+      "sha256": "396bd7c227f85e2284ee19ef1f2fb66a8d44d8d73bba8a35d4edc833d823b667",
+      "source": "https://learn.microsoft.com/en-us/legal/windows-sdk/redist",
+      "readable": true
+    },
+    {
+      "id": "windows-sdk-redist-original",
+      "path": "third-party-notices/WINDOWS-SDK-REDIST.html",
+      "sha256": "6a4f3618611fb5ab9a0eec293391f496796ff76e8fb402a18711caa1635f3c44",
+      "source": "https://learn.microsoft.com/en-us/legal/windows-sdk/redist",
+      "readable": false
+    },
+    {
+      "id": "copilot-sdk",
+      "path": "third-party-notices/GitHub-Copilot-SDK-LICENSE.md",
+      "sha256": "2510b446bc1f0cf9702453075d20cd88631e20e5642658edb7325d9c1eb534f7",
+      "source": "https://raw.githubusercontent.com/github/copilot-sdk/a550258d5c37bd662197536992a23d633bfe5804/LICENSE",
+      "readable": true
+    },
+    {
+      "id": "copilot-cli",
+      "path": "third-party-notices/GitHub-Copilot-CLI-LICENSE.md",
+      "sha256": "b9680937e10425bf19862908856c16ed274e6b81a1368bd62be7a757eab21628",
+      "source": "https://www.npmjs.com/package/@github/copilot-win32-x64/v/1.0.79",
+      "readable": true
+    }
+  ],
+  "components": [
+    {
+      "id": "dashboard",
+      "name": "AI Usage Dashboard original code",
+      "version": "MIT-2026",
+      "profiles": [
+        "app",
+        "setup",
+        "updater",
+        "capture",
+        "installer"
+      ],
+      "documents": [
+        "own-mit"
+      ],
+      "files": [
+        "AiUsageDashboard.*"
+      ],
+      "deliveryTargets": [
+        "app-zip",
+        "updater-exe",
+        "standalone-capture-exe"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "microsoft-terms",
+      "name": "Microsoft component supplemental terms",
+      "version": "2026-09-06.1",
+      "profiles": [
+        "app",
+        "setup",
+        "updater",
+        "capture",
+        "installer"
+      ],
+      "documents": [
+        "supplemental"
+      ],
+      "files": [],
+      "deliveryTargets": [
+        "app-zip",
+        "updater-exe",
+        "standalone-capture-exe"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "dotnet8",
+      "name": "Microsoft.NETCore.App.Runtime.win-x64",
+      "version": "8.0.30",
+      "profiles": [
+        "app",
+        "setup",
+        "updater",
+        "capture",
+        "installer"
+      ],
+      "documents": [
+        "dotnet8-mit",
+        "dotnet8-notices",
+        "dotnet8-library"
+      ],
+      "files": [
+        "coreclr.dll",
+        "Microsoft.DiaSymReader.Native.amd64.dll",
+        "embedded .NET runtime in single-file executables"
+      ],
+      "deliveryTargets": [
+        "app-zip",
+        "updater-exe",
+        "standalone-capture-exe"
+      ],
+      "notes": "The .NET Library license applies to coreclr.dll, DiaSymReader natives and the runtime in single-file binaries; other .NET runtime files use MIT, subject to their notices."
+    },
+    {
+      "id": "windowsdesktop8",
+      "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
+      "version": "8.0.30",
+      "profiles": [
+        "app",
+        "setup",
+        "installer"
+      ],
+      "documents": [
+        "dotnet8-mit",
+        "dotnet8-library",
+        "windows-sdk-license",
+        "windows-sdk-redist",
+        "windows-sdk-license-original",
+        "windows-sdk-redist-original"
+      ],
+      "files": [
+        "PresentationNative_cor3.dll",
+        "vcruntime140_cor3.dll",
+        "wpfgfx_cor3.dll",
+        "D3DCompiler_47_cor3.dll"
+      ],
+      "deliveryTargets": [
+        "app-zip"
+      ],
+      "notes": "The first three natives use .NET Library terms; D3DCompiler_47_cor3.dll uses Windows SDK terms. Other WindowsDesktop binaries use MIT. SDK text is a readable transcription; the accompanying HTML preserves the retrieved original."
+    },
+    {
+      "id": "microsoft.extensions.dependencyinjection.abstractions",
+      "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "version": "10.0.2",
+      "profiles": [
+        "app",
+        "installer"
+      ],
+      "documents": [
+        "dotnet10-mit",
+        "dotnet10-notices"
+      ],
+      "files": [
+        "Microsoft.Extensions.DependencyInjection.Abstractions.dll"
+      ],
+      "deliveryTargets": [
+        "app-zip"
+      ],
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The six .NET 10.0.2 notices are byte-identical and share one delivered file."
+    },
+    {
+      "id": "microsoft.extensions.logging.abstractions",
+      "name": "Microsoft.Extensions.Logging.Abstractions",
+      "version": "10.0.2",
+      "profiles": [
+        "app",
+        "installer"
+      ],
+      "documents": [
+        "dotnet10-mit",
+        "dotnet10-notices"
+      ],
+      "files": [
+        "Microsoft.Extensions.Logging.Abstractions.dll"
+      ],
+      "deliveryTargets": [
+        "app-zip"
+      ],
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The six .NET 10.0.2 notices are byte-identical and share one delivered file."
+    },
+    {
+      "id": "system.diagnostics.diagnosticsource",
+      "name": "System.Diagnostics.DiagnosticSource",
+      "version": "10.0.2",
+      "profiles": [
+        "app",
+        "setup",
+        "installer"
+      ],
+      "documents": [
+        "dotnet10-mit",
+        "dotnet10-notices"
+      ],
+      "files": [
+        "System.Diagnostics.DiagnosticSource.dll"
+      ],
+      "deliveryTargets": [
+        "app-zip"
+      ],
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The six .NET 10.0.2 notices are byte-identical and share one delivered file."
+    },
+    {
+      "id": "system.io.pipelines",
+      "name": "System.IO.Pipelines",
+      "version": "10.0.2",
+      "profiles": [
+        "app",
+        "setup",
+        "installer"
+      ],
+      "documents": [
+        "dotnet10-mit",
+        "dotnet10-notices"
+      ],
+      "files": [
+        "System.IO.Pipelines.dll"
+      ],
+      "deliveryTargets": [
+        "app-zip"
+      ],
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The six .NET 10.0.2 notices are byte-identical and share one delivered file."
+    },
+    {
+      "id": "system.text.encodings.web",
+      "name": "System.Text.Encodings.Web",
+      "version": "10.0.2",
+      "profiles": [
+        "app",
+        "setup",
+        "installer"
+      ],
+      "documents": [
+        "dotnet10-mit",
+        "dotnet10-notices"
+      ],
+      "files": [
+        "System.Text.Encodings.Web.dll"
+      ],
+      "deliveryTargets": [
+        "app-zip"
+      ],
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The six .NET 10.0.2 notices are byte-identical and share one delivered file."
+    },
+    {
+      "id": "system.text.json",
+      "name": "System.Text.Json",
+      "version": "10.0.2",
+      "profiles": [
+        "app",
+        "setup",
+        "installer"
+      ],
+      "documents": [
+        "dotnet10-mit",
+        "dotnet10-notices"
+      ],
+      "files": [
+        "System.Text.Json.dll"
+      ],
+      "deliveryTargets": [
+        "app-zip"
+      ],
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The six .NET 10.0.2 notices are byte-identical and share one delivered file."
+    },
+    {
+      "id": "extensions-ai",
+      "name": "Microsoft.Extensions.AI.Abstractions",
+      "version": "10.2.0",
+      "profiles": [
+        "app",
+        "installer"
+      ],
+      "documents": [
+        "extensions-ai-mit",
+        "extensions-ai-notices"
+      ],
+      "files": [
+        "Microsoft.Extensions.AI.Abstractions.dll"
+      ],
+      "deliveryTargets": [
+        "app-zip"
+      ],
+      "notes": "The NuGet package contains no separate notices file. Notices from its exact upstream repository revision are retained conservatively; they are not an assertion that every listed dependency is in this package."
+    },
+    {
+      "id": "copilot-sdk",
+      "name": "GitHub.Copilot.SDK",
+      "version": "1.0.11",
+      "profiles": [
+        "app",
+        "installer"
+      ],
+      "documents": [
+        "copilot-sdk"
+      ],
+      "files": [
+        "GitHub.Copilot.SDK.dll"
+      ],
+      "deliveryTargets": [
+        "app-zip"
+      ],
+      "notes": "Package metadata also carries Copyright (c) Microsoft Corporation. All rights reserved.; the upstream MIT copyright remains preserved."
+    },
+    {
+      "id": "copilot-cli",
+      "name": "GitHub Copilot CLI",
+      "version": "1.0.79",
+      "profiles": [
+        "app",
+        "installer"
+      ],
+      "documents": [
+        "copilot-cli"
+      ],
+      "files": [
+        "runtimes/win-x64/native/copilot.exe"
+      ],
+      "deliveryTargets": [
+        "app-zip"
+      ],
+      "notes": "Unmodified official stdio binary; unused FFI runtime and separate add-on files are not redistributed. Provider service access remains subject to the user's applicable service terms."
+    }
+  ]
+}

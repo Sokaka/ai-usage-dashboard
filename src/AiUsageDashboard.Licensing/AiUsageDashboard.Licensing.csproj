@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\LICENSE" LogicalName="AiUsageDashboard.Legal.LICENSE" />
+    <EmbeddedResource Include="..\..\third-party-notices\*"
+                      LogicalName="AiUsageDashboard.Legal.third-party-notices/%(Filename)%(Extension)" />
+    <InternalsVisibleTo Include="AiUsageDashboard.Tests" />
+  </ItemGroup>
+</Project>

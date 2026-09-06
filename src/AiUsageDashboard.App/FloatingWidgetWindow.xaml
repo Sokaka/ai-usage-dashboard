@@ -1,0 +1,900 @@
+<Window x:Class="AiUsageDashboard.App.FloatingWidgetWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:interaction="clr-namespace:AiUsageDashboard.Presentation"
+         xmlns:local="clr-namespace:AiUsageDashboard.App"
+         xmlns:models="clr-namespace:AiUsageDashboard.Core.Models;assembly=AiUsageDashboard.Core"
+         xmlns:system="clr-namespace:System.Windows;assembly=PresentationFramework"
+         xmlns:viewModels="clr-namespace:AiUsageDashboard.App.ViewModels"
+        Title="AI Usage"
+        Width="390"
+        Height="720"
+        SizeToContent="Manual"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        SnapsToDevicePixels="True"
+        Topmost="True"
+        UseLayoutRounding="True"
+        WindowStyle="None"
+        SizeChanged="Window_SizeChanged">
+    <Window.Resources>
+        <Style x:Key="AccountTitleStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="Foreground" Value="{DynamicResource DefaultProviderAccentBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Provider}" Value="{x:Static models:ProviderKind.Claude}">
+                    <Setter Property="Foreground" Value="{DynamicResource ClaudeProviderTextBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Provider}" Value="{x:Static models:ProviderKind.Codex}">
+                    <Setter Property="Foreground" Value="{DynamicResource CodexProviderTextBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Provider}" Value="{x:Static models:ProviderKind.Copilot}">
+                    <Setter Property="Foreground" Value="{DynamicResource CopilotProviderTextBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Provider}" Value="{x:Static models:ProviderKind.Antigravity}">
+                    <Setter Property="Foreground" Value="{DynamicResource AntigravityProviderTextBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Provider}" Value="{x:Static models:ProviderKind.Grok}">
+                    <Setter Property="Foreground" Value="{DynamicResource GrokProviderTextBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="WidgetIconButtonStyle"
+               TargetType="{x:Type Button}"
+               BasedOn="{StaticResource IconButtonStyle}">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style x:Key="AnchorToggleButtonStyle"
+               TargetType="{x:Type Button}"
+               BasedOn="{StaticResource IconButtonStyle}">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="{DynamicResource AccentSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontSize" Value="18" />
+        </Style>
+
+        <Style x:Key="CircularButtonKeyboardFocusVisualStyle">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Grid SnapsToDevicePixels="True">
+                            <Ellipse Margin="1"
+                                     IsHitTestVisible="False"
+                                     Stroke="{DynamicResource FocusBrush}"
+                                     StrokeThickness="2" />
+                            <Ellipse Margin="3"
+                                     IsHitTestVisible="False"
+                                     Stroke="{DynamicResource AccentFocusBrush}"
+                                     StrokeThickness="1" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PinButtonStyle"
+               TargetType="{x:Type ToggleButton}">
+            <Setter Property="interaction:PointerFocusRelease.ReleaseAfterPointerAction"
+                    Value="True" />
+            <Setter Property="MinHeight" Value="40" />
+            <Setter Property="Padding" Value="9,5" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource TransparentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource TransparentBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource ButtonKeyboardFocusVisualStyle}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                        <Border x:Name="Chrome"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="7">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource AccentSurfaceBrush}" />
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource ControlHoverBackgroundBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="MetricProgressStyle"
+               TargetType="{x:Type ProgressBar}"
+               BasedOn="{StaticResource UsageMetricProgressBarStyle}">
+            <Setter Property="Height" Value="6" />
+        </Style>
+
+        <Style x:Key="AccountMenuButtonStyle"
+               TargetType="{x:Type Button}"
+               BasedOn="{StaticResource IconButtonStyle}">
+            <Setter Property="IsEnabled" Value="False" />
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding CanOpenWidgetAccountMenu}"
+                                   Value="True" />
+                        <Condition Binding="{Binding DataContext.IsManagingAccounts, RelativeSource={RelativeSource AncestorType={x:Type local:FloatingWidgetWindow}}}"
+                                   Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="IsEnabled" Value="True" />
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="AccountMutationMenuItemStyle"
+               TargetType="{x:Type MenuItem}"
+               BasedOn="{StaticResource {x:Type MenuItem}}">
+            <Setter Property="IsEnabled" Value="False" />
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding CanChangeAccountSettings}"
+                                   Value="True" />
+                        <Condition Binding="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                   Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="IsEnabled" Value="True" />
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="AccountRefreshMenuItemStyle"
+               TargetType="{x:Type MenuItem}"
+               BasedOn="{StaticResource {x:Type MenuItem}}">
+            <Setter Property="IsEnabled" Value="False" />
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding CanRefreshUsage}"
+                                   Value="True" />
+                        <Condition Binding="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                   Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="IsEnabled" Value="True" />
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ConnectAccountButtonStyle"
+               TargetType="{x:Type Button}"
+               BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="IsEnabled" Value="{Binding CanInvokeProviderAccountAction}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DataContext.IsManagingAccounts, RelativeSource={RelativeSource AncestorType={x:Type local:FloatingWidgetWindow}}}"
+                             Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="RecoveryActionButtonStyle"
+               TargetType="{x:Type Button}"
+               BasedOn="{StaticResource ConnectAccountButtonStyle}">
+            <Setter Property="IsEnabled" Value="{Binding CanInvokeRecoveryAction}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DataContext.IsManagingAccounts, RelativeSource={RelativeSource AncestorType={x:Type local:FloatingWidgetWindow}}}"
+                             Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="RecoveryGuidanceButtonStyle"
+               TargetType="{x:Type Button}"
+               BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RecoveryAction}"
+                             Value="{x:Static models:UsageRecoveryAction.InstallOrUpdate}">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RecoveryAction}"
+                             Value="{x:Static models:UsageRecoveryAction.UpdateApplication}">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RecoveryAction}"
+                             Value="{x:Static models:UsageRecoveryAction.ReconfigureUsageSource}">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="RecoveryRetryButtonStyle"
+               TargetType="{x:Type Button}"
+               BasedOn="{StaticResource RecoveryGuidanceButtonStyle}">
+            <Setter Property="IsEnabled" Value="False" />
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding CanExecuteRecoveryAction}"
+                                   Value="True" />
+                        <Condition Binding="{Binding DataContext.IsManagingAccounts, RelativeSource={RelativeSource AncestorType={x:Type local:FloatingWidgetWindow}}}"
+                                   Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="IsEnabled" Value="True" />
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Border x:Name="ExpandedView"
+                Background="{DynamicResource WindowBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="14">
+            <Grid Margin="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition x:Name="ExpandedFooterRow" Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid x:Name="ExpandedHeader"
+                      Margin="2,0,2,10"
+                      AutomationProperties.HelpText="拖曳此區域可移動浮窗；也可從更多操作選擇停靠角落。"
+                      Cursor="SizeAll"
+                      MouseLeftButtonDown="ExpandedHeader_MouseLeftButtonDown">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel VerticalAlignment="Center"
+                                Orientation="Horizontal">
+                        <ContentControl Width="30"
+                                        Height="30"
+                                        Margin="0,0,8,0"
+                                        Focusable="False"
+                                        IsHitTestVisible="False"
+                                        Style="{StaticResource ThemeLogoStyle}" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Text="AI Usage" />
+                            <TextBlock Margin="0,2,0,0"
+                                       Foreground="{DynamicResource MutedTextBrush}"
+                                       FontSize="10"
+                                       Text="帳號用量顯示" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Margin="0,0,4,0"
+                            Padding="9,5"
+                            AutomationProperties.HelpText="{Binding LastRefreshText}"
+                            AutomationProperties.Name="檢查全部帳號用量"
+                            Click="RefreshButton_Click"
+                            Content="{Binding RefreshActionText}"
+                            IsEnabled="{Binding CanRefresh}"
+                            Style="{StaticResource GhostButtonStyle}"
+                            ToolTip="檢查各服務的最新用量" />
+                    <ToggleButton x:Name="PinButton"
+                                  Grid.Column="2"
+                                  Margin="0,0,4,0"
+                                  AutomationProperties.Name="視窗置頂"
+                                  Checked="PinButton_Checked"
+                                  Content="置頂"
+                                  IsChecked="True"
+                                  Style="{StaticResource PinButtonStyle}"
+                                  ToolTip="切換永遠置頂"
+                                  Unchecked="PinButton_Unchecked" />
+                    <Button Grid.Column="3"
+                            AutomationProperties.Name="開啟更多操作"
+                            Click="GlobalMenuButton_Click"
+                            Content="⋯"
+                            Style="{StaticResource WidgetIconButtonStyle}"
+                            ToolTip="更多操作">
+                        <Button.ContextMenu>
+                            <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                <MenuItem Click="AddAccountMenuItem_Click"
+                                          Header="新增帳號"
+                                          IsEnabled="{Binding CanStartAccountManagement}" />
+                                <MenuItem Click="ToggleSortModeMenuItem_Click"
+                                          Header="{Binding SortModeActionText}"
+                                          IsEnabled="{Binding CanChangeSortMode}"
+                                          ToolTip="{Binding SortModeToolTip}" />
+                                <MenuItem Click="ToggleUsageDisplayModeMenuItem_Click"
+                                          Header="{Binding UsageDisplayModeActionText}"
+                                          IsEnabled="{Binding CanChangeUsageDisplayMode}"
+                                          ToolTip="{Binding UsageDisplayModeToolTip}" />
+                                <MenuItem Header="主題配色">
+                                    <MenuItem x:Name="ClassicBlueThemeMenuItem"
+                                              AutomationProperties.Name="經典藍主題"
+                                              Click="ThemeMenuItem_Click"
+                                              Header="經典藍"
+                                              IsCheckable="True"
+                                              Tag="ClassicBlue">
+                                        <MenuItem.Icon>
+                                            <Border Width="12"
+                                                    Height="12"
+                                                    Background="#38BDF8"
+                                                    CornerRadius="6" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem x:Name="MidnightThemeMenuItem"
+                                              AutomationProperties.Name="曜石黑主題"
+                                              Click="ThemeMenuItem_Click"
+                                              Header="曜石黑"
+                                              IsCheckable="True"
+                                              Tag="Midnight">
+                                        <MenuItem.Icon>
+                                            <Border Width="12"
+                                                    Height="12"
+                                                    Background="#050505"
+                                                    BorderBrush="#8B5CF6"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem x:Name="LightThemeMenuItem"
+                                              AutomationProperties.Name="柔霧灰主題"
+                                              Click="ThemeMenuItem_Click"
+                                              Header="柔霧灰"
+                                              IsCheckable="True"
+                                              Tag="Light">
+                                        <MenuItem.Icon>
+                                            <Border Width="12"
+                                                    Height="12"
+                                                    Background="#E5E2DD"
+                                                    BorderBrush="#5F4B8B"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem x:Name="SakuraThemeMenuItem"
+                                              AutomationProperties.Name="櫻花粉主題"
+                                              Click="ThemeMenuItem_Click"
+                                              Header="櫻花粉"
+                                              IsCheckable="True"
+                                              Tag="Sakura">
+                                        <MenuItem.Icon>
+                                            <Grid Width="12"
+                                                  Height="12">
+                                                <Ellipse Fill="#F8D9E5"
+                                                         Stroke="#A52D5A"
+                                                         StrokeThickness="1" />
+                                                <Ellipse Width="4"
+                                                         Height="4"
+                                                         Fill="#D95C8A" />
+                                            </Grid>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </MenuItem>
+                                <MenuItem Header="停靠位置">
+                                    <MenuItem x:Name="TopLeftCornerMenuItem"
+                                              Click="CornerMenuItem_Click"
+                                              Header="左上角"
+                                              IsCheckable="True"
+                                              Tag="TopLeft" />
+                                    <MenuItem x:Name="TopRightCornerMenuItem"
+                                              Click="CornerMenuItem_Click"
+                                              Header="右上角"
+                                              IsCheckable="True"
+                                              Tag="TopRight" />
+                                    <MenuItem x:Name="BottomLeftCornerMenuItem"
+                                              Click="CornerMenuItem_Click"
+                                              Header="左下角"
+                                              IsCheckable="True"
+                                              Tag="BottomLeft" />
+                                    <MenuItem x:Name="BottomRightCornerMenuItem"
+                                              Click="CornerMenuItem_Click"
+                                              Header="右下角"
+                                              IsCheckable="True"
+                                              Tag="BottomRight" />
+                                </MenuItem>
+                                <MenuItem x:Name="HeightFollowsCardCountMenuItem"
+                                          AutomationProperties.Name="視窗高度隨卡片數量調整"
+                                          Click="HeightFollowsCardCountMenuItem_Click"
+                                          Header="高度隨卡片數量調整"
+                                          IsCheckable="True"
+                                          ToolTip="依目前卡片與提示內容自動縮短視窗；卡片過多時仍可捲動。" />
+                                <Separator />
+                                <MenuItem Header="匯入或匯出設定">
+                                    <MenuItem AutomationProperties.AutomationId="ExportPortableSettings"
+                                              Click="ExportSettingsMenuItem_Click"
+                                              Header="匯出設定…"
+                                              IsEnabled="{Binding CanStartAccountManagement}" />
+                                    <MenuItem AutomationProperties.AutomationId="ImportPortableSettings"
+                                              Click="ImportSettingsMenuItem_Click"
+                                              Header="匯入設定…"
+                                              IsEnabled="{Binding CanStartAccountManagement}" />
+                                    <Separator />
+                                    <MenuItem AutomationProperties.AutomationId="UndoPortableSettingsImport"
+                                              Click="UndoSettingsImportMenuItem_Click"
+                                              Header="還原匯入前設定"
+                                              IsEnabled="{Binding CanUndoLastPortableSettingsImport}"
+                                              ToolTip="只還原這次匯入取代的帳號、順序與設定。關閉程式後便無法還原。" />
+                                </MenuItem>
+                                <MenuItem AutomationProperties.AutomationId="OpenUserGuide"
+                                          Click="OpenUserGuideMenuItem_Click"
+                                          Header="使用說明" />
+                                <Separator />
+                                <MenuItem Click="HideButton_Click"
+                                          Header="隱藏浮窗" />
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
+                </Grid>
+
+                <ScrollViewer x:Name="AccountScrollViewer"
+                              Grid.Row="1"
+                              AutomationProperties.HelpText="可用滾輪、捲軸，或按住帳號卡片上下拖曳來捲動畫面。"
+                              HorizontalScrollBarVisibility="Disabled"
+                              LostMouseCapture="AccountScrollViewer_LostMouseCapture"
+                              PanningMode="VerticalOnly"
+                              PreviewMouseLeftButtonDown="AccountScrollViewer_PreviewMouseLeftButtonDown"
+                              PreviewMouseLeftButtonUp="AccountScrollViewer_PreviewMouseLeftButtonUp"
+                              PreviewMouseMove="AccountScrollViewer_PreviewMouseMove"
+                              VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0"
+                                Margin="0,0,0,8"
+                                Padding="10,8"
+                                Background="{DynamicResource ControlBackgroundBrush}"
+                                BorderBrush="{DynamicResource InfoBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                Visibility="{Binding HasAccountSettingsHealthMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock x:Name="AccountSettingsHealthTextBlock"
+                                       AutomationProperties.LiveSetting="Assertive"
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Text="{Binding AccountSettingsHealthMessage}"
+                                       TextWrapping="Wrap" />
+                        </Border>
+
+                        <ItemsControl x:Name="AccountItemsControl"
+                                      Grid.Row="1"
+                                      ItemsSource="{Binding Accounts}">
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="{x:Type ContentPresenter}">
+                                    <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,8"
+                                            Background="{DynamicResource CardBackgroundBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="11">
+                                        <StackPanel Margin="14,9,9,9">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock x:Name="AccountTitleText"
+                                                               VerticalAlignment="Center"
+                                                               FontWeight="SemiBold"
+                                                               Style="{StaticResource AccountTitleStyle}"
+                                                               Tag="{DynamicResource {x:Static system:SystemParameters.HighContrastKey}}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding AccountHeaderText}">
+                                                        <TextBlock.Inlines>
+                                                            <Run Text="{Binding ProviderName, Mode=OneWay}"
+                                                                 FontFamily="Segoe UI"
+                                                                 FontWeight="Bold" />
+                                                            <Run Text="{Binding AccountHeaderSuffixText, Mode=OneWay}"
+                                                                 Foreground="{DynamicResource PrimaryTextBrush}" />
+                                                        </TextBlock.Inlines>
+                                                    </TextBlock>
+                                                    <TextBlock Margin="0,3,0,0"
+                                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                                               FontSize="11"
+                                                               Text="{Binding AccountCardDisplayText}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding AccountCardDisplayText}" />
+                                                </StackPanel>
+
+                                                <Border Grid.Column="1"
+                                                        Margin="8,0,6,0"
+                                                        VerticalAlignment="Center"
+                                                        Style="{StaticResource StatusBadgeStyle}">
+                                                   <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
+                                                               AutomationProperties.LiveSetting="Polite"
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"
+                                                               Text="{Binding DisplayStatusText}" />
+                                                </Border>
+
+                                                <Button Grid.Column="2"
+                                                        Width="40"
+                                                        Height="40"
+                                                        Padding="0"
+                                                        AutomationProperties.Name="{Binding AccountName, StringFormat={}{0} 帳號操作}"
+                                                        Click="AccountMenuButton_Click"
+                                                        Content="⋯"
+                                                        Style="{StaticResource AccountMenuButtonStyle}"
+                                                        Tag="{Binding DataContext.IsManagingAccounts, RelativeSource={RelativeSource AncestorType={x:Type local:FloatingWidgetWindow}}}"
+                                                        ToolTip="帳號操作">
+                                                    <Button.ContextMenu>
+                                                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                            <MenuItem Click="RefreshAccountMenuItem_Click"
+                                                                      Header="檢查此帳號用量"
+                                                                      Style="{StaticResource AccountRefreshMenuItemStyle}" />
+                                                            <MenuItem Click="EditAccountMenuItem_Click"
+                                                                      Header="帳號設定"
+                                                                      Style="{StaticResource AccountMutationMenuItemStyle}" />
+                                                            <MenuItem AutomationProperties.Name="{Binding SubscriptionContextMenuText}"
+                                                                      Click="ToggleSubscriptionContextMenuItem_Click"
+                                                                      Header="{Binding SubscriptionContextMenuText}"
+                                                                      IsCheckable="True"
+                                                                      IsChecked="{Binding ShowSubscriptionContext, Mode=OneWay}"
+                                                                      Style="{StaticResource AccountMutationMenuItemStyle}"
+                                                                      ToolTip="{Binding SubscriptionContextToolTip}"
+                                                                      Visibility="{Binding SupportsSubscriptionContext, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                            <MenuItem Click="ToggleAccountEnabledMenuItem_Click">
+                                                                <MenuItem.Style>
+                                                                    <Style TargetType="{x:Type MenuItem}"
+                                                                           BasedOn="{StaticResource AccountMutationMenuItemStyle}">
+                                                                        <Setter Property="Header" Value="開始檢查用量" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsEnabled}" Value="True">
+                                                                                <Setter Property="Header" Value="停止檢查用量" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </MenuItem.Style>
+                                                            </MenuItem>
+                                                            <Separator />
+                                                            <MenuItem AutomationProperties.Name="{Binding AccountName, StringFormat=將帳號「{0}」向上移動}"
+                                                                      Click="MoveAccountUpButton_Click"
+                                                                      Header="向上移動"
+                                                                      IsEnabled="{Binding CanMoveUp}" />
+                                                            <MenuItem AutomationProperties.Name="{Binding AccountName, StringFormat=將帳號「{0}」向下移動}"
+                                                                      Click="MoveAccountDownButton_Click"
+                                                                      Header="向下移動"
+                                                                      IsEnabled="{Binding CanMoveDown}" />
+                                                            <Separator />
+                                                            <MenuItem Click="DeleteAccountMenuItem_Click"
+                                                                      Header="從 AI Usage 移除帳號">
+                                                                <MenuItem.Style>
+                                                                    <Style TargetType="{x:Type MenuItem}"
+                                                                           BasedOn="{StaticResource AccountMutationMenuItemStyle}">
+                                                                        <Setter Property="Foreground"
+                                                                                Value="{DynamicResource DangerTextBrush}" />
+                                                                    </Style>
+                                                                </MenuItem.Style>
+                                                            </MenuItem>
+                                                        </ContextMenu>
+                                                    </Button.ContextMenu>
+                                                </Button>
+                                            </Grid>
+
+                                            <StackPanel Margin="0,10,0,0">
+                                                <ItemsControl ItemsSource="{Binding UsageMetrics}"
+                                                              Tag="{DynamicResource {x:Static system:SystemParameters.HighContrastKey}}"
+                                                              Visibility="{Binding HasUsageMetrics, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Margin="0,0,0,10">
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="Auto" />
+                                                                    <RowDefinition Height="Auto" />
+                                                                </Grid.RowDefinitions>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
+                                                                           FontSize="11"
+                                                                           FontWeight="SemiBold"
+                                                                           Text="{Binding Label}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           ToolTip="{Binding Label}" />
+                                                                <StackPanel Grid.Column="1"
+                                                                            Margin="10,0,0,0"
+                                                                            Orientation="Horizontal">
+                                                                    <TextBlock x:Name="MetricValueTextBlock"
+                                                                               FontSize="11"
+                                                                               FontWeight="SemiBold"
+                                                                               Text="{Binding DisplayValue}"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               ToolTip="{Binding ToolTipValue}">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="{x:Type TextBlock}"
+                                                                                   BasedOn="{StaticResource UsageMetricValueTextStyle}">
+                                                                                <Setter Property="MaxWidth" Value="90" />
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding HasResetText}"
+                                                                                                 Value="False">
+                                                                                        <Setter Property="MaxWidth" Value="210" />
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+                                                                    <TextBlock Margin="7,0,0,0"
+                                                                               FontSize="10"
+                                                                               MaxWidth="120"
+                                                                               Style="{StaticResource CompactResetTimeTextStyle}"
+                                                                               Text="{Binding ResetText}"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               ToolTip="{Binding ResetText}"
+                                                                               Visibility="{Binding HasResetText, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                                </StackPanel>
+                                                                <ProgressBar Grid.Row="1"
+                                                                             Grid.ColumnSpan="2"
+                                                                             Margin="0,6,0,0"
+                                                                             AutomationProperties.HelpText="{Binding DisplayValue}"
+                                                                             AutomationProperties.Name="{Binding ProgressAutomationName}"
+                                                                             Maximum="100"
+                                                                             Style="{StaticResource MetricProgressStyle}"
+                                                                             Value="{Binding DisplayPercent, Mode=OneWay}"
+                                                                             Visibility="{Binding HasUsageBar, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+
+                                                <StackPanel Margin="0,2,0,9"
+                                                            Visibility="{Binding HasNoUsageMetrics, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               Text="{Binding PrimaryText}" />
+                                                    <TextBlock Margin="0,3,0,0"
+                                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                                               FontSize="10"
+                                                               Text="{Binding SecondaryText}"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+
+                                                <Border Margin="0,0,0,8"
+                                                        Padding="10,8"
+                                                        BorderThickness="1"
+                                                        CornerRadius="7">
+                                                    <Border.Style>
+                                                        <Style TargetType="{x:Type Border}"
+                                                               BasedOn="{StaticResource RecoveryNoticePanelStyle}">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding HasNotice}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding ShowRecoveryActionNotice}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <StackPanel>
+                                                        <TextBlock FontSize="12"
+                                                                   FontWeight="SemiBold"
+                                                                   Style="{StaticResource RecoveryNoticeTitleTextStyle}"
+                                                                   Text="{Binding RecoveryPanelTitle}" />
+                                                        <TextBlock Margin="0,3,0,0"
+                                                                   AutomationProperties.LiveSetting="Polite"
+                                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                                   FontSize="12"
+                                                                   Text="{Binding NoticeText}"
+                                                                   TextWrapping="Wrap"
+                                                                   Visibility="{Binding HasNotice, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                        <TextBlock Margin="0,3,0,0"
+                                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                                   FontSize="12"
+                                                                   Text="{Binding RecoveryActionDescription}"
+                                                                   TextWrapping="Wrap"
+                                                                   Visibility="{Binding ShowRecoveryActionNotice, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                        <WrapPanel Margin="0,7,0,0"
+                                                                   Visibility="{Binding HasExecutableRecoveryAction, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <Button Margin="0,0,7,5"
+                                                                    Click="RecoverUsageButton_Click"
+                                                                    Content="{Binding RecoveryActionText}"
+                                                                    Style="{StaticResource RecoveryActionButtonStyle}"
+                                                                    Visibility="{Binding HasExecutableRecoveryAction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                            <Button Margin="0,0,7,5"
+                                                                    Click="CopyRecoveryGuidanceButton_Click"
+                                                                    Content="複製處理步驟"
+                                                                    Style="{StaticResource RecoveryGuidanceButtonStyle}" />
+                                                            <Button Margin="0,0,0,5"
+                                                                    Click="RetryRecoveryButton_Click"
+                                                                    Content="完成後再檢查"
+                                                                    Style="{StaticResource RecoveryRetryButtonStyle}" />
+                                                        </WrapPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                                <Button HorizontalAlignment="Left"
+                                                        Click="ConnectClaudeAccountButton_Click"
+                                                        Content="{Binding ClaudeAccountActionText}"
+                                                        Style="{StaticResource ConnectAccountButtonStyle}"
+                                                        Visibility="{Binding ShowClaudeDefaultConnectionAction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                <Button HorizontalAlignment="Left"
+                                                        Click="ConnectCodexAccountButton_Click"
+                                                        Content="{Binding CodexAccountActionText}"
+                                                        Style="{StaticResource ConnectAccountButtonStyle}"
+                                                        Visibility="{Binding ShowCodexDefaultConnectionAction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                <Button HorizontalAlignment="Left"
+                                                        Click="ConnectCopilotAccountButton_Click"
+                                                        Content="{Binding CopilotAccountActionText}"
+                                                        Style="{StaticResource ConnectAccountButtonStyle}"
+                                                        Visibility="{Binding ShowCopilotDefaultConnectionAction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                <Button HorizontalAlignment="Left"
+                                                        Click="ConnectGrokAccountButton_Click"
+                                                        Content="{Binding GrokAccountActionText}"
+                                                        Style="{StaticResource ConnectAccountButtonStyle}"
+                                                        Visibility="{Binding ShowGrokDefaultConnectionAction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                <Button HorizontalAlignment="Left"
+                                                        Click="ConnectAntigravityAccountButton_Click"
+                                                        Content="{Binding AntigravityAccountActionText}"
+                                                        Style="{StaticResource ConnectAccountButtonStyle}"
+                                                        Visibility="{Binding ShowAntigravityDefaultConnectionAction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Border Grid.Row="1"
+                                MinHeight="170"
+                                Padding="22"
+                                Background="{DynamicResource CardBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="11"
+                                Visibility="{Binding HasNoAccounts, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                <TextBlock HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource PrimaryTextBrush}"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding EmptyAccountsTitle}" />
+                                <TextBlock Margin="0,6,0,12"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           FontSize="11"
+                                           Text="{Binding EmptyAccountsMessage}"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap" />
+                                <Button Click="AddAccountMenuItem_Click"
+                                        Content="新增帳號"
+                                        IsEnabled="{Binding CanStartAccountManagement}"
+                                        Style="{StaticResource PrimaryButtonStyle}" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+
+                <Grid x:Name="ExpandedFooter"
+                      Grid.Row="2"
+                      Margin="2,7,2,0"
+                      VerticalAlignment="Bottom"
+                      Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="RefreshingTextBlock"
+                               VerticalAlignment="Center"
+                               AutomationProperties.LiveSetting="Polite"
+                               Foreground="{DynamicResource InfoBrush}"
+                               FontSize="12"
+                               Text="檢查中…"
+                               Visibility="{Binding IsRefreshing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <TextBlock x:Name="CompactRefreshTextBlock"
+                               VerticalAlignment="Center"
+                               AutomationProperties.Name="{Binding LastRefreshText}"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               FontSize="12"
+                               Text="{Binding CompactRefreshStatus.Text}"
+                               TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding LastRefreshText}"
+                               Visibility="Collapsed" />
+                    <TextBlock x:Name="InlineStatusTextBlock"
+                               Grid.Row="1"
+                               Margin="0,5,0,0"
+                               AutomationProperties.LiveSetting="Polite"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed" />
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Button x:Name="AnchorToggleButton"
+                Width="44"
+                Height="44"
+                Margin="6"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Panel.ZIndex="1"
+                AutomationProperties.Name="收合 AI Usage 到右下角"
+                Click="CollapseButton_Click"
+                Content="↘"
+                Style="{StaticResource AnchorToggleButtonStyle}"
+                ToolTip="收合 AI Usage 到右下角"
+                Visibility="{Binding Visibility, ElementName=ExpandedView, Mode=OneWay}" />
+
+        <Button x:Name="CollapsedButton"
+                Width="56"
+                Height="56"
+                Padding="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                AutomationProperties.HelpText="按一下展開 AI Usage；拖曳可變更停靠角落。"
+                AutomationProperties.Name="展開 AI Usage 浮窗"
+                Background="{DynamicResource WindowBackgroundBrush}"
+                BorderBrush="{DynamicResource InfoBrush}"
+                BorderThickness="1"
+                Click="CollapsedButton_Click"
+                FocusVisualStyle="{StaticResource CircularButtonKeyboardFocusVisualStyle}"
+                LostMouseCapture="CollapsedButton_LostMouseCapture"
+                PreviewMouseLeftButtonDown="CollapsedButton_PreviewMouseLeftButtonDown"
+                PreviewMouseLeftButtonUp="CollapsedButton_PreviewMouseLeftButtonUp"
+                PreviewMouseMove="CollapsedButton_PreviewMouseMove"
+                ToolTip="展開 AI Usage"
+                Visibility="Collapsed">
+            <Button.Template>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="Chrome"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="28">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource InfoBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Chrome" Property="Opacity" Value="0.82" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+            <ContentControl Width="46"
+                            Height="46"
+                            Focusable="False"
+                            IsHitTestVisible="False"
+                            Style="{StaticResource ThemeLogoStyle}" />
+        </Button>
+    </Grid>
+</Window>

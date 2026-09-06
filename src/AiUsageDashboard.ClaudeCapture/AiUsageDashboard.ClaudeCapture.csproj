@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>AiUsageDashboard.ClaudeCapture</AssemblyName>
+    <RootNamespace>AiUsageDashboard.ClaudeCapture</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AiUsageDashboard.Core\AiUsageDashboard.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AiUsageDashboard.Licensing\AiUsageDashboard.Licensing.csproj" />
+  </ItemGroup>
+
+</Project>

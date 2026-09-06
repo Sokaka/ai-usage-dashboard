@@ -1,0 +1,55 @@
+# Build output
+**/bin/
+**/obj/
+publish/
+
+# Visual Studio and user settings
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test and diagnostic output
+TestResults/
+*.log
+.artifacts/
+**/artifacts/
+*.stackdump
+
+# Local workspace scratch
+outputs/
+work/
+.agents/
+.codex/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+secrets.json
+appsettings.Local.json
+*.key
+*.pem
+*.pk8
+*.jwk
+*.pfx
+*.p12
+private-key
+private-key.*
+credentials.json
+credentials.*.json
+!credentials.example.json
+auth.json
+auth.*.json
+!auth.example.json
+accounts.json
+accounts.json.bak
+accounts.corrupt-*.json
+preferences.json
+usage-snapshot*.json
+agy-profile*.json
+agy-*.profile.json
+antigravity-profile*.json
+*.private-profile.json
+*.profile.private.json

@@ -1,0 +1,586 @@
+name: Release candidate
+
+run-name: Candidate ${{ inputs.version }} from ${{ inputs.expected_sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact final version without v or build metadata (for example, 0.2.0)
+        required: true
+        type: string
+      expected_sha:
+        description: Full 40-character commit SHA currently at main
+        required: true
+        type: string
+      acknowledge_private_candidate:
+        description: Build a private candidate; publication is a separate decision
+        required: true
+        default: false
+        type: boolean
+      release_sequence:
+        description: New globally increasing sequence from the completed distribution audit
+        required: true
+        type: string
+      previous_release_sequence:
+        description: Audited maximum sequence from all previous distribution sources
+        required: true
+        type: string
+      acknowledge_sequence_audit:
+        description: All known prior distribution sources were enumerated and the upper bound is complete
+        required: true
+        default: false
+        type: boolean
+      publish_github_prerelease:
+        description: Save the verified six-file bundle as a private draft prerelease with the final tag
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: internal-release-candidate
+  cancel-in-progress: false
+
+jobs:
+  build-candidate:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    outputs:
+      candidate_version: ${{ steps.release_source.outputs.candidate_version }}
+
+    steps:
+      - name: Check out requested source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate release source
+        id: release_source
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          PRIVATE_CANDIDATE: ${{ inputs.acknowledge_private_candidate }}
+          RELEASE_SEQUENCE: ${{ inputs.release_sequence }}
+          PREVIOUS_RELEASE_SEQUENCE: ${{ inputs.previous_release_sequence }}
+          SEQUENCE_AUDIT: ${{ inputs.acknowledge_sequence_audit }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $rawVersion = $env:RELEASE_VERSION
+          $version = $rawVersion.Trim()
+          $expectedSha = $env:EXPECTED_SHA.Trim()
+          $headSha = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to inspect candidate source HEAD.' }
+
+          if ($env:PRIVATE_CANDIDATE -ne 'true') {
+            throw 'The private candidate acknowledgement must be selected.'
+          }
+
+          [long] $releaseSequence = 0
+          [long] $previousSequence = 0
+          if (($env:SEQUENCE_AUDIT -ne 'true') -or
+              ![long]::TryParse($env:RELEASE_SEQUENCE, [ref] $releaseSequence) -or
+              ![long]::TryParse($env:PREVIOUS_RELEASE_SEQUENCE, [ref] $previousSequence) -or
+              ($previousSequence -lt 0) -or ($releaseSequence -le $previousSequence)) {
+            throw 'A complete sequence audit and a strictly greater external release sequence are required.'
+          }
+
+          if ($rawVersion -cne $version) {
+            throw 'Version must not contain leading or trailing whitespace.'
+          }
+
+          if ($version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$') {
+            throw "Version '$version' must be a semantic version without build metadata."
+          }
+
+          if ($expectedSha -notmatch '^[0-9a-fA-F]{40}$') {
+            throw 'expected_sha must be the full 40-character commit SHA.'
+          }
+
+          if ($env:GITHUB_REF -ne 'refs/heads/main') {
+            throw "Release candidates must be dispatched from main, not '$env:GITHUB_REF'."
+          }
+
+          if (($headSha -ne $expectedSha) -or ($headSha -ne $env:GITHUB_SHA)) {
+            throw "Commit confirmation failed. Checked out $headSha; expected $expectedSha."
+          }
+
+          $candidateVersion = $version
+          $existingTag = git tag --list "v$candidateVersion"
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to inspect existing release tags.'
+          }
+          if (![string]::IsNullOrWhiteSpace(($existingTag -join ''))) {
+            throw "Tag v$candidateVersion already exists."
+          }
+
+          $workingTreeStatus = @(git status --porcelain=v1 --untracked-files=all)
+          if (($LASTEXITCODE -ne 0) -or ($workingTreeStatus.Count -ne 0)) {
+            throw 'The checked-out release source is not clean.'
+          }
+
+          "candidate_version=$candidateVersion" >> $env:GITHUB_OUTPUT
+          "Validated private release candidate $candidateVersion from $headSha."
+
+      - name: Set up pinned .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Prepare pinned public update keys
+        shell: pwsh
+        env:
+          UPDATE_TRUST_JSON: ${{ vars.UPDATE_FEED_TRUST_JSON }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:UPDATE_TRUST_JSON)) {
+            throw 'UPDATE_FEED_TRUST_JSON must be configured with externally provisioned production public keys.'
+          }
+          $trustPath = Join-Path $env:RUNNER_TEMP 'update-public-trust.json'
+          [IO.File]::WriteAllText($trustPath, $env:UPDATE_TRUST_JSON, [Text.UTF8Encoding]::new($false))
+          dotnet run --project tools/AiUsageDashboard.FeedSigning --configuration Release -- validate-trust --trust $trustPath
+          if ($LASTEXITCODE -ne 0) { throw 'Update feed public trust validation failed.' }
+
+      - name: Restore
+        run: dotnet restore AiUsageDashboard.sln
+
+      - name: Build
+        run: dotnet build AiUsageDashboard.sln --configuration Release --no-restore
+
+      - name: Test
+        run: >
+          dotnet test tests/AiUsageDashboard.Tests/AiUsageDashboard.Tests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          --maxcpucount:1
+          --nodeReuse:false
+          -p:UseSharedCompilation=false
+          --collect "Code Coverage;Format=Cobertura"
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory "${{ runner.temp }}/test-results"
+          --
+          xUnit.ParallelizeTestCollections=false
+
+      - name: Verify production line coverage
+        shell: pwsh
+        run: >
+          ./tools/Assert-ProductionCoverage.ps1
+          -ResultsDirectory "${{ runner.temp }}/test-results"
+          -MinimumLineCoveragePercent 70
+
+      - name: Build and sign versioned update bundle
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.release_source.outputs.candidate_version }}
+          RELEASE_SEQUENCE: ${{ inputs.release_sequence }}
+          PREVIOUS_RELEASE_SEQUENCE: ${{ inputs.previous_release_sequence }}
+          SIGNING_KEY_ID: ${{ vars.UPDATE_FEED_SIGNING_KEY_ID }}
+          SIGNING_KEY_PEM: ${{ secrets.UPDATE_FEED_SIGNING_PRIVATE_KEY_PEM }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:SIGNING_KEY_ID) -or
+              [string]::IsNullOrWhiteSpace($env:SIGNING_KEY_PEM)) {
+            throw 'The production signing key ID and private key secret are required.'
+          }
+          $signingRoot = Join-Path $env:RUNNER_TEMP ('.aud-signing-' + [Guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Path $signingRoot | Out-Null
+          $privateKeyPath = Join-Path $signingRoot 'private-key.pem'
+          try {
+            [IO.File]::WriteAllText($privateKeyPath, $env:SIGNING_KEY_PEM, [Text.UTF8Encoding]::new($false))
+            Remove-Item Env:SIGNING_KEY_PEM
+            ./tools/Publish-UpdateBundle.ps1 `
+              -Version $env:RELEASE_VERSION `
+              -ReleaseSequence $env:RELEASE_SEQUENCE `
+              -PreviousReleaseSequence $env:PREVIOUS_RELEASE_SEQUENCE `
+              -TrustedKeysFile (Join-Path $env:RUNNER_TEMP 'update-public-trust.json') `
+              -SigningKeyId $env:SIGNING_KEY_ID `
+              -SigningPrivateKeyFile $privateKeyPath `
+              -Channel stable `
+              -FeedUrl 'https://github.com/Sokaka/ai-usage-dashboard/releases/latest/download/AiUsageDashboard-update-stable.json' `
+              -AssetBaseUrl "https://github.com/Sokaka/ai-usage-dashboard/releases/download/v$env:RELEASE_VERSION" `
+              -OutputRoot (Join-Path $env:RUNNER_TEMP 'internal-release')
+          }
+          finally {
+            if (Test-Path -LiteralPath $privateKeyPath) { Remove-Item -LiteralPath $privateKeyPath -Force }
+            Remove-Item -LiteralPath $signingRoot
+          }
+
+      - name: Verify update bundle
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.release_source.outputs.candidate_version }}
+          RELEASE_SEQUENCE: ${{ inputs.release_sequence }}
+          PUBLISH_GITHUB_PRERELEASE: ${{ inputs.publish_github_prerelease }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $packageName = "AiUsageDashboard-$env:RELEASE_VERSION-win-x64"
+          $zipPath = Join-Path '${{ runner.temp }}/internal-release' "$packageName.zip"
+          $checksumPath = "$zipPath.sha256"
+          $updaterName = "AiUsageDashboard-Updater-$env:RELEASE_VERSION-win-x64.exe"
+          $updaterPath = Join-Path '${{ runner.temp }}/internal-release' $updaterName
+          $updaterChecksumPath = "$updaterPath.sha256"
+          $feedPath = Join-Path '${{ runner.temp }}/internal-release' 'AiUsageDashboard-update-stable.json'
+          $feedChecksumPath = "$feedPath.sha256"
+          $checksumText = (Get-Content -LiteralPath $checksumPath -Raw).Trim()
+          $updaterChecksumText = (Get-Content -LiteralPath $updaterChecksumPath -Raw).Trim()
+          $feedChecksumText = (Get-Content -LiteralPath $feedChecksumPath -Raw).Trim()
+
+          $bundleEntries = @(Get-ChildItem -LiteralPath '${{ runner.temp }}/internal-release' -Force)
+          if (($bundleEntries.Count -ne 6) -or
+              (@($bundleEntries | Where-Object { !$_.PSIsContainer }).Count -ne 6)) {
+            throw 'The update bundle must contain exactly six files.'
+          }
+
+          if ($checksumText -notmatch '^([0-9a-f]{64})  (.+\.zip)$') {
+            throw 'The generated checksum file has an invalid format.'
+          }
+
+          $expectedHash = $Matches[1]
+          $expectedFileName = $Matches[2]
+          $actualHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+
+          if ($updaterChecksumText -notmatch '^([0-9a-f]{64})  (.+\.exe)$') {
+            throw 'The generated updater checksum file has an invalid format.'
+          }
+
+          $expectedUpdaterHash = $Matches[1]
+          $expectedUpdaterFileName = $Matches[2]
+          $actualUpdaterHash = (Get-FileHash -LiteralPath $updaterPath -Algorithm SHA256).Hash.ToLowerInvariant()
+
+          if ($feedChecksumText -notmatch '^([0-9a-f]{64})  (.+\.json)$') {
+            throw 'The generated feed checksum file has an invalid format.'
+          }
+
+          $expectedFeedHash = $Matches[1]
+          $expectedFeedFileName = $Matches[2]
+          $actualFeedHash = (Get-FileHash -LiteralPath $feedPath -Algorithm SHA256).Hash.ToLowerInvariant()
+
+          if ($expectedFileName -ne (Split-Path -Leaf $zipPath)) {
+            throw "Checksum names '$expectedFileName', not the generated ZIP."
+          }
+          if ($expectedHash -ne $actualHash) {
+            throw "Package checksum mismatch: expected $expectedHash; got $actualHash."
+          }
+          if ($expectedUpdaterFileName -ne (Split-Path -Leaf $updaterPath)) {
+            throw "Updater checksum names '$expectedUpdaterFileName', not the generated EXE."
+          }
+          if ($expectedUpdaterHash -ne $actualUpdaterHash) {
+            throw "Updater checksum mismatch: expected $expectedUpdaterHash; got $actualUpdaterHash."
+          }
+          if ($expectedFeedFileName -ne (Split-Path -Leaf $feedPath)) {
+            throw "Feed checksum names '$expectedFeedFileName', not the generated JSON."
+          }
+          if ($expectedFeedHash -ne $actualFeedHash) {
+            throw "Feed checksum mismatch: expected $expectedFeedHash; got $actualFeedHash."
+          }
+
+          $verifiedPayloadPath = Join-Path $env:RUNNER_TEMP ('verified-feed-' + [Guid]::NewGuid().ToString('N') + '.json')
+          dotnet run --project tools/AiUsageDashboard.FeedSigning --configuration Release -- verify `
+            --feed $feedPath --trust (Join-Path $env:RUNNER_TEMP 'update-public-trust.json') `
+            --channel stable --output $verifiedPayloadPath
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate feed signature verification failed.' }
+          $feed = Get-Content -LiteralPath $verifiedPayloadPath -Raw | ConvertFrom-Json
+          $expectedAssetBaseUrl = "https://github.com/Sokaka/ai-usage-dashboard/releases/download/v$env:RELEASE_VERSION"
+          if (($feed.schemaVersion -ne 1) -or
+              ($feed.channel -cne 'stable') -or
+              ($feed.releaseSequence -ne [long]$env:RELEASE_SEQUENCE) -or
+              ($feed.minimumUpdaterVersion -cne $env:RELEASE_VERSION) -or
+              ($feed.package.artifactId -cne 'AiUsageDashboard') -or
+              ($feed.package.version -cne $env:RELEASE_VERSION) -or
+              ($feed.package.runtimeIdentifier -cne 'win-x64') -or
+              ($feed.package.fileName -cne (Split-Path -Leaf $zipPath)) -or
+              ($feed.package.downloadUrl -cne "$expectedAssetBaseUrl/$(Split-Path -Leaf $zipPath)") -or
+              ($feed.package.sizeBytes -ne (Get-Item -LiteralPath $zipPath).Length) -or
+              ($feed.package.sha256 -cne $actualHash) -or
+              ($feed.updater.artifactId -cne 'AiUsageDashboard.Updater') -or
+              ($feed.updater.version -cne $env:RELEASE_VERSION) -or
+              ($feed.updater.runtimeIdentifier -cne 'win-x64') -or
+              ($feed.updater.fileName -cne (Split-Path -Leaf $updaterPath)) -or
+              ($feed.updater.downloadUrl -cne "$expectedAssetBaseUrl/$(Split-Path -Leaf $updaterPath)") -or
+              ($feed.updater.sizeBytes -ne (Get-Item -LiteralPath $updaterPath).Length) -or
+              ($feed.updater.sha256 -cne $actualUpdaterHash) -or
+              ($feed.package.sourceRevision -cne $env:GITHUB_SHA) -or
+              ($feed.updater.sourceRevision -cne $env:GITHUB_SHA)) {
+            throw 'Update feed does not match the generated package, updater, or source.'
+          }
+
+          $result = if ($env:PUBLISH_GITHUB_PRERELEASE -eq 'true') {
+            'verified artifact; private prerelease publication requested'
+          }
+          else {
+            'verified Actions artifact only; no tag or GitHub Release was created'
+          }
+
+          @"
+          ## Private release candidate
+
+          - Version: ``$env:RELEASE_VERSION``
+          - Commit: ``$env:GITHUB_SHA``
+          - Package SHA-256: ``$actualHash``
+          - Updater SHA-256: ``$actualUpdaterHash``
+          - Feed SHA-256: ``$actualFeedHash``
+          - Feed: ``AiUsageDashboard-update-stable.json``
+          - Result: $result
+          "@ | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload versioned candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: AiUsageDashboard-${{ steps.release_source.outputs.candidate_version }}-win-x64
+          path: |
+            ${{ runner.temp }}/internal-release/AiUsageDashboard-${{ steps.release_source.outputs.candidate_version }}-win-x64.zip
+            ${{ runner.temp }}/internal-release/AiUsageDashboard-${{ steps.release_source.outputs.candidate_version }}-win-x64.zip.sha256
+            ${{ runner.temp }}/internal-release/AiUsageDashboard-Updater-${{ steps.release_source.outputs.candidate_version }}-win-x64.exe
+            ${{ runner.temp }}/internal-release/AiUsageDashboard-Updater-${{ steps.release_source.outputs.candidate_version }}-win-x64.exe.sha256
+            ${{ runner.temp }}/internal-release/AiUsageDashboard-update-stable.json
+            ${{ runner.temp }}/internal-release/AiUsageDashboard-update-stable.json.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload test diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: internal-release-test-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  publish-prerelease:
+    if: ${{ inputs.publish_github_prerelease }}
+    needs: build-candidate
+    runs-on: windows-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: write
+
+    steps:
+      - name: Check out candidate verifier
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up pinned .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Prepare pinned public update keys
+        shell: pwsh
+        env:
+          UPDATE_TRUST_JSON: ${{ vars.UPDATE_FEED_TRUST_JSON }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:UPDATE_TRUST_JSON)) {
+            throw 'UPDATE_FEED_TRUST_JSON must be configured with externally provisioned production public keys.'
+          }
+          $trustPath = Join-Path $env:RUNNER_TEMP 'update-public-trust.json'
+          [IO.File]::WriteAllText($trustPath, $env:UPDATE_TRUST_JSON, [Text.UTF8Encoding]::new($false))
+          dotnet run --project tools/AiUsageDashboard.FeedSigning --configuration Release -- validate-trust --trust $trustPath
+          if ($LASTEXITCODE -ne 0) { throw 'Update feed public trust validation failed.' }
+
+      - name: Download verified candidate
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.build-candidate.outputs.candidate_version }}
+          RELEASE_SEQUENCE: ${{ inputs.release_sequence }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $artifactName = "AiUsageDashboard-$env:RELEASE_VERSION-win-x64"
+          $releaseRoot = Join-Path $env:RUNNER_TEMP 'github-prerelease'
+          New-Item -ItemType Directory -Path $releaseRoot | Out-Null
+          gh run download $env:GITHUB_RUN_ID `
+            --repo $env:GITHUB_REPOSITORY `
+            --name $artifactName `
+            --dir $releaseRoot
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to download verified artifact $artifactName."
+          }
+
+          "release_root=$releaseRoot" >> $env:GITHUB_ENV
+
+      - name: Reverify and publish private prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.build-candidate.outputs.candidate_version }}
+          RELEASE_SEQUENCE: ${{ inputs.release_sequence }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $releaseRoot = $env:release_root
+          $packageName = "AiUsageDashboard-$env:RELEASE_VERSION-win-x64.zip"
+          $updaterName = "AiUsageDashboard-Updater-$env:RELEASE_VERSION-win-x64.exe"
+          $feedName = 'AiUsageDashboard-update-stable.json'
+          $expectedNames = @(
+            $packageName,
+            "$packageName.sha256",
+            $updaterName,
+            "$updaterName.sha256",
+            $feedName,
+            "$feedName.sha256"
+          )
+          $files = @(Get-ChildItem -LiteralPath $releaseRoot -File)
+          $actualNames = @($files.Name | Sort-Object)
+          if (($files.Count -ne 6) -or
+              (Compare-Object ($expectedNames | Sort-Object) $actualNames)) {
+            throw 'Downloaded candidate does not contain the exact six release files.'
+          }
+
+          $verifiedHashes = @{}
+          foreach ($fileName in @($packageName, $updaterName, $feedName)) {
+            $filePath = Join-Path $releaseRoot $fileName
+            $sidecarPath = "$filePath.sha256"
+            $sidecar = ([IO.File]::ReadAllText($sidecarPath)).Trim()
+            if ($sidecar -notmatch '^([0-9a-f]{64})  (.+)$') {
+              throw "Checksum sidecar has an invalid format: $sidecarPath"
+            }
+
+            $expectedHash = $Matches[1]
+            $sidecarName = $Matches[2]
+            $actualHash = (Get-FileHash `
+              -LiteralPath $filePath `
+              -Algorithm SHA256).Hash.ToLowerInvariant()
+            if (($sidecarName -cne $fileName) -or
+                ($expectedHash -cne $actualHash)) {
+              throw "Checksum verification failed for $fileName."
+            }
+
+            $verifiedHashes[$fileName] = $actualHash
+          }
+
+          $packagePath = Join-Path $releaseRoot $packageName
+          $updaterPath = Join-Path $releaseRoot $updaterName
+          $feedPath = Join-Path $releaseRoot $feedName
+          $verifiedPayloadPath = Join-Path $env:RUNNER_TEMP ('verified-feed-' + [Guid]::NewGuid().ToString('N') + '.json')
+          dotnet run --project tools/AiUsageDashboard.FeedSigning --configuration Release -- verify `
+            --feed $feedPath --trust (Join-Path $env:RUNNER_TEMP 'update-public-trust.json') `
+            --channel stable --output $verifiedPayloadPath
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate feed signature verification failed.' }
+          $feed = Get-Content -LiteralPath $verifiedPayloadPath -Raw | ConvertFrom-Json
+          if (($feed.schemaVersion -ne 1) -or
+              ($feed.channel -cne 'stable') -or
+              ($feed.releaseSequence -ne [long]$env:RELEASE_SEQUENCE) -or
+              ($feed.minimumUpdaterVersion -cne $env:RELEASE_VERSION) -or
+              ($feed.package.version -cne $env:RELEASE_VERSION) -or
+              ($feed.package.fileName -cne $packageName) -or
+              ($feed.package.sizeBytes -ne (Get-Item -LiteralPath $packagePath).Length) -or
+              ($feed.package.sha256 -cne $verifiedHashes[$packageName]) -or
+              ($feed.package.sourceRevision -cne $env:GITHUB_SHA) -or
+              ($feed.updater.version -cne $env:RELEASE_VERSION) -or
+              ($feed.updater.fileName -cne $updaterName) -or
+              ($feed.updater.sizeBytes -ne (Get-Item -LiteralPath $updaterPath).Length) -or
+              ($feed.updater.sha256 -cne $verifiedHashes[$updaterName]) -or
+              ($feed.updater.sourceRevision -cne $env:GITHUB_SHA)) {
+            throw 'Downloaded candidate feed no longer matches the verified release files.'
+          }
+
+          $tag = "v$env:RELEASE_VERSION"
+          $notesPath = Join-Path $env:RUNNER_TEMP 'github-prerelease-notes.md'
+          $notes = @"
+          Private release candidate built from ``$env:GITHUB_SHA`` by
+          [workflow run $env:GITHUB_RUN_ID, attempt $env:GITHUB_RUN_ATTEMPT](https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID).
+          Release sequence: $env:RELEASE_SEQUENCE. These exact six assets are the candidate for a later publication decision.
+
+          Download all six assets from this Release for verification and offline recovery.
+          The standalone updater cannot download private GitHub assets without separate GitHub authentication.
+          "@
+          [IO.File]::WriteAllText(
+            $notesPath,
+            $notes,
+            [Text.UTF8Encoding]::new($false))
+          $assets = @($files | Sort-Object Name | Select-Object -ExpandProperty FullName)
+
+          $repository = gh api "repos/$env:GITHUB_REPOSITORY" | ConvertFrom-Json
+          if (($LASTEXITCODE -ne 0) -or !$repository.private) {
+            throw 'Candidate Release creation requires the repository to remain private.'
+          }
+
+          gh release create $tag @assets `
+            --repo $env:GITHUB_REPOSITORY `
+            --target $env:GITHUB_SHA `
+            --title "AI Usage $env:RELEASE_VERSION candidate" `
+            --notes-file $notesPath `
+            --prerelease `
+            --draft
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to create draft prerelease $tag."
+          }
+
+          $release = gh release view $tag `
+            --repo $env:GITHUB_REPOSITORY `
+            --json assets,isDraft,isPrerelease,tagName,targetCommitish,url |
+            ConvertFrom-Json
+          if (!$release.isDraft -or
+              !$release.isPrerelease -or
+              ($release.tagName -cne $tag) -or
+              ($release.targetCommitish -cne $env:GITHUB_SHA) -or
+              ($release.assets.Count -ne 6)) {
+            throw 'Draft prerelease metadata does not match the requested publication.'
+          }
+
+          foreach ($file in $files) {
+            $remoteAsset = @($release.assets | Where-Object {
+              $_.name -ceq $file.Name
+            })
+            $localDigest = 'sha256:' + (Get-FileHash `
+              -LiteralPath $file.FullName `
+              -Algorithm SHA256).Hash.ToLowerInvariant()
+            if (($remoteAsset.Count -ne 1) -or
+                ($remoteAsset[0].size -ne $file.Length) -or
+                ($remoteAsset[0].digest -cne $localDigest)) {
+              throw "Uploaded Release asset verification failed for $($file.Name)."
+            }
+          }
+
+          $freeze = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag" | ConvertFrom-Json
+          if (($LASTEXITCODE -ne 0) -or !$freeze.draft -or !$freeze.prerelease -or
+              ($freeze.tag_name -cne $tag) -or ($freeze.target_commitish -cne $env:GITHUB_SHA) -or
+              ($freeze.assets.Count -ne 6)) {
+            throw 'Candidate Release could not be read back in its private draft state.'
+          }
+          foreach ($file in $files) {
+            $frozenAsset = @($freeze.assets | Where-Object { $_.name -ceq $file.Name })
+            $localDigest = 'sha256:' + (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            if (($frozenAsset.Count -ne 1) -or ($frozenAsset[0].size -ne $file.Length) -or
+                ($frozenAsset[0].digest -cne $localDigest)) {
+              throw "Candidate asset changed before freezing its identity: $($file.Name)."
+            }
+          }
+          $receipt = [ordered] @{
+            repository = "https://github.com/$env:GITHUB_REPOSITORY"
+            repositoryId = $repository.id
+            releaseId = $freeze.id
+            releaseUrl = $freeze.html_url
+            tag = $tag
+            sourceSha = $env:GITHUB_SHA
+            buildRunId = $env:GITHUB_RUN_ID
+            buildRunAttempt = $env:GITHUB_RUN_ATTEMPT
+            releaseSequence = [long] $env:RELEASE_SEQUENCE
+            assets = @($freeze.assets | ForEach-Object {
+              [ordered] @{ id = $_.id; name = $_.name; size = $_.size; digest = $_.digest }
+            })
+          }
+          $receiptPath = Join-Path $env:RUNNER_TEMP 'candidate-freeze.json'
+          [IO.File]::WriteAllText($receiptPath, ($receipt | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
+          "Private draft candidate frozen at $($freeze.html_url); six asset identities and digests recorded. Public promotion must reuse these exact assets without rebuilding." |
+            Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
+
+      - name: Save candidate identity receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: candidate-freeze-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/candidate-freeze.json
+          if-no-files-found: error
+          retention-days: 14

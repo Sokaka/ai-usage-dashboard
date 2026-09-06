@@ -1,0 +1,1420 @@
+{
+  "FormatVersion": "agy-reviewed-package-manifest-v1",
+  "ReviewState": "Reviewed",
+  "Contracts": [
+    {
+      "ContractId": "agy-windows-2026-07-reviewed-1",
+      "Executable": {
+        "CliVersion": "1.1.7",
+        "FileVersion": "\u003Cabsent\u003E",
+        "ProductVersion": "\u003Cabsent\u003E",
+        "Sha256": "CBF804C9F58D7E2FE65C6CA3840039AAA7B64D662F3E62D13FDC250FC39EEBDB",
+        "WinVerifyTrustStatus": 0,
+        "SignerSubject": "CN=Google LLC, O=Google LLC, L=Mountain View, S=California, C=US, SERIALNUMBER=3582691, OID.2.5.4.15=Private Organization, OID.1.3.6.1.4.1.311.60.2.1.2=Delaware, OID.1.3.6.1.4.1.311.60.2.1.3=US",
+        "SignerThumbprint": "607A3EDAA64933E94422FC8F0C80388E0590986C"
+      },
+      "ExpectedPromptStructuralFingerprint": "5966A8526CEE97E87006D0EBF9C2FF5A0E1467E216A669B1D469BB30BBCC4624",
+      "UsageLayout": {
+        "Spec": {
+          "SchemaVersion": 2,
+          "LayoutId": "agy-usage-r1-120x50-primary-section-v1",
+          "Columns": 120,
+          "Rows": 50,
+          "IsAlternateScreen": false,
+          "Sections": [
+            {
+              "StableSectionId": "agy.gemini",
+              "RenderedLiteral": "GEMINI MODELS",
+              "Order": 0,
+              "Windows": [
+                {
+                  "StableWindowId": "agy.gemini.weekly",
+                  "RenderedLiteral": "  Weekly Limit",
+                  "WindowKind": "Weekly",
+                  "WindowHours": null,
+                  "Order": 0,
+                  "CapacityPolicy": "Percentage",
+                  "ResetPolicy": "CountdownOrAvailability"
+                },
+                {
+                  "StableWindowId": "agy.gemini.rolling-5h",
+                  "RenderedLiteral": "  Five Hour Limit",
+                  "WindowKind": "RollingHours",
+                  "WindowHours": 5,
+                  "Order": 1,
+                  "CapacityPolicy": "Percentage",
+                  "ResetPolicy": "CountdownOrAvailability"
+                }
+              ]
+            },
+            {
+              "StableSectionId": "agy.claude",
+              "RenderedLiteral": "CLAUDE AND GPT MODELS",
+              "Order": 1,
+              "Windows": [
+                {
+                  "StableWindowId": "agy.claude.weekly",
+                  "RenderedLiteral": "  Weekly Limit",
+                  "WindowKind": "Weekly",
+                  "WindowHours": null,
+                  "Order": 0,
+                  "CapacityPolicy": "Percentage",
+                  "ResetPolicy": "CountdownOrAvailability"
+                },
+                {
+                  "StableWindowId": "agy.claude.rolling-5h",
+                  "RenderedLiteral": "  Five Hour Limit",
+                  "WindowKind": "RollingHours",
+                  "WindowHours": 5,
+                  "Order": 1,
+                  "CapacityPolicy": "Percentage",
+                  "ResetPolicy": "CountdownOrAvailability"
+                }
+              ]
+            }
+          ],
+          "Lines": [
+            {
+              "RowIndex": 0,
+              "StableLineId": "row-00",
+              "Role": "OuterChrome",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-00-outer-shape",
+                  "Tokens": [
+                    {
+                      "Kind": "OuterLineShape",
+                      "PublicPrefix": "   \u2584\u2580\u2580    \u2580\u2580\u2584     ",
+                      "PublicSuffix": "",
+                      "MinimumDynamicLength": 1,
+                      "MaximumDynamicLength": 1000,
+                      "AllowedCharacters": "UnicodeVisibleText"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 1,
+              "StableLineId": "row-01",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-01-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  \u2584\u2580\u2580      \u2580\u2580\u2584"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 2,
+              "StableLineId": "row-02",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-02-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 3,
+              "StableLineId": "row-03",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-03-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 4,
+              "StableLineId": "row-04",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-04-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "\u003E"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 5,
+              "StableLineId": "row-05",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-05-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 6,
+              "StableLineId": "row-06",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-06-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "\u2514 Models \u0026 Quota"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 7,
+              "StableLineId": "row-07",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-07-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 8,
+              "StableLineId": "row-08",
+              "Role": "Identity",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-08-identity",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  Account: "
+                    },
+                    {
+                      "Kind": "Identity"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 9,
+              "StableLineId": "row-09",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-09-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 10,
+              "StableLineId": "row-10",
+              "Role": "SectionHeading",
+              "StableSectionId": "agy.gemini",
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-10-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "GEMINI MODELS"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 11,
+              "StableLineId": "row-11",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-11-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  Models within this group: Gemini Flash, Gemini Pro"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 12,
+              "StableLineId": "row-12",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-12-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 13,
+              "StableLineId": "row-13",
+              "Role": "WindowLabel",
+              "StableSectionId": "agy.gemini",
+              "StableWindowId": "agy.gemini.weekly",
+              "Alternatives": [
+                {
+                  "PatternId": "row-13-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  Weekly Limit"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 14,
+              "StableLineId": "row-14",
+              "Role": "Capacity",
+              "StableSectionId": "agy.gemini",
+              "StableWindowId": "agy.gemini.weekly",
+              "Alternatives": [
+                {
+                  "PatternId": "row-14-capacity",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    ["
+                    },
+                    {
+                      "Kind": "ProgressMeter",
+                      "Rule": {
+                        "Width": 50,
+                        "FilledGlyph": "\u2588",
+                        "EmptyGlyph": "\u2591",
+                        "Meaning": "Remaining",
+                        "Rounding": "Nearest"
+                      }
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": "] "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 2
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 15,
+              "StableLineId": "row-15",
+              "Role": "Reset",
+              "StableSectionId": "agy.gemini",
+              "StableWindowId": "agy.gemini.weekly",
+              "Alternatives": [
+                {
+                  "PatternId": "row-15-countdown",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 0
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": " remaining \u00B7 Refreshes in "
+                    },
+                    {
+                      "Kind": "Countdown",
+                      "Rule": {
+                        "Separator": " ",
+                        "Units": [
+                          {
+                            "Unit": "Hours",
+                            "SingularLiteral": "h",
+                            "PluralLiteral": "h",
+                            "Order": 0
+                          },
+                          {
+                            "Unit": "Minutes",
+                            "SingularLiteral": "m",
+                            "PluralLiteral": "m",
+                            "Order": 1
+                          }
+                        ],
+                        "MaximumTotalMinutes": 10080
+                      }
+                    }
+                  ]
+                },
+                {
+                  "PatternId": "row-15-countdown-minutes-only",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 0
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": " remaining \u00B7 Refreshes in "
+                    },
+                    {
+                      "Kind": "Countdown",
+                      "Rule": {
+                        "Separator": " ",
+                        "Units": [
+                          {
+                            "Unit": "Minutes",
+                            "SingularLiteral": "m",
+                            "PluralLiteral": "m",
+                            "Order": 0
+                          }
+                        ],
+                        "MaximumTotalMinutes": 10080
+                      }
+                    }
+                  ]
+                },
+                {
+                  "PatternId": "row-15-available",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Availability",
+                      "Values": [
+                        {
+                          "StableStatusId": "quota_available",
+                          "RenderedLiteral": "Quota available"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 16,
+              "StableLineId": "row-16",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-16-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 17,
+              "StableLineId": "row-17",
+              "Role": "WindowLabel",
+              "StableSectionId": "agy.gemini",
+              "StableWindowId": "agy.gemini.rolling-5h",
+              "Alternatives": [
+                {
+                  "PatternId": "row-17-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  Five Hour Limit"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 18,
+              "StableLineId": "row-18",
+              "Role": "Capacity",
+              "StableSectionId": "agy.gemini",
+              "StableWindowId": "agy.gemini.rolling-5h",
+              "Alternatives": [
+                {
+                  "PatternId": "row-18-capacity",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    ["
+                    },
+                    {
+                      "Kind": "ProgressMeter",
+                      "Rule": {
+                        "Width": 50,
+                        "FilledGlyph": "\u2588",
+                        "EmptyGlyph": "\u2591",
+                        "Meaning": "Remaining",
+                        "Rounding": "Nearest"
+                      }
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": "] "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 2
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 19,
+              "StableLineId": "row-19",
+              "Role": "Reset",
+              "StableSectionId": "agy.gemini",
+              "StableWindowId": "agy.gemini.rolling-5h",
+              "Alternatives": [
+                {
+                  "PatternId": "row-19-countdown",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 0
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": " remaining \u00B7 Refreshes in "
+                    },
+                    {
+                      "Kind": "Countdown",
+                      "Rule": {
+                        "Separator": " ",
+                        "Units": [
+                          {
+                            "Unit": "Hours",
+                            "SingularLiteral": "h",
+                            "PluralLiteral": "h",
+                            "Order": 0
+                          },
+                          {
+                            "Unit": "Minutes",
+                            "SingularLiteral": "m",
+                            "PluralLiteral": "m",
+                            "Order": 1
+                          }
+                        ],
+                        "MaximumTotalMinutes": 300
+                      }
+                    }
+                  ]
+                },
+                {
+                  "PatternId": "row-19-countdown-minutes-only",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 0
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": " remaining \u00B7 Refreshes in "
+                    },
+                    {
+                      "Kind": "Countdown",
+                      "Rule": {
+                        "Separator": " ",
+                        "Units": [
+                          {
+                            "Unit": "Minutes",
+                            "SingularLiteral": "m",
+                            "PluralLiteral": "m",
+                            "Order": 0
+                          }
+                        ],
+                        "MaximumTotalMinutes": 300
+                      }
+                    }
+                  ]
+                },
+                {
+                  "PatternId": "row-19-available",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Availability",
+                      "Values": [
+                        {
+                          "StableStatusId": "quota_available",
+                          "RenderedLiteral": "Quota available"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 20,
+              "StableLineId": "row-20",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-20-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 21,
+              "StableLineId": "row-21",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-21-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 22,
+              "StableLineId": "row-22",
+              "Role": "SectionHeading",
+              "StableSectionId": "agy.claude",
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-22-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "CLAUDE AND GPT MODELS"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 23,
+              "StableLineId": "row-23",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-23-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  Models within this group: Claude Opus, Claude Sonnet, GPT-OSS"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 24,
+              "StableLineId": "row-24",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-24-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 25,
+              "StableLineId": "row-25",
+              "Role": "WindowLabel",
+              "StableSectionId": "agy.claude",
+              "StableWindowId": "agy.claude.weekly",
+              "Alternatives": [
+                {
+                  "PatternId": "row-25-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  Weekly Limit"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 26,
+              "StableLineId": "row-26",
+              "Role": "Capacity",
+              "StableSectionId": "agy.claude",
+              "StableWindowId": "agy.claude.weekly",
+              "Alternatives": [
+                {
+                  "PatternId": "row-26-capacity",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    ["
+                    },
+                    {
+                      "Kind": "ProgressMeter",
+                      "Rule": {
+                        "Width": 50,
+                        "FilledGlyph": "\u2588",
+                        "EmptyGlyph": "\u2591",
+                        "Meaning": "Remaining",
+                        "Rounding": "Nearest"
+                      }
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": "] "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 2
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 27,
+              "StableLineId": "row-27",
+              "Role": "Reset",
+              "StableSectionId": "agy.claude",
+              "StableWindowId": "agy.claude.weekly",
+              "Alternatives": [
+                {
+                  "PatternId": "row-27-countdown",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 0
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": " remaining \u00B7 Refreshes in "
+                    },
+                    {
+                      "Kind": "Countdown",
+                      "Rule": {
+                        "Separator": " ",
+                        "Units": [
+                          {
+                            "Unit": "Hours",
+                            "SingularLiteral": "h",
+                            "PluralLiteral": "h",
+                            "Order": 0
+                          },
+                          {
+                            "Unit": "Minutes",
+                            "SingularLiteral": "m",
+                            "PluralLiteral": "m",
+                            "Order": 1
+                          }
+                        ],
+                        "MaximumTotalMinutes": 10080
+                      }
+                    }
+                  ]
+                },
+                {
+                  "PatternId": "row-27-countdown-minutes-only",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 0
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": " remaining \u00B7 Refreshes in "
+                    },
+                    {
+                      "Kind": "Countdown",
+                      "Rule": {
+                        "Separator": " ",
+                        "Units": [
+                          {
+                            "Unit": "Minutes",
+                            "SingularLiteral": "m",
+                            "PluralLiteral": "m",
+                            "Order": 0
+                          }
+                        ],
+                        "MaximumTotalMinutes": 10080
+                      }
+                    }
+                  ]
+                },
+                {
+                  "PatternId": "row-27-available",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Availability",
+                      "Values": [
+                        {
+                          "StableStatusId": "quota_available",
+                          "RenderedLiteral": "Quota available"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 28,
+              "StableLineId": "row-28",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-28-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 29,
+              "StableLineId": "row-29",
+              "Role": "WindowLabel",
+              "StableSectionId": "agy.claude",
+              "StableWindowId": "agy.claude.rolling-5h",
+              "Alternatives": [
+                {
+                  "PatternId": "row-29-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  Five Hour Limit"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 30,
+              "StableLineId": "row-30",
+              "Role": "Capacity",
+              "StableSectionId": "agy.claude",
+              "StableWindowId": "agy.claude.rolling-5h",
+              "Alternatives": [
+                {
+                  "PatternId": "row-30-capacity",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    ["
+                    },
+                    {
+                      "Kind": "ProgressMeter",
+                      "Rule": {
+                        "Width": 50,
+                        "FilledGlyph": "\u2588",
+                        "EmptyGlyph": "\u2591",
+                        "Meaning": "Remaining",
+                        "Rounding": "Nearest"
+                      }
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": "] "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 2
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 31,
+              "StableLineId": "row-31",
+              "Role": "Reset",
+              "StableSectionId": "agy.claude",
+              "StableWindowId": "agy.claude.rolling-5h",
+              "Alternatives": [
+                {
+                  "PatternId": "row-31-countdown",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 0
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": " remaining \u00B7 Refreshes in "
+                    },
+                    {
+                      "Kind": "Countdown",
+                      "Rule": {
+                        "Separator": " ",
+                        "Units": [
+                          {
+                            "Unit": "Hours",
+                            "SingularLiteral": "h",
+                            "PluralLiteral": "h",
+                            "Order": 0
+                          },
+                          {
+                            "Unit": "Minutes",
+                            "SingularLiteral": "m",
+                            "PluralLiteral": "m",
+                            "Order": 1
+                          }
+                        ],
+                        "MaximumTotalMinutes": 300
+                      }
+                    }
+                  ]
+                },
+                {
+                  "PatternId": "row-31-countdown-minutes-only",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Percent",
+                      "Meaning": "Remaining",
+                      "DecimalPlaces": 0
+                    },
+                    {
+                      "Kind": "Literal",
+                      "Value": " remaining \u00B7 Refreshes in "
+                    },
+                    {
+                      "Kind": "Countdown",
+                      "Rule": {
+                        "Separator": " ",
+                        "Units": [
+                          {
+                            "Unit": "Minutes",
+                            "SingularLiteral": "m",
+                            "PluralLiteral": "m",
+                            "Order": 0
+                          }
+                        ],
+                        "MaximumTotalMinutes": 300
+                      }
+                    }
+                  ]
+                },
+                {
+                  "PatternId": "row-31-available",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "    "
+                    },
+                    {
+                      "Kind": "Availability",
+                      "Values": [
+                        {
+                          "StableStatusId": "quota_available",
+                          "RenderedLiteral": "Quota available"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 32,
+              "StableLineId": "row-32",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-32-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 33,
+              "StableLineId": "row-33",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-33-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 34,
+              "StableLineId": "row-34",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-34-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  \u2502Within each group, models share a weekly limit and a 5-hour limit. Quota is"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 35,
+              "StableLineId": "row-35",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-35-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  \u2502consumed proportionally to the cost of the tokens. Thus, limits will last"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 36,
+              "StableLineId": "row-36",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-36-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  \u2502longer with shorter tasks or using more cost-effective models. The 5-hour"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 37,
+              "StableLineId": "row-37",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-37-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  \u2502limit smooths out aggregate demand to fairly distribute global capacity"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 38,
+              "StableLineId": "row-38",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-38-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  \u2502across all users, while your weekly limit is tied directly to your individual"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 39,
+              "StableLineId": "row-39",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-39-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  \u2502tier."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 40,
+              "StableLineId": "row-40",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-40-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 41,
+              "StableLineId": "row-41",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-41-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "MODEL CREDITS"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 42,
+              "StableLineId": "row-42",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-42-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  Use your AI credits to fulfill model requests once you\u0027re out of quota."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 43,
+              "StableLineId": "row-43",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-43-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 44,
+              "StableLineId": "row-44",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-44-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  AI Credit Overages: Enabled"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 45,
+              "StableLineId": "row-45",
+              "Role": "NonQuotaDynamic",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-45-unsigned-amount",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  Available AI Credits: "
+                    },
+                    {
+                      "Kind": "UnsignedAmount",
+                      "MinimumDigits": 1,
+                      "MaximumDigits": 128
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 46,
+              "StableLineId": "row-46",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-46-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 47,
+              "StableLineId": "row-47",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-47-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 48,
+              "StableLineId": "row-48",
+              "Role": "Fixed",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-48-exact",
+                  "Tokens": [
+                    {
+                      "Kind": "Literal",
+                      "Value": "  \u2191/\u2193 Scroll \u00B7 pgup/pgdown Page \u00B7 ctrl\u002Bend Bottom \u00B7 ctrl\u002Bhome Top \u00B7 esc Close"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "RowIndex": 49,
+              "StableLineId": "row-49",
+              "Role": "OuterChrome",
+              "StableSectionId": null,
+              "StableWindowId": null,
+              "Alternatives": [
+                {
+                  "PatternId": "row-49-outer-shape",
+                  "Tokens": [
+                    {
+                      "Kind": "OuterLineShape",
+                      "PublicPrefix": "                                                                 ",
+                      "PublicSuffix": "",
+                      "MinimumDynamicLength": 1,
+                      "MaximumDynamicLength": 1000,
+                      "AllowedCharacters": "UnicodeVisibleText"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "PaginationPolicy": "RequireFullyVisible",
+          "PaginationMode": "NoneWhenFullyVisible"
+        },
+        "SchemaFingerprint": "54202C33B006F9D87CC120EE0AABD65D8D2D4169107A4A177B6CB1FF3CD8DADF",
+        "ExpectedPageFingerprints": [
+          "040DA9FAAB78C14BA49D175838F9A7D16CE1661288700D34B715AEFEC2C3E62F"
+        ]
+      },
+      "ContractFingerprint": "624D5DB80090BCB65D4BEECF81DCD731DFADEC6F7903817F8D9727256F8082F4",
+      "CompatibleBuilds": [
+        {
+          "ContractId": "agy-windows-2026-07-reviewed-1.1.9",
+          "Executable": {
+            "CliVersion": "1.1.9",
+            "FileVersion": "\u003Cabsent\u003E",
+            "ProductVersion": "\u003Cabsent\u003E",
+            "Sha256": "83FB6E9D80E751D174B3738C3EEFB054E75E85E47B17D1E159FE4831ADCEADC8",
+            "WinVerifyTrustStatus": 0,
+            "SignerSubject": "CN=Google LLC, O=Google LLC, L=Mountain View, S=California, C=US, SERIALNUMBER=3582691, OID.2.5.4.15=Private Organization, OID.1.3.6.1.4.1.311.60.2.1.2=Delaware, OID.1.3.6.1.4.1.311.60.2.1.3=US",
+            "SignerThumbprint": "607A3EDAA64933E94422FC8F0C80388E0590986C"
+          },
+          "ContractFingerprint": "FDC2D4067D02395CF0037E83CD18FB91BC13164942FE8D7F2111641FA372C8A8"
+        }
+      ]
+    }
+  ]
+}
