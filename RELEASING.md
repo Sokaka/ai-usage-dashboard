@@ -28,6 +28,8 @@ feed 使用 [固定簽章格式](docs/UPDATE_FEED_FORMAT.md)。正式 build 從�
 
 所有 workflow、版本、條款及簽章變更先完成，再建立候選。候選 workflow 必須綁定指定 main SHA、原始 build run 與 attempt；原 workflow 檔名保留為相容入口，實際參數以 repository 中的 workflow 為準。
 
+build job 保存原始 run／attempt 及上傳的 artifact ID／digest。發布 job 先核對來源，再依該 ID 下載；只重跑發布 job 時，Release 說明與凍結紀錄仍沿用原 build attempt。來源 outputs 缺失或 artifact 核對失敗時停止，不以目前發布 attempt 補值；Actions artifact 名稱包含 build run／attempt，六件正式成品名稱不變。
+
 封裝順序固定為：最終 binaries → App ZIP → ZIP／Updater EXE 的 size 與 SHA256 → 帶正式 stable URL 與完整版本／sequence 的 feed → 簽署 → 最終 feed 的 SHA256。任何受簽欄位改變都須重簽。
 
 封裝工具會建立多層暫存目錄，請使用較短的 `OutputRoot`。未啟用 long paths 的 Windows 若使用過深目錄，可能在 Copilot 成品檢查時失敗；先縮短輸出路徑，不移除缺件檢查或要求使用者變更全機設定。
