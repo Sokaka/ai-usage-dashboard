@@ -171,6 +171,18 @@ dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
 
 維護副本或登錄失敗時會顯示警告，但已安裝的 App 仍可使用。這不是 MSI，也不需要管理員權限。使用自訂 `--install-root` 的測試安裝不會覆寫正式的 Windows 應用程式項目。
 
+### 條款與命令列入口
+
+首次啟動 portable App、Setup 或 Updater 時可先閱讀適用條款，再接受或退出。紀錄僅存在同一 Windows 使用者的電腦，依條款內容版本與涵蓋範圍共用，不綁定 provider 帳號、不上傳。有效接受已涵蓋時，背景查詢與 helper 回呼不重複提示；條款變更後必須重新確認。
+
+App、Setup、Updater 與 capture helper 提供 `--licenses` 閱讀、`--export-licenses <新目錄>` 離線匯出，以及 `--accept-licenses <本版顯示的 digest>` 明確預先接受。非互動入口缺少有效接受會停止；請先閱讀同一版本的文字。授權提示不會混入 helper 的回呼輸出。解除安裝、關閉 App 供更新與人工離線復原不受一般啟動提示阻擋。
+
+### 舊 internal 安裝銜接
+
+舊 internal Updater 的 channel 已固定；只換 `--feed-url` 不會切到 stable。正式版本驗收通過後，從正式 Release 取得新 stable Updater，以原 Windows 使用者、一般權限，在原 install root 手動執行一次；自訂安裝位置以 `--install-root` 明確指定原目錄。
+
+保留 `%LOCALAPPDATA%\AiUsageDashboard`、既有帳號、Credential Manager 與受保護 CLI，不複製或重建登入資料。完成後核對版本、maintenance 副本及 Windows 已安裝的應用程式；有警告就不要當成全部成功。後續更新使用 stable feed，仍會拒絕降版與同版本異內容。此銜接的實機結果以該 Release 為準。
+
 ### 更新切換與離線復原
 
 更新時，既有 `current` 會先在同一磁碟改名為 `previous`，新版本再改名為 `current`。切換失敗時會立即還原；`previous` 與完成紀錄會保留供診斷。

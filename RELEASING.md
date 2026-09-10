@@ -6,6 +6,8 @@
 
 使用乾淨 `main` 的完整 source SHA。Windows CI 必須通過同一 SHA 的 restore、Release build、完整測試、production line coverage 70% 與封裝 gates。NuGet moderate 以上 advisory 會使 restore 失敗。App、Setup 使用同一組實際 runtime 與相依版本，不把歷史結果當成本次通過。
 
+SDK 由 `global.json` 固定，transitive NuGet audit 由 `Directory.Build.props` 啟用。沒有 Git 歷史的原始碼匯出目錄可建置與測試，不能產生符合正式發布契約的候選包。
+
 .NET 8.0.31 是目前固定的 runtime；依 [Microsoft 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)，.NET 8 於 2026-11-10 結束支援。每次候選重新核對 patch 與 advisory；逾期或出現未處理風險時先修正，再建候選。
 
 `Microsoft.Extensions.AI.Abstractions` 固定為 10.9.0，適用另行更新的 [Platform Extensions 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/extensions)。App、Setup 與 ClaudeCapture 共用的 `System.Text.Json` 固定為 10.0.11；各自的 dependency manifest 必須涵蓋相同版本及其依賴，並通過合併成品的實際離線授權匯出。
@@ -66,6 +68,8 @@ ZIP 包含自有 LICENSE、精確第三方原約/notices 及元件交付清單�
 候選可檢閱後，由維護者確認具體成品、驗收結果與尚未執行的正式 URL smoke，再決定公開。同時保留 Claude／AGY 個案條款適用的不確定性，以及 Microsoft 原約的 publisher 義務。個人作品、MIT 免責、使用者按同意或外部 AI 審核，都不等於供應商許可；不另設個別廠商回函門檻。
 
 Claude 保留未修改官方 binary、內建 auth、使用者自己的憑證與直接計費，不自建 Claude.ai 登入、不代管 session token、不代付或轉售用量；`--claudeai`、`CLAUDE_CONFIG_DIR` 及 child-process 隔離仍保留。這些判斷項不代表已確認完全符合 [Anthropic 產品整合條款](https://code.claude.com/docs/en/legal-and-compliance)。AGY 使用 user-installed、unmodified 官方 CLI；headless 技術支援不排除條款限制。新增證據若明確影響功能，先列精確適用事實再由維護者決定。
+
+圖示由使用者請助手生成，實際工具與生成紀錄未知，尚未證明排他權利。服務名稱僅說明相容性；第三方 copyright、license 與 notices 均須保留。
 
 ## 轉正同一 Release 與正式端點驗收
 

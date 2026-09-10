@@ -819,7 +819,7 @@ public sealed class InternalPackageInvariantsTests
 		Assert.Contains("| Grok |", distributionGuide);
 		Assert.Contains("- [ ] Grok：", distributionGuide);
 		Assert.Contains(
-			"| Grok | 從 xAI 官方來源安裝到預設位置的 Grok Build CLI；",
+			"| Grok | 從 xAI 官方來源安裝到預設位置的 Grok Build CLI。",
 			userGuide,
 			StringComparison.Ordinal);
 
@@ -852,16 +852,12 @@ public sealed class InternalPackageInvariantsTests
 			"docs",
 			"TECHNICAL_OVERVIEW.md"));
 
-		Assert.Contains(
-			"目前以 0.144.1 測試",
+		Assert.DoesNotContain(
+			"0.144.1",
 			userGuide,
 			StringComparison.Ordinal);
-		Assert.Contains(
-			"目前以 1.0.3 測試",
-			userGuide,
-			StringComparison.Ordinal);
-		Assert.Contains(
-			"不代表其他官方版本一定不能使用",
+		Assert.DoesNotContain(
+			"1.0.3",
 			userGuide,
 			StringComparison.Ordinal);
 		Assert.Contains(
