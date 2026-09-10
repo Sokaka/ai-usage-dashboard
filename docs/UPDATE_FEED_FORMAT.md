@@ -42,7 +42,7 @@ Canonical v1 由 `SignedUpdateFeed.Sign` 的固定 serializer 產生：UTF-8 無
 
 ## CI 與私鑰保管
 
-候選 workflow 讀取外部 provision 的 `UPDATE_FEED_TRUST_JSON`、`UPDATE_FEED_SIGNING_KEY_ID` repository variables，以及 `UPDATE_FEED_SIGNING_PRIVATE_KEY_PEM` repository secret。此次程式修改沒有建立或上傳 production private key，也未啟用遠端 Actions；free quota、可信 runner 與 secret 設定要在執行前完成。
+候選 workflow 讀取外部 provision 的 `UPDATE_FEED_TRUST_JSON`、`UPDATE_FEED_SIGNING_KEY_ID` repository variables，以及 `UPDATE_FEED_SIGNING_PRIVATE_KEY_PEM` repository secret。執行前依[發布流程](../RELEASING.md)核對 runner、費用限制與 secret 設定；PR 與一般 CI 不取得私鑰。
 
 簽署只在指定 main SHA 的手動候選流程、測試 gates 通過後執行。私鑰只在該 step 的 runner-owned temp directory 暫存；寫檔後清掉 child-process 環境中的私鑰值，結束時刪除檔案及空目錄。source、成品、diagnostics 與 freeze receipt 都不應包含私鑰。runner 工作目錄與 repository workflow 修改權限必須限於可信維護者；GitHub repository secrets 的可用保護能力須依實際帳號設定核對，不假設已配置付費環境保護。
 
@@ -57,7 +57,7 @@ production key 應由維護者在受控環境外部建立，依[簽章私鑰保�
 
 自有 feed 簽章不提供 Windows CA 認證的 publisher 身分，也不保證消除 SmartScreen。第一次下載仍依賴正式 repo／HTTPS 與可核對發布資訊。`apply-local` 保留人工選擇可信 ZIP 與 SHA256 sidecar 的離線復原能力；它沒有線上 feed 簽章與相同的線上反降級保護。
 
-目前自動測試覆蓋受簽欄位竄改、缺少／未知簽章、格式、channel 與 bridge trust policy。正式 production key 的 provision／備份復原、不同版本 Updater 的實際輪替與公開 HTTPS 下載仍需成品驗收；測試不代表這些操作已完成。
+自動測試涵蓋受簽欄位竄改、缺少／未知簽章、格式、channel 與 bridge trust policy。建鑰、備份還原、不同版本 Updater 的換鍵及公開 HTTPS 下載，以各自的實際操作紀錄為準；版本狀態見 [README](../README.md#目前版本)。
 
 ## 安裝者與條款範圍
 

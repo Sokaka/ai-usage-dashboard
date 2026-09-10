@@ -8,7 +8,7 @@ Claude、Codex、GitHub Copilot 與 Grok 可加入多個帳號；Antigravity 目
 
 ## 目前版本
 
-目前正在準備首個公開 stable 版本，尚未完成候選成品及乾淨 Windows 驗收。此原始碼狀態不代表已有可公開下載的穩定版。
+首個 stable 候選 `1.0.0` 已完成私有 Windows 驗收，尚未正式公開；正式下載、安裝與更新驗收會在公開後完成。
 
 正式版本公開後，下載入口為 [GitHub Releases](https://github.com/Sokaka/ai-usage-dashboard/releases)。以 Release 的版本、檔案雜湊及實際驗收紀錄為準，不把開發機測試視為所有環境的保證。
 
@@ -28,7 +28,8 @@ Claude、Codex、GitHub Copilot 與 Grok 可加入多個帳號；Antigravity 目
 - Claude 查詢可能增加用量或費用，請先閱讀[Claude 注意事項](使用說明.md#連接-claude-前必讀)。
 - Claude 同一帳號可依不同組織建立卡片；Codex 可依不同工作區建立卡片；Copilot 與 Grok 不可重複加入同一帳號。
 - 匯出檔不含密碼或 token，但可能含電子郵件及暱稱，請存放在可信任位置。
-- 自有 Windows EXE 未購買 Authenticode 簽章。feed 的專案金鑰驗簽不等同 Windows 已驗證發布者；遇到提示請核對來源，不要關閉 SmartScreen 或安全防護。
+- 自有 Windows EXE 尚無 Authenticode 簽章，可能出現安全提示或依系統政策阻擋。feed 簽章不提供 Windows 已驗證發布者身分；不要關閉 SmartScreen 或安全防護。
+- 各服務仍受供應商條款約束；Claude／AGY 的整合適用性尚未確認，詳見[發布限制](RELEASING.md#最後公開決策)。
 - 舊 internal 安裝需要以新 stable Updater 在原 Windows 使用者、原安裝路徑手動銜接一次。完整驗收狀態見 Release；只修改 `--feed-url` 不會改變舊 Updater 的 channel。
 
 ## 維護與開發

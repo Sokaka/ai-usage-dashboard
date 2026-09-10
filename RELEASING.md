@@ -1,6 +1,6 @@
 # Windows 候選版本與發布流程
 
-讀者：AI Usage Dashboard 的維護者。此流程涵蓋 private 候選驗收及正式公開；一般操作請見[使用說明](使用說明.md)。目前公開版本的實機與正式端點驗收尚未完成。
+供 AI Usage Dashboard 維護者建立、驗收及公開候選版本。版本狀態見 [README](README.md#目前版本)，一般操作見[使用說明](使用說明.md)。
 
 ## 建置前
 
