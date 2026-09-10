@@ -4,7 +4,9 @@
 
 ## 建置前
 
-使用乾淨 `main` 的完整 source SHA。Windows CI 必須通過同一 SHA 的 restore、Release build、完整測試、production line coverage 70% 與封裝 gates。NuGet moderate 以上 advisory 會使 restore 失敗。App、Setup 使用同一組實際 runtime 與相依版本，不把歷史結果當成本次通過。
+使用乾淨 `main` 的完整 source SHA。Windows CI 必須通過同一 SHA 的 Git 歷史敏感資訊檢查、restore、Release build、完整測試、production line coverage 70% 與封裝 gates。NuGet moderate 以上 advisory 會使 restore 失敗。App、Setup 使用同一組實際 runtime 與相依版本，不把歷史結果當成本次通過。
+
+程式碼與文件共用 source 隱私規則；候選建置檢查本機可見 refs 的全部歷史，失敗 diagnostics 通過檢查後才可上傳。掃描範圍、限制、本機指令與公開後 required status checks 設定見 [CI 敏感資訊檢查](docs/CI_PRIVACY.md)。
 
 SDK 由 `global.json` 固定，transitive NuGet audit 由 `Directory.Build.props` 啟用。沒有 Git 歷史的原始碼匯出目錄可建置與測試，不能產生符合正式發布契約的候選包。
 

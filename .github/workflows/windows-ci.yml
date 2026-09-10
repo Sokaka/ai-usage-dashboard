@@ -24,12 +24,46 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up pinned .NET SDK
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
+
+      - name: Check Git history for secrets
+        id: repository_history
+        shell: pwsh
+        env:
+          HISTORY_EVENT_NAME: ${{ github.event_name }}
+          HISTORY_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HISTORY_PUSH_BASE_SHA: ${{ github.event.before }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $privacyArguments = @(
+            'run', '--project', 'tools/AiUsageDashboard.PrivacyCheck',
+            '--configuration', 'Release', '--', 'history',
+            '--repository', $env:GITHUB_WORKSPACE, '--revision', 'HEAD')
+          $baseSha = $null
+          switch ($env:HISTORY_EVENT_NAME) {
+            'pull_request' { $baseSha = [string] $env:HISTORY_PR_BASE_SHA }
+            'push' {
+              if ($env:HISTORY_PUSH_BASE_SHA -cne ('0' * 40)) {
+                $baseSha = [string] $env:HISTORY_PUSH_BASE_SHA
+              }
+            }
+            'workflow_dispatch' { }
+            default { throw 'Unsupported event for Git history privacy validation.' }
+          }
+          if ($null -ne $baseSha) {
+            if ($baseSha -notmatch '\A[0-9a-fA-F]{40}\z') {
+              throw 'Git history privacy validation requires a full 40-character base SHA.'
+            }
+            $privacyArguments += @('--base', $baseSha)
+          }
+          dotnet @privacyArguments
+          if ($LASTEXITCODE -ne 0) { throw 'Git history privacy validation failed.' }
 
       - name: Restore
         run: dotnet restore AiUsageDashboard.sln
@@ -38,6 +72,7 @@ jobs:
         run: dotnet build AiUsageDashboard.sln --configuration Release --no-restore
 
       - name: Test
+        id: tests
         run: >
           dotnet test tests/AiUsageDashboard.Tests/AiUsageDashboard.Tests.csproj
           --configuration Release
@@ -66,11 +101,21 @@ jobs:
             -Version "0.0.0-verify-ci.${{ github.run_number }}.${{ github.run_attempt }}" `
             -OutputRoot "${{ runner.temp }}/ai-usage-dashboard-package"
 
+      - name: Prepare checked test diagnostics on failure
+        id: diagnostic_preparation
+        if: failure() && steps.repository_history.outcome == 'success' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
+        shell: pwsh
+        run: |
+          dotnet run --project tools/AiUsageDashboard.PrivacyCheck --configuration Release --no-build --no-restore -- diagnostics `
+            --input (Join-Path $env:RUNNER_TEMP 'test-results') `
+            --output (Join-Path $env:RUNNER_TEMP 'safe-test-diagnostics')
+          if ($LASTEXITCODE -ne 0) { throw 'Test diagnostics privacy validation failed; upload is blocked.' }
+
       - name: Upload test diagnostics on failure
-        if: failure()
+        if: failure() && steps.diagnostic_preparation.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-ci-test-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/test-results
+          path: ${{ runner.temp }}/safe-test-diagnostics
           if-no-files-found: ignore
           retention-days: 7

@@ -36,5 +36,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AiUsageDashboard.Licensing\AiUsageDashboard.Licensing.csproj" />
+    <ProjectReference Include="..\..\tools\AiUsageDashboard.PrivacyCheck\AiUsageDashboard.PrivacyCheck.csproj" />
   </ItemGroup>
 </Project>

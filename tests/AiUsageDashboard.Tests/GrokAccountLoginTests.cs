@@ -198,6 +198,8 @@ public sealed class GrokAccountLoginTests
 	[Fact]
 	public async Task LoginAsync_WhenRunnerStartBlocks_TimesOutWithoutHoldingCallerAndRetainsGateUntilCleanup()
 	{
+		TimeSpan operationWatchdogTimeout = TimeSpan.FromSeconds(10);
+		TimeSpan fallbackReleaseTimeout = TimeSpan.FromSeconds(30);
 		Guid accountId = Guid.NewGuid();
 		string testRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
 		StubExecutableValidator validator = new(
@@ -231,7 +233,7 @@ public sealed class GrokAccountLoginTests
 				}
 			},
 			TimeSpan.FromMilliseconds(100));
-		using CancellationTokenSource fallbackRelease = new(TimeSpan.FromSeconds(2));
+		using CancellationTokenSource fallbackRelease = new(fallbackReleaseTimeout);
 		using CancellationTokenRegistration fallbackRegistration =
 			fallbackRelease.Token.Register(releaseStart.Set);
 		Stopwatch invocationStopwatch = Stopwatch.StartNew();
@@ -239,31 +241,51 @@ public sealed class GrokAccountLoginTests
 		Task loginTask = login.LoginAsync(accountId);
 
 		invocationStopwatch.Stop();
-		Assert.True(
-			invocationStopwatch.Elapsed < TimeSpan.FromMilliseconds(500),
-			$"LoginAsync synchronously held its caller for {invocationStopwatch.Elapsed}.");
-		await runnerEntered.Task.WaitAsync(TimeSpan.FromSeconds(1));
-		GrokAccountLoginException exception =
-			await Assert.ThrowsAsync<GrokAccountLoginException>(() => loginTask)
-				.WaitAsync(TimeSpan.FromSeconds(1));
-		Assert.Contains("逾時", exception.Message, StringComparison.Ordinal);
+		Task<GrokAccountLoginException> loginFailureTask =
+			Assert.ThrowsAsync<GrokAccountLoginException>(() => loginTask);
+		// 例外由主要斷言驗證；cleanup 等待同一工作，並在較早的斷言失敗時觀察其錯誤。
+		Task loginCompletion = loginFailureTask.ContinueWith(
+			completedTask => _ = completedTask.Exception,
+			CancellationToken.None,
+			TaskContinuationOptions.ExecuteSynchronously,
+			TaskScheduler.Default);
 
-		using (CancellationTokenSource blockedGateTimeout =
-			new(TimeSpan.FromMilliseconds(100)))
+		try
 		{
-			await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-				operationGate.EnterAsync(
-					accountId,
-					blockedGateTimeout.Token).AsTask());
-		}
+			Assert.True(
+				invocationStopwatch.Elapsed < TimeSpan.FromMilliseconds(500),
+				$"LoginAsync synchronously held its caller for {invocationStopwatch.Elapsed}.");
+			await runnerEntered.Task.WaitAsync(operationWatchdogTimeout);
+			GrokAccountLoginException exception =
+				await loginFailureTask.WaitAsync(operationWatchdogTimeout);
+			Assert.Contains("逾時", exception.Message, StringComparison.Ordinal);
 
-		releaseStart.Set();
-		await cleanupObserved.Task.WaitAsync(TimeSpan.FromSeconds(1));
-		using CancellationTokenSource releasedGateTimeout =
-			new(TimeSpan.FromSeconds(1));
-		using IDisposable releasedLease = await operationGate.EnterAsync(
-			accountId,
-			releasedGateTimeout.Token);
+			using (CancellationTokenSource blockedGateTimeout =
+				new(TimeSpan.FromMilliseconds(100)))
+			{
+				await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+					operationGate.EnterAsync(
+						accountId,
+						blockedGateTimeout.Token).AsTask());
+			}
+
+			releaseStart.Set();
+			await cleanupObserved.Task.WaitAsync(operationWatchdogTimeout);
+			using CancellationTokenSource releasedGateTimeout =
+				new(operationWatchdogTimeout);
+			using IDisposable releasedLease = await operationGate.EnterAsync(
+				accountId,
+				releasedGateTimeout.Token);
+		}
+		finally
+		{
+			releaseStart.Set();
+			Task runnerCleanup = runnerEntered.Task.IsCompletedSuccessfully
+				? cleanupObserved.Task
+				: Task.CompletedTask;
+			await Task.WhenAll(loginCompletion, runnerCleanup)
+				.WaitAsync(operationWatchdogTimeout);
+		}
 	}
 
 	[Fact]

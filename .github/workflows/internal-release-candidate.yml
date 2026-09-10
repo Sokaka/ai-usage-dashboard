@@ -138,6 +138,14 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Check Git history for secrets
+        id: repository_history
+        shell: pwsh
+        run: |
+          dotnet run --project tools/AiUsageDashboard.PrivacyCheck --configuration Release -- history `
+            --repository $env:GITHUB_WORKSPACE --all
+          if ($LASTEXITCODE -ne 0) { throw 'Git history privacy validation failed.' }
+
       - name: Prepare pinned public update keys
         shell: pwsh
         env:
@@ -159,6 +167,7 @@ jobs:
         run: dotnet build AiUsageDashboard.sln --configuration Release --no-restore
 
       - name: Test
+        id: tests
         run: >
           dotnet test tests/AiUsageDashboard.Tests/AiUsageDashboard.Tests.csproj
           --configuration Release
@@ -351,12 +360,22 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Prepare checked test diagnostics on failure
+        id: diagnostic_preparation
+        if: failure() && steps.repository_history.outcome == 'success' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
+        shell: pwsh
+        run: |
+          dotnet run --project tools/AiUsageDashboard.PrivacyCheck --configuration Release --no-build --no-restore -- diagnostics `
+            --input (Join-Path $env:RUNNER_TEMP 'test-results') `
+            --output (Join-Path $env:RUNNER_TEMP 'safe-test-diagnostics')
+          if ($LASTEXITCODE -ne 0) { throw 'Test diagnostics privacy validation failed; upload is blocked.' }
+
       - name: Upload test diagnostics on failure
-        if: failure()
+        if: failure() && steps.diagnostic_preparation.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: internal-release-test-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/test-results
+          path: ${{ runner.temp }}/safe-test-diagnostics
           if-no-files-found: ignore
           retention-days: 7
 
