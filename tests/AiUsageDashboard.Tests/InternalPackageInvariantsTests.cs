@@ -809,11 +809,20 @@ public sealed class InternalPackageInvariantsTests
 		string userGuide = File.ReadAllText(
 			Path.Combine(repositoryRoot, "使用說明.md"));
 
-		Assert.Contains(
-			"Claude、Codex、GitHub Copilot 與 Grok 可加入多個帳號；" +
-			"Antigravity 目前限一個帳號。",
-			readme,
-			StringComparison.Ordinal);
+		foreach ((string platform, string accountCards) in new[]
+		{
+			("Claude", "多帳號；同帳號依不同組織分卡"),
+			("Codex", "多帳號；同帳號依不同工作區分卡"),
+			("GitHub Copilot", "多帳號；同帳號限一張卡片"),
+			("Grok", "多帳號；同帳號限一張卡片"),
+			("Antigravity", "限一個帳號")
+		})
+		{
+			string rowPattern =
+				$@"(?m)^\| {Regex.Escape(platform)} \|[^\r\n|]*\| {Regex.Escape(accountCards)} \|\r?$";
+			Assert.Matches(rowPattern, readme);
+			Assert.Matches(rowPattern, userGuide);
+		}
 		Assert.Contains("| Grok |", technicalOverview);
 		Assert.Contains("| Grok |", implementationChecklist);
 		Assert.Contains("| Grok |", distributionGuide);
