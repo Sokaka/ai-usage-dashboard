@@ -33,8 +33,8 @@ public sealed class UpdaterPackageInvariantsTests
 		Assert.Equal(0xEF, bytes[0]);
 		Assert.Equal(0xBB, bytes[1]);
 		Assert.Equal(0xBF, bytes[2]);
-		Assert.Contains("$requiredSdkVersion = '8.0.424'", script);
-		Assert.Contains("$selfContainedRuntimeVersion = '8.0.30'", script);
+		Assert.Contains("$requiredSdkVersion = '8.0.425'", script);
+		Assert.Contains("$selfContainedRuntimeVersion = '8.0.31'", script);
 		Assert.Contains("$runtimeIdentifier = 'win-x64'", script);
 		Assert.Contains("-p:RuntimeFrameworkVersion=$selfContainedRuntimeVersion", script);
 		Assert.Contains("-p:TargetLatestRuntimePatch=false", script);

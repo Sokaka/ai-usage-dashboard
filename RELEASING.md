@@ -6,7 +6,7 @@
 
 使用乾淨 `main` 的完整 source SHA。Windows CI 必須通過同一 SHA 的 restore、Release build、完整測試、production line coverage 70% 與封裝 gates。NuGet moderate 以上 advisory 會使 restore 失敗。App、Setup 使用同一組實際 runtime 與相依版本，不把歷史結果當成本次通過。
 
-.NET 8.0.30 是目前固定的 runtime；依 [Microsoft 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)，.NET 8 於 2026-11-10 結束支援。每次候選重新核對 patch 與 advisory；逾期或出現未處理風險時先修正，再建候選。
+.NET 8.0.31 是目前固定的 runtime；依 [Microsoft 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)，.NET 8 於 2026-11-10 結束支援。每次候選重新核對 patch 與 advisory；逾期或出現未處理風險時先修正，再建候選。
 
 `Microsoft.Extensions.AI.Abstractions` 固定為 10.9.0，適用另行更新的 [Platform Extensions 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/extensions)。App、Setup 與 ClaudeCapture 共用的 `System.Text.Json` 固定為 10.0.11；各自的 dependency manifest 必須涵蓋相同版本及其依賴，並通過合併成品的實際離線授權匯出。
 
@@ -20,7 +20,7 @@ App 與 Updater 版本都須高於舊版。重新建置造成 bytes 改變時使
 
 feed 使用 [固定簽章格式](docs/UPDATE_FEED_FORMAT.md)。正式 build 從受控外部檔案嵌入可信公鑰，簽署使用對應私鑰；未知 signer 或無效簽章必須在信任 feed 欄位前失敗。公鑰不可從同一未驗證 feed 學習。私鑰不進 source、Git、成品或 logs。
 
-使用現有免費受控簽署環境，權限只給發布工作；PR 與一般 build 不取得私鑰。另保留受控的離線備份，實際演練還原。換鍵分兩次發布：先用舊鍵簽署、交付同時信任新舊鍵的 Updater；確認銜接後才改用新鍵。私鑰遺失且無可用備份時，須透過正式 repo/HTTPS 重新取得可信 Updater；洩漏時停止使用該鍵、發布移除其信任的新 Updater，並說明使用者必須手動銜接的範圍。不能依賴已洩漏的唯一信任根證明新鍵安全。
+使用現有免費受控簽署環境，權限只給發布工作；PR 與一般 build 不取得私鑰。另保留以獨立口令加密、存於維護者個人 Google Drive 的異地備份，口令分開保管；從 Drive 重新下載後，實際驗證備份還原與 signer 整合。雲端備份不記為離線媒體，保管與還原要求見 [簽章私鑰保管](docs/SIGNING_KEY_CUSTODY.md)。換鍵分兩次發布：先用舊鍵簽署、交付同時信任新舊鍵的 Updater；確認銜接後才改用新鍵。私鑰遺失且無可用備份時，須透過正式 repo/HTTPS 重新取得可信 Updater；洩漏時停止使用該鍵、發布移除其信任的新 Updater，並說明使用者必須手動銜接的範圍。不能依賴已洩漏的唯一信任根證明新鍵安全。
 
 首次發布不購買自有 EXE 的 Authenticode 憑證；第三方官方 CLI 的來源與簽章檢查仍保留。feed 簽章不提供 Windows CA 發布者身分，也不保證消除 SmartScreen 提示。
 

@@ -12,7 +12,7 @@
     {
       "id": "supplemental",
       "path": "third-party-notices/MICROSOFT-SUPPLEMENTAL-TERMS.txt",
-      "sha256": "d56453588e68b50aae7cb3f45cc6b290e1715b725f7ede3d40e1794072ad440e",
+      "sha256": "e81cc23f77262d1f121783fe43288ce3cc16a219e508c0467ce0d511db26e020",
       "source": "https://github.com/Sokaka/ai-usage-dashboard",
       "readable": true
     },
@@ -20,21 +20,21 @@
       "id": "dotnet8-mit",
       "path": "third-party-notices/DOTNET-8-MIT-LICENSE.txt",
       "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
-      "source": "https://www.nuget.org/packages/Microsoft.NETCore.App.Runtime.win-x64/8.0.30",
+      "source": "https://www.nuget.org/packages/Microsoft.NETCore.App.Runtime.win-x64/8.0.31",
       "readable": true
     },
     {
       "id": "dotnet8-notices",
       "path": "third-party-notices/DOTNET-8-THIRD-PARTY-NOTICES.txt",
       "sha256": "b60b2912da28eaa6518593c9e2efb5334ee062d3c42e80d8fdfa806b3dc52977",
-      "source": "https://www.nuget.org/packages/Microsoft.NETCore.App.Runtime.win-x64/8.0.30",
+      "source": "https://www.nuget.org/packages/Microsoft.NETCore.App.Runtime.win-x64/8.0.31",
       "readable": true
     },
     {
       "id": "dotnet8-library",
       "path": "third-party-notices/DOTNET-8-LIBRARY-LICENSE.txt",
       "sha256": "7f6839a61ce892b79c6549e2dc5a81fdbd240a0b260f8881216b45b7fda8b45d",
-      "source": "https://builds.dotnet.microsoft.com/dotnet/Runtime/8.0.30/dotnet-runtime-8.0.30-win-x64.zip",
+      "source": "https://builds.dotnet.microsoft.com/dotnet/Runtime/8.0.31/dotnet-runtime-8.0.31-win-x64.zip",
       "readable": true
     },
     {
@@ -160,7 +160,7 @@
     {
       "id": "dotnet8",
       "name": "Microsoft.NETCore.App.Runtime.win-x64",
-      "version": "8.0.30",
+      "version": "8.0.31",
       "profiles": [
         "app",
         "setup",
@@ -189,7 +189,7 @@
     {
       "id": "windowsdesktop8",
       "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
-      "version": "8.0.30",
+      "version": "8.0.31",
       "profiles": [
         "app",
         "setup",

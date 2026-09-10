@@ -46,13 +46,13 @@ Canonical v1 由 `SignedUpdateFeed.Sign` 的固定 serializer 產生：UTF-8 無
 
 簽署只在指定 main SHA 的手動候選流程、測試 gates 通過後執行。私鑰只在該 step 的 runner-owned temp directory 暫存；寫檔後清掉 child-process 環境中的私鑰值，結束時刪除檔案及空目錄。source、成品、diagnostics 與 freeze receipt 都不應包含私鑰。runner 工作目錄與 repository workflow 修改權限必須限於可信維護者；GitHub repository secrets 的可用保護能力須依實際帳號設定核對，不假設已配置付費環境保護。
 
-production key 應由維護者在受控環境外部建立，保留一份離線加密備份，將解密憑證與備份分開管理。先用 disposable test key 演練簽署、驗證、復原與輪替，再 provision 正式 key；不要把測試 key 用於發布。
+production key 應由維護者在受控環境外部建立，依[簽章私鑰保管](SIGNING_KEY_CUSTODY.md)保留 Google Drive 加密異地備份，將解密憑證與備份分開管理，並實際驗證重新下載後的還原。先用 disposable test key 演練簽署、驗證、復原與輪替，再 provision 正式 key；不要把測試 key 用於發布。
 
 ## 金鑰輪替與失效
 
 1. 正常輪替：用舊 key A 簽署包含 A＋B 公鑰的新 Updater；舊客戶端驗 A 並更新到 bridge 版本。確認目標安裝群已取得 bridge 後，再改用 B 簽署後續 feed。尚未取得 bridge 的 A-only 安裝會拒絕 B，需從正式來源手動取得新版 Updater。
 2. 移除 A：以 B 簽署只信任 B 的更新版本，驗收新 key 可用且 A 已拒絕。已分發的 A-only Updater 不會因遠端公告自動撤銷 A。
-3. A 私鑰遺失：從受控離線備份還原；若無可用備份及事先 provision 的替代鍵，走正式來源下載新 Updater 的人工銜接，不降低驗簽要求。
+3. A 私鑰遺失：依[簽章私鑰保管](SIGNING_KEY_CUSTODY.md)從已驗證的受控備份還原；若無可用備份及事先 provision 的替代鍵，走正式來源下載新 Updater 的人工銜接，不降低驗簽要求。
 4. A 疑似洩漏：停止使用 A、保留事件與候選證據，提供只信任新鍵的 Updater，通知使用者從正式來源手動更新。持有 A 的攻擊者可以簽署任意 feed；單靠同一 key 簽署撤銷宣告或提高 sequence 不能修復舊客戶端的信任。
 
 自有 feed 簽章不提供 Windows CA 認證的 publisher 身分，也不保證消除 SmartScreen。第一次下載仍依賴正式 repo／HTTPS 與可核對發布資訊。`apply-local` 保留人工選擇可信 ZIP 與 SHA256 sidecar 的離線復原能力；它沒有線上 feed 簽章與相同的線上反降級保護。

@@ -16,7 +16,7 @@ recovering an interrupted installation remain available without accepting.
 2. Component use and redistribution
 
 You may use the identified Microsoft components with AI Usage Dashboard.
-The Microsoft .NET Library terms supplied with .NET 8.0.30 apply to coreclr.dll,
+The Microsoft .NET Library terms supplied with .NET 8.0.31 apply to coreclr.dll,
 the runtime included in single-file binaries, Microsoft.DiaSymReader.Native
 binaries, and the WPF native binaries identified in the component manifest.
 The accompanying Windows SDK license and redistribution list apply to
