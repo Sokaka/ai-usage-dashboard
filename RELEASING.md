@@ -8,6 +8,8 @@
 
 SDK 由 `global.json` 固定，transitive NuGet audit 由 `Directory.Build.props` 啟用。沒有 Git 歷史的原始碼匯出目錄可建置與測試，不能產生符合正式發布契約的候選包。
 
+每次發布須依[升級與相容性原則](docs/COMPATIBILITY_POLICY.md)確認舊資料、既有安裝與 CLI 的受影響範圍及驗證結果。必要的不相容變更須在 Release 說明原因、受影響版本、使用者步驟與復原限制；不以要求刪除設定、全部重新登入或強制換 CLI 取代相容性處理。
+
 .NET 8.0.31 是目前固定的 runtime；依 [Microsoft 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)，.NET 8 於 2026-11-10 結束支援。每次候選重新核對 patch 與 advisory；逾期或出現未處理風險時先修正，再建候選。
 
 `Microsoft.Extensions.AI.Abstractions` 固定為 10.9.0，適用另行更新的 [Platform Extensions 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/extensions)。App、Setup 與 ClaudeCapture 共用的 `System.Text.Json` 固定為 10.0.11；各自的 dependency manifest 必須涵蓋相同版本及其依賴，並通過合併成品的實際離線授權匯出。

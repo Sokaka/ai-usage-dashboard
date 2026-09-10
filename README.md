@@ -55,6 +55,7 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 | --- | --- |
 | 一般使用、設定與問題排除 | [使用說明](使用說明.md) |
 | 架構、資料保存與服務串接 | [技術總覽](docs/TECHNICAL_OVERVIEW.md) |
+| 開發規範與升級相容性要求 | [AGENTS.md](AGENTS.md) |
 | 功能與驗收狀態 | [實作檢查清單](IMPLEMENTATION_CHECKLIST.md) |
 | 安裝、更新、復原與解除安裝 | [Windows 分發與支援手冊](INTERNAL_DISTRIBUTION.md) |
 | 版本發布與維護要求 | [發布流程](RELEASING.md) |
