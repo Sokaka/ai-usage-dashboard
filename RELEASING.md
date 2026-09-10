@@ -63,6 +63,8 @@ ZIP 包含自有 LICENSE、精確第三方原約/notices 及元件交付清單�
 
 安裝、支援及資料保留細節見 [Windows 分發與支援手冊](INTERNAL_DISTRIBUTION.md)。沒有測試環境就記為待驗；本機 build、單元測試或 `apply-local` 都不代替正式線上 E2E。
 
+候選發布前依 [CLI 相容性維護](INTERNAL_DISTRIBUTION.md#cli-相容性維護)執行，並在 Release 引用 [CLI 相容性](docs/CLI_COMPATIBILITY.md) 中該 App 版本的唯一實測表，公開實際 CLI 版本、範圍及未驗項目的去識別摘要。詳細證據保存在受控紀錄，不公開本機路徑或帳號；歷史或部分實測不得寫成本候選完整通過。
+
 ## 最後公開決策
 
 候選可檢閱後，由維護者確認具體成品、驗收結果與尚未執行的正式 URL smoke，再決定公開。同時保留 Claude／AGY 個案條款適用的不確定性，以及 Microsoft 原約的 publisher 義務。個人作品、MIT 免責、使用者按同意或外部 AI 審核，都不等於供應商許可；不另設個別廠商回函門檻。

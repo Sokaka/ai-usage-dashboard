@@ -20,7 +20,7 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 | Grok | 從 xAI 官方來源安裝 Grok Build CLI 至預設位置 | 多帳號；同帳號限一張卡片 |
 | Antigravity | 安裝官方 Antigravity CLI | 限一個帳號 |
 
-各工具的支援版本、帳號需求與安裝方法請見[使用說明](使用說明.md)。
+版本要求與實測狀態見 [CLI 相容性](docs/CLI_COMPATIBILITY.md)；帳號需求與安裝方法見[使用說明](使用說明.md)。
 
 ## 主要功能
 
