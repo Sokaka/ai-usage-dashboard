@@ -14,7 +14,7 @@
 | Claude | 相容性基準 `2.1.169`；官方 Claude Code `>=2.1.169` 才有需要的 `--safe-mode`；執行 `Anthropic, PBC` 簽署、目前 Windows 使用者專用的受保護副本；Claude.ai Pro／Max／Team；Enterprise 可辨識，但目前不提供 `/usage`；實驗性輪詢 |
 | Codex | 相容性基準 `0.144.1`；可確認為官方 `codex-cli x.y.z` 的三段式正式版本都會先實測；執行 `OpenAI OpCo, LLC` 簽署、目前 Windows 使用者專用的受保護副本；實驗性 `app-server` 串接 |
 | Grok | 相容性基準 `1.0.3`；可信任的官方版本即使版號不同或無法解析，仍先測試 ACP 通訊；只接受預設安裝位置、`X.AI LLC` 簽章與目前 Windows 使用者專用的受保護副本；實驗性多帳號串接 |
-| GitHub Copilot | 隨附官方 Copilot CLI `1.0.79` 與 `GitHub.Copilot.SDK` `1.0.11`；只支援不同的 `github.com` 帳號；每張卡片分開保存登入資料 |
+| GitHub Copilot | 使用本機官方 CLI 三段式正式版 `>=1.0.79` 且 `<2.0.0`；基準 `1.0.79`，App 固定 `GitHub.Copilot.SDK` `1.0.11`；核對 `GitHub, Inc.` 簽章與 ProductName，執行目前使用者的受保護副本；只支援不同的 `github.com` 帳號，每張卡片分開保存登入資料 |
 | AGY | 相容性基準 `1.1.11`；Windows 10 1809 以上；官方用量輸出功能（official print）只執行 `1.1.11 <= version < 2.0.0` 的正式版本，並核對 Google 簽章；既有 1.1.7／1.1.9 只保留已審查 SHA-256 的相容流程 |
 
 相容性基準只供比較和診斷，不是允許版本清單。其他官方版本只要通過必要功能與安全檢查，就應先實測；不得只因版號不同而拒絕，也不得把版本差異寫成已確認的失敗原因。每個候選版本仍須記錄實際 CLI 版本與測試結果。
@@ -48,7 +48,7 @@ Claude、Codex、GitHub Copilot、Grok 與 AGY 都須記錄實際 CLI 版本及�
 - **執行範圍**：使用隔離的 Windows 環境與測試資料，不替換使用者全機 CLI、登入資料或受保護副本。
 
 1. 在受控驗收紀錄固定要驗證的 App 成品、完整 source SHA 與版本；逐一記錄平台、CLI 版本及 SHA-256。
-   外部 CLI 比較基準與最新正式版；Copilot 先驗隨包 CLI／SDK，新版依賴另建測試包，不替換原候選檔案。
+   各平台比較相容性基準與最新正式 CLI；Copilot 另記錄 App 固定的 SDK `1.0.11`，分開核對本機 CLI 版本與來源。新版依賴另建測試包，不替換已凍結的候選檔案。
 2. 從官方來源核對版本、下載來源與簽章，再按官方方式安裝至隔離環境。
    AGY 另核對 signer subject 與憑證 thumbprint；官方換證也可能被拒絕，須先查明，不放寬信任檢查。
 3. 先確認版本符合硬限制，再做不帶登入資料的版本／協定前檢。
@@ -70,7 +70,7 @@ Claude、Codex、GitHub Copilot、Grok 與 AGY 都須記錄實際 CLI 版本及�
 | 項目 | 紀錄 |
 | --- | --- |
 | App 版本／完整 source SHA／成品 SHA-256 | 待驗 |
-| 平台／CLI 版本／CLI SHA-256／基準、最新或隨附 | 待驗 |
+| 平台／CLI 版本／CLI SHA-256／基準或最新／Copilot SDK 版本 | 待驗 |
 | Windows 版本與組建／日期與時區 | 待驗 |
 | 官方來源 URL／簽章檢查（AGY 含 subject、thumbprint） | 待驗 |
 | 本人帳號受控執行與 Claude 費用同意（不記帳號秘密） | 待驗 |
@@ -91,6 +91,8 @@ Claude、Codex、GitHub Copilot、Grok 與 AGY 都須記錄實際 CLI 版本及�
 啟用前先檢閱 workflow 的來源、權限、執行次數、逾時與清理方式，確認 Actions 免費額度及儲存預算足夠，再受控啟用；不得將此方案列為已有 CI 覆蓋。
 
 ## 套件內容
+
+主包不再隨附第三方 CLI；各服務的官方 CLI 由使用者另行安裝。Copilot 仍使用 App 固定的 `GitHub.Copilot.SDK` `1.0.11`，SDK 授權文件隨實際交付元件保留。
 
 ZIP 固定使用簡短的根目錄 `AiUsageDashboard`，避免 Windows 解壓縮路徑重複包含完整版本名稱。以下路徑都以該目錄為基準：
 
@@ -297,7 +299,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 
 待刪除目錄不得含 reparse point。未知的頂層項目會保留，根目錄只有在空白時才移除；中途失敗時會保留可供下次接續的紀錄。最後執行中的維護 EXE 只會交由目前使用者的隱藏程序刪除該精確檔案，不會使用萬用字元或遞迴刪除。
 
-若使用離線 ZIP，請先結束 AI Usage，再刪除自行解壓的版本目錄。兩種方式都會保留使用者資料、Copilot 的 Windows Credential Manager 登入資料，以及 Claude、Codex、Grok 的受保護執行副本，供日後重新安裝使用。
+若使用離線 ZIP，請先結束 AI Usage，再刪除自行解壓的版本目錄。兩種方式都會保留使用者資料、Copilot 的 Windows Credential Manager 登入資料，以及 Claude、Codex、Copilot、Grok 的受保護執行副本，供日後重新安裝使用。
 
 永久刪除本機資料是另一項不可復原的操作。執行前，資料擁有者必須確認會失去 AI Usage 設定、快取、診斷資料、各服務的本機登入、受保護執行副本及 AGY 私密資料。
 
@@ -309,9 +311,9 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 4. Account ID 必須是 32 位十六進位格式，且不含連字號。不得使用萬用字元、前綴批次刪除或未核對身分的命令。無法確認精確目標時，不能宣稱已永久清除。
 5. 從系統匣結束 AI Usage，確認目前使用者的 Windows 登入期間沒有 AI Usage 或其 Claude、Codex、Grok、Copilot 子程序仍在執行。
 6. 由受信任工具從目前 `WindowsIdentity` 取得完整 SID，並從 Windows system directory 取得 system-volume root。不得接受手動輸入的 SID、替代磁碟或環境變數覆寫。
-7. 只用上一步取得的值建立 Claude、Codex 與 Grok 三個完整路徑：`%SystemDrive%\AiUsageDashboard.<Provider>Cli.<current-user-SID>`，其中 `<Provider>` 只能替換成這三個服務名稱之一。
+7. 只用上一步取得的值建立 Claude、Codex、Copilot 與 Grok 四個完整路徑：`%SystemDrive%\AiUsageDashboard.<Provider>Cli.<current-user-SID>`，其中 `<Provider>` 只能替換成這四個服務名稱之一。
 8. 對每個存在的目錄重新檢查：它必須位於固定磁碟，所有路徑都沒有 reparse point，擁有者是目前使用者 SID，而且 DACL 已停用繼承，只授予目前使用者、Local System (`S-1-5-18`) 與 Builtin Administrators (`S-1-5-32-544`) Full Control。任一條件不符就停止，不得遞迴刪除。
-9. 只刪除目前使用者的 `%LOCALAPPDATA%\AiUsageDashboard`，以及通過上一步全部檢查的三個完整服務目錄。不得使用父目錄、萬用字元、前綴比對或跟隨 junction 擴大範圍。刪除整個 `%LOCALAPPDATA%\AiUsageDashboard` 也會刪除其中的 AGY 本機連接資料與私密校準資料；若要保留既有 AGY 連接，不得執行完整資料清除。
+9. 只刪除目前使用者的 `%LOCALAPPDATA%\AiUsageDashboard`，以及通過上一步全部檢查的四個完整服務目錄。不得使用父目錄、萬用字元、前綴比對或跟隨 junction 擴大範圍。刪除整個 `%LOCALAPPDATA%\AiUsageDashboard` 也會刪除其中的 AGY 本機連接資料與私密校準資料；若要保留既有 AGY 連接，不得執行完整資料清除。
 10. 若曾使用 AGY，再清除目前使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE` 與 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE` 環境變數。不得碰觸其他使用者的設定、受保護目錄或共用磁碟內容。
 
 ### 資料範圍與帳號移除
@@ -339,6 +341,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1`：目前 Windows 使用者共用、依檔案內容雜湊分類的 Claude 受保護執行檔版本；正常保留目前與前一個有效版本，安全清理失敗時可暫時超過兩份，移除單張卡片時不清理。
 - `%SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\executables-v1`：目前 Windows 使用者共用、依檔案內容雜湊分類的 Codex 受保護執行檔版本；正常保留目前與前一個有效版本，安全清理失敗時可暫時超過兩份，移除單張卡片時不清理。
 - `%SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\validation-v1`：Codex 版本檢查使用的私密根目錄；每次正常檢查會刪除自己的 `probe-<guid>` 目錄，移除單張卡片時不清理根目錄。
+- `%SystemDrive%\AiUsageDashboard.CopilotCli.<current-user-SID>\executables-v1`：目前 Windows 使用者共用的 Copilot 受保護執行檔副本；只有 Copilot 操作時才取得，移除卡片不清理此目錄。
 - `%SystemDrive%\AiUsageDashboard.GrokCli.<current-user-SID>\executables-v1`：目前 Windows 使用者共用、依檔案內容雜湊分類的 Grok 受保護執行檔版本；正常保留目前與前一個有效版本，安全清理失敗時可暫時超過兩份，移除單張卡片時不清理。
 - `%LOCALAPPDATA%\AiUsageDashboard\grok-connection-pending-v1.json`：不含 token／原始帳號的 Grok 連接續做狀態。
 - `%LOCALAPPDATA%\AiUsageDashboard\account-cleanup-pending-v1.json`：帳號清理失敗後供背景重試的狀態。
@@ -418,6 +421,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 ## 支援與復原
 
 - Claude／Codex CLI 遺失或不相容：先記錄偵測版本與完整原始錯誤。版本差異只是可能原因；若官方來源、簽章與必要功能都合格，先重新啟動 AI Usage，讓程式自行建立或更新受保護副本，再對照候選版試用紀錄。不得手動複製受保護執行檔或放寬目錄權限；既有帳號識別會保留。
+- GitHub Copilot CLI 缺少或不符：依[官方文件](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli)安裝或更新，建議 WinGet 標準安裝；來源也可為標準 npm 安裝或 `PATH` 可解析的真正官方 `copilot.exe`。AI Usage 不執行 `.cmd`／`.ps1` wrapper、不退回舊 App bundle；卡片及 token 保留，修正 CLI 後重試，不先重新登入。精確來源與版本規則見[技術總覽](docs/TECHNICAL_OVERVIEW.md#本機-cli-來源與版本)。
 - GitHub Copilot 要求重新連接：只重新連接受影響的卡片。若移除卡片後仍顯示清理警告，保持 AI Usage 開啟以完成背景重試；不要手動批次刪除 Windows Credential Manager 項目。
 - Grok CLI 遺失或來源不受信任：只能從 xAI 官方來源安裝到 `%USERPROFILE%\.grok\bin\grok.exe`。重新啟動 AI Usage，讓程式自行更新受保護副本，並確認 `X.AI LLC` 簽章與路徑檢查通過。`1.0.3` 是相容性基準；不得只因版本不同而要求降版，也不得用 `PATH`、手動複製或替代執行檔繞過檢查。
 - 服務暫時失敗：稍後重試；畫面會保留上次正常的用量資料。

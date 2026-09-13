@@ -6,6 +6,20 @@
 
 一般操作見 [使用說明](使用說明.md)；架構、資料格式與各服務的實作見 [技術總覽](docs/TECHNICAL_OVERVIEW.md)；候選驗收與公開規則見 [RELEASING.md](RELEASING.md)。
 
+## 目前 source
+
+Copilot 改為使用本機安裝的官方 CLI，主包不再隨附第三方 CLI；`GitHub.Copilot.SDK` 保持 `1.0.11`，CLI `1.0.79` 保留為相容性基準，接受正式版 `>=1.0.79` 且 `<2.0.0`。帳號綁定、Credential Manager 與程序隔離要求維持不變。
+
+CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保留既有卡片與 token，安裝／更新後重試。其他 `1.x` 尚未宣稱真人實測通過，精確來源規則見 [CLI 相容性](docs/CLI_COMPATIBILITY.md)。
+
+連接與用量查詢的 CLI 搜尋、驗簽及副本準備已移到背景；取消後晚到的執行檔鎖會清理。修正後本機 Release 建置通過（0 warnings／0 errors），404／404 項相關回歸測試通過，0 failed／0 skipped，包含阻塞解析器時呼叫先返回、取消、晚到檔案鎖釋放及未啟動 CLI／SDK 的測試。
+
+修正後驗證包 `0.0.0-verify-local-cli.20260913.2` 的封裝及四組實際授權匯出通過。ZIP 從 183,971,646 bytes 降到 82,248,336 bytes，減少 55.29%；完整列舉的 498 個 ZIP files 不含第三方 CLI，保留 SDK 與 .NET runtime。
+
+背景準備修正前的完整測試首輪為 3,982／3,983 通過、1 failed、0 skipped，production line coverage 為 75.79%（50,754／66,966）。唯一失敗為既有 `CodexVersionProbe_WhenRootSpawnsChild_ConfirmsTreeEmptyBeforeGateRelease` 在清理合成 fixture DLL 時遭遇存取拒絕；該案例單獨重跑（未收集 coverage）通過，但首輪失敗原因尚未確定。背景準備修正後只重跑上述相關測試，未重跑完整套件或 coverage，不宣稱完整測試一輪全過。
+
+這份 source 尚未建立正式候選，也未執行真人 CLI 登入／用量驗證；下列 `1.0.1` 的六件凍結成品與 13 案離線驗收只適用於原 source，不代表新封裝的安裝／升級驗收。
+
 ## 目前候選
 
 目前為 `1.0.1 / sequence 1015` 私有候選（[source `d639a8ad7cc1956c7628ae07037051859e25fe53`](https://github.com/Sokaka/ai-usage-dashboard/commit/d639a8ad7cc1956c7628ae07037051859e25fe53)），包含 Claude `/usage` 回應相容性、Antigravity 程序路徑查詢與防毒阻擋提示修正。Repository 維持 private，Release 維持 draft／prerelease。
@@ -46,7 +60,7 @@
 | Claude | 以未修改的官方 Claude Code、每卡獨立設定與官方登入查詢 `/usage`；仍屬實驗性，回傳後檢查 turn／token／cost 為零。 |
 | Codex | 以官方 `app-server` 查詢帳號及多個 rate-limit 區間；每卡隔離登入與 state，仍須持續驗證上游格式相容。 |
 | Grok | 以官方 Grok Build CLI 的 auth／billing 支援多帳號、重複帳號拒絕與連接復原；仍屬實驗性。 |
-| GitHub Copilot | 使用官方 SDK 與隨附 CLI；只支援不同的 `github.com` 帳號，登入資料按卡片存於 Windows Credential Manager，不把 organization／subscription 拆成不同帳號。 |
+| GitHub Copilot | 目前 source 改用固定版本的官方 SDK 與本機官方 CLI；只支援不同的 `github.com` 帳號，登入資料按卡片存於 Windows Credential Manager，不把 organization／subscription 拆成不同帳號。 |
 | Antigravity／AGY | 使用 user-installed、unmodified 官方 CLI `/usage`；每位 Windows 使用者只允許一張卡片，保留受限的舊版相容路徑，回傳後檢查 turn／token 為零。 |
 
 ## 候選與歷史驗證的界線

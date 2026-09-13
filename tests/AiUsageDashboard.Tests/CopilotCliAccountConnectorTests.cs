@@ -5,12 +5,32 @@ using System.Text;
 
 using AiUsageDashboard.App.Providers;
 
-using GitHub.Copilot;
-
 namespace AiUsageDashboard.Tests;
 
 public sealed class CopilotCliAccountConnectorTests
 {
+	private sealed class DisposalObservedFileStream : FileStream
+	{
+		private readonly TaskCompletionSource _disposeCompletion = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+
+		internal Task DisposeCompletion => _disposeCompletion.Task;
+
+		internal DisposalObservedFileStream(string path)
+			: base(path, FileMode.Open, FileAccess.Read, FileShare.Read)
+		{
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			base.Dispose(disposing);
+			if (disposing)
+			{
+				_disposeCompletion.TrySetResult();
+			}
+		}
+	}
+
 	private sealed class FakeCredentialStore : ICopilotCredentialStore
 	{
 		private readonly Dictionary<Guid, CopilotStoredCredential> _active = new();
@@ -346,6 +366,11 @@ public sealed class CopilotCliAccountConnectorTests
 
 		internal ConcurrentQueue<ProcessStartInfo> LoginStartInfos { get; } = new();
 
+		internal ConcurrentQueue<string> BootstrapExecutablePaths { get; } = new();
+
+		internal TaskCompletionSource<bool> BootstrapStarted { get; } = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+
 		internal ConnectorHarness(
 			string testRoot,
 			IReadOnlyCollection<(
@@ -359,7 +384,8 @@ public sealed class CopilotCliAccountConnectorTests
 			TimeSpan? processTerminationTimeout = null,
 			Action<ProcessStartInfo>? loginStartHandler = null,
 			Func<ProcessStartInfo, ICopilotLoginProcess>? processStarter = null,
-			Action<string>? bootstrapHomeHandler = null)
+			Action<string>? bootstrapHomeHandler = null,
+			Func<WindowsOfficialCliExecutableLease?>? leaseResolver = null)
 		{
 			_loginProcessFactory = loginProcessFactory ??
 				(() => new FakeLoginProcess(completeImmediately: true));
@@ -390,7 +416,7 @@ public sealed class CopilotCliAccountConnectorTests
 				operationGate,
 				CredentialStore,
 				quotaClient,
-				() => executablePath,
+				leaseResolver ?? (() => WindowsOfficialCliExecutableLease.CreateUnprotected(executablePath)),
 				startInfo =>
 				{
 					loginStartHandler?.Invoke(startInfo);
@@ -400,8 +426,9 @@ public sealed class CopilotCliAccountConnectorTests
 						? _loginProcessFactory()
 						: processStarter(startInfo);
 				},
-				bootstrapHomeDirectory =>
+				(bootstrapExecutablePath, bootstrapHomeDirectory) =>
 				{
+					BootstrapExecutablePaths.Enqueue(bootstrapExecutablePath);
 					bootstrapHomeHandler?.Invoke(bootstrapHomeDirectory);
 					if (!_bootstrapCredentials.TryDequeue(
 							out CopilotBootstrapCredential? credential))
@@ -410,8 +437,11 @@ public sealed class CopilotCliAccountConnectorTests
 							"No synthetic bootstrap credential remains.");
 					}
 
-					Action startHandler = () => Interlocked.Increment(
-						ref _bootstrapStartCount);
+					Action startHandler = () =>
+					{
+						Interlocked.Increment(ref _bootstrapStartCount);
+						BootstrapStarted.TrySetResult(true);
+					};
 					return bootstrapClientFactory is null
 						? new FakeBootstrapClient(credential, startHandler)
 						: bootstrapClientFactory(credential, startHandler);
@@ -429,6 +459,151 @@ public sealed class CopilotCliAccountConnectorTests
 			CopilotCliAccountConnector.MaximumBootstrapFileBytes >= 116_732_192);
 		Assert.True(
 			CopilotCliAccountConnector.MaximumBootstrapTotalBytes >= 223_391_149);
+	}
+
+	[Fact]
+	public async Task BeginConnectAsync_WhenResolverBlocks_ReturnsTaskAndCancelsBeforeCleaningLateLease()
+	{
+		TimeSpan testTimeout = TimeSpan.FromSeconds(5);
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CreateSyntheticExecutable(temporaryDirectory.Path, "late-copilot.exe");
+		DisposalObservedFileStream executableStream = new(executablePath);
+		using WindowsOfficialCliExecutableLease executableLease =
+			WindowsOfficialCliExecutableLease.CreateProtected(executablePath, executableStream);
+		using ManualResetEventSlim releaseResolver = new(initialState: false);
+		TaskCompletionSource resolverEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		using CancellationTokenSource cancellationSource = new();
+		Guid accountId = Guid.NewGuid();
+		ConnectorHarness harness = new(
+			temporaryDirectory.Path,
+			[],
+			leaseResolver: () =>
+			{
+				resolverEntered.TrySetResult();
+				releaseResolver.Wait();
+				return executableLease;
+			});
+		Task<Task<ICopilotConnectionCandidate>> invocation = Task.Factory.StartNew(
+			() => harness.Connector.BeginConnectAsync(
+				accountId,
+				expectedProviderAccountIdentity: null,
+				allowAccountSwitch: false,
+				cancellationSource.Token),
+			CancellationToken.None,
+			TaskCreationOptions.LongRunning,
+			TaskScheduler.Default);
+
+		try
+		{
+			// 不 unwrap，才能分別驗證直接呼叫已返回與連接工作仍未完成。
+			Task<ICopilotConnectionCandidate> connectTask = await invocation.WaitAsync(testTimeout);
+			await resolverEntered.Task.WaitAsync(testTimeout);
+			Assert.False(connectTask.IsCompleted);
+			AssertExecutableIsLocked(executablePath);
+
+			cancellationSource.Cancel();
+			CopilotAccountLoginException failure =
+				await Assert.ThrowsAsync<CopilotAccountLoginException>(() => connectTask)
+					.WaitAsync(testTimeout);
+
+			Assert.Equal(CopilotAccountLoginFailureKind.Cancelled, failure.Kind);
+			Assert.False(releaseResolver.IsSet);
+			Assert.Equal(0, harness.LoginStartCount);
+			Assert.Equal(0, harness.BootstrapStartCount);
+			Assert.Equal(0, harness.CredentialStore.StageCount);
+			Assert.Equal(0, harness.CredentialStore.CommitCount);
+			Assert.Null(harness.CredentialStore.Read(accountId));
+			Assert.Null(harness.CredentialStore.ReadPending(accountId));
+			Assert.True(executableLease.IsProtected);
+			Assert.False(executableStream.DisposeCompletion.IsCompleted);
+			AssertExecutableIsLocked(executablePath);
+		}
+		finally
+		{
+			cancellationSource.Cancel();
+			releaseResolver.Set();
+			Task<ICopilotConnectionCandidate> connectTask = await invocation.WaitAsync(testTimeout);
+			// 保留原斷言失敗，同時觀察取消結果並清理意外成功的 candidate。
+			await Record.ExceptionAsync(async () =>
+			{
+				await using ICopilotConnectionCandidate candidate = await connectTask.WaitAsync(testTimeout);
+			});
+			await executableStream.DisposeCompletion.WaitAsync(testTimeout);
+		}
+
+		Assert.False(executableLease.IsProtected);
+		AssertExecutableIsReleased(executablePath);
+		Assert.Equal(0, harness.LoginStartCount);
+		Assert.Equal(0, harness.BootstrapStartCount);
+		Assert.Equal(0, harness.CredentialStore.StageCount);
+		Assert.Equal(0, harness.CredentialStore.CommitCount);
+	}
+
+	[Fact]
+	public async Task BeginConnectAsync_WithoutLocalCli_DoesNotLaunchOrChangeCredential()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		Guid accountId = Guid.NewGuid();
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_MISSING_CLI", "missing-cli-user", 1001);
+		CopilotStoredCredential activeCredential = new(
+			CopilotAccountIdentityRules.Create(principal), "fixture-credential-existing");
+		ConnectorHarness harness = new(
+			temporaryDirectory.Path,
+			[],
+			leaseResolver: () => null);
+		harness.CredentialStore.SeedActive(accountId, activeCredential);
+
+		CopilotAccountLoginException failure =
+			await Assert.ThrowsAsync<CopilotAccountLoginException>(() => harness.Connector.BeginConnectAsync(
+				accountId, activeCredential.ProviderAccountIdentity, allowAccountSwitch: false));
+
+		Assert.Equal(CopilotAccountLoginFailureKind.RuntimeUnavailable, failure.Kind);
+		Assert.Equal(0, harness.LoginStartCount);
+		Assert.Equal(0, harness.BootstrapStartCount);
+		Assert.Empty(harness.BootstrapExecutablePaths);
+		Assert.Same(activeCredential, harness.CredentialStore.Read(accountId));
+		Assert.Null(harness.CredentialStore.ReadPending(accountId));
+		Assert.Equal(0, harness.CredentialStore.StageCount);
+		Assert.Equal(0, harness.CredentialStore.CommitCount);
+		Assert.Equal(0, harness.CredentialStore.DiscardCount);
+	}
+
+	[Fact]
+	public async Task BeginConnectAsync_UsesOneProtectedExecutableForLoginAndBootstrap()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CreateSyntheticExecutable(temporaryDirectory.Path, "protected-copilot.exe");
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_LOCAL_CLI", "local-cli-user", 1001);
+		WindowsOfficialCliExecutableLease? resolvedLease = null;
+		int resolveCount = 0;
+		ConnectorHarness harness = new(
+			temporaryDirectory.Path,
+			new[] { (principal, "fixture-credential-local-cli") },
+			loginStartHandler: startInfo =>
+			{
+				Assert.Equal(executablePath, startInfo.FileName);
+				AssertExecutableIsLocked(executablePath);
+			},
+			bootstrapClientFactory: (credential, startHandler) =>
+			{
+				AssertExecutableIsLocked(executablePath);
+				return new FakeBootstrapClient(credential, startHandler);
+			},
+			leaseResolver: () =>
+			{
+				resolveCount++;
+				resolvedLease = CreateExecutableLease(executablePath);
+				return resolvedLease;
+			});
+
+		await using ICopilotConnectionCandidate candidate = await harness.Connector.BeginConnectAsync(
+			Guid.NewGuid(), expectedProviderAccountIdentity: null, allowAccountSwitch: false);
+
+		Assert.Equal(1, resolveCount);
+		Assert.Equal(executablePath, Assert.Single(harness.LoginStartInfos).FileName);
+		Assert.Equal(executablePath, Assert.Single(harness.BootstrapExecutablePaths));
+		Assert.False(resolvedLease!.IsProtected);
+		AssertExecutableIsReleased(executablePath);
 	}
 
 	[Fact]
@@ -740,6 +915,10 @@ public sealed class CopilotCliAccountConnectorTests
 	public async Task BeginConnectAsync_WhenCancelledProcessExitIsLate_KeepsGlobalAdmissionUntilExit()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
+		string firstExecutable = CreateSyntheticExecutable(temporaryDirectory.Path, "first-copilot.exe");
+		string secondExecutable = CreateSyntheticExecutable(temporaryDirectory.Path, "second-copilot.exe");
+		WindowsOfficialCliExecutableLease? firstExecutableLease = null;
+		int resolveCount = 0;
 		Guid firstAccountId = Guid.NewGuid();
 		Guid secondAccountId = Guid.NewGuid();
 		CopilotAccountIdentity secondPrincipal = CreatePrincipal(
@@ -765,7 +944,10 @@ public sealed class CopilotCliAccountConnectorTests
 				? process
 				: throw new InvalidOperationException(
 					"No synthetic login process remains."),
-			processTerminationTimeout: TimeSpan.FromMilliseconds(50));
+			processTerminationTimeout: TimeSpan.FromMilliseconds(50),
+			leaseResolver: () => ++resolveCount == 1
+				? firstExecutableLease = CreateExecutableLease(firstExecutable)
+				: CreateExecutableLease(secondExecutable));
 		using CancellationTokenSource cancellationSource = new();
 		Task<ICopilotConnectionCandidate> firstConnectTask =
 			harness.Connector.BeginConnectAsync(
@@ -780,22 +962,29 @@ public sealed class CopilotCliAccountConnectorTests
 				expectedProviderAccountIdentity: null,
 				allowAccountSwitch: false);
 
-		cancellationSource.Cancel();
+		try
+		{
+			cancellationSource.Cancel();
 
-		await Assert.ThrowsAsync<CopilotAccountLoginException>(async () =>
-			await firstConnectTask.WaitAsync(TimeSpan.FromSeconds(20)));
-		await Task.Delay(TimeSpan.FromMilliseconds(250));
-		Assert.Equal(1, lateProcess.KillCount);
-		Assert.True(lateProcess.WaitCallCount >= 2);
-		Assert.False(secondConnectTask.IsCompleted);
-		Assert.Equal(1, harness.LoginStartCount);
+			await Assert.ThrowsAsync<CopilotAccountLoginException>(async () =>
+				await firstConnectTask.WaitAsync(TimeSpan.FromSeconds(20)));
+			Assert.Equal(1, lateProcess.KillCount);
+			Assert.True(lateProcess.WaitCallCount >= 2);
+			Assert.False(secondConnectTask.IsCompleted);
+			Assert.Equal(1, harness.LoginStartCount);
+			Assert.True(firstExecutableLease!.IsProtected);
+			AssertExecutableIsLocked(firstExecutable);
+		}
+		finally
+		{
+			lateProcess.CompleteExit();
+			await using ICopilotConnectionCandidate secondCandidate =
+				await secondConnectTask.WaitAsync(TimeSpan.FromSeconds(5));
+		}
 
-		lateProcess.CompleteExit();
-
-		ICopilotConnectionCandidate secondCandidate =
-			await secondConnectTask.WaitAsync(TimeSpan.FromSeconds(5));
 		Assert.Equal(2, harness.LoginStartCount);
-		await secondCandidate.DisposeAsync();
+		Assert.False(firstExecutableLease!.IsProtected);
+		AssertExecutableIsReleased(firstExecutable);
 	}
 
 	[Fact]
@@ -913,6 +1102,10 @@ public sealed class CopilotCliAccountConnectorTests
 	public async Task BeginConnectAsync_WhenBootstrapDisposeIsLate_KeepsGlobalAdmissionUntilCleanup()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
+		string firstExecutable = CreateSyntheticExecutable(temporaryDirectory.Path, "first-copilot.exe");
+		string secondExecutable = CreateSyntheticExecutable(temporaryDirectory.Path, "second-copilot.exe");
+		WindowsOfficialCliExecutableLease? firstExecutableLease = null;
+		int resolveCount = 0;
 		Guid firstAccountId = Guid.NewGuid();
 		Guid secondAccountId = Guid.NewGuid();
 		CopilotAccountIdentity firstPrincipal = CreatePrincipal(
@@ -939,34 +1132,42 @@ public sealed class CopilotCliAccountConnectorTests
 						credential,
 						startHandler,
 						disposeSource.Task)
-					: new FakeBootstrapClient(credential, startHandler));
+					: new FakeBootstrapClient(credential, startHandler),
+			leaseResolver: () => ++resolveCount == 1
+				? firstExecutableLease = CreateExecutableLease(firstExecutable)
+				: CreateExecutableLease(secondExecutable));
 		Task<ICopilotConnectionCandidate> firstConnectTask =
 			harness.Connector.BeginConnectAsync(
 				firstAccountId,
 				expectedProviderAccountIdentity: null,
 				allowAccountSwitch: false);
-		await WaitUntilAsync(
-			() => harness.BootstrapStartCount == 1,
-			TimeSpan.FromSeconds(5));
+		await harness.BootstrapStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
 		Task<ICopilotConnectionCandidate> secondConnectTask =
 			harness.Connector.BeginConnectAsync(
 				secondAccountId,
 				expectedProviderAccountIdentity: null,
 				allowAccountSwitch: false);
 
-		await Assert.ThrowsAsync<CopilotAccountLoginException>(async () =>
-			await firstConnectTask.WaitAsync(TimeSpan.FromSeconds(20)));
-		await Task.Delay(TimeSpan.FromMilliseconds(250));
-		Assert.False(secondConnectTask.IsCompleted);
-		Assert.Equal(1, harness.LoginStartCount);
-		Assert.Equal(0, harness.CredentialStore.StageCount);
+		try
+		{
+			await Assert.ThrowsAsync<CopilotAccountLoginException>(async () =>
+				await firstConnectTask.WaitAsync(TimeSpan.FromSeconds(20)));
+			Assert.False(secondConnectTask.IsCompleted);
+			Assert.Equal(1, harness.LoginStartCount);
+			Assert.Equal(0, harness.CredentialStore.StageCount);
+			Assert.True(firstExecutableLease!.IsProtected);
+			AssertExecutableIsLocked(firstExecutable);
+		}
+		finally
+		{
+			disposeSource.TrySetResult(true);
+			await using ICopilotConnectionCandidate secondCandidate =
+				await secondConnectTask.WaitAsync(TimeSpan.FromSeconds(5));
+		}
 
-		disposeSource.TrySetResult(true);
-
-		ICopilotConnectionCandidate secondCandidate =
-			await secondConnectTask.WaitAsync(TimeSpan.FromSeconds(5));
 		Assert.Equal(2, harness.LoginStartCount);
-		await secondCandidate.DisposeAsync();
+		Assert.False(firstExecutableLease!.IsProtected);
+		AssertExecutableIsReleased(firstExecutable);
 	}
 
 	[Fact]
@@ -1617,104 +1818,30 @@ public sealed class CopilotCliAccountConnectorTests
 			StringComparison.Ordinal);
 	}
 
-	[Fact]
-	public async Task BundledBootstrapRuntime_ConnectsThroughContainedLoopbackTransport()
+	private static string CreateSyntheticExecutable(string directory, string fileName)
 	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string executablePath =
-			CopilotCliAccountConnector.ResolveExecutablePath(
-				AppContext.BaseDirectory,
-				System.Runtime.InteropServices.RuntimeInformation
-					.ProcessArchitecture,
-				File.Exists) ??
-			throw new FileNotFoundException(
-				"The bundled Copilot runtime was not staged for the test.");
-		string homeDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"bootstrap-home");
-		string connectionToken = $"synthetic-{Guid.NewGuid():N}";
-		ProcessStartInfo startInfo =
-			CopilotCliAccountConnector.CreateBootstrapRuntimeStartInfo(
-				executablePath,
-				homeDirectory,
-				connectionToken);
-		WindowsJobContainedProcess? runtimeProcess = null;
-		CopilotClient? client = null;
-		Task standardErrorDrainTask = Task.CompletedTask;
-		Task standardOutputDrainTask = Task.CompletedTask;
-		bool isTreeEmptyConfirmed = false;
+		string path = Path.Combine(directory, fileName);
+		File.WriteAllBytes(path, [0x4D, 0x5A, 0x01, 0x02]);
+		return path;
+	}
 
-		try
+	private static WindowsOfficialCliExecutableLease CreateExecutableLease(string path)
+	{
+		return WindowsOfficialCliExecutableLease.CreateProtected(
+			path, new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read));
+	}
+
+	private static void AssertExecutableIsLocked(string path)
+	{
+		Assert.Throws<IOException>(() =>
 		{
-			runtimeProcess = WindowsJobContainedProcess.Start(
-				startInfo,
-				static () => { });
-			standardErrorDrainTask = runtimeProcess.StandardError.CopyToAsync(
-				Stream.Null);
-			using CancellationTokenSource startupSource = new(
-				TimeSpan.FromSeconds(30));
-			int port = await CopilotCliAccountConnector
-				.ReadBootstrapRuntimePortAsync(
-					runtimeProcess.StandardOutput,
-					startupSource.Token);
-			standardOutputDrainTask = runtimeProcess.StandardOutput.CopyToAsync(
-				Stream.Null);
-			client = new CopilotClient(new CopilotClientOptions
-			{
-				Connection = RuntimeConnection.ForUri(
-					$"http://127.0.0.1:{port}",
-					connectionToken),
-				LogLevel = CopilotLogLevel.None
-			});
+			using FileStream stream = new(path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+		});
+	}
 
-			await client.StartAsync(startupSource.Token);
-			Assert.Equal(port, client.RuntimePort);
-			await client.StopAsync().WaitAsync(TimeSpan.FromSeconds(10));
-			await runtimeProcess.TerminateTreeAndConfirmEmptyAsync(
-				TimeSpan.FromSeconds(10));
-			isTreeEmptyConfirmed = true;
-			await Task.WhenAll(
-				standardOutputDrainTask,
-				standardErrorDrainTask).WaitAsync(TimeSpan.FromSeconds(5));
-		}
-		finally
-		{
-			if (client is not null)
-			{
-				try
-				{
-					await client.ForceStopAsync();
-				}
-				catch
-				{
-				}
-
-				try
-				{
-					await client.DisposeAsync();
-				}
-				catch
-				{
-				}
-			}
-
-			if (runtimeProcess is not null)
-			{
-				if (!isTreeEmptyConfirmed)
-				{
-					try
-					{
-						await runtimeProcess.TerminateTreeAndConfirmEmptyAsync(
-							TimeSpan.FromSeconds(10));
-					}
-					catch
-					{
-					}
-				}
-
-				runtimeProcess.Dispose();
-			}
-		}
+	private static void AssertExecutableIsReleased(string path)
+	{
+		using FileStream stream = new(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 	}
 
 	private static CopilotAccountIdentity CreatePrincipal(

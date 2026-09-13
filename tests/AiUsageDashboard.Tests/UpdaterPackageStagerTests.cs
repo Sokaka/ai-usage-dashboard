@@ -85,11 +85,11 @@ public sealed class UpdaterPackageStagerTests
 	public async Task StageAsync_WithThirdPartyNoticesInsideApp_PreservesBothGuideLinkTargets()
 	{
 		const string RootGuide = """
-			[Copilot CLI](app/third-party-notices/GitHub-Copilot-CLI-LICENSE.md)
+			[.NET](app/third-party-notices/DOTNET-8-MIT-LICENSE.txt)
 			[Copilot SDK](app/third-party-notices/GitHub-Copilot-SDK-LICENSE.md)
 			""";
 		const string AppGuide = """
-			[Copilot CLI](third-party-notices/GitHub-Copilot-CLI-LICENSE.md)
+			[.NET](third-party-notices/DOTNET-8-MIT-LICENSE.txt)
 			[Copilot SDK](third-party-notices/GitHub-Copilot-SDK-LICENSE.md)
 			""";
 		using TemporaryDirectory temporaryDirectory = new();
@@ -103,8 +103,8 @@ public sealed class UpdaterPackageStagerTests
 				new("AiUsageDashboard/app/README.md", Encoding.UTF8.GetBytes(AppGuide)),
 				new("AiUsageDashboard/app/AiUsageDashboard.App.exe", [0x4D, 0x5A]),
 				new(
-					"AiUsageDashboard/app/third-party-notices/GitHub-Copilot-CLI-LICENSE.md",
-					"CLI license"u8.ToArray()),
+					"AiUsageDashboard/app/third-party-notices/DOTNET-8-MIT-LICENSE.txt",
+					".NET license"u8.ToArray()),
 				new(
 					"AiUsageDashboard/app/third-party-notices/GitHub-Copilot-SDK-LICENSE.md",
 					"SDK license"u8.ToArray())

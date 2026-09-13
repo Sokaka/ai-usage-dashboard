@@ -680,7 +680,6 @@ try {
 		-DepsPath (Join-Path $appRoot 'AiUsageDashboard.App.deps.json') `
 		-Profile app `
 		-ExpectedManifestPath $legalManifestPath `
-		-ProjectPath (Join-Path $repositoryRoot 'src/AiUsageDashboard.App/AiUsageDashboard.App.csproj') `
 		-SelfContained
 	& (Join-Path $PSScriptRoot 'Assert-LicenseDependencies.ps1') `
 		-DepsPath (Join-Path $appRoot 'AiUsageDashboard.Antigravity.Setup.deps.json') `
@@ -733,9 +732,6 @@ try {
 		(Join-Path $appRoot 'AiUsageDashboard.AntigravityCapture.exe'),
 		(Join-Path $appRoot 'AiUsageDashboard.Antigravity.dll'),
 		(Join-Path $appRoot 'README.md'),
-		(Join-Path `
-			$appRoot `
-			'third-party-notices\GitHub-Copilot-CLI-LICENSE.md'),
 		(Join-Path `
 			$appRoot `
 			'third-party-notices\GitHub-Copilot-SDK-LICENSE.md'),

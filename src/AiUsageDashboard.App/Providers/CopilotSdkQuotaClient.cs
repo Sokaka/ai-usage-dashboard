@@ -63,9 +63,9 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 			_lifecycleCompletion = lifecycleCompletion;
 		}
 
-		internal void Start()
+		internal Task Start()
 		{
-			_ = ReleaseLeaseAsync();
+			return ReleaseLeaseAsync();
 		}
 
 		private async Task ReleaseLeaseAsync()
@@ -97,14 +97,14 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		private readonly string _accessToken;
 		private readonly CopilotClient _client;
 
-		internal SdkClient(string homeDirectory, string accessToken)
+		internal SdkClient(
+			string homeDirectory,
+			string accessToken,
+			string executablePath)
 		{
 			ArgumentException.ThrowIfNullOrWhiteSpace(homeDirectory);
 			ArgumentException.ThrowIfNullOrWhiteSpace(accessToken);
-			string executablePath = CopilotCliAccountConnector
-				.ResolveExecutablePath() ??
-				throw new FileNotFoundException(
-					"找不到 AI Usage 隨附的 GitHub Copilot CLI runtime。");
+			ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
 			_accessToken = accessToken;
 			_client = new CopilotClient(new CopilotClientOptions
 			{
@@ -193,8 +193,9 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 	private static long _nextCleanupLeaseTrackerId;
 	private readonly CopilotAccountOperationGate _accountOperationGate;
 	private readonly TimeSpan _cleanupTimeout;
-	private readonly Func<string, string, ICopilotSdkClient> _clientFactory;
+	private readonly Func<string, string, string, ICopilotSdkClient> _clientFactory;
 	private readonly ICopilotCredentialStore _credentialStore;
+	private readonly Func<WindowsOfficialCliExecutableLease?>? _executableResolver;
 	private readonly ICopilotGitHubUserClient _githubUserClient;
 	private readonly Func<Guid, string> _homeDirectoryResolver;
 	private readonly TimeSpan _operationTimeout;
@@ -213,8 +214,9 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 			accountOperationGate,
 			credentialStore,
 			githubUserClient,
-			static (homeDirectory, accessToken) =>
-				new SdkClient(homeDirectory, accessToken),
+			CopilotCliExecutableResolver.Resolve,
+			static (homeDirectory, accessToken, executablePath) =>
+				new SdkClient(homeDirectory, accessToken, executablePath),
 			static () => DateTimeOffset.UtcNow)
 	{
 	}
@@ -229,6 +231,31 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		TimeSpan? operationTimeout = null,
 		TimeSpan? cleanupTimeout = null,
 		TimeSpan? planProbeTimeout = null)
+		: this(
+			homeDirectoryResolver,
+			accountOperationGate,
+			credentialStore,
+			githubUserClient,
+			executableResolver: null,
+			AdaptClientFactory(clientFactory),
+			utcNow,
+			operationTimeout,
+			cleanupTimeout,
+			planProbeTimeout)
+	{
+	}
+
+	internal CopilotSdkQuotaClient(
+		Func<Guid, string> homeDirectoryResolver,
+		CopilotAccountOperationGate accountOperationGate,
+		ICopilotCredentialStore credentialStore,
+		ICopilotGitHubUserClient githubUserClient,
+		Func<WindowsOfficialCliExecutableLease?>? executableResolver,
+		Func<string, string, string, ICopilotSdkClient> clientFactory,
+		Func<DateTimeOffset>? utcNow = null,
+		TimeSpan? operationTimeout = null,
+		TimeSpan? cleanupTimeout = null,
+		TimeSpan? planProbeTimeout = null)
 	{
 		_homeDirectoryResolver = homeDirectoryResolver ??
 			throw new ArgumentNullException(nameof(homeDirectoryResolver));
@@ -236,6 +263,7 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 			throw new ArgumentNullException(nameof(accountOperationGate));
 		_credentialStore = credentialStore ??
 			throw new ArgumentNullException(nameof(credentialStore));
+		_executableResolver = executableResolver;
 		_githubUserClient = githubUserClient ??
 			throw new ArgumentNullException(nameof(githubUserClient));
 		_clientFactory = clientFactory ??
@@ -331,7 +359,7 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 				cancellationToken);
 			if (!result.LifecycleCompletion.IsCompleted)
 			{
-				RetainLeaseUntilLifecycleCompletes(
+				_ = RetainLeaseUntilLifecycleCompletes(
 					operationLease,
 					result.LifecycleCompletion);
 				operationLease = null;
@@ -378,6 +406,7 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		CancellationToken cancellationToken)
 	{
 		ICopilotSdkClient? client = null;
+		WindowsOfficialCliExecutableLease? executableLease = null;
 		CopilotUsageReport? report = null;
 		Exception? operationFailure = null;
 		bool didStart = false;
@@ -392,7 +421,14 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		try
 		{
 			string homeDirectory = ResolveHomeDirectory(accountId);
-			client = _clientFactory(homeDirectory, accessToken);
+			executableLease = await CopilotCliExecutableResolver.ResolveAsync(
+				ResolveExecutableLease,
+				operationSource.Token);
+			operationSource.Token.ThrowIfCancellationRequested();
+			client = _clientFactory(
+				homeDirectory,
+				accessToken,
+				executableLease?.ExecutablePath ?? string.Empty);
 			startWasInvoked = true;
 			Task startTask = client.StartAsync(operationSource.Token);
 			lifecycleTasks.Add(startTask);
@@ -435,19 +471,40 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		bool shouldAttemptStop = didStart ||
 			(startWasInvoked &&
 				(operationFailure is OperationCanceledException or TimeoutException));
-		Exception? cleanupFailure = client is null
-			? null
-			: await CleanupClientAsync(
-				client,
-				shouldAttemptStop,
-				_cleanupTimeout,
-				lifecycleTasks);
-		Task lifecycleCompletion = ObserveTasksAsync(lifecycleTasks);
+		Task? lifecycleCompletion = null;
+		try
+		{
+			Exception? cleanupFailure = client is null
+				? null
+				: await CleanupClientAsync(
+					client,
+					shouldAttemptStop,
+					_cleanupTimeout,
+					lifecycleTasks);
+			lifecycleCompletion = ObserveTasksAsync(lifecycleTasks);
+			if (executableLease is not null)
+			{
+				lifecycleCompletion = RetainLeaseUntilLifecycleCompletes(
+					executableLease,
+					lifecycleCompletion);
+				executableLease = null;
+			}
 
-		return new QuotaCoreResult(
-			report,
-			operationFailure ?? cleanupFailure,
-			lifecycleCompletion);
+			return new QuotaCoreResult(
+				report,
+				operationFailure ?? cleanupFailure,
+				lifecycleCompletion);
+		}
+		finally
+		{
+			if (executableLease is not null)
+			{
+				// 面向使用者的逾時不代表 SDK 已停止使用執行檔。
+				_ = RetainLeaseUntilLifecycleCompletes(
+					executableLease,
+					lifecycleCompletion ?? ObserveTasksAsync(lifecycleTasks));
+			}
+		}
 	}
 
 	private string ResolveHomeDirectory(Guid accountId)
@@ -468,6 +525,39 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 			throw new InvalidOperationException(
 				"GitHub Copilot isolated home is unavailable.",
 				exception);
+		}
+	}
+
+	private static Func<string, string, string, ICopilotSdkClient> AdaptClientFactory(
+		Func<string, string, ICopilotSdkClient> clientFactory)
+	{
+		ArgumentNullException.ThrowIfNull(clientFactory);
+		return (homeDirectory, accessToken, _) => clientFactory(homeDirectory, accessToken);
+	}
+
+	private WindowsOfficialCliExecutableLease? ResolveExecutableLease()
+	{
+		if (_executableResolver is null)
+		{
+			return null;
+		}
+
+		const string Guidance =
+			"本機官方 GitHub Copilot CLI 無法使用。請依 GitHub 官方安裝說明安裝或更新後重試；" +
+			"卡片與登入資料會保留，不必重新登入：" +
+			"https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli";
+		try
+		{
+			return _executableResolver() ?? throw new CopilotClientException(
+				CopilotFailureKind.RuntimeUnavailable,
+				Guidance);
+		}
+		catch (IOException exception)
+		{
+			throw new CopilotClientException(
+				CopilotFailureKind.RuntimeUnavailable,
+				Guidance,
+				innerException: exception);
 		}
 	}
 
@@ -659,7 +749,7 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 			isTokenBasedBilling);
 	}
 
-	private static void RetainLeaseUntilLifecycleCompletes(
+	private static Task RetainLeaseUntilLifecycleCompletes(
 		IDisposable operationLease,
 		Task lifecycleCompletion)
 	{
@@ -670,7 +760,7 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 			operationLease,
 			lifecycleCompletion);
 		ActiveCleanupLeaseTrackers[trackerId] = tracker;
-		tracker.Start();
+		return tracker.Start();
 	}
 
 	private static CopilotClientException CreateNormalizedException(

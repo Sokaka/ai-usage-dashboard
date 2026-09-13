@@ -2119,7 +2119,7 @@ public partial class FloatingWidgetWindow : Window
 			ProviderKind.Codex =>
 				"Codex：請從官方來源安裝或更新 Codex CLI。這不會刪除既有帳號設定或登入資料。完成後回到浮窗按「完成後再檢查」。",
 			ProviderKind.Copilot =>
-				"Copilot：請更新或修復 AI Usage 的 Copilot 元件。這不會刪除已儲存在 Windows Credential Manager 的卡片 credential。完成後回到浮窗按「完成後再檢查」。",
+				"Copilot：請安裝或更新本機官方 GitHub Copilot CLI（正式版 1.0.79 以上且低於 2.0.0）。安裝說明：https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli 。原有卡片 credential 會保留；完成後回到浮窗按「完成後再檢查」。",
 			ProviderKind.Grok =>
 				"Grok：請從 xAI 官方來源安裝或更新 Grok Build CLI。這不會影響 AI Usage 已儲存的帳號設定。完成後回到浮窗按「完成後再檢查」。",
 			ProviderKind.Antigravity =>

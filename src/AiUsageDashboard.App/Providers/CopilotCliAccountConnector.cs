@@ -3,7 +3,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -114,17 +113,20 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 		private readonly Task _lifecycleCompletion;
 		private readonly long _trackerId;
 		private IDisposable? _accountLease;
+		private IDisposable? _executableLease;
 		private IDisposable? _globalLease;
 
 		internal LateCleanupLeaseTracker(
 			long trackerId,
 			IDisposable accountLease,
 			IDisposable globalLease,
+			IDisposable executableLease,
 			Task lifecycleCompletion)
 		{
 			_trackerId = trackerId;
 			_accountLease = accountLease;
 			_globalLease = globalLease;
+			_executableLease = executableLease;
 			_lifecycleCompletion = lifecycleCompletion;
 		}
 
@@ -151,7 +153,14 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 			}
 			finally
 			{
-				Interlocked.Exchange(ref _globalLease, null)?.Dispose();
+				try
+				{
+					Interlocked.Exchange(ref _globalLease, null)?.Dispose();
+				}
+				finally
+				{
+					Interlocked.Exchange(ref _executableLease, null)?.Dispose();
+				}
 				ActiveLateCleanupLeaseTrackers.TryRemove(_trackerId, out _);
 			}
 		}
@@ -187,16 +196,6 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 		private Task _unconfirmedLaunchContainmentCompletion =
 			Task.CompletedTask;
 		private WindowsJobContainedProcess? _runtimeProcess;
-
-		internal BootstrapClient(string homeDirectory)
-			: this(
-				ResolveExecutablePath() ??
-					throw new FileNotFoundException(
-						"找不到 AI Usage 隨附的 GitHub Copilot CLI runtime。"),
-				homeDirectory,
-				WindowsJobContainedProcess.Start)
-		{
-		}
 
 		internal BootstrapClient(
 			string executablePath,
@@ -802,10 +801,10 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 	private static string? _lateCleanupFailureMessage;
 	private static long _nextLateCleanupLeaseTrackerId;
 	private readonly CopilotAccountOperationGate _accountOperationGate;
-	private readonly Func<string, ICopilotBootstrapClient>
+	private readonly Func<string, string, ICopilotBootstrapClient>
 		_bootstrapClientFactory;
 	private readonly ICopilotCredentialStore _credentialStore;
-	private readonly Func<string?> _executableResolver;
+	private readonly Func<WindowsOfficialCliExecutableLease?> _executableResolver;
 	private readonly Func<Guid, string> _homeDirectoryResolver;
 	private readonly Func<ProcessStartInfo, ICopilotLoginProcess>
 		_processStarter;
@@ -825,9 +824,10 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 			accountOperationGate,
 			credentialStore,
 			quotaClient,
-			ResolveExecutablePath,
+			CopilotCliExecutableResolver.Resolve,
 			StartProcess,
-			static homeDirectory => new BootstrapClient(homeDirectory))
+			static (executablePath, homeDirectory) => new BootstrapClient(
+				executablePath, homeDirectory, WindowsJobContainedProcess.Start))
 	{
 	}
 
@@ -839,6 +839,31 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 		Func<string?> executableResolver,
 		Func<ProcessStartInfo, ICopilotLoginProcess> processStarter,
 		Func<string, ICopilotBootstrapClient> bootstrapClientFactory,
+		TimeSpan? processTerminationTimeout = null)
+		: this(
+			homeDirectoryResolver,
+			accountOperationGate,
+			credentialStore,
+			quotaClient,
+			() => executableResolver() is string path
+				? WindowsOfficialCliExecutableLease.CreateUnprotected(path)
+				: null,
+			processStarter,
+			(_, homeDirectory) => bootstrapClientFactory(homeDirectory),
+			processTerminationTimeout)
+	{
+		ArgumentNullException.ThrowIfNull(executableResolver);
+		ArgumentNullException.ThrowIfNull(bootstrapClientFactory);
+	}
+
+	internal CopilotCliAccountConnector(
+		Func<Guid, string> homeDirectoryResolver,
+		CopilotAccountOperationGate accountOperationGate,
+		ICopilotCredentialStore credentialStore,
+		CopilotSdkQuotaClient quotaClient,
+		Func<WindowsOfficialCliExecutableLease?> executableResolver,
+		Func<ProcessStartInfo, ICopilotLoginProcess> processStarter,
+		Func<string, string, ICopilotBootstrapClient> bootstrapClientFactory,
 		TimeSpan? processTerminationTimeout = null)
 	{
 		_homeDirectoryResolver = homeDirectoryResolver ??
@@ -889,11 +914,13 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 			Guid.NewGuid().ToString("N"));
 		IDisposable? globalLease = null;
 		IDisposable? accountLease = null;
+		WindowsOfficialCliExecutableLease? executableLease = null;
 		bool didTransferBootstrapCleanup = false;
 		bool didStageCredential = false;
 
 		try
 		{
+			executableLease = await ResolveExecutableLeaseAsync(cancellationToken);
 			globalLease = await AcquireGlobalLockAsync(
 				ResolveGlobalLockPath(activeHomeDirectory),
 				cancellationToken);
@@ -926,6 +953,7 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 			try
 			{
 				await RunInteractiveLoginAsync(
+					executableLease.ExecutablePath,
 					bootstrapDirectory,
 					cancellationToken);
 			}
@@ -940,9 +968,11 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 				RetainLateCleanupLeases(
 					accountLease,
 					globalLease,
+					executableLease,
 					lifecycleCompletion);
 				accountLease = null;
 				globalLease = null;
+				executableLease = null;
 				didTransferBootstrapCleanup = true;
 				throw exception.UserFacingFailure;
 			}
@@ -956,14 +986,17 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 				RetainLateCleanupLeases(
 					accountLease,
 					globalLease,
+					executableLease,
 					lifecycleCompletion);
 				accountLease = null;
 				globalLease = null;
+				executableLease = null;
 				didTransferBootstrapCleanup = true;
 				throw exception.UserFacingFailure;
 			}
 			BootstrapReadOutcome bootstrapOutcome =
 				await ReadBootstrapCredentialWithLifecycleAsync(
+					executableLease.ExecutablePath,
 					bootstrapDirectory,
 					cancellationToken);
 			bool didTransferBootstrapLeases = false;
@@ -979,9 +1012,11 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 				RetainLateCleanupLeases(
 					accountLease,
 					globalLease,
+					executableLease,
 					lifecycleCompletion);
 				accountLease = null;
 				globalLease = null;
+				executableLease = null;
 				didTransferBootstrapCleanup = true;
 				didTransferBootstrapLeases = true;
 			}
@@ -1033,9 +1068,11 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 				RetainLateCleanupLeases(
 					accountLease,
 					globalLease,
+					executableLease,
 					probeLifecycleCompletion);
 				accountLease = null;
 				globalLease = null;
+				executableLease = null;
 				didTransferProbeLeases = true;
 			}
 
@@ -1122,8 +1159,21 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 			}
 			finally
 			{
-				accountLease?.Dispose();
-				globalLease?.Dispose();
+				try
+				{
+					accountLease?.Dispose();
+				}
+				finally
+				{
+					try
+					{
+						globalLease?.Dispose();
+					}
+					finally
+					{
+						executableLease?.Dispose();
+					}
+				}
 			}
 		}
 	}
@@ -1154,7 +1204,7 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 		{
 			throw new CopilotAccountLoginException(
 				CopilotAccountLoginFailureKind.RuntimeUnavailable,
-				"Copilot CLI 路徑無效，請更新或修復 AI Usage。");
+				"本機 GitHub Copilot CLI 路徑無效，請安裝或更新官方 CLI。");
 		}
 
 		string normalizedHomeDirectory = Path.GetFullPath(homeDirectory);
@@ -1353,7 +1403,7 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 		{
 			throw new CopilotAccountLoginException(
 				CopilotAccountLoginFailureKind.RuntimeUnavailable,
-				"Copilot CLI 路徑無效，請更新或修復 AI Usage。");
+				"本機 GitHub Copilot CLI 路徑無效，請安裝或更新官方 CLI。");
 		}
 
 		string normalizedHomeDirectory = Path.GetFullPath(homeDirectory);
@@ -1373,46 +1423,6 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 		startInfo.ArgumentList.Add("--web-flow");
 		CopilotProcessEnvironment.Apply(startInfo, normalizedHomeDirectory);
 		return startInfo;
-	}
-
-	internal static string? ResolveExecutablePath(
-		string baseDirectory,
-		Architecture processArchitecture,
-		Func<string, bool> fileExists)
-	{
-		ArgumentException.ThrowIfNullOrWhiteSpace(baseDirectory);
-		ArgumentNullException.ThrowIfNull(fileExists);
-		string? runtimeIdentifier = processArchitecture switch
-		{
-			Architecture.X64 => "win-x64",
-			Architecture.Arm64 => "win-arm64",
-			_ => null
-		};
-		if (runtimeIdentifier is null)
-		{
-			return null;
-		}
-
-		string bundledPath = Path.Combine(
-			baseDirectory,
-			"runtimes",
-			runtimeIdentifier,
-			"native",
-			"copilot.exe");
-		return TryResolveCandidate(
-			bundledPath,
-			fileExists,
-			out string resolvedPath)
-			? resolvedPath
-			: null;
-	}
-
-	internal static string? ResolveExecutablePath()
-	{
-		return ResolveExecutablePath(
-			AppContext.BaseDirectory,
-			RuntimeInformation.ProcessArchitecture,
-			File.Exists);
 	}
 
 	private static async Task<FileStream> AcquireGlobalLockAsync(
@@ -1449,11 +1459,12 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 
 	private async Task<BootstrapReadOutcome>
 		ReadBootstrapCredentialWithLifecycleAsync(
+		string executablePath,
 		string bootstrapDirectory,
 		CancellationToken cancellationToken)
 	{
 		ICopilotBootstrapClient client =
-			_bootstrapClientFactory(bootstrapDirectory);
+			_bootstrapClientFactory(executablePath, bootstrapDirectory);
 		CopilotBootstrapCredential? credential = null;
 		Exception? operationFailure = null;
 		bool didStart = false;
@@ -1587,9 +1598,10 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 	private static void RetainLateCleanupLeases(
 		IDisposable? accountLease,
 		IDisposable? globalLease,
+		IDisposable? executableLease,
 		Task lifecycleCompletion)
 	{
-		if ((accountLease is null) || (globalLease is null))
+		if ((accountLease is null) || (globalLease is null) || (executableLease is null))
 		{
 			throw new InvalidOperationException(
 				"Copilot late cleanup 缺少必要的 operation lease。");
@@ -1601,35 +1613,41 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 			trackerId,
 			accountLease,
 			globalLease,
+			executableLease,
 			lifecycleCompletion);
 		ActiveLateCleanupLeaseTrackers[trackerId] = tracker;
 		tracker.Start();
 	}
 
-	private async Task RunInteractiveLoginAsync(
-		string bootstrapDirectory,
+	private async Task<WindowsOfficialCliExecutableLease> ResolveExecutableLeaseAsync(
 		CancellationToken cancellationToken)
 	{
-		string executablePath;
 		try
 		{
-			executablePath = _executableResolver() ??
+			return await CopilotCliExecutableResolver.ResolveAsync(
+				_executableResolver,
+				cancellationToken).ConfigureAwait(false) ??
 				throw new CopilotAccountLoginException(
 					CopilotAccountLoginFailureKind.RuntimeUnavailable,
-					"找不到 Copilot CLI，請更新或修復 AI Usage。");
+					"找不到本機 GitHub Copilot CLI。請安裝官方 CLI 後重試，原有帳號設定會保留。");
 		}
-		catch (CopilotAccountLoginException)
-		{
-			throw;
-		}
-		catch (Exception exception)
+		catch (Exception exception) when (
+			(exception is IOException) ||
+			(exception is UnauthorizedAccessException) ||
+			(exception is WindowsOfficialCliExecutableStagingException))
 		{
 			throw new CopilotAccountLoginException(
 				CopilotAccountLoginFailureKind.RuntimeUnavailable,
-				"無法確認 Copilot CLI，請更新或修復 AI Usage。",
+				"本機 GitHub Copilot CLI 無法使用。請安裝或更新官方 CLI 後重試，原有帳號設定會保留。",
 				innerException: exception);
 		}
+	}
 
+	private async Task RunInteractiveLoginAsync(
+		string executablePath,
+		string bootstrapDirectory,
+		CancellationToken cancellationToken)
+	{
 		ICopilotLoginProcess process;
 		try
 		{
@@ -1649,7 +1667,7 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 		{
 			throw new CopilotAccountLoginException(
 				CopilotAccountLoginFailureKind.ProcessFailed,
-				"無法開啟 Copilot 登入，請更新或修復 AI Usage。",
+				"無法開啟 Copilot 登入，請安裝或更新本機官方 GitHub Copilot CLI 後重試。",
 				innerException: exception);
 		}
 
@@ -2496,28 +2514,6 @@ internal sealed class CopilotCliAccountConnector : ICopilotAccountConnector
 		return new CopilotAccountLoginException(
 			CopilotAccountLoginFailureKind.Cancelled,
 			"已取消 Copilot 登入。");
-	}
-
-	private static bool TryResolveCandidate(
-		string? candidate,
-		Func<string, bool> fileExists,
-		out string resolvedPath)
-	{
-		resolvedPath = string.Empty;
-		if (!ProviderProcessExecution.TryNormalizeLocalExecutablePath(
-				candidate,
-				out string normalizedPath) ||
-			!string.Equals(
-				Path.GetExtension(normalizedPath),
-				".exe",
-				StringComparison.OrdinalIgnoreCase) ||
-			!fileExists(normalizedPath))
-		{
-			return false;
-		}
-
-		resolvedPath = normalizedPath;
-		return true;
 	}
 }
 

@@ -2012,7 +2012,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		{
 			_activeCopilotLogins.Remove(account.Id);
 			reportNotice?.Invoke(
-				"Copilot 元件尚未就緒，請更新或修復 AI Usage。",
+				"本機 GitHub Copilot CLI 尚未就緒，請安裝或更新官方 CLI。",
 				"Copilot 無法使用",
 				MessageBoxImage.Information);
 			return;
@@ -4102,7 +4102,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				"GitHub 暫時限制請求",
 				MessageBoxImage.Warning),
 			CopilotFailureKind.RuntimeUnavailable => (
-				"Copilot 元件無法啟動，請更新或修復 AI Usage。",
+				"本機 GitHub Copilot CLI 無法使用，請安裝或更新官方 CLI。",
 				"Copilot 無法使用",
 				MessageBoxImage.Warning),
 			CopilotFailureKind.InvalidResponse => (
@@ -4276,7 +4276,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			UsageRecoveryAction.SwitchAccount =>
 				"Copilot 帳號已連接，但這次 quota 檢查取得不同帳號。已忽略結果，請依卡片提示確認帳號。",
 			UsageRecoveryAction.InstallOrUpdate =>
-				"Copilot 帳號已連接，但元件需要更新或修復；完成後 AI Usage 會繼續檢查。",
+				"Copilot 帳號已連接，請安裝或更新本機官方 GitHub Copilot CLI；完成後 AI Usage 會繼續檢查。",
 			UsageRecoveryAction.Retry =>
 				"Copilot 帳號已連接；目前暫時無法讀取 quota，稍後會自動再試。",
 			_ when (account.CurrentSnapshot?.Status == SnapshotStatus.Unsupported) =>

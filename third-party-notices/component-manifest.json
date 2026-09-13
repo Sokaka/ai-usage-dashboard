@@ -99,13 +99,6 @@
       "sha256": "2510b446bc1f0cf9702453075d20cd88631e20e5642658edb7325d9c1eb534f7",
       "source": "https://raw.githubusercontent.com/github/copilot-sdk/a550258d5c37bd662197536992a23d633bfe5804/LICENSE",
       "readable": true
-    },
-    {
-      "id": "copilot-cli",
-      "path": "third-party-notices/GitHub-Copilot-CLI-LICENSE.md",
-      "sha256": "b9680937e10425bf19862908856c16ed274e6b81a1368bd62be7a757eab21628",
-      "source": "https://www.npmjs.com/package/@github/copilot-win32-x64/v/1.0.79",
-      "readable": true
     }
   ],
   "components": [
@@ -379,25 +372,6 @@
         "app-zip"
       ],
       "notes": "Package metadata also carries Copyright (c) Microsoft Corporation. All rights reserved.; the upstream MIT copyright remains preserved."
-    },
-    {
-      "id": "copilot-cli",
-      "name": "GitHub Copilot CLI",
-      "version": "1.0.79",
-      "profiles": [
-        "app",
-        "installer"
-      ],
-      "documents": [
-        "copilot-cli"
-      ],
-      "files": [
-        "runtimes/win-x64/native/copilot.exe"
-      ],
-      "deliveryTargets": [
-        "app-zip"
-      ],
-      "notes": "Unmodified official stdio binary; unused FFI runtime and separate add-on files are not redistributed. Provider service access remains subject to the user's applicable service terms."
     }
   ]
 }

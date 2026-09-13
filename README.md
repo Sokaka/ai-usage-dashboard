@@ -8,7 +8,7 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 
 ## 目前版本
 
-目前候選版為 `1.0.1`，尚未正式公開；驗收範圍與未驗證項目見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前候選)。正式版本公開後，可從 [GitHub Releases](https://github.com/Sokaka/ai-usage-dashboard/releases)下載。
+已凍結的私有候選版為 `1.0.1`，尚未正式公開。目前 source 的 Copilot 改用本機官方 CLI，主包不再隨附第三方 CLI；這項變更尚未建立正式候選，不能套用 `1.0.1` 的驗收結果。驗收範圍與未驗證項目見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前候選)。正式版本公開後，可從 [GitHub Releases](https://github.com/Sokaka/ai-usage-dashboard/releases)下載。
 
 ## 支援平台
 
@@ -16,7 +16,7 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 | --- | --- | --- |
 | Claude | 安裝官方 Claude Code | 多帳號；同帳號依不同組織分卡 |
 | Codex | 安裝官方 Codex CLI | 多帳號；同帳號依不同工作區分卡 |
-| GitHub Copilot | 安裝包隨附 Copilot 所需工具 | 多帳號；同帳號限一張卡片 |
+| GitHub Copilot | 安裝本機官方 Copilot CLI | 多帳號；同帳號限一張卡片 |
 | Grok | 從 xAI 官方來源安裝 Grok Build CLI 至預設位置 | 多帳號；同帳號限一張卡片 |
 | Antigravity | 安裝官方 Antigravity CLI | 限一個帳號 |
 
@@ -40,7 +40,7 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 ## 環境需求
 
 - 仍在 Microsoft 支援範圍內的 Windows x64 電腦，以及網路連線。
-- 安裝包包含所需的 .NET 執行環境，不必另外安裝。
+- 安裝包包含所需的 .NET 執行環境，不必另外安裝；各服務的官方 CLI 由使用者另行安裝。
 
 ## 使用與限制
 

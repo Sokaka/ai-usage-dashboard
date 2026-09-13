@@ -551,7 +551,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		UsageRecoveryAction.InstallOrUpdate when IsGrok =>
 			"目前找不到可用的 Grok Build CLI，或版本不支援用量檢查。請從 xAI 官方來源安裝或更新；完成後不必重新連接帳號。",
 		UsageRecoveryAction.InstallOrUpdate when IsCopilot =>
-			"GitHub Copilot 元件目前無法使用。請更新或修復 AI Usage；完成後不必重新連接帳號。",
+			"本機 GitHub Copilot CLI 目前無法使用。請安裝或更新官方 CLI；完成後不必重新連接帳號。",
 		UsageRecoveryAction.InstallOrUpdate =>
 			$"目前的 {ProviderName} CLI 無法使用。安裝、更新或修復後不必重新連接帳號。",
 		UsageRecoveryAction.RevalidateUsage when IsAntigravity =>

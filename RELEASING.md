@@ -8,7 +8,9 @@
 
 程式碼與文件共用 source 隱私規則；候選建置檢查本機可見 refs 的全部歷史，失敗 diagnostics 通過檢查後才可上傳。掃描範圍、限制、本機指令與公開後 required status checks 設定見 [CI 敏感資訊檢查](docs/CI_PRIVACY.md)。
 
-SDK 由 `global.json` 固定，transitive NuGet audit 由 `Directory.Build.props` 啟用。沒有 Git 歷史的原始碼匯出目錄可建置與測試，不能產生符合正式發布契約的候選包。
+主包不再隨附第三方 CLI；封裝須確認沒有 Copilot CLI 或其他第三方 CLI payload。`GitHub.Copilot.SDK` 保持 `1.0.11`，交付清單與授權文件依實際包含的 SDK 元件核對。本機 Copilot CLI 只接受正式版 `>=1.0.79` 且 `<2.0.0`；來源、版本、隔離與舊卡片升級流程須另行驗證，並確認 CLI 缺少時保留憑證、安裝後可重試；已凍結的 `1.0.1` 成品及其 13 案離線驗收不涵蓋這份尚未建立正式候選的新 source。
+
+.NET SDK 由 `global.json` 固定，transitive NuGet audit 由 `Directory.Build.props` 啟用。沒有 Git 歷史的原始碼匯出目錄可建置與測試，不能產生符合正式發布契約的候選包。
 
 每次發布須依[升級與相容性原則](docs/COMPATIBILITY_POLICY.md)確認舊資料、既有安裝與 CLI 的受影響範圍及驗證結果。必要的不相容變更須在 Release 說明原因、受影響版本、使用者步驟與復原限制；不以要求刪除設定、全部重新登入或強制換 CLI 取代相容性處理。
 
@@ -44,7 +46,7 @@ build job 保存原始 run／attempt 及上傳的 artifact ID／digest。發布 
 
 封裝順序固定為：最終 binaries → App ZIP → ZIP／Updater EXE 的 size 與 SHA256 → 帶正式 stable URL 與完整版本／sequence 的 feed → 簽署 → 最終 feed 的 SHA256。任何受簽欄位改變都須重簽。
 
-封裝工具會建立多層暫存目錄，請使用較短的 `OutputRoot`。未啟用 long paths 的 Windows 若使用過深目錄，可能在 Copilot 成品檢查時失敗；先縮短輸出路徑，不移除缺件檢查或要求使用者變更全機設定。
+封裝工具會建立多層暫存目錄，請使用較短的 `OutputRoot`。未啟用 long paths 的 Windows 若使用過深目錄，可能在成品檢查時失敗；先縮短輸出路徑，不移除缺件檢查或要求使用者變更全機設定。
 
 正式候選只有六件，全部來自同 source/run/attempt：
 

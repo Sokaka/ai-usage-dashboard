@@ -247,7 +247,7 @@ internal sealed class CopilotUsageProvider : IUsageProvider
 	private const string RetryMessage =
 		"暫時無法讀取 Copilot 用量。";
 	private const string RuntimeUnavailableMessage =
-		"Copilot CLI 無法啟動。";
+		"本機 GitHub Copilot CLI 無法使用，請安裝或更新官方 CLI。";
 	private const string SwitchAccountMessage =
 		"Copilot credential 與卡片身分不同。";
 	private static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(1);

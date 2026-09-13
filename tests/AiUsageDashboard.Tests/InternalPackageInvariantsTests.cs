@@ -12,6 +12,58 @@ namespace AiUsageDashboard.Tests;
 public sealed class InternalPackageInvariantsTests
 {
 	[Fact]
+	public async Task PackageCliCheck_AllowsProductExecutablesAndLibraryDependencies()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		foreach (string relativePath in new[]
+		{
+			"AiUsageDashboard.App.exe", "AiUsageDashboard.Antigravity.Setup.exe",
+			"AiUsageDashboard.AntigravityCapture.exe", "AiUsageDashboard.ClaudeCapture.exe",
+			"createdump.exe",
+			"GitHub.Copilot.SDK.dll", "coreclr.dll", "D3DCompiler_47_cor3.dll",
+			"README.md", "third-party-notices/GitHub-Copilot-SDK-LICENSE.md"
+		})
+		{
+			string path = Path.Combine(temporaryDirectory.Path, relativePath);
+			Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+			await File.WriteAllTextAsync(path, "Synthetic package file; never executed.");
+		}
+
+		(int exitCode, string output) = await RunPackageCliCheckAsync(temporaryDirectory.Path);
+		Assert.True(exitCode == 0, output);
+		Assert.Contains("10 files", output, StringComparison.Ordinal);
+	}
+
+	[Theory]
+	[InlineData("runtimes/win-x64/native/copilot.exe")]
+	[InlineData("runtimes/win-arm64/native/COPILOT.EXE")]
+	[InlineData("runtimes/win-x64/native/copilot_runtime.dll")]
+	[InlineData("runtimes/linux-x64/native/libcopilot_runtime.so")]
+	[InlineData("runtimes/osx-arm64/native/libcopilot_runtime.dylib")]
+	[InlineData("prebuilds/win32-x64/runtime.node")]
+	[InlineData("tools/claude.cmd")]
+	[InlineData("tools/codex.ps1")]
+	[InlineData("grok.exe")]
+	[InlineData("agy.bat")]
+	[InlineData("copilot")]
+	[InlineData("node_modules/cli/index.js")]
+	[InlineData("unexpected.exe")]
+	[InlineData("nested/AiUsageDashboard.App.exe")]
+	[InlineData("third-party-notices/GitHub-Copilot-CLI-LICENSE.md")]
+	public async Task PackageCliCheck_RejectsUnexpectedExecutablesAndProviderRuntimeFiles(string relativePath)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string path = Path.Combine(temporaryDirectory.Path, relativePath);
+		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+		await File.WriteAllTextAsync(path, "Synthetic package file; never executed.");
+
+		(int exitCode, string output) = await RunPackageCliCheckAsync(temporaryDirectory.Path);
+		Assert.NotEqual(0, exitCode);
+		Assert.Contains("Unexpected executable or provider CLI package content detected", output, StringComparison.Ordinal);
+		Assert.True(File.Exists(path));
+	}
+
+	[Fact]
 	public void GlobalJson_PinsReviewedSdkWithoutRollForward()
 	{
 		string repositoryRoot = RepositoryTestPaths.Root;
@@ -379,11 +431,7 @@ public sealed class InternalPackageInvariantsTests
 		Assert.Contains("'](app/third-party-notices/'", script);
 		Assert.Contains("'AiUsageDashboard.Updater.Core.UpdatePackageStager'", script);
 		Assert.Contains("$stager.StageAsync(", script);
-		Assert.Single(
-			Regex.Matches(
-				script,
-				Regex.Escape(
-					"'third-party-notices\\GitHub-Copilot-CLI-LICENSE.md'")));
+		Assert.DoesNotContain("GitHub-Copilot-CLI-LICENSE.md", script);
 		Assert.Single(
 			Regex.Matches(
 				script,
@@ -840,10 +888,14 @@ public sealed class InternalPackageInvariantsTests
 			releasingGuide,
 			StringComparison.Ordinal);
 		Assert.Contains("- [ ] GitHub Copilot：", distributionGuide);
-		Assert.Contains(
-			"| GitHub Copilot | 可使用 Copilot 的 `github.com` 帳號；",
+		string copilotRequirements = Regex.Match(
 			userGuide,
-			StringComparison.Ordinal);
+			@"(?m)^\| GitHub Copilot \| (?<requirements>[^\r\n|]*)\|")
+			.Groups["requirements"].Value;
+		Assert.Contains("安裝", copilotRequirements, StringComparison.Ordinal);
+		Assert.Contains("Copilot CLI", copilotRequirements, StringComparison.Ordinal);
+		Assert.Contains("`github.com`", copilotRequirements, StringComparison.Ordinal);
+		Assert.Contains("https://docs.github.com/en/copilot/", copilotRequirements, StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -1032,6 +1084,46 @@ public sealed class InternalPackageInvariantsTests
 
 		throw new InvalidOperationException(
 			$"Method body was not terminated: {signature}");
+	}
+
+	private static async Task<(int ExitCode, string Output)> RunPackageCliCheckAsync(string appRoot)
+	{
+		ProcessStartInfo startInfo = new("powershell.exe")
+		{
+			CreateNoWindow = true,
+			UseShellExecute = false,
+			RedirectStandardOutput = true,
+			RedirectStandardError = true,
+			WorkingDirectory = appRoot
+		};
+		foreach (string argument in new[]
+		{
+			"-NoLogo", "-NoProfile", "-NonInteractive", "-File",
+			Path.Combine(RepositoryTestPaths.Root, "tools", "Assert-NoBundledProviderCli.ps1"),
+			"-AppRoot", appRoot
+		})
+		{
+			startInfo.ArgumentList.Add(argument);
+		}
+
+		using Process process = new() { StartInfo = startInfo };
+		Assert.True(process.Start());
+		Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
+		Task<string> errorTask = process.StandardError.ReadToEndAsync();
+		try
+		{
+			await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+		}
+		finally
+		{
+			if (!process.HasExited)
+			{
+				process.Kill(entireProcessTree: true);
+				await process.WaitForExitAsync();
+			}
+			await Task.WhenAll(outputTask, errorTask);
+		}
+		return (process.ExitCode, outputTask.Result + errorTask.Result);
 	}
 
 	private static void AssertAntigravityVersionPolicyIsDocumented(

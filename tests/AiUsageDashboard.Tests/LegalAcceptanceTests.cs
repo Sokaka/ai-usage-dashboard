@@ -93,7 +93,7 @@ public sealed class LegalAcceptanceTests : IDisposable
 		store.Accept(original, original.Digest);
 		JsonObject manifest = ReadManifest(original);
 		JsonObject component = manifest["components"]!.AsArray().Select(item => item!.AsObject())
-			.Single(item => item["id"]!.GetValue<string>() == "copilot-cli");
+			.Single(item => item["id"]!.GetValue<string>() == "copilot-sdk");
 		component["version"] = "future-test-version";
 		LegalCatalog changed = LoadChangedCatalog(original, manifest);
 		Assert.NotEqual(original.Digest, changed.Digest);
@@ -136,9 +136,33 @@ public sealed class LegalAcceptanceTests : IDisposable
 	{
 		LegalCatalog installer = LegalCatalog.Load(LegalProfile.Installer);
 		Assert.Contains(installer.Components, component => component.Id == "windowsdesktop8");
-		Assert.Contains(installer.Components, component => component.Id == "copilot-cli");
+		Assert.Contains(installer.Components, component => component.Id == "copilot-sdk");
+		Assert.DoesNotContain(installer.Components, component => component.Id == "copilot-cli");
+		Assert.DoesNotContain(installer.Documents, document => document.Id == "copilot-cli");
 		Assert.Contains("App ZIP", installer.GetReadableText());
 		Assert.Equal(LegalCatalog.Load(LegalProfile.App).Digest, installer.Digest);
+	}
+
+	[Fact]
+	public void PreviousAcceptanceWithRemovedCliComponentStillCoversCurrentApp()
+	{
+		LegalCatalog current = LegalCatalog.Load(LegalProfile.App);
+		string manifest = LegalCatalog.StrictUtf8.GetString(current.GetScopedManifestBytes());
+		const string PreviousCliComponent = """
+			, {"id":"copilot-cli","name":"Synthetic previous Copilot CLI","version":"1.0.79","profiles":["app","installer"],"documents":["own-mit"],"files":["runtimes/win-x64/native/copilot.exe"],"deliveryTargets":["app-zip"],"notes":"Synthetic removed-component fixture."}
+			""";
+		// 保留其餘 component 的原始 JSON；接受 digest 包含這些 bytes。
+		string previousManifest = manifest.Insert(manifest.LastIndexOf(']'), PreviousCliComponent);
+		LegalCatalog previous = LegalCatalog.Load(LegalProfile.App,
+			LegalCatalog.StrictUtf8.GetBytes(previousManifest), path => ReadBytes(current, path));
+		LegalAcceptanceStore store = CreateStore("S-1-5-21-test-user-a");
+		store.Accept(previous, previous.Digest);
+
+		Assert.NotEqual(previous.Digest, current.Digest);
+		Assert.All(current.Components, component => Assert.Equal(component.Digest,
+			previous.Components.Single(item => item.Id == component.Id).Digest));
+		Assert.True(store.IsAccepted(current));
+		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Installer)));
 	}
 
 	[Fact]

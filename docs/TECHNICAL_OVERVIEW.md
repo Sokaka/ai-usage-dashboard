@@ -57,7 +57,7 @@
 | Claude | Claude Code `/usage`；必要時改讀既有 status line 的 `rate_limits` | 只對 Claude.ai Pro／Max／Team 執行 `/usage`；Enterprise 僅辨識訂閱資訊，不執行 `/usage`、無法顯示用量 | 官方命令的實驗性背景查詢；status line 由官方事件觸發 |
 | Codex | `codex app-server` 的 `account/read`、`account/rateLimits/read` | 只接受 ChatGPT account，登入及查詢都在帳號專用目錄內執行 | 官方、實驗性本機介面 |
 | Grok | Grok Build CLI ACP stdio 的 `x.ai/billing`、`x.ai/auth/info`；舊 `_x.ai/*` namespace 相容 | 每張卡片使用獨立設定；只有通過來源檢查的官方 CLI 才能執行 | 通過簽章與路徑驗證的官方本機 CLI；實驗性 ACP |
-| GitHub Copilot | 官方 `GitHub.Copilot.SDK` 1.0.11 的 Experimental `account.getQuota`；隨附官方 CLI 1.0.79 | 只支援不同的 `github.com` 帳號；每張卡片使用自己的 token | 官方 SDK／CLI 的 Experimental 介面 |
+| GitHub Copilot | 官方 `GitHub.Copilot.SDK` 1.0.11 的 Experimental `account.getQuota`；使用本機官方 Copilot CLI | 只支援不同的 `github.com` 帳號；每張卡片使用自己的 token | 官方 SDK／CLI 的 Experimental 介面 |
 | Antigravity | 官方 AGY CLI print mode `/usage`；既有精確 SHA-256 的 ConPTY 相容路徑 | 使用目前 Windows 使用者的單一登入來源；連接時執行一次性本機設定 | 官方命令的實驗性背景查詢；舊版私有路徑仍屬實驗性 |
 
 功能完成、實機驗證與尚待測試的項目，請看[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md)。
@@ -72,7 +72,7 @@ Copilot 只在使用者明確連接時，透過受控的官方 CLI 網頁登入�
 | --- | --- | --- | --- |
 | Claude | `2.1.169` | 格式固定的三段版本 `>=2.1.169` | `<2.1.169` 缺少目前命令參數（argv）所需的 `--safe-mode` 功能；產品身分、來源、簽章與路徑仍須通過 |
 | Codex | `0.144.1` | 可辨識為 `codex-cli x.y.z` 的非零三段版本 | 無法確認產品、版號、執行檔來源或程序能安全隔離時停止 |
-| GitHub Copilot | SDK `1.0.11`；隨附 CLI `1.0.79` | 目前只使用套件固定的 SDK 版本與其隨附的官方 CLI 執行環境 | 只接受隨產物併附的 CLI、`github.com`、每張卡片明確提供的 token 與 Experimental RPC 格式；任一身分或回應驗證失敗就停止 |
+| GitHub Copilot | SDK `1.0.11`；CLI 基準 `1.0.79` | 本機官方 CLI 的三段式正式版 `>=1.0.79` 且 `<2.0.0` | 核對 `GitHub, Inc.` Authenticode 與 ProductName，再執行受保護副本；只接受 `github.com`、每張卡片明確提供的 token 與 Experimental RPC 格式；任一身分或回應驗證失敗就停止 |
 | Grok | `1.0.3` | 通過來源驗證的官方執行檔；版號不同或無法解析都可進行 ACP 初始交握（handshake） | 只接受固定預設路徑、固定磁碟、所有上層路徑都不是 reparse point、安全 ACL、通過 WinVerifyTrust，且簽署者必須精確符合程式固定的 `X.AI LLC` |
 | AGY | `1.1.11` | 標準三段穩定版 `1.1.11 <= version < 2.0.0` | `<1.1.11` 缺少官方 print mode 功能；`>=2.0.0`、預發行格式（prerelease）與非標準版本格式一律在執行前拒絕，因為執行後無法撤回可能影響；舊版方式仍限已審查的精確 SHA-256 |
 
@@ -84,7 +84,7 @@ Copilot 只在使用者明確連接時，透過受控的官方 CLI 網頁登入�
 
 ### 執行官方 CLI 前的檔案保護
 
-Windows 上的 Claude、Codex 與 Grok 不直接執行原始安裝檔。程式會先鎖住安裝檔、驗證來源，再複製到受保護的資料夾：
+Windows 上的 Claude、Codex、Copilot 與 Grok 不直接執行原始安裝檔。程式會先鎖住安裝檔、驗證來源，再複製到受保護的資料夾：
 
 - 用不允許其他程序寫入或刪除的檔案控制代碼（handle）鎖住原始檔。
 - 確認檔案位於固定磁碟（fixed drive）、完整路徑沒有重新導向點（reparse point）、檔案不超過 512 MiB，並通過 WinVerifyTrust 與各服務要求的簽署者（signer）檢查。
@@ -96,6 +96,7 @@ Windows 上的 Claude、Codex 與 Grok 不直接執行原始安裝檔。程式�
 ```text
 %SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1
 %SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\executables-v1
+%SystemDrive%\AiUsageDashboard.CopilotCli.<current-user-SID>\executables-v1
 %SystemDrive%\AiUsageDashboard.GrokCli.<current-user-SID>\executables-v1
 ```
 
@@ -434,6 +435,16 @@ Grok 最短每 15 分鐘更新一次，快取在 30 分鐘後標成舊資料。A
 
 ## GitHub Copilot 串接
 
+### 本機 CLI 來源與版本
+
+Copilot CLI 由使用者依[官方安裝文件](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli)安裝，建議使用 WinGet 標準安裝。解析器接受目前 Windows 使用者的 WinGet 標準 package、標準 npm 安裝的 native `copilot.exe`，或 `PATH` 內的真正官方 EXE／npm prefix 下的 native 位置；不執行 `.cmd`／`.ps1` wrapper，也不從舊 App bundle 取得備援執行檔。
+
+來源須通過 `GitHub, Inc.` Authenticode、ProductName 與共用檔案保護檢查，再由共用 stager 複製到 `%SystemDrive%\AiUsageDashboard.CopilotCli.<current-user-SID>\executables-v1`。只在 Copilot 操作時取得執行檔，不因啟動 App 或使用其他 provider 就要求安裝 Copilot。
+
+連接與用量查詢都在背景執行 CLI 搜尋、驗簽與副本準備，避免這些同步檔案作業佔用 UI 執行緒。取消時會先結束呼叫端的等待；若背景準備稍後才取得執行檔鎖，會由清理工作釋放，不啟動登入或 SDK。
+
+支援三段式正式版 `>=1.0.79` 且 `<2.0.0`；`1.0.79` 是固定 SDK `1.0.11` 的既有配對與起始支援基準，其他 `1.x` 仍須通過 RPC 相容性檢查，不能據版本範圍宣稱真人實測完成。CLI 缺少或不符時保留卡片、token 與資料，安裝或更新後重試；只有帳號驗證失效才要求重新連接。
+
 ### 支援範圍與穩定帳號識別
 
 Copilot 一張卡片對應一個不同的 `github.com` 帳號；目前不支援 GitHub Enterprise Server，也不把同一帳號的組織、enterprise seat 或訂閱拆成多張額度卡。
@@ -442,7 +453,7 @@ Copilot 一張卡片對應一個不同的 `github.com` 帳號；目前不支援 
 
 ### 受控連接與日常隔離
 
-只有使用者明確新增、連接、切換或重新連接 Copilot 卡片時，AI Usage 才會在跨程序全域鎖內建立一次性登入暫存目錄，並啟動隨產物提供的官方 CLI：
+只有使用者明確新增、連接、切換或重新連接 Copilot 卡片時，AI Usage 才會在跨程序全域鎖內建立一次性登入暫存目錄，並啟動通過本機來源與相容性檢查的官方 CLI：
 
 ```text
 copilot.exe --no-auto-update login --web-flow
@@ -470,7 +481,7 @@ AI Usage 會交叉比對 `auth status`、`current auth` 與 `all-users`，且只
 
 ### 額度、匯入與清理
 
-額度來源固定為官方 `GitHub.Copilot.SDK` 1.0.11 的 Experimental `account.getQuota`，執行環境則是套件隨附的官方 Copilot CLI 1.0.79。
+額度來源固定為官方 `GitHub.Copilot.SDK` 1.0.11 的 Experimental `account.getQuota`，執行環境使用本機安裝的官方 Copilot CLI。CLI `1.0.79` 是相容性基準，與 SDK 版本分開記錄；主包不再包含第三方 CLI。
 
 每次呼叫額度 RPC 前，都會以同一張卡片的 token 重查 `GET /user`，並同時比對憑證綁定與卡片預期的帳號識別。若帳號識別已被替換（identity swap），程式會在 SDK 啟動前停止。
 
@@ -512,9 +523,9 @@ App 啟動、同次執行中的清理重試，以及建立新清理工作前，�
 
 移除卡片或完成匯入後的清理，只會刪除該卡片 ID 的 Windows Credential Manager 正式／暫存項目、用量快取與私有登入目錄。失敗時會記錄並在之後重試，不會刪除另一張 Copilot 卡片，也不會操作官方 CLI 的共用登入清單。
 
-建置 App 時，[官方 CLI](../third-party-notices/GitHub-Copilot-CLI-LICENSE.md) 與 [SDK](../third-party-notices/GitHub-Copilot-SDK-LICENSE.md) 的第三方授權聲明會放在輸出目錄的 `third-party-notices`。
+建置 App 時，[SDK](../third-party-notices/GitHub-Copilot-SDK-LICENSE.md) 的第三方授權聲明會放在輸出目錄的 `third-party-notices`；不再交付 Copilot CLI binary、component 或 CLI 授權文件。使用者另行安裝的 CLI 仍適用其官方條款。
 
-建立發布套件時，套件根目錄的 `third-party-notices` 與 `app\third-party-notices` 各有一份。
+建立發布套件時，授權文件置於 `app\third-party-notices`；根目錄使用說明的相對連結會指向該處。
 
 Copilot 的功能完成、建置、封裝、實機驗證與尚待測試項目，以[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md)為準。
 

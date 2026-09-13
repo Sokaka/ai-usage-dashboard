@@ -18,6 +18,28 @@ public sealed class CopilotSdkQuotaIsolationTests
 		string AccessToken,
 		FakeSdkClient Client);
 
+	private sealed class DisposalObservedFileStream : FileStream
+	{
+		private readonly TaskCompletionSource<bool> _disposed = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+
+		internal Task Disposed => _disposed.Task;
+
+		internal DisposalObservedFileStream(string path)
+			: base(path, FileMode.Open, FileAccess.Read, FileShare.Read)
+		{
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			base.Dispose(disposing);
+			if (disposing)
+			{
+				_disposed.TrySetResult(true);
+			}
+		}
+	}
+
 	private sealed class FakeCredentialStore : ICopilotCredentialStore
 	{
 		private readonly IReadOnlyDictionary<Guid, CopilotStoredCredential>
@@ -127,8 +149,11 @@ public sealed class CopilotSdkQuotaIsolationTests
 			};
 
 		private readonly AccountGetCurrentAuthResult? _currentAuth;
+		private readonly Func<ValueTask> _disposeAction;
+		private readonly Func<Task> _forceStopAction;
 		private readonly IReadOnlyDictionary<string, CopilotSdkQuotaValue> _quota;
 		private readonly Func<CancellationToken, Task> _startAction;
+		private readonly Func<Task> _stopAction;
 		private int _startCount;
 
 		internal int StartCount => Volatile.Read(ref _startCount);
@@ -136,11 +161,17 @@ public sealed class CopilotSdkQuotaIsolationTests
 		internal FakeSdkClient(
 			Func<CancellationToken, Task>? startAction = null,
 			AccountGetCurrentAuthResult? currentAuth = null,
-			IReadOnlyDictionary<string, CopilotSdkQuotaValue>? quota = null)
+			IReadOnlyDictionary<string, CopilotSdkQuotaValue>? quota = null,
+			Func<Task>? stopAction = null,
+			Func<Task>? forceStopAction = null,
+			Func<ValueTask>? disposeAction = null)
 		{
 			_currentAuth = currentAuth;
+			_disposeAction = disposeAction ?? (static () => ValueTask.CompletedTask);
+			_forceStopAction = forceStopAction ?? (static () => Task.CompletedTask);
 			_quota = quota ?? DefaultQuota;
 			_startAction = startAction ?? (static _ => Task.CompletedTask);
+			_stopAction = stopAction ?? (static () => Task.CompletedTask);
 		}
 
 		public Task StartAsync(CancellationToken cancellationToken)
@@ -172,17 +203,17 @@ public sealed class CopilotSdkQuotaIsolationTests
 
 		public Task StopAsync()
 		{
-			return Task.CompletedTask;
+			return _stopAction();
 		}
 
 		public Task ForceStopAsync()
 		{
-			return Task.CompletedTask;
+			return _forceStopAction();
 		}
 
 		public ValueTask DisposeAsync()
 		{
-			return ValueTask.CompletedTask;
+			return _disposeAction();
 		}
 	}
 
@@ -524,6 +555,315 @@ public sealed class CopilotSdkQuotaIsolationTests
 		Assert.Equal(2, startBarrier.ArrivalCount);
 		Assert.Contains(reports, report => report.Account == firstPrincipal);
 		Assert.Contains(reports, report => report.Account == secondPrincipal);
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task GetAccountQuotaAsync_WhenLocalCliUnavailable_PreservesCredentialAndCanRetry(
+		bool resolverThrows)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		Guid accountId = Guid.NewGuid();
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_LOCAL", "local-user", 1004);
+		CopilotStoredCredential credential = CreateCredential(principal, "synthetic-local-token");
+		FakeCredentialStore credentialStore = new(new Dictionary<Guid, CopilotStoredCredential>
+		{
+			[accountId] = credential
+		});
+		IOException resolutionFailure = new("Synthetic invalid local CLI signature.");
+		WindowsOfficialCliExecutableLease? executableLease = null;
+		int factoryCalls = 0;
+		CopilotSdkQuotaClient client = new(
+			id => GetExpectedHome(temporaryDirectory.Path, id),
+			new CopilotAccountOperationGate(),
+			credentialStore,
+			new FakeGitHubUserClient(new Dictionary<string, CopilotAccountIdentity>
+			{
+				[credential.AccessToken] = principal
+			}),
+			() => executableLease ?? (resolverThrows ? throw resolutionFailure : null),
+			(homeDirectory, accessToken, executablePath) =>
+			{
+				factoryCalls++;
+				Assert.Equal(GetExpectedHome(temporaryDirectory.Path, accountId), homeDirectory);
+				Assert.Equal(credential.AccessToken, accessToken);
+				Assert.Equal(executableLease!.ExecutablePath, executablePath);
+				Assert.True(executableLease.IsProtected);
+				return new FakeSdkClient();
+			});
+
+		CopilotClientException failure = await Assert.ThrowsAsync<CopilotClientException>(() =>
+			client.GetAccountQuotaAsync(accountId, credential.ProviderAccountIdentity));
+
+		Assert.Equal(CopilotFailureKind.RuntimeUnavailable, failure.Kind);
+		Assert.Contains("https://docs.github.com/", failure.Message, StringComparison.Ordinal);
+		Assert.Equal(resolverThrows ? resolutionFailure : null, failure.InnerException);
+		Assert.Same(credential, credentialStore.Read(accountId));
+		Assert.Equal(0, factoryCalls);
+
+		using WindowsOfficialCliExecutableLease availableLease = CreateExecutableLease(temporaryDirectory.Path);
+		executableLease = availableLease;
+		CopilotUsageReport report = await client.GetAccountQuotaAsync(
+			accountId,
+			credential.ProviderAccountIdentity);
+
+		Assert.Equal(principal, report.Account);
+		Assert.Equal(1, factoryCalls);
+		Assert.Same(credential, credentialStore.Read(accountId));
+		Assert.False(availableLease.IsProtected);
+	}
+
+	[Fact]
+	public async Task GetAccountQuotaAsync_WhenResolverBlocks_CancelsWithoutHoldingCallerAndReleasesLateLease()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		using ManualResetEventSlim releaseResolver = new(false);
+		using CancellationTokenSource callerCancellation = new();
+		TaskCompletionSource<int> resolverEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<int> invocationReturned = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> resolverExited = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		string executablePath = Path.Combine(temporaryDirectory.Path, "synthetic-copilot.exe");
+		File.WriteAllBytes(executablePath, [0x4d, 0x5a]);
+		using DisposalObservedFileStream executableStream = new(executablePath);
+		using WindowsOfficialCliExecutableLease executableLease =
+			WindowsOfficialCliExecutableLease.CreateProtected(executablePath, executableStream);
+		Guid accountId = Guid.NewGuid();
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_RESOLVER", "resolver-user", 1007);
+		CopilotStoredCredential credential = CreateCredential(principal, "synthetic-resolver-token");
+		FakeCredentialStore credentialStore = new(new Dictionary<Guid, CopilotStoredCredential>
+		{
+			[accountId] = credential
+		});
+		CopilotAccountOperationGate accountGate = new();
+		FakeSdkClient sdkClient = new();
+		int factoryCalls = 0;
+		CopilotSdkQuotaClient client = new(
+			id => GetExpectedHome(temporaryDirectory.Path, id),
+			accountGate,
+			credentialStore,
+			new FakeGitHubUserClient(new Dictionary<string, CopilotAccountIdentity>
+			{
+				[credential.AccessToken] = principal
+			}),
+			() =>
+			{
+				resolverEntered.TrySetResult(Environment.CurrentManagedThreadId);
+				try
+				{
+					releaseResolver.Wait();
+					return executableLease;
+				}
+				finally
+				{
+					resolverExited.TrySetResult(true);
+				}
+			},
+			(_, _, _) =>
+			{
+				Interlocked.Increment(ref factoryCalls);
+				return sdkClient;
+			});
+		Task<CopilotUsageReport> request = Task.Factory.StartNew(
+			() =>
+			{
+				int callerThread = Environment.CurrentManagedThreadId;
+				Task<CopilotUsageReport> pending = client.GetAccountQuotaAsync(
+					accountId,
+					credential.ProviderAccountIdentity,
+					callerCancellation.Token);
+				invocationReturned.TrySetResult(callerThread);
+				return pending;
+			},
+			CancellationToken.None,
+			TaskCreationOptions.LongRunning,
+			TaskScheduler.Default).Unwrap();
+
+		try
+		{
+			int resolverThread = await resolverEntered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+			int callerThread = await invocationReturned.Task.WaitAsync(TimeSpan.FromSeconds(10));
+			Assert.NotEqual(callerThread, resolverThread);
+			Assert.False(releaseResolver.IsSet);
+			Assert.False(request.IsCompleted);
+			Assert.Equal(0, Volatile.Read(ref factoryCalls));
+
+			callerCancellation.Cancel();
+			await Assert.ThrowsAnyAsync<OperationCanceledException>(() => request.WaitAsync(TimeSpan.FromSeconds(10)));
+			Assert.False(releaseResolver.IsSet);
+			Assert.False(resolverExited.Task.IsCompleted);
+			Assert.True(executableLease.IsProtected);
+			Assert.Same(credential, credentialStore.Read(accountId));
+			using (CancellationTokenSource gateDeadline = new(TimeSpan.FromSeconds(10)))
+			using (IDisposable reacquiredGate = await accountGate.EnterAsync(accountId, gateDeadline.Token))
+			{
+				Assert.Equal(0, sdkClient.StartCount);
+			}
+
+			releaseResolver.Set();
+			await executableStream.Disposed.WaitAsync(TimeSpan.FromSeconds(10));
+			Assert.False(executableLease.IsProtected);
+			Assert.Equal(0, Volatile.Read(ref factoryCalls));
+			Assert.Equal(0, sdkClient.StartCount);
+			using FileStream writable = new(executablePath, FileMode.Open, FileAccess.Write, FileShare.None);
+		}
+		finally
+		{
+			callerCancellation.Cancel();
+			releaseResolver.Set();
+			try
+			{
+				await request.WaitAsync(TimeSpan.FromSeconds(10));
+			}
+			catch (OperationCanceledException)
+			{
+				// 測試取消後仍觀察 request，並先釋放 resolver gate 再回收 fixture。
+			}
+			if (resolverEntered.Task.IsCompleted)
+			{
+				await resolverExited.Task.WaitAsync(TimeSpan.FromSeconds(10));
+			}
+		}
+	}
+
+	[Fact]
+	public async Task ProbeTokenWithLifecycleAsync_WhenFactoryFails_ReleasesExecutableLease()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		using WindowsOfficialCliExecutableLease executableLease = CreateExecutableLease(temporaryDirectory.Path);
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_FACTORY", "factory-user", 1005);
+		InvalidOperationException factoryFailure = new("Synthetic SDK construction failure.");
+		CopilotSdkQuotaClient client = CreateRuntimeClient(
+			temporaryDirectory.Path,
+			principal,
+			() => executableLease,
+			(_, _, _) => throw factoryFailure);
+
+		var result = await client.ProbeTokenWithLifecycleAsync(
+			Guid.NewGuid(),
+			"synthetic-runtime-token",
+			"github.com",
+			CancellationToken.None);
+		await result.LifecycleCompletion;
+
+		Assert.Same(factoryFailure, result.Failure);
+		Assert.False(executableLease.IsProtected);
+		using FileStream write = new(executableLease.ExecutablePath, FileMode.Open, FileAccess.Write, FileShare.None);
+	}
+
+	[Theory]
+	[InlineData("Start")]
+	[InlineData("Stop")]
+	[InlineData("ForceStop")]
+	[InlineData("Dispose")]
+	public async Task ProbeTokenWithLifecycleAsync_WhenLifecycleOutlivesDeadline_HoldsExecutableLease(
+		string delayedOperation)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		using WindowsOfficialCliExecutableLease executableLease = CreateExecutableLease(temporaryDirectory.Path);
+		using CancellationTokenSource callerCancellation = new();
+		TaskCompletionSource<bool> enteredDelayedOperation = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> releaseDelayedOperation = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_DELAYED", "delayed-user", 1006);
+		Task RunLifecycleOperation(string operation)
+		{
+			if (operation == delayedOperation)
+			{
+				enteredDelayedOperation.TrySetResult(true);
+				return releaseDelayedOperation.Task;
+			}
+
+			return Task.CompletedTask;
+		}
+
+		FakeSdkClient sdkClient = new(
+			startAction: _ => RunLifecycleOperation("Start"),
+			stopAction: () => delayedOperation == "ForceStop"
+				? Task.FromException(new IOException("Synthetic stop failure."))
+				: RunLifecycleOperation("Stop"),
+			forceStopAction: () => RunLifecycleOperation("ForceStop"),
+			disposeAction: () => new ValueTask(RunLifecycleOperation("Dispose")));
+		CopilotSdkQuotaClient client = CreateRuntimeClient(
+			temporaryDirectory.Path,
+			principal,
+			() => executableLease,
+			(_, _, executablePath) =>
+			{
+				Assert.Equal(executableLease.ExecutablePath, executablePath);
+				Assert.True(executableLease.IsProtected);
+				return sdkClient;
+			});
+		var probe = client.ProbeTokenWithLifecycleAsync(
+			Guid.NewGuid(),
+			"synthetic-runtime-token",
+			"github.com",
+			callerCancellation.Token);
+
+		try
+		{
+			await enteredDelayedOperation.Task.WaitAsync(TimeSpan.FromSeconds(10));
+			if (delayedOperation == "Start")
+			{
+				callerCancellation.Cancel();
+			}
+
+			var result = await probe.WaitAsync(TimeSpan.FromSeconds(10));
+			Assert.NotNull(result.Failure);
+			Assert.False(result.LifecycleCompletion.IsCompleted);
+			Assert.True(executableLease.IsProtected);
+			Assert.Throws<IOException>(() =>
+			{
+				using FileStream write = new(executableLease.ExecutablePath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+			});
+
+			if (delayedOperation == "Start")
+			{
+				releaseDelayedOperation.TrySetException(new IOException("Synthetic late start failure."));
+			}
+			else
+			{
+				releaseDelayedOperation.TrySetResult(true);
+			}
+			await result.LifecycleCompletion.WaitAsync(TimeSpan.FromSeconds(10));
+			Assert.False(executableLease.IsProtected);
+			using FileStream writable = new(executableLease.ExecutablePath, FileMode.Open, FileAccess.Write, FileShare.None);
+		}
+		finally
+		{
+			callerCancellation.Cancel();
+			releaseDelayedOperation.TrySetResult(true);
+			var result = await probe.WaitAsync(TimeSpan.FromSeconds(10));
+			await result.LifecycleCompletion.WaitAsync(TimeSpan.FromSeconds(10));
+		}
+	}
+
+	private static CopilotSdkQuotaClient CreateRuntimeClient(
+		string testRoot,
+		CopilotAccountIdentity principal,
+		Func<WindowsOfficialCliExecutableLease?> executableResolver,
+		Func<string, string, string, ICopilotSdkClient> clientFactory)
+	{
+		return new CopilotSdkQuotaClient(
+			accountId => GetExpectedHome(testRoot, accountId),
+			new CopilotAccountOperationGate(),
+			new FakeCredentialStore(new Dictionary<Guid, CopilotStoredCredential>()),
+			new FakeGitHubUserClient(new Dictionary<string, CopilotAccountIdentity>
+			{
+				["synthetic-runtime-token"] = principal
+			}),
+			executableResolver,
+			clientFactory,
+			operationTimeout: TimeSpan.FromSeconds(10),
+			cleanupTimeout: TimeSpan.FromMilliseconds(30));
+	}
+
+	private static WindowsOfficialCliExecutableLease CreateExecutableLease(string testRoot)
+	{
+		string executablePath = Path.Combine(testRoot, "synthetic-copilot.exe");
+		File.WriteAllBytes(executablePath, [0x4d, 0x5a]);
+		return WindowsOfficialCliExecutableLease.CreateProtected(
+			executablePath,
+			new FileStream(executablePath, FileMode.Open, FileAccess.Read, FileShare.Read));
 	}
 
 	private static CopilotSdkQuotaClient CreateClient(

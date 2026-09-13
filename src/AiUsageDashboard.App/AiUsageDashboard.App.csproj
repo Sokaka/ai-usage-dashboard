@@ -11,21 +11,19 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- This is a WPF app; process DPI awareness must be set before its first HWND exists. -->
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
+    <CopilotSkipCliDownload>true</CopilotSkipCliDownload>
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="..\..\使用說明.md"
              Link="README.md"
              CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="..\..\third-party-notices\GitHub-Copilot-CLI-LICENSE.md"
-             Link="third-party-notices\GitHub-Copilot-CLI-LICENSE.md"
-             CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\third-party-notices\GitHub-Copilot-SDK-LICENSE.md"
              Link="third-party-notices\GitHub-Copilot-SDK-LICENSE.md"
              CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\third-party-notices\*"
-             Exclude="..\..\third-party-notices\GitHub-Copilot-CLI-LICENSE.md;..\..\third-party-notices\GitHub-Copilot-SDK-LICENSE.md"
+             Exclude="..\..\third-party-notices\GitHub-Copilot-SDK-LICENSE.md"
              Link="third-party-notices\%(Filename)%(Extension)"
              CopyToOutputDirectory="PreserveNewest" />
     <Resource Include="Assets\AppIcon.png" />
@@ -69,44 +67,33 @@
           SkipUnchangedFiles="true" />
   </Target>
 
-  <Target Name="RemoveUnusedCopilotFfiRuntimeFromCopyItems"
-          AfterTargets="_RegisterCopilotCliForCopy">
+  <Target Name="ValidateUnbundledCopilotRuntime"
+          BeforeTargets="BeforeBuild;_DownloadCopilotCli;_CopyCopilotCliToOutput;_RegisterCopilotCliForCopy">
+    <Error Condition="'$(CopilotSkipCliDownload)' != 'true' Or '$(CopilotCliBinaryPath)' != ''"
+           Text="AI Usage uses a user-installed Copilot CLI. SDK CLI downloads and bundled binary overrides must remain disabled." />
+  </Target>
+
+  <Target Name="RemoveBundledCopilotRuntimeFromOutput"
+          BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish"
+          AfterTargets="Build"
+          Condition="'$(OutDir)' != ''">
     <ItemGroup>
-      <_UnusedCopilotFfiRuntime Include="@(ContentWithTargetPath)"
-                                Condition="'%(ContentWithTargetPath.TargetPath)' == 'runtimes\$(_CopilotRid)\native\$(_CopilotRuntimeLib)'" />
-      <ContentWithTargetPath Remove="@(_UnusedCopilotFfiRuntime)" />
+      <_BundledCopilotOutputFiles Include="$(OutDir)runtimes\**\native\copilot.exe;$(OutDir)runtimes\**\native\copilot;$(OutDir)runtimes\**\native\copilot_runtime.dll;$(OutDir)runtimes\**\native\libcopilot_runtime.*;$(OutDir)third-party-notices\GitHub-Copilot-CLI-LICENSE.md" />
     </ItemGroup>
+    <Delete Files="@(_BundledCopilotOutputFiles)" />
+    <Error Condition="Exists('%(_BundledCopilotOutputFiles.Identity)')"
+           Text="Obsolete bundled Copilot content could not be removed: %(_BundledCopilotOutputFiles.Identity)" />
   </Target>
 
-  <Target Name="RemoveUnusedCopilotFfiRuntimeFromOutput"
-          AfterTargets="_CopyCopilotCliToOutput">
-    <PropertyGroup>
-      <_CopilotNativeOutputDirectory>$(OutDir)runtimes\$(_CopilotRid)\native</_CopilotNativeOutputDirectory>
-    </PropertyGroup>
-    <Delete Files="$(_CopilotNativeOutputDirectory)\$(_CopilotRuntimeLib)" />
-    <Error Condition="Exists('$(_CopilotNativeOutputDirectory)\$(_CopilotRuntimeLib)')"
-           Text="The unused Copilot FFI runtime must not be present in stdio build output." />
-    <Error Condition="!Exists('$(_CopilotNativeOutputDirectory)\$(_CopilotBinary)')"
-           Text="The Copilot stdio executable was not produced." />
-  </Target>
-
-  <Target Name="RemoveUnusedCopilotFfiRuntimeFromPublish"
+  <Target Name="RemoveBundledCopilotRuntimeFromPublish"
           AfterTargets="Publish"
           Condition="'$(PublishDir)' != ''">
-    <PropertyGroup>
-      <_CopilotNativeBuildDirectory>$(OutDir)runtimes\$(_CopilotRid)\native</_CopilotNativeBuildDirectory>
-      <_CopilotNativePublishDirectory>$(PublishDir)runtimes\$(_CopilotRid)\native</_CopilotNativePublishDirectory>
-    </PropertyGroup>
-    <MakeDir Directories="$(_CopilotNativePublishDirectory)" />
-    <Copy SourceFiles="$(_CopilotNativeBuildDirectory)\$(_CopilotBinary)"
-          DestinationFiles="$(_CopilotNativePublishDirectory)\$(_CopilotBinary)"
-          SkipUnchangedFiles="true"
-          Condition="!Exists('$(_CopilotNativePublishDirectory)\$(_CopilotBinary)') And Exists('$(_CopilotNativeBuildDirectory)\$(_CopilotBinary)')" />
-    <Delete Files="$(_CopilotNativePublishDirectory)\$(_CopilotRuntimeLib)" />
-    <Error Condition="Exists('$(_CopilotNativePublishDirectory)\$(_CopilotRuntimeLib)')"
-           Text="The unused Copilot FFI runtime must not be present in stdio publish output." />
-    <Error Condition="!Exists('$(_CopilotNativePublishDirectory)\$(_CopilotBinary)')"
-           Text="The Copilot stdio executable was not published." />
+    <ItemGroup>
+      <_BundledCopilotPublishFiles Include="$(PublishDir)runtimes\**\native\copilot.exe;$(PublishDir)runtimes\**\native\copilot;$(PublishDir)runtimes\**\native\copilot_runtime.dll;$(PublishDir)runtimes\**\native\libcopilot_runtime.*;$(PublishDir)third-party-notices\GitHub-Copilot-CLI-LICENSE.md" />
+    </ItemGroup>
+    <Delete Files="@(_BundledCopilotPublishFiles)" />
+    <Error Condition="Exists('%(_BundledCopilotPublishFiles.Identity)')"
+           Text="Obsolete bundled Copilot content could not be removed: %(_BundledCopilotPublishFiles.Identity)" />
   </Target>
 
   <ItemGroup>
