@@ -576,16 +576,24 @@ jobs:
             throw "Unable to create draft prerelease $tag."
           }
 
-          $release = gh release view $tag `
+          $releaseJson = gh release view $tag `
             --repo $env:GITHUB_REPOSITORY `
-            --json assets,isDraft,isPrerelease,tagName,targetCommitish,url |
-            ConvertFrom-Json
+            --json 'databaseId,assets,isDraft,isPrerelease,tagName,targetCommitish,url'
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to inspect draft prerelease $tag in $env:GITHUB_REPOSITORY (exit $LASTEXITCODE)."
+          }
+          $release = $releaseJson | ConvertFrom-Json
+          [long] $releaseId = 0
+          if (([string] $release.databaseId -cnotmatch '\A[1-9][0-9]*\z') -or
+              ![long]::TryParse([string] $release.databaseId, [ref] $releaseId)) {
+            throw "Draft prerelease $tag in $env:GITHUB_REPOSITORY has no valid numeric Release ID."
+          }
           if (!$release.isDraft -or
               !$release.isPrerelease -or
               ($release.tagName -cne $tag) -or
               ($release.targetCommitish -cne $env:GITHUB_SHA) -or
               ($release.assets.Count -ne 6)) {
-            throw 'Draft prerelease metadata does not match the requested publication.'
+            throw "Draft prerelease $tag (Release $releaseId) in $env:GITHUB_REPOSITORY does not match source $env:GITHUB_SHA and the requested six assets."
           }
 
           foreach ($file in $files) {
@@ -602,11 +610,16 @@ jobs:
             }
           }
 
-          $freeze = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag" | ConvertFrom-Json
-          if (($LASTEXITCODE -ne 0) -or !$freeze.draft -or !$freeze.prerelease -or
+          $freezeJson = gh api "repos/$env:GITHUB_REPOSITORY/releases/$releaseId"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to read back draft Release $releaseId ($tag) in $env:GITHUB_REPOSITORY (exit $LASTEXITCODE)."
+          }
+          $freeze = $freezeJson | ConvertFrom-Json
+          if (([string] $freeze.id -cne [string] $releaseId) -or
+              !$freeze.draft -or !$freeze.prerelease -or
               ($freeze.tag_name -cne $tag) -or ($freeze.target_commitish -cne $env:GITHUB_SHA) -or
               ($freeze.assets.Count -ne 6)) {
-            throw 'Candidate Release could not be read back in its private draft state.'
+            throw "Draft Release $releaseId ($tag) in $env:GITHUB_REPOSITORY changed identity, private draft state, source $env:GITHUB_SHA, or its six-asset set before freezing."
           }
           foreach ($file in $files) {
             $frozenAsset = @($freeze.assets | Where-Object { $_.name -ceq $file.Name })

@@ -5,19 +5,29 @@ namespace AiUsageDashboard.Tests;
 
 public sealed class ReleaseCandidateProvenanceTests
 {
+	private sealed record ReleaseApiResponse(
+		string? Failure = null,
+		Dictionary<string, object?>? Overrides = null,
+		Dictionary<string, object?>? AssetOverrides = null,
+		bool OmitAsset = false);
+
 	private sealed record FixtureRequest(
 		int BuildAttempt,
 		int PublishAttempt,
 		Dictionary<string, string> EnvironmentOverrides,
 		Dictionary<string, object?> ArtifactOverrides,
 		string BuildArtifactId = ArtifactId,
-		string? ArtifactReadFailure = null);
+		string? ArtifactReadFailure = null,
+		ReleaseApiResponse? ReleaseView = null,
+		ReleaseApiResponse? FreezeRead = null);
 
 	private sealed record FixtureResult(
 		string Phase,
 		string? Error,
 		int ArtifactReadCount,
 		int RemoteMutationCount,
+		int ReleaseViewReadCount,
+		string[] ReleaseApiPaths,
 		string[] BuildOutputs,
 		string[] ProvenanceOutputs,
 		string? Notes,
@@ -25,6 +35,7 @@ public sealed class ReleaseCandidateProvenanceTests
 
 	private const string RunId = "12345";
 	private const string ArtifactId = "98765";
+	private const long ReleaseId = 3456;
 	private const string SourceSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 	private const string ArtifactDigest = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
@@ -62,7 +73,7 @@ public sealed class ReleaseCandidateProvenanceTests
 	[Theory]
 	[InlineData(1, 2, ArtifactId)]
 	[InlineData(3, 3, "98767")]
-	public async Task Workflow_PreservesBuildIdentityWhenPublishingOrRerunningAllJobs(
+	public async Task Workflow_FreezesDraftWithoutTagRefAndPreservesOriginalBuildIdentity(
 		int buildAttempt,
 		int publishAttempt,
 		string buildArtifactId)
@@ -78,6 +89,8 @@ public sealed class ReleaseCandidateProvenanceTests
 		Assert.Equal("complete", result.Phase);
 		Assert.Equal(1, result.ArtifactReadCount);
 		Assert.Equal(1, result.RemoteMutationCount);
+		Assert.Equal(1, result.ReleaseViewReadCount);
+		Assert.Equal([$"repos/fixture/release-candidate/releases/{ReleaseId}"], result.ReleaseApiPaths);
 		Assert.Contains($"build_run_id={RunId}", result.BuildOutputs);
 		Assert.Contains($"build_run_attempt={buildAttempt}", result.BuildOutputs);
 		Assert.Equal([$"artifact_id={buildArtifactId}"], result.ProvenanceOutputs);
@@ -88,7 +101,90 @@ public sealed class ReleaseCandidateProvenanceTests
 		Assert.Equal(buildArtifactId, result.Receipt.GetProperty("buildArtifactId").GetString());
 		Assert.Equal($"sha256:{ArtifactDigest}", result.Receipt.GetProperty("buildArtifactDigest").GetString());
 		Assert.Equal(SourceSha, result.Receipt.GetProperty("sourceSha").GetString());
+		Assert.Equal(ReleaseId, result.Receipt.GetProperty("releaseId").GetInt64());
 		Assert.Equal(6, result.Receipt.GetProperty("assets").GetArrayLength());
+	}
+
+	[Theory]
+	[InlineData("view", "exit-code")]
+	[InlineData("view", "malformed-json")]
+	[InlineData("freeze", "exit-code")]
+	[InlineData("freeze", "malformed-json")]
+	public async Task Workflow_RejectsReleaseApiFailureWithoutFreezeReceipt(
+		string stage,
+		string failure)
+	{
+		FixtureResult result = await RunFixtureAsync(CreateReleaseRequest(
+			stage, new(Failure: failure)));
+
+		AssertRejectedBeforeFreezeReceipt(result, stage);
+		string expectedError = (stage, failure) switch
+		{
+			("view", "exit-code") => "Unable to inspect draft prerelease",
+			("freeze", "exit-code") => "Unable to read back draft Release",
+			(_, "malformed-json") => "JSON",
+			_ => throw new ArgumentOutOfRangeException(nameof(failure), failure, "Unknown release API fixture failure.")
+		};
+		Assert.Contains(expectedError, result.Error);
+	}
+
+	[Theory]
+	[InlineData(null)]
+	[InlineData(0L)]
+	[InlineData("03456")]
+	[InlineData("3456\n")]
+	[InlineData("9223372036854775808")]
+	[InlineData(1.5)]
+	public async Task Workflow_RejectsInvalidReleaseIdBeforeFreezeRead(object? releaseId)
+	{
+		FixtureResult result = await RunFixtureAsync(CreateReleaseRequest(
+			"view", new(Overrides: new() { ["databaseId"] = releaseId })));
+
+		AssertRejectedBeforeFreezeReceipt(result, "view");
+		Assert.Contains("valid numeric Release ID", result.Error);
+	}
+
+	[Theory]
+	[InlineData("view", "isDraft", false)]
+	[InlineData("view", "isPrerelease", false)]
+	[InlineData("view", "tagName", "v0.2.1")]
+	[InlineData("view", "targetCommitish", "cccccccccccccccccccccccccccccccccccccccc")]
+	[InlineData("freeze", "id", 3457L)]
+	[InlineData("freeze", "draft", false)]
+	[InlineData("freeze", "prerelease", false)]
+	[InlineData("freeze", "tag_name", "v0.2.1")]
+	[InlineData("freeze", "target_commitish", "cccccccccccccccccccccccccccccccccccccccc")]
+	public async Task Workflow_RejectsReleaseMetadataMismatchWithoutFreezeReceipt(
+		string stage,
+		string field,
+		object value)
+	{
+		FixtureResult result = await RunFixtureAsync(CreateReleaseRequest(
+			stage, new(Overrides: new() { [field] = value })));
+
+		AssertRejectedBeforeFreezeReceipt(result, stage);
+	}
+
+	[Theory]
+	[InlineData("view", "name", "unexpected.zip")]
+	[InlineData("view", "size", -1L)]
+	[InlineData("view", "digest", "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")]
+	[InlineData("view", null, null)]
+	[InlineData("freeze", "name", "unexpected.zip")]
+	[InlineData("freeze", "size", -1L)]
+	[InlineData("freeze", "digest", "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")]
+	[InlineData("freeze", null, null)]
+	public async Task Workflow_RejectsReleaseAssetMismatchOrMissingAssetWithoutFreezeReceipt(
+		string stage,
+		string? field,
+		object? value)
+	{
+		FixtureResult result = await RunFixtureAsync(CreateReleaseRequest(
+			stage, new(
+				AssetOverrides: field is null ? null : new() { [field] = value },
+				OmitAsset: field is null)));
+
+		AssertRejectedBeforeFreezeReceipt(result, stage);
 	}
 
 	[Theory]
@@ -181,6 +277,32 @@ public sealed class ReleaseCandidateProvenanceTests
 		Assert.Equal(0, result.RemoteMutationCount);
 		Assert.Empty(result.ProvenanceOutputs);
 		Assert.Null(result.Notes);
+		Assert.Equal(JsonValueKind.Null, result.Receipt.ValueKind);
+	}
+
+	private static FixtureRequest CreateReleaseRequest(string stage, ReleaseApiResponse response)
+	{
+		return stage switch
+		{
+			"view" => new(1, 2, new(), new(), ReleaseView: response),
+			"freeze" => new(1, 2, new(), new(), FreezeRead: response),
+			_ => throw new ArgumentOutOfRangeException(nameof(stage), stage, "Unknown release API fixture stage.")
+		};
+	}
+
+	private static void AssertRejectedBeforeFreezeReceipt(FixtureResult result, string stage)
+	{
+		Assert.Equal("publish", result.Phase);
+		Assert.NotNull(result.Error);
+		Assert.Equal(1, result.RemoteMutationCount);
+		Assert.Equal(1, result.ReleaseViewReadCount);
+		string[] expectedApiPaths = stage switch
+		{
+			"view" => [],
+			"freeze" => [$"repos/fixture/release-candidate/releases/{ReleaseId}"],
+			_ => throw new ArgumentOutOfRangeException(nameof(stage), stage, "Unknown release API fixture stage.")
+		};
+		Assert.Equal(expectedApiPaths, result.ReleaseApiPaths);
 		Assert.Equal(JsonValueKind.Null, result.Receipt.ValueKind);
 	}
 

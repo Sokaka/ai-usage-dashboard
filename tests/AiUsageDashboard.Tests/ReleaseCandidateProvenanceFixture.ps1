@@ -8,6 +8,8 @@ $request = Get-Content -LiteralPath $RequestPath -Raw | ConvertFrom-Json -AsHash
 $fixtureRoot = Split-Path -Parent $RequestPath
 $script:FixtureArtifactReadCount = 0
 $script:FixtureRemoteMutationCount = 0
+$script:FixtureReleaseViewReadCount = 0
+$script:FixtureReleaseApiPaths = [Collections.Generic.List[string]]::new()
 $env:PATH = Join-Path $fixtureRoot 'no-native-commands'
 $env:RUNNER_TEMP = $fixtureRoot
 $env:GITHUB_REPOSITORY = 'fixture/release-candidate'
@@ -72,6 +74,9 @@ function git {
 function gh {
   $global:LASTEXITCODE = 0
   if (($args.Count -eq 2) -and ($args[0] -ceq 'api')) {
+    if ($args[1].StartsWith("repos/$env:GITHUB_REPOSITORY/releases/", [StringComparison]::Ordinal)) {
+      $script:FixtureReleaseApiPaths.Add($args[1])
+    }
     switch ($args[1]) {
       "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:CANDIDATE_ARTIFACT_ID" {
         $script:FixtureArtifactReadCount++
@@ -90,7 +95,11 @@ function gh {
         return @{ id = 6789; private = $true } | ConvertTo-Json
       }
       "repos/$env:GITHUB_REPOSITORY/releases/tags/v0.2.0" {
-        return $script:FixtureRelease | ConvertTo-Json -Depth 5
+        $global:LASTEXITCODE = 1
+        return '{"message":"Not Found","status":"404"}'
+      }
+      "repos/$env:GITHUB_REPOSITORY/releases/3456" {
+        return Get-ReleaseApiResponse -BaseResponse $script:FixtureRelease -Behavior $request.FreezeRead
       }
     }
   }
@@ -99,15 +108,56 @@ function gh {
     return
   }
   elseif (($args[0] -ceq 'release') -and ($args[1] -ceq 'view')) {
-    return @{
+    $script:FixtureReleaseViewReadCount++
+    $view = @{
+      databaseId = $script:FixtureRelease.id
       isDraft = $true
       isPrerelease = $true
       tagName = $script:FixtureRelease.tag_name
       targetCommitish = $script:FixtureRelease.target_commitish
       assets = $script:FixtureRelease.assets
-    } | ConvertTo-Json -Depth 5
+      url = $script:FixtureRelease.html_url
+    }
+    $jsonIndex = [Array]::IndexOf($args, '--json')
+    if (($jsonIndex -lt 0) -or ($jsonIndex + 1 -ge $args.Count)) {
+      throw 'Fixture release view requires an explicit JSON field list.'
+    }
+    $selectedView = @{}
+    $requestedFields = @($args[$jsonIndex + 1]) | ForEach-Object { ([string] $_).Split(',') }
+    foreach ($field in $requestedFields) {
+      if (!$view.ContainsKey($field)) {
+        throw "Unsupported fixture release view field: $field"
+      }
+      $selectedView[$field] = $view[$field]
+    }
+    return Get-ReleaseApiResponse -BaseResponse $selectedView -Behavior $request.ReleaseView
   }
   throw "Unexpected gh call in workflow fixture: $($args -join ' ')"
+}
+
+function Get-ReleaseApiResponse([hashtable] $BaseResponse, [hashtable] $Behavior) {
+  $response = $BaseResponse.Clone()
+  $response.assets = @($BaseResponse.assets | ForEach-Object { $_.Clone() })
+  if ($null -ne $Behavior.Overrides) {
+    foreach ($entry in $Behavior.Overrides.GetEnumerator()) {
+      $response[$entry.Key] = $entry.Value
+    }
+  }
+  if ($null -ne $Behavior.AssetOverrides) {
+    foreach ($entry in $Behavior.AssetOverrides.GetEnumerator()) {
+      $response.assets[0][$entry.Key] = $entry.Value
+    }
+  }
+  if ($Behavior.OmitAsset) {
+    $response.assets = @($response.assets | Select-Object -Skip 1)
+  }
+  switch ($Behavior.Failure) {
+    'exit-code' { $global:LASTEXITCODE = 1 }
+    'malformed-json' { return '{ invalid-json' }
+    $null { }
+    default { throw "Unsupported fixture release API failure: $($Behavior.Failure)" }
+  }
+  return $response | ConvertTo-Json -Depth 5
 }
 
 # 驗簽與 GitHub transport 是此測試的外部邊界；checksum 與發佈 script 仍實際執行。
@@ -220,6 +270,8 @@ $result = @{
   Error = $failure
   ArtifactReadCount = $script:FixtureArtifactReadCount
   RemoteMutationCount = $script:FixtureRemoteMutationCount
+  ReleaseViewReadCount = $script:FixtureReleaseViewReadCount
+  ReleaseApiPaths = @($script:FixtureReleaseApiPaths)
   BuildOutputs = $buildOutputs
   ProvenanceOutputs = @(if (Test-Path -LiteralPath $provenanceOutputPath) { [IO.File]::ReadAllLines($provenanceOutputPath) })
   Notes = if (Test-Path -LiteralPath $notesPath) { [IO.File]::ReadAllText($notesPath) } else { $null }

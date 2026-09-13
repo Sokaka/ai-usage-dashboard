@@ -56,6 +56,8 @@ ZIP 包含自有 LICENSE、精確第三方原約/notices 及元件交付清單�
 
 凍結前把六件保存為 private 候選 Release，使用最終 tag 與 asset 名稱，維持 draft／prerelease。保留 repo identity、Release identity、tag、source SHA、原 build run／attempt、每個 asset ID／名稱／size／SHA256。凍結後不得重建補件、重新打包、重簽或替換 assets。
 
+draft Release 先以 `gh release view` 取得數值 `databaseId`，再依 Release ID 回讀，核對同一候選、source 及六件成品後才保存凍結紀錄。draft 尚未建立 tag ref 時，by-tag API 可能回傳 404；因此凍結回讀使用 [Release ID API](https://docs.github.com/en/rest/releases/releases#get-a-release)。
+
 ## Private 驗收
 
 用受控 HTTPS 測試 feed 與同一候選 App／Updater bytes 驗收。測試 feed 的 URL／簽章另存，不覆蓋正式 feed；保持正式 channel、TLS 與簽章檢查，不增加產品 GitHub token 或略過驗證。private GitHub Release 不能證明匿名下載成功。
