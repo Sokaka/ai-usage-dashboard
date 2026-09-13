@@ -57,6 +57,7 @@ internal sealed class GrokCliVersionProbe : IGrokCliVersionProbe
 	private readonly Action<string, string> _prepareDirectories;
 	private readonly TimeSpan _probeTimeout;
 	private readonly IGrokAcpProcessFactory _processFactory;
+	private readonly TimeProvider _timeProvider;
 
 	internal GrokCliVersionProbe(IGrokAcpProcessFactory processFactory)
 		: this(
@@ -75,7 +76,8 @@ internal sealed class GrokCliVersionProbe : IGrokCliVersionProbe
 		Action<string, string> prepareDirectories,
 		Action<string> cleanupScratchDirectory,
 		TimeSpan probeTimeout,
-		TimeSpan cleanupTimeout)
+		TimeSpan cleanupTimeout,
+		TimeProvider? timeProvider = null)
 	{
 		_processFactory = processFactory ??
 			throw new ArgumentNullException(nameof(processFactory));
@@ -91,6 +93,7 @@ internal sealed class GrokCliVersionProbe : IGrokCliVersionProbe
 		_cleanupTimeout = cleanupTimeout > TimeSpan.Zero
 			? cleanupTimeout
 			: throw new ArgumentOutOfRangeException(nameof(cleanupTimeout));
+		_timeProvider = timeProvider ?? TimeProvider.System;
 	}
 
 	public async Task<GrokExecutableVersion?> ReadVersionAsync(
@@ -124,7 +127,7 @@ internal sealed class GrokCliVersionProbe : IGrokCliVersionProbe
 		IDisposable scratchCleanupLease = processOperationTracker.HoldLease(
 			new ScratchCleanupLease(
 				() => _cleanupScratchDirectory(scratchDirectory)));
-		using CancellationTokenSource timeoutSource = new(_probeTimeout);
+		using CancellationTokenSource timeoutSource = new(_probeTimeout, _timeProvider);
 		using CancellationTokenSource linkedSource =
 			CancellationTokenSource.CreateLinkedTokenSource(
 				cancellationToken,
