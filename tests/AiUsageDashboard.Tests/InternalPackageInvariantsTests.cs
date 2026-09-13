@@ -899,7 +899,7 @@ public sealed class InternalPackageInvariantsTests
 	}
 
 	[Fact]
-	public void CliVersionGuides_SeparateUserRequirementsFromTechnicalVersionPolicy()
+	public void CliVersionGuides_DistinguishVersionRequirementsFromDiagnosticBaselines()
 	{
 		string repositoryRoot = RepositoryTestPaths.Root;
 		string readme = File.ReadAllText(
@@ -913,24 +913,24 @@ public sealed class InternalPackageInvariantsTests
 			"docs",
 			"TECHNICAL_OVERVIEW.md"));
 
-		Assert.DoesNotContain(
+		Assert.Contains(
 			"0.144.1",
 			userGuide,
 			StringComparison.Ordinal);
-		Assert.DoesNotContain(
+		Assert.Contains(
 			"1.0.3",
 			userGuide,
 			StringComparison.Ordinal);
 		Assert.Contains(
-			"Claude Code 2.1.169 以上版本",
+			"`>=2.1.169`",
 			userGuide,
 			StringComparison.Ordinal);
 		Assert.Contains(
 			"1.1.11 以上、2.0.0 未滿",
 			userGuide,
 			StringComparison.Ordinal);
-		Assert.DoesNotContain(
-			"相容性基準",
+		Assert.Contains(
+			"不是最低版本門檻",
 			userGuide,
 			StringComparison.Ordinal);
 		Assert.DoesNotContain(
