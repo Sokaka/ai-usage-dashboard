@@ -8,7 +8,7 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 
 ## 目前版本
 
-`1.0.0` 尚未正式公開。正式版本公開後，可從 [GitHub Releases](https://github.com/Sokaka/ai-usage-dashboard/releases)下載。
+目前候選版為 `1.0.1`，尚未正式公開；驗收範圍與未驗證項目見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前候選)。正式版本公開後，可從 [GitHub Releases](https://github.com/Sokaka/ai-usage-dashboard/releases)下載。
 
 ## 支援平台
 
