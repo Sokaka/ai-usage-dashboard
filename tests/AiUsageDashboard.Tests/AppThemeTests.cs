@@ -120,6 +120,7 @@ public sealed class AppThemeTests
 		Assert.Equal(SystemColors.WindowTextColor, GetColor(palette, "PrimaryTextColor"));
 		Assert.Equal(SystemColors.HighlightColor, GetColor(palette, "AccentColor"));
 		Assert.Equal(SystemColors.HighlightTextColor, GetColor(palette, "AccentTextColor"));
+		Assert.Equal(SystemColors.WindowTextColor, GetColor(palette, "ScrollBarThumbColor"));
 	}
 
 	[Fact]
@@ -291,11 +292,20 @@ public sealed class AppThemeTests
 				3,
 				$"{fileName} {resourceKey} against the progress track");
 		}
-		AssertMinimumContrast(
+		Assert.Equal(
+			GetColor(palette, "ProgressTrackColor"),
+			GetColor(palette, "ScrollBarThumbColor"));
+		double previousScrollBarContrast = GetContrastRatio(
 			GetColor(palette, "ScrollBarThumbColor"),
-			windowBackground,
-			3,
-			$"{fileName} idle scrollbar thumb against the window");
+			windowBackground);
+		foreach (string resourceKey in new[] { "ScrollBarThumbHoverColor", "ScrollBarThumbPressedColor" })
+		{
+			double scrollBarContrast = GetContrastRatio(
+				GetColor(palette, resourceKey),
+				windowBackground);
+			Assert.InRange(scrollBarContrast / previousScrollBarContrast, 1.1, 1.4);
+			previousScrollBarContrast = scrollBarContrast;
+		}
 		AssertMinimumContrast(
 			GetColor(palette, "PrimaryTextColor"),
 			controlHoverBackground,

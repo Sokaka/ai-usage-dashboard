@@ -42,6 +42,8 @@
 
 一般主題共用相同的資源鍵與控制項樣式。介面透過 `DynamicResource` 取得配色；切換時，`App.UpdatePaletteResources` 會直接更新仍可修改的 `SolidColorBrush`，其餘資源則換成目標配色的值，避免已取得的筆刷物件仍顯示舊主題。浮窗展開與收合時的 Logo 都使用 `ThemeLogoStyle` 與配色資源；系統匣仍使用執行檔圖示，不會隨主題切換。
 
+一般主題的捲動滑塊沒有外框，平常的 `ScrollBarThumbColor` 與用量條底色 `ProgressTrackColor` 相同。滑鼠移入與拖曳時保留同色系，逐步小幅提高與背景的色差，避免狀態切換時突然變亮或變深。可見滑塊維持 6 DIP，操作區域維持 18 DIP。Windows 高對比模式保留系統文字色與選取色。
+
 平台色與狀態色採固定角色分工：
 
 - 帳號卡片以平台名稱的文字色識別服務，不使用平台商標圖示或彩色邊緣裝飾。`AccountTitleStyle` 依 `ProviderKind` 選取對應的 `ProviderTextBrush`；名稱 `Run` 使用 `Segoe UI Bold`，方案與暱稱的 `AccountHeaderSuffixText` 則使用 `PrimaryTextBrush`，保留標題的 `SemiBold` 字重。

@@ -448,6 +448,11 @@ public sealed class XamlUsabilityRegressionTests
 			controls,
 			"Style",
 			"ScrollBarThumbStyle");
+		AssertSetter(thumbStyle, "Background", "{DynamicResource ScrollBarThumbBrush}");
+		XElement chrome = Assert.Single(thumbStyle.Descendants(Presentation + "Border"));
+		Assert.Equal("{TemplateBinding Background}", (string?)chrome.Attribute("Background"));
+		Assert.Null(chrome.Attribute("BorderBrush"));
+		Assert.Null(chrome.Attribute("BorderThickness"));
 		XElement[] orientationTriggers = thumbStyle
 			.Descendants(Presentation + "DataTrigger")
 			.Where(element =>
