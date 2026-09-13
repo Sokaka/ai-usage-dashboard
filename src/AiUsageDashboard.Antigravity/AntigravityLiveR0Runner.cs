@@ -65,6 +65,17 @@ internal sealed class WindowsAntigravityLiveConPtySessionFactory :
 internal sealed class WindowsAntigravityExistingProcessGate :
 	IAntigravityExistingProcessGate
 {
+	private readonly Func<string, Process[]> _getProcessesByName;
+	private readonly Func<int, string?> _readExecutablePath;
+
+	internal WindowsAntigravityExistingProcessGate(
+		Func<string, Process[]>? getProcessesByName = null,
+		Func<int, string?>? readExecutablePath = null)
+	{
+		_getProcessesByName = getProcessesByName ?? Process.GetProcessesByName;
+		_readExecutablePath = readExecutablePath ?? WindowsProcessImagePathReader.Read;
+	}
+
 	public ValueTask<AntigravityExistingProcessGateResult> CheckAsync(
 		string absoluteExecutablePath,
 		int? allowedProcessId,
@@ -92,7 +103,7 @@ internal sealed class WindowsAntigravityExistingProcessGate :
 
 		try
 		{
-			processes = Process.GetProcessesByName(processName);
+			processes = _getProcessesByName(processName);
 		}
 		catch (Exception exception) when (
 			(exception is InvalidOperationException) ||
@@ -118,12 +129,11 @@ internal sealed class WindowsAntigravityExistingProcessGate :
 
 				try
 				{
-					string? candidatePath = process.MainModule?.FileName;
+					string? candidatePath = _readExecutablePath(process.Id);
 
 					if (candidatePath is null)
 					{
-						return ValueTask.FromResult(
-							AntigravityExistingProcessGateResult.Indeterminate);
+						continue;
 					}
 
 					if (string.Equals(

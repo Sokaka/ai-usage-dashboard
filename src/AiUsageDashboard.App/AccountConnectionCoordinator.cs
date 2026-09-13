@@ -609,6 +609,13 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					reportStatus?.Invoke(
 						"Antigravity 連接視窗尚未回報完成。AI Usage 已記錄連接進度，稍後會自動確認，重新啟動後也會繼續。");
 					break;
+				case AntigravityAccountSetupOutcome.SecurityBlocked:
+					shouldRetainSetupIntent = false;
+					reportNotice?.Invoke(
+						"Windows 回報 Antigravity 連接元件遭防毒軟體封鎖或移除。請保留防毒通知中的偵測名稱與檔案路徑，交由開發者或 IT 確認後再試。AI Usage 已保留原本顯示的用量。",
+						"Antigravity 連接元件遭封鎖",
+						MessageBoxImage.Warning);
+					break;
 				case AntigravityAccountSetupOutcome.LaunchFailed:
 				default:
 					shouldRetainSetupIntent = false;

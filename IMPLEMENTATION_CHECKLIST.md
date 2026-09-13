@@ -1,6 +1,6 @@
 # 實作與驗證清單
 
-更新日期：2026-09-12
+更新日期：2026-09-13
 
 讀者：負責 AI Usage Dashboard 開發、測試與交付的人員。本文只列現況、驗證界線與尚待工作。
 
@@ -8,7 +8,7 @@
 
 ## 目前候選
 
-本節記錄既有候選成品的結果；本輪文件修訂尚未納入新的來源與發布檢核。
+本節記錄 source `8eb14fe` 的既有候選成品結果。目前 source 另含 Claude `/usage` 回應相容性、Antigravity 程序路徑查詢與防毒阻擋提示修正，尚未建立包含這些修正的新候選；下列成品驗收結果不涵蓋這些修正。
 
 - [x] `1.0.0 / sequence 1014` 的私有 Windows 驗收通過 27/27：全新情境 17 案、舊版 null sequence 與 sequence 24 銜接各 5 案。
 - [x] App、Setup、Updater、Claude capture、AGY capture 與 maintenance Updater 共六組實際離線 license exports 通過；文件集合、原文 hashes 與 acceptance digest 均已核對。

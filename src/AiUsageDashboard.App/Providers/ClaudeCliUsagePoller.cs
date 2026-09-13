@@ -124,6 +124,8 @@ internal sealed class ClaudeCliUsagePoller :
 		{
 			"type",
 			"subtype",
+			"local_command",
+			"result_index",
 			"is_error",
 			"num_turns",
 			"queued_turn_count",
@@ -1406,6 +1408,9 @@ internal sealed class ClaudeCliUsagePoller :
 			!ContainsOnlyProperties(root, SafeResultPropertyNames) ||
 			!HasStringValue(root, "type", "result") ||
 			!HasStringValue(root, "subtype", "success") ||
+			!HasOptionalStringValue(root, "local_command", "usage") ||
+			(root.TryGetProperty("result_index", out JsonElement resultIndexElement) &&
+				!IsExactJsonZero(resultIndexElement)) ||
 			!root.TryGetProperty("is_error", out JsonElement isErrorElement) ||
 			(isErrorElement.ValueKind is not JsonValueKind.False) ||
 			!root.TryGetProperty("num_turns", out JsonElement numTurnsElement) ||

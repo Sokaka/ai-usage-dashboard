@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 using AiUsageDashboard.Antigravity.Setup;
 using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App.Providers;
@@ -729,6 +731,8 @@ public sealed class AntigravitySetupTests
 			.DashboardManagedCompletionUnknownExitCode,
 		"CompletionUnknown")]
 	[InlineData(99, "CompletionUnknown")]
+	[InlineData(225, "CompletionUnknown")]
+	[InlineData(226, "CompletionUnknown")]
 	public async Task AntigravitySetupLauncher_MapsNonSuccessExitCode(
 		int? exitCode,
 		string expected)
@@ -812,6 +816,37 @@ public sealed class AntigravitySetupTests
 		Assert.Equal(
 			AntigravityAccountSetupOutcome.LaunchFailed,
 			outcome);
+	}
+
+	[Theory]
+	[InlineData(225, "SecurityBlocked")]
+	[InlineData(226, "SecurityBlocked")]
+	[InlineData(5, "LaunchFailed")]
+	[InlineData(2, "LaunchFailed")]
+	public async Task AntigravitySetupLauncher_WhenWindowsRejectsLaunch_DistinguishesSecurityDetection(
+		int nativeErrorCode,
+		string expectedOutcome)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string appDirectory = Path.Combine(temporaryDirectory.Path, "app");
+		Directory.CreateDirectory(appDirectory);
+		File.WriteAllBytes(
+			Path.Combine(appDirectory, "AiUsageDashboard.Antigravity.Setup.exe"),
+			new byte[] { 0 });
+		int launchCount = 0;
+		AntigravityAccountSetupLauncher launcher = new(
+			appDirectory,
+			(_, _) =>
+			{
+				launchCount++;
+				throw new Win32Exception(nativeErrorCode, "Synthetic launch rejection.");
+			});
+
+		AntigravityAccountSetupOutcome outcome =
+			await launcher.RunAsync(CancellationToken.None);
+
+		Assert.Equal(expectedOutcome, outcome.ToString());
+		Assert.Equal(1, launchCount);
 	}
 
 	[Fact]

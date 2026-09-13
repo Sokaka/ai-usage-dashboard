@@ -14,7 +14,8 @@ internal enum AntigravityAccountSetupOutcome
 	Cancelled,
 	Unavailable,
 	Failed,
-	LaunchFailed
+	LaunchFailed,
+	SecurityBlocked
 }
 
 internal interface IAntigravityAccountSetupLauncher
@@ -33,6 +34,8 @@ internal sealed class AntigravityAccountSetupLauncher :
 		"AiUsageDashboard.Antigravity.Setup.exe";
 	private const int CompletionUnknownProcessResult = int.MinValue;
 	private const int CancelledBeforeLaunchProcessResult = int.MinValue + 1;
+	private const int ErrorVirusInfected = 225;
+	private const int ErrorVirusDeleted = 226;
 	private static readonly TimeSpan ProcessCloseGracePeriod =
 		TimeSpan.FromSeconds(3);
 	private readonly string _appBaseDirectory;
@@ -136,6 +139,12 @@ internal sealed class AntigravityAccountSetupLauncher :
 			cancellationToken.IsCancellationRequested)
 		{
 			return AntigravityAccountSetupOutcome.CompletionUnknown;
+		}
+		catch (Win32Exception exception) when (
+			(exception.NativeErrorCode == ErrorVirusInfected) ||
+			(exception.NativeErrorCode == ErrorVirusDeleted))
+		{
+			return AntigravityAccountSetupOutcome.SecurityBlocked;
 		}
 		catch (Exception exception) when (
 			exception is ArgumentException or

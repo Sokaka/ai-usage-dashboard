@@ -1412,8 +1412,11 @@ public sealed class AccountConnectionCoordinatorTests
 		Assert.Equal("person@example.com", account.AccountDisplayText);
 	}
 
-	[Fact]
-	public async Task RunAntigravitySetupAsync_WritesIntentBeforeLauncherAndRemovesItAfterCancellation()
+	[Theory]
+	[InlineData("Cancelled")]
+	[InlineData("SecurityBlocked")]
+	public async Task RunAntigravitySetupAsync_WritesIntentBeforeLauncherAndRemovesItWhenNotStarted(
+		string outcomeName)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		AccountProfile profile = CreateAntigravityProfile("Antigravity");
@@ -1443,7 +1446,7 @@ public sealed class AccountConnectionCoordinatorTests
 			AntigravityConnectionPendingWork intent =
 				Assert.Single(await pendingStore.LoadAsync());
 			wasIntentDurableBeforeLauncher = intent.IsSetupPending;
-			return AntigravityAccountSetupOutcome.Cancelled;
+			return Enum.Parse<AntigravityAccountSetupOutcome>(outcomeName);
 		});
 		using AccountConnectionCoordinator coordinator =
 			CreateCoordinator(launcher);
@@ -2529,6 +2532,7 @@ public sealed class AccountConnectionCoordinatorTests
 	[InlineData("Cancelled", 0)]
 	[InlineData("Failed", 0)]
 	[InlineData("LaunchFailed", 1)]
+	[InlineData("SecurityBlocked", 1)]
 	[InlineData("Unavailable", 1)]
 	public async Task RunAntigravitySetupAsync_WhenNotCompleted_AbortsWithoutRefresh(
 		string outcomeName,
@@ -2577,6 +2581,15 @@ public sealed class AccountConnectionCoordinatorTests
 						"已保留原本顯示的用量",
 						StringComparison.Ordinal));
 			Assert.Empty(notices);
+		}
+
+		if (outcome == AntigravityAccountSetupOutcome.SecurityBlocked)
+		{
+			string notice = Assert.Single(notices);
+			Assert.Contains("防毒軟體封鎖或移除", notice, StringComparison.Ordinal);
+			Assert.Contains("偵測名稱與檔案路徑", notice, StringComparison.Ordinal);
+			Assert.Contains("已保留原本顯示的用量", notice, StringComparison.Ordinal);
+			Assert.DoesNotContain("重新下載", notice, StringComparison.Ordinal);
 		}
 
 		if (outcome == AntigravityAccountSetupOutcome.LaunchFailed)
