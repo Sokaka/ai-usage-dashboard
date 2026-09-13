@@ -246,7 +246,7 @@ public sealed class InternalPackageInvariantsTests
 
 		foreach (string packageName in packageNames)
 		{
-			string expectedVersion = packageName == "System.Text.Json" ? "10.0.11" : "10.0.2";
+			string expectedVersion = packageName == "System.Text.Json" ? "10.0.12" : "10.0.2";
 			string[] sharingProjectPaths = packageName == "System.Text.Json"
 				? [.. projectPaths, Path.Combine(repositoryRoot, "src", "AiUsageDashboard.ClaudeCapture", "AiUsageDashboard.ClaudeCapture.csproj")]
 				: projectPaths;

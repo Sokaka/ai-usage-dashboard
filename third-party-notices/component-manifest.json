@@ -41,28 +41,28 @@
       "id": "dotnet10-mit",
       "path": "third-party-notices/DOTNET-10-MIT-LICENSE.txt",
       "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
-      "source": "https://raw.githubusercontent.com/dotnet/dotnet/e2f47b0110ed922f21a1522da67279133ce28f32/src/runtime/LICENSE.TXT",
+      "source": "https://raw.githubusercontent.com/dotnet/dotnet/95017c711e6afc1085133d440e42b4bd78155701/src/runtime/LICENSE.TXT",
       "readable": true
     },
     {
       "id": "dotnet10-notices",
       "path": "third-party-notices/DOTNET-10-THIRD-PARTY-NOTICES.txt",
       "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
-      "source": "https://www.nuget.org/packages/System.Text.Json/10.0.11",
+      "source": "https://www.nuget.org/packages/System.Text.Json/10.0.12",
       "readable": true
     },
     {
       "id": "extensions-ai-mit",
       "path": "third-party-notices/EXTENSIONS-AI-MIT-LICENSE.txt",
       "sha256": "47f0ad8ba753eae5de6178291cd8f38bbb42d2368b177f8e11714ad17c701275",
-      "source": "https://raw.githubusercontent.com/dotnet/extensions/b10f9c0a081b5dbb7755b8f5592e1d3c3f550a3a/LICENSE",
+      "source": "https://raw.githubusercontent.com/dotnet/extensions/02107c65bab30aad9e35b5133ed643eaa77bccd8/LICENSE",
       "readable": true
     },
     {
       "id": "extensions-ai-notices",
       "path": "third-party-notices/EXTENSIONS-AI-THIRD-PARTY-NOTICES.txt",
       "sha256": "07f3e74329ed32ac9229a75ae994b98b30aadb1d9947eee926eed3d3fc4cf0c6",
-      "source": "https://raw.githubusercontent.com/dotnet/extensions/b10f9c0a081b5dbb7755b8f5592e1d3c3f550a3a/THIRD-PARTY-NOTICES.TXT",
+      "source": "https://raw.githubusercontent.com/dotnet/extensions/02107c65bab30aad9e35b5133ed643eaa77bccd8/THIRD-PARTY-NOTICES.TXT",
       "readable": true
     },
     {
@@ -232,7 +232,7 @@
       "deliveryTargets": [
         "app-zip"
       ],
-      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.11 package notices are byte-identical and share one delivered file."
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.12 package notices are byte-identical and share one delivered file."
     },
     {
       "id": "microsoft.extensions.logging.abstractions",
@@ -252,7 +252,7 @@
       "deliveryTargets": [
         "app-zip"
       ],
-      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.11 package notices are byte-identical and share one delivered file."
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.12 package notices are byte-identical and share one delivered file."
     },
     {
       "id": "system.diagnostics.diagnosticsource",
@@ -273,12 +273,12 @@
       "deliveryTargets": [
         "app-zip"
       ],
-      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.11 package notices are byte-identical and share one delivered file."
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.12 package notices are byte-identical and share one delivered file."
     },
     {
       "id": "system.io.pipelines",
       "name": "System.IO.Pipelines",
-      "version": "10.0.11",
+      "version": "10.0.12",
       "profiles": [
         "app",
         "setup",
@@ -295,12 +295,12 @@
       "deliveryTargets": [
         "app-zip"
       ],
-      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.11 package notices are byte-identical and share one delivered file."
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.12 package notices are byte-identical and share one delivered file."
     },
     {
       "id": "system.text.encodings.web",
       "name": "System.Text.Encodings.Web",
-      "version": "10.0.11",
+      "version": "10.0.12",
       "profiles": [
         "app",
         "setup",
@@ -317,12 +317,12 @@
       "deliveryTargets": [
         "app-zip"
       ],
-      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.11 package notices are byte-identical and share one delivered file."
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.12 package notices are byte-identical and share one delivered file."
     },
     {
       "id": "system.text.json",
       "name": "System.Text.Json",
-      "version": "10.0.11",
+      "version": "10.0.12",
       "profiles": [
         "app",
         "setup",
@@ -339,12 +339,12 @@
       "deliveryTargets": [
         "app-zip"
       ],
-      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.11 package notices are byte-identical and share one delivered file."
+      "notes": "Copyright Microsoft Corporation; package third-party notices retained verbatim. The included .NET 10.0.2 and 10.0.12 package notices are byte-identical and share one delivered file."
     },
     {
       "id": "extensions-ai",
       "name": "Microsoft.Extensions.AI.Abstractions",
-      "version": "10.9.0",
+      "version": "10.10.0",
       "profiles": [
         "app",
         "installer"

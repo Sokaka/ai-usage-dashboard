@@ -14,7 +14,7 @@ SDK 由 `global.json` 固定，transitive NuGet audit 由 `Directory.Build.props
 
 .NET 8.0.31 是目前固定的 runtime；依 [Microsoft 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)，.NET 8 於 2026-11-10 結束支援。每次候選重新核對 patch 與 advisory；逾期或出現未處理風險時先修正，再建候選。
 
-`Microsoft.Extensions.AI.Abstractions` 固定為 10.9.0，適用另行更新的 [Platform Extensions 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/extensions)。App、Setup 與 ClaudeCapture 共用的 `System.Text.Json` 固定為 10.0.11；各自的 dependency manifest 必須涵蓋相同版本及其依賴，並通過合併成品的實際離線授權匯出。
+`Microsoft.Extensions.AI.Abstractions` 固定為 10.10.0，適用另行更新的 [Platform Extensions 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/extensions)。App、Setup 與 ClaudeCapture 共用的 `System.Text.Json` 固定為 10.0.12；各自的 dependency manifest 必須涵蓋相同版本及其依賴，並通過合併成品的實際離線授權匯出。
 
 private repo 的 Actions 額度由 owner 共用。首次 push 前關閉新 repo Actions 並回讀；按 [GitHub 計費規則](https://docs.github.com/en/billing/concepts/product-billing/github-actions)核對帳號額度、已用量、artifact/cache 儲存、預定成功／失敗執行量及超額停止措施，再受控啟用。無法確認免費範圍時只做本機驗證，不啟用付費 runner 或更動全帳號預算。候選 artifact 與失敗 diagnostics 的 retention 也計入前檢。
 
