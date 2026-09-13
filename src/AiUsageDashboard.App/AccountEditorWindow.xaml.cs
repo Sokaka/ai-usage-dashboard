@@ -28,9 +28,9 @@ public partial class AccountEditorWindow : Window
 		{
 			new(ProviderKind.Claude, "Claude"),
 			new(ProviderKind.Codex, "Codex"),
-			new(ProviderKind.Copilot, "GitHub Copilot"),
 			new(ProviderKind.Antigravity, "Antigravity"),
-			new(ProviderKind.Grok, "Grok")
+			new(ProviderKind.Grok, "Grok"),
+			new(ProviderKind.Copilot, "GitHub Copilot")
 		};
 	private readonly Guid _accountId;
 	private readonly bool _canConnectCurrentProviderAccount;
