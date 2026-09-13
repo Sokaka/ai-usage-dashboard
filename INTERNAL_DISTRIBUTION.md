@@ -19,6 +19,8 @@
 
 相容性基準只供比較和診斷，不是允許版本清單。其他官方版本只要通過必要功能與安全檢查，就應先實測；不得只因版號不同而拒絕，也不得把版本差異寫成已確認的失敗原因。每個候選版本仍須記錄實際 CLI 版本與測試結果。
 
+套件的 .NET 與相依元件語系資源只保留繁體中文（`zh-Hant`）、簡體中文（`zh-Hans`）、英文（`en`）及日文（`ja`），由 [Directory.Build.props](Directory.Build.props) 統一設定。英文預設訊息包含在元件本體中，因此不一定另有 `en` 資料夾。這項設定控制執行環境的訊息資源；AI Usage 自身介面目前使用繁體中文。
+
 ### 執行檔安全要求
 
 Claude、Codex 與 Grok 只會執行 AI Usage 建立的受保護副本。程式會鎖住來源檔，確認檔案位於本機固定磁碟、路徑沒有重新解析點（reparse point）、大小不超過 512 MiB、Windows 簽章與發行者正確，再依 SHA-256 建立副本。受保護目錄只開放目前使用者、Local System 與 Builtin Administrators 完整存取：

@@ -12,9 +12,11 @@ Copilot 改為使用本機安裝的官方 CLI，主包不再隨附第三方 CLI�
 
 CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保留既有卡片與 token，安裝／更新後重試。其他 `1.x` 尚未宣稱真人實測通過，精確來源規則見 [CLI 相容性](docs/CLI_COMPATIBILITY.md)。
 
-連接與用量查詢的 CLI 搜尋、驗簽及副本準備已移到背景；取消後晚到的執行檔鎖會清理。修正後本機 Release 建置通過（0 warnings／0 errors），404／404 項相關回歸測試通過，0 failed／0 skipped，包含阻塞解析器時呼叫先返回、取消、晚到檔案鎖釋放及未啟動 CLI／SDK 的測試。
+連接與用量查詢的 CLI 搜尋、驗簽及副本準備已移到背景；取消後晚到的執行檔鎖會清理。這項程式修正完成時，Release 建置通過（0 warnings／0 errors），404／404 項相關回歸測試通過，0 failed／0 skipped，包含阻塞解析器時呼叫先返回、取消、晚到檔案鎖釋放及未啟動 CLI／SDK 的測試。
 
-修正後驗證包 `0.0.0-verify-local-cli.20260913.2` 的封裝及四組實際授權匯出通過。ZIP 從 183,971,646 bytes 降到 82,248,336 bytes，減少 55.29%；完整列舉的 498 個 ZIP files 不含第三方 CLI，保留 SDK 與 .NET runtime。
+目前封裝只保留繁中、簡中、英文及日文的執行環境資源，App 自身介面仍為繁中。語系設定後 Release 建置通過（0 warnings／0 errors），62／62 項封裝、授權及隱私相關測試通過；本輪沒有重跑完整套件、coverage 或真人 UI／CLI 驗收。
+
+最新驗證包 `0.0.0-verify-locales.20260913.1` 的封裝及四組實際授權匯出通過。ZIP 從前一驗證包的 82,248,336 bytes 降到 77,735,352 bytes，減少 5.49%；完整列舉共 328 files，只移除其他 10 種語系的 170 個資源檔。保留的 294 個相依元件 binary 與 15 個授權／manifest 檔案均與前包 bytes 相同；繁中、簡中及日文各保留 17 個資源檔，英文內建資源亦保留。主包維持不含第三方 CLI。
 
 背景準備修正前的完整測試首輪為 3,982／3,983 通過、1 failed、0 skipped，production line coverage 為 75.79%（50,754／66,966）。唯一失敗為既有 `CodexVersionProbe_WhenRootSpawnsChild_ConfirmsTreeEmptyBeforeGateRelease` 在清理合成 fixture DLL 時遭遇存取拒絕；該案例單獨重跑（未收集 coverage）通過，但首輪失敗原因尚未確定。背景準備修正後只重跑上述相關測試，未重跑完整套件或 coverage，不宣稱完整測試一輪全過。
 
