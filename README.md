@@ -20,7 +20,7 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 | Grok | 從 xAI 官方來源安裝 Grok Build CLI 至預設位置 | 多帳號；同帳號限一張卡片 |
 | Antigravity | 安裝官方 Antigravity CLI | 限一個帳號 |
 
-版本要求與實測狀態見 [CLI 相容性](docs/CLI_COMPATIBILITY.md)；帳號需求與安裝方法見[使用說明](使用說明.md)。
+版本要求與實測狀態見 [CLI 相容性](docs/CLI_COMPATIBILITY.md)；帳號需求、官方工具安裝與登入步驟見[使用說明](使用說明.md)。
 
 ## 主要功能
 
@@ -54,9 +54,9 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 - **Claude 費用**：查詢可能增加用量或費用，請先閱讀[Claude 注意事項](使用說明.md#連接-claude-前必讀)。
 - **本機資料**：帳號設定與上次用量保存在目前 Windows 使用者的電腦中。
 - **匯出隱私**：匯出檔不含密碼或 token，但可能含電子郵件及暱稱，請存放在可信任位置。
-- **Windows 安全**：自有 EXE 尚無 Authenticode 簽章，可能提示或受系統政策阻擋；feed 簽章不提供 Windows 已驗證發布者身分。不要關閉 SmartScreen 或安全防護。
-- **服務條款**：各服務仍受供應商條款約束；Claude／AGY 的整合適用性尚未確認，詳見[發布限制](RELEASING.md#最後公開決策)。
-- **舊版升級**：舊內部版本需手動升級一次，請使用原 Windows 使用者與原安裝位置，依[舊版升級說明](使用說明.md#舊-internal-安裝銜接)操作。
+- **Windows 安全**：自有 EXE 尚無 Authenticode 簽章，可能提示或受系統政策阻擋；更新清單的簽章不提供 Windows 已驗證發布者身分。不要關閉 SmartScreen 或安全防護。
+- **服務條款**：各服務仍受供應商條款約束；Claude／Antigravity 的整合適用性尚未確認，詳見[發布限制](RELEASING.md#最後公開決策)。
+- **舊版升級**：舊內部版本需手動升級一次，請使用原 Windows 使用者與原安裝位置，依[舊版升級說明](使用說明.md#從舊內部版升級)操作。
 
 ## 相關文件
 

@@ -118,7 +118,7 @@ Claude 背景查詢只有在 model turns、tokens 與 cost 全部恰好為零時
 
 每位使用者須自行接受 Claude 的用量風險，決定寫在每張卡片的本機設定。一般第三方條款另依同一 Windows 使用者、版本與範圍在本機共用；不建立或上傳試用者名單。
 
-新卡片或升級後的卡片預設為未接受；使用者明確接受並儲存設定前，程式不會登入或呼叫 `/usage`。拒絕 Claude 風險不影響 Codex、GitHub Copilot、Grok 或 AGY。Codex 用量查詢不會建立 turn；AGY 仍會要求回傳結果中的 turn 與所有 token 都是零。上游說明不代表 Google 對 AI Usage 背書。
+新卡片及從尚未保存 Claude 風險同意的舊格式升級而來的卡片，預設為未接受；已有有效同意紀錄的卡片升級後會保留原狀態。使用者明確接受並儲存設定前，程式不會登入或呼叫 `/usage`。拒絕 Claude 風險不影響 Codex、GitHub Copilot、Grok 或 AGY。Codex 用量查詢不會建立 turn；AGY 仍會要求回傳結果中的 turn 與所有 token 都是零。上游說明不代表 Google 對 AI Usage 背書。
 
 ## 選用的 Grok 多帳號設定
 
@@ -256,7 +256,14 @@ stable feed 在信任 URL、hash、size、版本與 sequence 前先驗證專案�
 
 `transactions/<id>/transaction.json` 以 `Flush(true)` 加上同目錄 rename 提交；`receipt-*.tmp` 不會被當成已提交證據。正常更新保留 previous，rollback 保留 staging，復原不自動清除交易、暫存或未知檔案，也不改既有 downloads／updater-cache 清理規則。
 
-legacy 中斷紀錄缺少新增的 identity 證據時會拒絕自動復原。請先退出 App／Updater、備份整個 install root，再人工比對 current／previous／staging 的 manifest 與可信套件；確認可用版本及未知檔案皆已備份後，將該 legacy transaction 整個移至 install root 外另存。若 current 不可用，也先另存，再用可信 ZIP／sidecar 在原 install root 執行 `apply-local`。單純重跑命令無法繞過損壞 receipt。這是人工處理程序，未宣稱硬體 write cache 或真實斷電已驗收。
+legacy 中斷紀錄缺少新增的 identity 證據時會拒絕自動復原。請依序處理：
+
+1. 退出 App／Updater，備份整個 install root。
+2. 人工比對 current／previous／staging 的 manifest 與可信套件。
+3. 確認可用版本及未知檔案皆已備份後，將該 legacy transaction 整個移至 install root 外另存。
+4. 若 current 不可用，也先將它另存，再用可信 ZIP／sidecar 在原 install root 執行 `apply-local`。
+
+單純重跑命令無法繞過損壞 receipt。這是人工處理程序，未宣稱硬體 write cache 或真實斷電已驗收。
 
 ### 回復舊版
 

@@ -1,43 +1,43 @@
 # AGENTS.md
 
-These instructions apply to the entire repository and are intended for coding agents and developers. AI Usage Dashboard is a .NET/WPF desktop application for Windows x64.
+本規範適用於整個 repository，供 coding agents 與開發者遵循。AI Usage Dashboard 是 Windows x64 的 .NET/WPF 桌面應用程式。
 
-## Documentation
+## 文件
 
-| Task | Read first |
+| 任務 | 先閱讀 |
 | --- | --- |
-| User features and operation | [User guide](使用說明.md) |
-| Architecture, account storage, and provider integrations | [Technical overview](docs/TECHNICAL_OVERVIEW.md) |
-| Data formats, CLI support, and upgrades across versions | [Compatibility policy](docs/COMPATIBILITY_POLICY.md) and [CLI compatibility](docs/CLI_COMPATIBILITY.md) |
-| Installation, recovery, and releases | [Distribution guide](INTERNAL_DISTRIBUTION.md) and [Release process](RELEASING.md) |
-| Completed work and pending verification | [Implementation and verification checklist](IMPLEMENTATION_CHECKLIST.md) |
+| 使用者功能與操作 | [使用說明](使用說明.md) |
+| 架構、帳號儲存與 provider 串接 | [技術總覽](docs/TECHNICAL_OVERVIEW.md) |
+| 資料格式、CLI 支援與跨版本升級 | [相容性原則](docs/COMPATIBILITY_POLICY.md)與 [CLI 相容性](docs/CLI_COMPATIBILITY.md) |
+| 安裝、復原與發布 | [分發與支援手冊](INTERNAL_DISTRIBUTION.md)與[發布流程](RELEASING.md) |
+| 已完成工作與待驗證項目 | [實作與驗證檢查清單](IMPLEMENTATION_CHECKLIST.md) |
 
-## Development
+## 開發
 
-- Make the smallest change that completes the task. Follow existing layering, data access, process execution, and testing patterns; avoid incidental refactoring.
-- Follow each C# file's conventions: Allman braces, tab indentation, explicit access modifiers, and nullable checks. Match surrounding type and member naming; do not casually rename persisted or protocol fields.
-- Write ordinary comments in Traditional Chinese. Keep necessary rationale, constraints, and contracts across systems; put implementation explanations in documentation.
-- Preserve error causes and actionable context; never silently ignore errors. Observe asynchronous results and provide complete cleanup paths for resources and child processes.
-- Update relevant documentation when product behavior changes. User documentation describes the current product; keep development history and private verification records out of general guides.
+- 以完成任務所需的最小改動為原則。沿用既有分層、資料存取、程序執行與測試方式，避免順手重構。
+- 遵循各 C# 檔案的慣例：Allman 大括號、tab 縮排、明確的存取修飾詞與 nullable 檢查。型別與成員命名須與周圍程式一致；不可任意更改持久化或協定欄位的名稱。
+- 一般註解使用繁體中文。保留必要的理由、限制與跨系統契約；實作說明放在文件中。
+- 保留錯誤原因與可供排查的資訊，絕不可靜默忽略錯誤。觀察非同步執行結果，並確保資源與子程序都有完整的清理流程。
+- 產品行為改變時，同步更新相關文件。使用者文件應描述目前產品；一般指南不得混入開發歷史或私有驗證紀錄。
 
-## Compatibility and safety
+## 相容性與安全
 
-- Future development must follow the [compatibility policy](docs/COMPATIBILITY_POLICY.md): prioritize preserving existing data, settings, valid connections, and CLI versions that remain safe and compatible, minimizing manual steps during upgrades.
-- Changes to persisted formats, authentication bindings, providers, CLI/SDK dependencies, or the Updater must verify existing users' upgrade paths and include relevant validation. Necessary breaking changes must document their reasons, impact, and migration/recovery plan.
-- Do not weaken source, signature, account isolation, protocol, or usage safety checks for compatibility. Do not import browser cookies or share credentials between account cards.
-- Keep tokens, private keys, real account data, and raw usage output out of Git, distributed artifacts, and public logs. Ordinary tests use synthetic data and must not read personal login state.
-- Follow the [controlled acceptance procedure](INTERNAL_DISTRIBUTION.md#cli-相容性維護) for live CLI login or usage queries. First confirm the authorized platforms, operations, and execution counts; Claude queries may consume usage or incur charges.
+- 後續開發必須遵循[相容性原則](docs/COMPATIBILITY_POLICY.md)：優先保留既有資料、設定、有效連接及仍安全相容的 CLI 版本，盡量減少升級時的手動操作。
+- 修改持久化格式、驗證綁定、provider、CLI/SDK 相依套件或 Updater 時，必須驗證既有使用者的升級流程，並附上相關驗證。必要的不相容變更必須記錄原因、影響與遷移／復原計畫。
+- 不可為了相容性而放寬來源、簽章、帳號隔離、協定或用量安全檢查。不可匯入瀏覽器 cookies，也不可在帳號卡片間共用憑證。
+- token、私鑰、真實帳號資料與原始用量輸出不得進入 Git、分發成品或公開紀錄。一般測試使用合成資料，不得讀取個人登入狀態。
+- 執行真實 CLI 登入或用量查詢時，須遵循[受控驗收程序](INTERNAL_DISTRIBUTION.md#cli-相容性維護)。先確認已授權的平台、操作與執行次數；Claude 查詢可能消耗用量或產生費用。
 
-## Build and verification
+## 建置與驗證
 
-- Use Windows x64 and the SDK pinned in [global.json](global.json). Follow [Windows CI](.github/workflows/windows-ci.yml) for restore, Release builds, tests, and coverage checks; do not lower warning, dependency audit, or verification thresholds.
-- Run affected existing tests for routine changes. Compatibility behavior changes require de-identified fixtures for older formats/responses and regression tests across versions. Keep tests reproducible and independent of personal accounts or live external responses.
-- Check links, UTF-8 encoding, and privacy when adding or editing documents. Documentation changes usually do not need new tests that only compare text.
-- Report checks actually performed and items left unverified. Record unit tests, installation tests, and live CLI tests separately; do not apply historical results to a new candidate.
+- 使用 Windows x64 與 [global.json](global.json) 固定的 SDK。依 [Windows CI](.github/workflows/windows-ci.yml) 執行 restore、Release 建置、測試與覆蓋率檢查；不可降低警告、相依套件稽核或驗證門檻。
+- 一般改動須執行受影響的既有測試。相容性行為改變時，須提供舊格式／回應的去識別 fixtures，以及跨版本回歸測試。測試必須可重現，且不依賴個人帳號或即時外部回應。
+- 新增或修改文件時，檢查連結、UTF-8 編碼與隱私。文件改動通常不需要新增只比對文字的測試。
+- 如實回報已執行的檢查與未驗證項目。分別記錄單元測試、安裝測試與真實 CLI 測試；不得將歷史結果套用到新的候選版。
 
-## Git and releases
+## Git 與發布
 
-- Git commits, branch or tag creation, pushes, and public releases require explicit user instructions. A general request to continue does not grant new authorization for Git writes.
-- Use Conventional Commits with an English type and a short Traditional Chinese subject, without AI attribution. Destructive Git operations are prohibited.
-- Propose a plan before substantial changes to CI, infrastructure, or release settings, and implement it only after explicit approval. Routine documentation and code fixes stay within the authorization for the current task.
-- Validate release candidates according to [RELEASING.md](RELEASING.md). Do not replace frozen artifacts, publish different bytes under the same version, or treat a push request as authorization to publish a Release.
+- Git commit、建立 branch 或 tag、push 及公開發布，都需要使用者明確指示。一般的「繼續」要求不會新增 Git 寫入授權。
+- 使用 Conventional Commits，type 用英文，subject 用精簡繁體中文，不附 AI 署名。禁止破壞性 Git 操作。
+- 大幅修改 CI、基礎設施或發布設定前，先提出計畫，取得明確同意後才能實作。一般文件與程式修正仍限於本次任務已授權的範圍。
+- 依 [RELEASING.md](RELEASING.md) 驗證發布候選版。不可替換已凍結的成品、以同一版本發布不同位元組的檔案，或將 push 要求視為公開 Release 的授權。

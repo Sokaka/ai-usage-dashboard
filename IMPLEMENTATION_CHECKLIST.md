@@ -16,7 +16,7 @@
 - [x] 兩種舊版均由原入口自然建立後升級；三個安裝情境的解除安裝均自然 exit 0，maintenance 清理及使用者資料保留通過。卸載使用 debugger 觀測，會改變時序。
 - [x] 同 source、原 build run／attempt 的原六件成品已建立獨立正式 freeze，沒有重建、重簽或替換。原候選 workflow 仍為 failure，原 workflow freeze 缺失；獨立驗收不改寫該結果。
 - [x] 原候選指定範圍的 source、歷史、logs／artifacts、圖片與 binaries 公開面掃描已完成；不宣稱涵蓋未知外部分發或證明所有敏感內容都不存在。
-- [x] 已登錄同候選 Copilot CLI `1.0.79`／SDK `1.0.11` 的手動實測：8 項本人回報符合、3 項部分證據。範圍與未量測細項見 [CLI 相容性](docs/CLI_COMPATIBILITY.md#github-copilot-手動實測範圍)；其餘平台與版本沒有因此改列通過。
+- [x] 已登錄同候選 Copilot CLI `1.0.79`／SDK `1.0.11` 的手動實測：8 項測試者回報符合、3 項部分證據。範圍與未量測細項見 [CLI 相容性](docs/CLI_COMPATIBILITY.md#github-copilot-手動實測範圍)；其餘平台與版本沒有因此改列通過。
 - [ ] 維護者決定是否公開同一候選 Release。
 - [ ] 公開後完成原六件匿名下載、hash／size／簽章核對，以及 10 案正式網址驗收。私有測試 feed 的成功不能取代這一步。
 
