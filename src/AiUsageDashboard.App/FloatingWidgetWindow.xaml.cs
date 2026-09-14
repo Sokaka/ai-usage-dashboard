@@ -2727,6 +2727,14 @@ public partial class FloatingWidgetWindow : Window
 			DispatcherPriority.Loaded);
 	}
 
+	private void OpenAboutMenuItem_Click(object sender, RoutedEventArgs e)
+	{
+		if (System.Windows.Application.Current is App app)
+		{
+			app.ShowAboutWindow();
+		}
+	}
+
 	private void OpenUserGuideMenuItem_Click(object sender, RoutedEventArgs e)
 	{
 		LocalUserGuideOpenResult result = LocalUserGuideLauncher.Open();

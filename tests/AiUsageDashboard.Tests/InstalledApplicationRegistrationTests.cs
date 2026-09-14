@@ -23,10 +23,12 @@ public sealed class InstalledApplicationRegistrationTests
 		string userDataRoot = Path.Combine(temporaryDirectory.Path, "data");
 		UpdateManifest manifest = CreateInstalledPayload(installRoot, "1.2.3");
 		FakeRegistrationStore store = new();
-		ManagedInstallationRegistrar registrar = new(store);
+		ManagedInstallationRegistrar registrar = new(
+			store,
+			new ManagedStartMenuShortcut(Path.Combine(temporaryDirectory.Path, "Programs")));
 		string sourceUpdater = GetUpdaterExecutablePath();
 
-		await registrar.EnsureRegisteredAsync(
+		string? warning = await registrar.EnsureRegisteredAsync(
 			sourceUpdater,
 			installRoot,
 			maintenanceRoot,
@@ -60,10 +62,19 @@ public sealed class InstalledApplicationRegistrationTests
 			registration.UninstallCommand,
 			StringComparison.Ordinal);
 		Assert.Matches("^[0-9]{8}$", registration.InstallDate);
+		Assert.Null(warning);
+		ShellShortcutDefinition shortcut = WindowsShellShortcut.Read(Path.Combine(
+			temporaryDirectory.Path,
+			"Programs",
+			ManagedStartMenuShortcut.ShortcutFileName));
+		Assert.Equal(ManagedInstallationPaths.GetInstalledAppExecutable(installRoot), shortcut.TargetPath);
+		Assert.Empty(shortcut.Arguments);
 	}
 
-	[Fact]
-	public async Task EnsureRegisteredAsync_WhenVersionChanges_ReusesStableEntry()
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task EnsureRegisteredAsync_WhenVersionChanges_ReusesEntryAndCreatesMissingShortcut(bool previousVersionHasNoShortcut)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string installRoot = Path.Combine(temporaryDirectory.Path, "install");
@@ -72,15 +83,26 @@ public sealed class InstalledApplicationRegistrationTests
 			"maintenance");
 		string userDataRoot = Path.Combine(temporaryDirectory.Path, "data");
 		FakeRegistrationStore store = new();
-		ManagedInstallationRegistrar registrar = new(store);
+		ManagedInstallationRegistrar registrar = new(
+			store,
+			new ManagedStartMenuShortcut(Path.Combine(temporaryDirectory.Path, "Programs")));
 		string sourceUpdater = GetUpdaterExecutablePath();
 		UpdateManifest first = CreateInstalledPayload(installRoot, "1.2.3");
-		await registrar.EnsureRegisteredAsync(
+		Assert.Null(await registrar.EnsureRegisteredAsync(
 			sourceUpdater,
 			installRoot,
 			maintenanceRoot,
 			userDataRoot,
-			first);
+			first));
+
+		if (previousVersionHasNoShortcut)
+		{
+			File.Delete(Path.Combine(
+				temporaryDirectory.Path,
+				"Programs",
+				ManagedStartMenuShortcut.ShortcutFileName));
+		}
+
 		File.Delete(ManagedInstallationPaths.GetInstalledManifest(installRoot));
 		UpdateManifest second = new(
 			UpdateManifest.CurrentSchemaVersion,
@@ -92,15 +114,20 @@ public sealed class InstalledApplicationRegistrationTests
 		await second.WriteAsync(
 			ManagedInstallationPaths.GetInstalledManifest(installRoot));
 
-		await registrar.EnsureRegisteredAsync(
+		Assert.Null(await registrar.EnsureRegisteredAsync(
 			sourceUpdater,
 			installRoot,
 			maintenanceRoot,
 			userDataRoot,
-			second);
+			second));
 
 		Assert.Equal(2, store.Upserts.Count);
 		Assert.Equal("1.2.4", store.Upserts[^1].DisplayVersion);
+		ShellShortcutDefinition shortcut = WindowsShellShortcut.Read(Path.Combine(
+			temporaryDirectory.Path,
+			"Programs",
+			ManagedStartMenuShortcut.ShortcutFileName));
+		Assert.Equal(ManagedInstallationPaths.GetInstalledAppExecutable(installRoot), shortcut.TargetPath);
 	}
 
 	[Fact]
@@ -115,7 +142,9 @@ public sealed class InstalledApplicationRegistrationTests
 		string userDataRoot = Path.Combine(temporaryDirectory.Path, "data");
 		UpdateManifest manifest = CreateInstalledPayload(installRoot, "1.2.3");
 		FakeRegistrationStore store = new();
-		ManagedInstallationRegistrar registrar = new(store);
+		ManagedInstallationRegistrar registrar = new(
+			store,
+			new ManagedStartMenuShortcut(Path.Combine(temporaryDirectory.Path, "Programs")));
 		string sourceUpdater = GetUpdaterExecutablePath();
 		string stableUpdater = ManagedInstallationPaths.GetMaintenanceUpdater(
 			maintenanceRoot);
@@ -134,12 +163,12 @@ public sealed class InstalledApplicationRegistrationTests
 			FileAccess.Read,
 			FileShare.Read))
 		{
-			await registrar.EnsureRegisteredAsync(
+			Assert.Null(await registrar.EnsureRegisteredAsync(
 				sourceUpdater,
 				installRoot,
 				maintenanceRoot,
 				userDataRoot,
-				manifest);
+				manifest));
 
 			Assert.True(File.Exists(generationUpdater));
 			Assert.Equal(GetSha256(sourceUpdater), GetSha256(generationUpdater));
@@ -149,18 +178,100 @@ public sealed class InstalledApplicationRegistrationTests
 				StringComparison.OrdinalIgnoreCase);
 		}
 
-		await registrar.EnsureRegisteredAsync(
+		Assert.Null(await registrar.EnsureRegisteredAsync(
 			generationUpdater,
 			installRoot,
 			maintenanceRoot,
 			userDataRoot,
-			manifest);
+			manifest));
 
 		Assert.Equal(GetSha256(sourceUpdater), GetSha256(stableUpdater));
 		Assert.Contains(
 			$"\"{stableUpdater}\" uninstall",
 			store.Upserts[^1].UninstallCommand,
 			StringComparison.OrdinalIgnoreCase);
+	}
+
+	[Fact]
+	public async Task EnsureRegisteredAsync_WhenShortcutNameConflicts_ReturnsWarningAndKeepsWindowsRegistration()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string installRoot = Path.Combine(temporaryDirectory.Path, "install");
+		UpdateManifest manifest = CreateInstalledPayload(installRoot, "1.2.3");
+		string programsRoot = Path.Combine(temporaryDirectory.Path, "Programs");
+		Directory.CreateDirectory(programsRoot);
+		string shortcutPath = Path.Combine(programsRoot, ManagedStartMenuShortcut.ShortcutFileName);
+		File.WriteAllText(shortcutPath, "keep");
+		FakeRegistrationStore store = new();
+		ManagedInstallationRegistrar registrar = new(store, new ManagedStartMenuShortcut(programsRoot));
+
+		string? warning = await registrar.EnsureRegisteredAsync(
+			GetUpdaterExecutablePath(),
+			installRoot,
+			Path.Combine(temporaryDirectory.Path, "maintenance"),
+			Path.Combine(temporaryDirectory.Path, "data"),
+			manifest);
+
+		Assert.NotNull(warning);
+		Assert.Contains(shortcutPath, warning, StringComparison.Ordinal);
+		Assert.Single(store.Upserts);
+		Assert.Equal("keep", File.ReadAllText(shortcutPath));
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task EnsureRegisteredAsync_WhenProgramsResolutionFails_KeepsMaintenanceAndRegistration(
+		bool throwsOnResolve)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string installRoot = Path.Combine(temporaryDirectory.Path, "install");
+		string maintenanceRoot = Path.Combine(temporaryDirectory.Path, "maintenance");
+		string userDataRoot = Path.Combine(temporaryDirectory.Path, "data");
+		Directory.CreateDirectory(userDataRoot);
+		string userDataCanary = Path.Combine(userDataRoot, "settings.json");
+		File.WriteAllText(userDataCanary, "keep");
+		UpdateManifest manifest = CreateInstalledPayload(installRoot, "1.2.3");
+		FakeRegistrationStore store = new();
+		int resolveCount = 0;
+		ManagedStartMenuShortcut shortcut = new(() =>
+		{
+			resolveCount++;
+
+			if (throwsOnResolve)
+			{
+				throw new UnauthorizedAccessException("Synthetic Programs access denied.");
+			}
+
+			return string.Empty;
+		});
+		ManagedInstallationRegistrar registrar = new(store, shortcut);
+		string sourceUpdater = GetUpdaterExecutablePath();
+		Assert.Equal(0, resolveCount);
+
+		string? warning = await registrar.EnsureRegisteredAsync(
+			sourceUpdater,
+			installRoot,
+			maintenanceRoot,
+			userDataRoot,
+			manifest);
+
+		InstalledApplicationRegistration registration = Assert.Single(store.Upserts);
+		string maintenanceUpdater = ManagedInstallationPaths.GetMaintenanceUpdater(maintenanceRoot);
+		Assert.Equal(GetSha256(sourceUpdater), GetSha256(maintenanceUpdater));
+		Assert.Equal(Path.GetFullPath(installRoot), registration.InstallLocation);
+		Assert.Equal("1.2.3", registration.DisplayVersion);
+		Assert.Contains(maintenanceUpdater, registration.UninstallCommand, StringComparison.Ordinal);
+		Assert.True(File.Exists(ManagedInstallationPaths.GetInstalledAppExecutable(installRoot)));
+		Assert.Equal("keep", File.ReadAllText(userDataCanary));
+		Assert.Equal(1, resolveCount);
+		Assert.NotNull(warning);
+		Assert.Contains("開始選單", warning, StringComparison.Ordinal);
+
+		if (throwsOnResolve)
+		{
+			Assert.Contains("Synthetic Programs access denied.", warning, StringComparison.Ordinal);
+		}
 	}
 
 	[Fact]
@@ -171,7 +282,9 @@ public sealed class InstalledApplicationRegistrationTests
 		UpdateManifest installed = CreateInstalledPayload(installRoot, "1.2.3");
 		UpdateManifest expected = installed with { Version = "1.2.4" };
 		FakeRegistrationStore store = new();
-		ManagedInstallationRegistrar registrar = new(store);
+		ManagedInstallationRegistrar registrar = new(
+			store,
+			new ManagedStartMenuShortcut(Path.Combine(temporaryDirectory.Path, "Programs")));
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			registrar.EnsureRegisteredAsync(

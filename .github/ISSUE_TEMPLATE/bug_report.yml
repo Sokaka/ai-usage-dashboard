@@ -1,0 +1,44 @@
+name: 問題回報
+description: 回報安裝、操作或用量顯示問題。
+title: '[問題] '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前請查閱 [支援說明](https://github.com/Sokaka/ai-usage-dashboard/blob/main/SUPPORT.md) 與既有 Issues。
+        不要上傳原始 logs、用量輸出、帳號匯出檔或登入資料；安全漏洞請依 [私密回報指引](https://github.com/Sokaka/ai-usage-dashboard/blob/main/SECURITY.md) 處理。
+  - type: input
+    id: app-version
+    attributes:
+      label: AI Usage 版本與安裝方式
+      description: 從「關於 AI Usage」按「複製版本」，並註明 Updater 或免安裝 ZIP；無法啟動時提供安裝檔名或已安裝清單中的版本。
+    validations:
+      required: true
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows 版本與組建
+      description: 不需填寫電腦名稱、Windows 使用者名稱或裝置識別碼。
+    validations:
+      required: true
+  - type: input
+    id: provider-cli
+    attributes:
+      label: 受影響的服務與官方 CLI 版本
+      description: 不涉及服務請填「不適用」；無法確認請填「未知」，不必重新登入或查詢用量。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 重現步驟、預期結果與實際結果
+      description: 請說明從哪個操作開始出現問題，以及是否在 App／CLI 更新後發生。Claude 查詢可能增加用量或費用，不需為了回報反覆重試。
+    validations:
+      required: true
+  - type: textarea
+    id: redacted-error
+    attributes:
+      label: 已遮蔽個人資訊的錯誤文字
+      description: 保留錯誤代碼與描述；移除帳號、電子郵件、組織／工作區名稱、使用者路徑、token、授權碼與 callback URL。無錯誤文字可留白。
+    validations:
+      required: false

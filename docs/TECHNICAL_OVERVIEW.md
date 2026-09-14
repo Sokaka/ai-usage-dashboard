@@ -17,11 +17,19 @@
 
 - WPF 浮窗是唯一主介面，可查看用量並完成帳號新增、編輯、啟用、停用、排序、移除、連接與復原。
 - Claude、Codex、GitHub Copilot 與 Grok 支援多個帳號。每張卡片平時都使用自己的登入資料與用量。Copilot 只有在使用者操作連接時，會暫時使用官方 CLI 共用的登入清單，詳見後文。AGY 使用目前 Windows 使用者的單一設定，因此暫限一張卡片。
-- 系統匣提供顯示、隱藏、置頂、使用說明與結束程式；帳號管理可用時也能匯出設定，本次執行仍有可用還原點時則能還原匯入前設定。隱藏浮窗不會停止背景更新。
+- 系統匣提供顯示、隱藏、置頂、使用說明、關於與結束程式；帳號管理可用時也能匯出設定，本次執行仍有可用還原點時則能還原匯入前設定。隱藏浮窗不會停止背景更新。
 - 同一個 Windows 使用者同時只能執行一份 AI Usage。再次啟動時會帶回既有浮窗，不會開出第二份程式。
 - 浮窗位置、停靠角落、置頂、收合、主題與排序偏好會保存在本機。舊版 `Dashboard`、`Widget`、`DashboardAndWidget` 與 `Tray` 值仍可讀取，避免升級後遺失顯示偏好。
 - 每張卡片都有自己的快取。同一張卡片已有查詢在執行時，不會再啟動重複查詢；查詢失敗時可保留上次成功的資料並標成舊資料。讀到快取不會標示成剛完成更新。
 - 動態狀態、表單標籤、按鈕與選單都提供鍵盤、螢幕閱讀器與 Windows 高對比模式所需的資訊。
+
+## 啟動與版本資訊
+
+標準安裝的 Updater 透過 `ManagedInstallationRegistrar` 建立目前 Windows 使用者的開始選單捷徑，指向固定的 `current/app/AiUsageDashboard.App.exe`。更新沿用同一目標；自訂安裝位置與免安裝版不建立捷徑。`ManagedStartMenuShortcut` 核對目標、工作目錄、參數、描述、圖示、視窗狀態與 hotkey，只有相符項目可在解除安裝時清理；同名衝突、損壞或不安全的路徑會保留並回報警告。
+
+`WindowsShellShortcut` 使用 Windows `IShellLinkW`／`IPersistFile` 的固定 COM 介面建立及讀回捷徑，並成對釋放 interface 與 COM initialization，避免 trimmed Updater 依賴動態 COM 包裝。此處只處理捷徑，不變更帳號資料或登入自動啟動設定。安裝及復原操作見[分發與支援手冊](../INTERNAL_DISTRIBUTION.md)。
+
+浮窗與系統匣共用一個 `AboutWindow`，從 App assembly 的 `AssemblyInformationalVersion` 取得完整版本，保留預覽版與 source revision 資訊；未指定版本的開發建置使用 `0.0.0-dev`。使用者可複製版本、開啟隨包使用說明，或前往固定的 GitHub Releases／Issues 網址。開啟「關於」不查詢 provider 或更新服務。
 
 ## 主題與配色
 

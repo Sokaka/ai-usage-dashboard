@@ -85,6 +85,6 @@ internal static class LocalUserGuideLauncher
 
 	private static void StartProcess(ProcessStartInfo startInfo)
 	{
-		_ = Process.Start(startInfo);
+		using Process? process = Process.Start(startInfo);
 	}
 }

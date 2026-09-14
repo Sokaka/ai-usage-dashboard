@@ -22,6 +22,7 @@ internal sealed class ManagedInstallationUninstaller
 	private readonly IMaintenanceUpdaterCleanup _maintenanceCleanup;
 	private readonly IInstalledApplicationRegistrationStore _registrationStore;
 	private readonly IManagedPayloadShutdown _shutdown;
+	private readonly IManagedStartMenuShortcut _startMenuShortcut;
 	private readonly Func<IDisposable> _acquireAppMutex;
 	private readonly Func<string> _createExpectedLogonStartupCommand;
 
@@ -31,6 +32,7 @@ internal sealed class ManagedInstallationUninstaller
 		ICurrentUserLogonStartupRegistrationStore
 			logonStartupRegistrationStore,
 		IMaintenanceUpdaterCleanup maintenanceCleanup,
+		IManagedStartMenuShortcut startMenuShortcut,
 		Func<IDisposable>? acquireAppMutex = null,
 		Func<string>? createExpectedLogonStartupCommand = null)
 	{
@@ -42,6 +44,8 @@ internal sealed class ManagedInstallationUninstaller
 				nameof(logonStartupRegistrationStore));
 		_maintenanceCleanup = maintenanceCleanup ??
 			throw new ArgumentNullException(nameof(maintenanceCleanup));
+		_startMenuShortcut = startMenuShortcut ??
+			throw new ArgumentNullException(nameof(startMenuShortcut));
 		_acquireAppMutex = acquireAppMutex ?? (() =>
 			AppSingleInstanceMutexLease.Acquire(TimeSpan.FromSeconds(5)));
 		_createExpectedLogonStartupCommand =
@@ -82,7 +86,9 @@ internal sealed class ManagedInstallationUninstaller
 
 			if (shouldManageInstalledAppRegistration)
 			{
-				absentWarning = RemoveLogonStartupRegistration();
+				absentWarning = CombineWarnings(
+					RemoveLogonStartupRegistration(),
+					_startMenuShortcut.RemoveIfMatches(normalizedInstallRoot));
 				_registrationStore.RemoveIfMatches(normalizedInstallRoot);
 			}
 
@@ -141,7 +147,9 @@ internal sealed class ManagedInstallationUninstaller
 
 				if (shouldManageInstalledAppRegistration)
 				{
-					warning = RemoveLogonStartupRegistration();
+					warning = CombineWarnings(
+						RemoveLogonStartupRegistration(),
+						_startMenuShortcut.RemoveIfMatches(normalizedInstallRoot));
 				}
 
 				DeleteOwnedTrees(normalizedInstallRoot);

@@ -6,9 +6,13 @@
 
 AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務的訂閱用量。
 
+![AI Usage 浮窗與主題配色預覽，帳號及用量皆為合成示意資料](docs/images/dashboard-preview.png)
+
+畫面使用合成帳號與用量展示浮窗及主題配色，不是真實帳號、用量或服務驗收結果。
+
 ## 目前版本
 
-已凍結的私有候選版為 `1.0.1`，尚未正式公開。目前 source 的 Copilot 改用本機官方 CLI，主包不再隨附第三方 CLI；這項變更尚未建立正式候選，不能套用 `1.0.1` 的驗收結果。驗收範圍與未驗證項目見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前候選)。正式版本公開後，可從 [GitHub Releases](https://github.com/Sokaka/ai-usage-dashboard/releases)下載。
+本專案目前仍為 private，尚無正式公開下載。已凍結的私有候選版為 `1.0.1`；目前 source 已有後續變更，包括 Copilot 改用本機官方 CLI、主包不再隨附第三方 CLI，尚未建立新正式候選，不能套用 `1.0.1` 的驗收結果。驗收範圍與未驗證項目見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前候選)。正式公開後，安裝檔將由 [GitHub Releases](https://github.com/Sokaka/ai-usage-dashboard/releases)提供。
 
 ## 支援平台
 
@@ -42,11 +46,18 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 - 仍在 Microsoft 支援範圍內的 Windows x64 電腦，以及網路連線。
 - 安裝包包含所需的 .NET 執行環境，不必另外安裝；各服務的官方 CLI 由使用者另行安裝。
 
-## 使用與限制
+## 安裝與第一次使用
 
-1. 從正式 Release 取得 Updater 或完整 ZIP。
-2. 依[安裝與第一次啟動](使用說明.md#安裝與第一次啟動)操作，閱讀並接受適用條款。
-3. 新增帳號，透過服務的官方登入流程完成連接。
+正式版本公開後，從該版本的 GitHub Release 選擇：
+
+| 使用方式 | 下載檔案 | 啟動方式 |
+| --- | --- | --- |
+| **一般安裝：Updater** | `AiUsageDashboard-Updater-<version>-win-x64.exe` | Updater 也能首次安裝。以一般使用者權限執行，安裝後從開始選單搜尋 **AI Usage**；保留 Updater 供日後更新。 |
+| **免安裝：完整 ZIP** | `AiUsageDashboard-<version>-win-x64.zip` | 完整解壓到新資料夾後，執行其中的 App；不要下載 GitHub 自動產生的 Source code ZIP。 |
+
+依[安裝與第一次啟動](使用說明.md#安裝與第一次啟動)操作、閱讀並接受適用條款，再新增帳號，透過服務的官方登入流程完成連接。
+
+## 使用限制
 
 使用前請留意：
 
@@ -63,6 +74,8 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 | 需求 | 文件 |
 | --- | --- |
 | 一般使用、設定與問題排除 | [使用說明](使用說明.md) |
+| 回報問題或提出功能建議 | [支援與問題回報](SUPPORT.md) |
+| 私密回報安全問題 | [安全問題回報](SECURITY.md) |
 | 架構、資料保存與服務串接 | [技術總覽](docs/TECHNICAL_OVERVIEW.md) |
 | 開發規範與升級相容性要求 | [AGENTS.md](AGENTS.md) |
 | 功能與驗收狀態 | [實作檢查清單](IMPLEMENTATION_CHECKLIST.md) |

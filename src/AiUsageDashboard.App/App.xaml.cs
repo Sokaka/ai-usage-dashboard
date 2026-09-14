@@ -112,6 +112,7 @@ public partial class App : System.Windows.Application
 	private readonly SemaphoreSlim _shellPreferencesSaveGate = new(1, 1);
 	private readonly CancellationTokenSource _startupRecoverySource = new();
 	private AccountConnectionCoordinator? _accountConnectionCoordinator;
+	private AboutWindow? _aboutWindow;
 	private SingleInstanceActivationChannel? _activationChannel;
 	private UpdateShutdownChannel? _updateShutdownChannel;
 	private Icon? _applicationIcon;
@@ -2975,6 +2976,10 @@ public partial class App : System.Windows.Application
 			"使用說明",
 			null,
 			(_, _) => Dispatcher.Invoke(OpenUserGuide));
+		menu.Items.Add(
+			"關於 AI Usage",
+			null,
+			(_, _) => Dispatcher.Invoke(ShowAboutWindow));
 		menu.Items.Add("-");
 		menu.Items.Add(
 			"結束 AI Usage",
@@ -2996,6 +3001,48 @@ public partial class App : System.Windows.Application
 		UpdateWidgetTopmostMenuItem();
 		UpdatePortableSettingsMenuItems();
 		UpdateLogonStartupMenuItem();
+	}
+
+	internal void ShowAboutWindow()
+	{
+		if (IsQuitting)
+		{
+			return;
+		}
+
+		if (_aboutWindow is not null)
+		{
+			if (_aboutWindow.WindowState == WindowState.Minimized)
+			{
+				_aboutWindow.WindowState = WindowState.Normal;
+			}
+
+			_aboutWindow.Activate();
+			return;
+		}
+
+		AboutWindow aboutWindow = new();
+
+		if (_floatingWidgetWindow?.IsVisible == true)
+		{
+			aboutWindow.Owner = _floatingWidgetWindow;
+		}
+		else
+		{
+			aboutWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+			aboutWindow.ShowInTaskbar = true;
+		}
+
+		_aboutWindow = aboutWindow;
+
+		try
+		{
+			aboutWindow.ShowDialog();
+		}
+		finally
+		{
+			_aboutWindow = null;
+		}
 	}
 
 	private void OpenUserGuide()

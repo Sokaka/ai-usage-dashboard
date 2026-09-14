@@ -2,7 +2,7 @@
 
 讀者：AI Usage 的維護者與協助安裝、更新或排錯的人員。本手冊說明目前 source 的 Windows x64 行為；實際成品是否驗收通過，以該版本 Release 的紀錄為準。一般使用者請優先讀隨附指南。
 
-一般使用者請閱讀 [`使用說明.md`](使用說明.md)。正式 ZIP 只附使用者指南；本手冊留在專案原始碼庫，供維護與支援人員查閱，不隨套件分發。
+一般使用者請閱讀 [`使用說明.md`](使用說明.md)。一般問題與功能建議走[支援入口](SUPPORT.md)，安全問題依[私密回報指引](SECURITY.md)處理。正式 ZIP 只附使用者指南；本手冊留在專案原始碼庫，供維護與支援人員查閱，不隨套件分發。
 
 本手冊只說明前置條件、操作步驟、預期結果與失敗處理。執行檔驗證、程序隔離、更新切換與中斷復原的完整設計，請查閱 [`docs/TECHNICAL_OVERVIEW.md`](docs/TECHNICAL_OVERVIEW.md)。
 
@@ -107,11 +107,15 @@ ZIP 固定使用簡短的根目錄 `AiUsageDashboard`，避免 Windows 解壓縮
 
 ## 安裝與啟動
 
+一般安裝使用 Updater，首次安裝與後續更新使用同一入口。安裝後可從 Windows 開始選單搜尋 **AI Usage**；App 的 **關於 AI Usage** 提供版本資訊、隨包指南、Releases 與問題回報入口。
+
+以下為免安裝 ZIP 的操作步驟：
+
 1. 請使用者先閱讀根目錄的 `使用說明.md`。
 2. 使用相鄰的 `.sha256` 檔案驗證 ZIP。
 3. 把 ZIP 解壓縮至新的、有版本區隔且使用者可寫入的目錄，再開啟其中的 `AiUsageDashboard` 目錄。
 4. 只安裝使用者要新增之服務所需、且已核准的官方 CLI。
-5. 啟動 `app\AiUsageDashboard.App.exe`。這是唯一的一般啟動入口。
+5. 啟動 `app\AiUsageDashboard.App.exe`。這是免安裝 ZIP 的一般啟動入口。
 6. 首次使用時，從浮窗新增需要的帳號。換機或重建設定時，可從浮窗的 **⋯** 選單匯入先前匯出的設定檔，再逐張重新連接 Claude、Codex、GitHub Copilot、Grok 與 AGY。這些服務的本機登入資料或電腦綁定不會隨匯入移轉。AGY 為選用服務；使用者選擇 Antigravity 後才會開始連接，受支援的新版本不必先關閉既有 AGY 視窗。
 
 不要複製其他使用者的 `%LOCALAPPDATA%\AiUsageDashboard` 目錄。裡面可能包含帳號專屬的 CLI 狀態、Grok 登入目錄、用量快取、診斷資訊，以及 AGY 私密校準資料。
@@ -256,7 +260,7 @@ stable feed 在信任 URL、hash、size、版本與 sequence 前先驗證專案�
 
 更新交易的 journal 與 rename 邊界須接受程序中斷、再次復原中斷、rollback 失敗、磁碟不足及未知檔案保留測試。保留既有 previous／交易紀錄供診斷；沒有確認 ownership 不做自動刪除。單元測試不等同真實斷電證據，公開前仍需乾淨 Windows 成品驗收。
 
-`apply-local` 是使用者明確選擇可信本機 ZIP／SHA256 的人工離線復原路徑，不讀線上 feed，也不執行一般安裝入口的條款提示，不具有同等簽章與線上反降級保障。一般首次安裝請使用 Updater 的正常入口，App 的正常啟動仍須有效接受紀錄。維持 Windows 登錄、解除安裝、maintenance 自清理與使用者資料保留；本版不建立快捷方式或工作列釘選。
+`apply-local` 是使用者明確選擇可信本機 ZIP／SHA256 的人工離線復原路徑，不讀線上 feed，也不執行一般安裝入口的條款提示，不具有同等簽章與線上反降級保障。一般首次安裝請使用 Updater 的正常入口，App 的正常啟動仍須有效接受紀錄。維持 Windows 登錄、解除安裝、maintenance 自清理與使用者資料保留；使用標準安裝位置時（含 `apply-local`）會建立開始選單捷徑；自訂安裝位置與免安裝 ZIP 不建立捷徑。所有安裝方式都不會自動釘選工作列。
 
 `transactions/<id>/transaction.json` 以 `Flush(true)` 加上同目錄 rename 提交；`receipt-*.tmp` 不會被當成已提交證據。正常更新保留 previous，rollback 保留 staging，復原不自動清除交易、暫存或未知檔案，也不改既有 downloads／updater-cache 清理規則。
 

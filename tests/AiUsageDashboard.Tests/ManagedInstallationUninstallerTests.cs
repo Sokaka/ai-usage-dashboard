@@ -517,13 +517,199 @@ public sealed class ManagedInstallationUninstallerTests
 			ManagedInstallationPaths.GetInstalledAppExecutable(installRoot)));
 	}
 
+	[Theory]
+	[InlineData(true, false)]
+	[InlineData(true, true)]
+	[InlineData(false, false)]
+	public async Task UninstallAsync_RemovesOnlyCanonicalMatchingStartMenuShortcut(
+		bool shouldManageInstalledAppRegistration,
+		bool hasConflict)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		TestLayout layout = CreateLayout(temporaryDirectory.Path);
+		CreateInstalledPayload(layout.InstallRoot);
+		string programsRoot = Path.Combine(temporaryDirectory.Path, "Programs");
+		ManagedStartMenuShortcut shortcut = new(programsRoot);
+		Assert.Null(shortcut.EnsurePresent(layout.InstallRoot));
+		string shortcutPath = Path.Combine(programsRoot, ManagedStartMenuShortcut.ShortcutFileName);
+
+		if (hasConflict)
+		{
+			File.WriteAllText(shortcutPath, "user-owned shortcut");
+		}
+
+		byte[] original = File.ReadAllBytes(shortcutPath);
+		ManagedInstallationUninstaller uninstaller = CreateUninstaller(
+			new FakeShutdown([]),
+			new FakeRegistrationStore(layout.InstallRoot, []),
+			new FakeMaintenanceCleanup([]),
+			[],
+			startMenuShortcut: shortcut);
+
+		ManagedInstallationUninstallResult result = await uninstaller.UninstallAsync(
+			layout.ExternalUpdaterPath,
+			layout.InstallRoot,
+			layout.MaintenanceRoot,
+			layout.UserDataRoot,
+			shouldManageInstalledAppRegistration);
+
+		Assert.True(result.InstallRootRemoved);
+
+		if ((!shouldManageInstalledAppRegistration) || hasConflict)
+		{
+			Assert.Equal(original, File.ReadAllBytes(shortcutPath));
+		}
+		else
+		{
+			Assert.False(File.Exists(shortcutPath));
+		}
+
+		if (hasConflict)
+		{
+			Assert.NotNull(result.Warning);
+			Assert.Contains(shortcutPath, result.Warning, StringComparison.Ordinal);
+		}
+		else
+		{
+			Assert.Null(result.Warning);
+		}
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task UninstallAsync_WhenProgramsResolutionFails_CompletesCanonicalCleanupWithWarning(
+		bool throwsOnResolve)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		TestLayout layout = CreateLayout(temporaryDirectory.Path);
+		CreateInstalledPayload(layout.InstallRoot);
+		CreateOwnedSupportTrees(layout.InstallRoot);
+		Directory.CreateDirectory(layout.UserDataRoot);
+		string userDataCanary = Path.Combine(layout.UserDataRoot, "settings.json");
+		File.WriteAllText(userDataCanary, "keep");
+		List<string> events = [];
+		FakeShutdown shutdown = new(events);
+		FakeRegistrationStore registration = new(layout.InstallRoot, events);
+		FakeLogonStartupRegistrationStore logonStartupRegistration = new(
+			events,
+			LogonStartupRegistrationState.ExactMatch);
+		FakeMaintenanceCleanup maintenanceCleanup = new(events);
+		int resolveCount = 0;
+		ManagedStartMenuShortcut shortcut = new(() =>
+		{
+			resolveCount++;
+
+			if (throwsOnResolve)
+			{
+				throw new UnauthorizedAccessException("Synthetic Programs access denied.");
+			}
+
+			return string.Empty;
+		});
+		ManagedInstallationUninstaller uninstaller = CreateUninstaller(
+			shutdown,
+			registration,
+			maintenanceCleanup,
+			events,
+			logonStartupRegistration,
+			startMenuShortcut: shortcut);
+		Assert.Equal(0, resolveCount);
+
+		ManagedInstallationUninstallResult result = await uninstaller.UninstallAsync(
+			layout.ExternalUpdaterPath,
+			layout.InstallRoot,
+			layout.MaintenanceRoot,
+			layout.UserDataRoot,
+			shouldManageInstalledAppRegistration: true);
+
+		Assert.False(result.WasAlreadyAbsent);
+		Assert.True(result.InstallRootRemoved);
+		Assert.False(Directory.Exists(layout.InstallRoot));
+		Assert.Equal("keep", File.ReadAllText(userDataCanary));
+		Assert.Equal(1, shutdown.QuiescentCount);
+		Assert.Equal(1, shutdown.FinalScanCount);
+		Assert.True(registration.WasRemoved);
+		Assert.True(logonStartupRegistration.WasRemoved);
+		Assert.Equal(1, maintenanceCleanup.CallCount);
+		Assert.Equal(1, resolveCount);
+		Assert.NotNull(result.Warning);
+		Assert.Contains("開始選單", result.Warning, StringComparison.Ordinal);
+
+		if (throwsOnResolve)
+		{
+			Assert.Contains("Synthetic Programs access denied.", result.Warning, StringComparison.Ordinal);
+		}
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task UninstallAsync_ForCustomInstall_NeverResolvesProgramsDirectory(
+		bool hasInstalledPayload)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		TestLayout layout = CreateLayout(temporaryDirectory.Path);
+
+		if (hasInstalledPayload)
+		{
+			CreateInstalledPayload(layout.InstallRoot);
+			CreateOwnedSupportTrees(layout.InstallRoot);
+		}
+
+		Directory.CreateDirectory(layout.UserDataRoot);
+		string userDataCanary = Path.Combine(layout.UserDataRoot, "settings.json");
+		File.WriteAllText(userDataCanary, "keep");
+		Directory.CreateDirectory(layout.MaintenanceRoot);
+		string maintenanceCanary = Path.Combine(layout.MaintenanceRoot, "keep.txt");
+		File.WriteAllText(maintenanceCanary, "keep maintenance");
+		List<string> events = [];
+		FakeRegistrationStore registration = new(layout.InstallRoot, events);
+		FakeLogonStartupRegistrationStore logonStartupRegistration = new(
+			events,
+			LogonStartupRegistrationState.ExactMatch);
+		FakeMaintenanceCleanup maintenanceCleanup = new(events);
+		int resolveCount = 0;
+		ManagedStartMenuShortcut shortcut = new(() =>
+		{
+			resolveCount++;
+			throw new InvalidOperationException("Programs resolver must not run for a custom install.");
+		});
+		ManagedInstallationUninstaller uninstaller = CreateUninstaller(
+			new FakeShutdown(events),
+			registration,
+			maintenanceCleanup,
+			events,
+			logonStartupRegistration,
+			startMenuShortcut: shortcut);
+
+		ManagedInstallationUninstallResult result = await uninstaller.UninstallAsync(
+			layout.ExternalUpdaterPath,
+			layout.InstallRoot,
+			layout.MaintenanceRoot,
+			layout.UserDataRoot,
+			shouldManageInstalledAppRegistration: false);
+
+		Assert.Equal(!hasInstalledPayload, result.WasAlreadyAbsent);
+		Assert.True(result.InstallRootRemoved);
+		Assert.Null(result.Warning);
+		Assert.False(Directory.Exists(layout.InstallRoot));
+		Assert.Equal(0, resolveCount);
+		Assert.False(registration.WasRemoved);
+		Assert.Equal(0, logonStartupRegistration.RemoveCount);
+		Assert.Equal(0, maintenanceCleanup.CallCount);
+		Assert.Equal("keep", File.ReadAllText(userDataCanary));
+		Assert.Equal("keep maintenance", File.ReadAllText(maintenanceCanary));
+	}
+
 	private static ManagedInstallationUninstaller CreateUninstaller(
 		FakeShutdown shutdown,
 		FakeRegistrationStore registration,
 		FakeMaintenanceCleanup maintenanceCleanup,
 		List<string> events,
 		FakeLogonStartupRegistrationStore? logonStartupRegistration = null,
-		Func<string>? createExpectedLogonStartupCommand = null)
+		Func<string>? createExpectedLogonStartupCommand = null,
+		IManagedStartMenuShortcut? startMenuShortcut = null)
 	{
 		return new ManagedInstallationUninstaller(
 			shutdown,
@@ -533,10 +719,24 @@ public sealed class ManagedInstallationUninstallerTests
 					events,
 					LogonStartupRegistrationState.Absent),
 			maintenanceCleanup,
+			startMenuShortcut ?? new FakeStartMenuShortcut(),
 			() => new CallbackDisposable(
 				() => events.Add("mutex-acquired"),
 				() => events.Add("mutex-disposed")),
 			createExpectedLogonStartupCommand);
+	}
+
+	private sealed class FakeStartMenuShortcut : IManagedStartMenuShortcut
+	{
+		public string? EnsurePresent(string installRoot)
+		{
+			throw new NotSupportedException();
+		}
+
+		public string? RemoveIfMatches(string installRoot)
+		{
+			return null;
+		}
 	}
 
 	private sealed class FakeLogonStartupRegistrationStore :

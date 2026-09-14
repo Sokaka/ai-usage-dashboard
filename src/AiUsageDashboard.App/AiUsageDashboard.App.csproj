@@ -5,6 +5,7 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Version Condition="'$(Version)' == ''">0.0.0-dev</Version>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Assets\AiUsageDashboard.ico</ApplicationIcon>

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 使用說明與支援範圍
+    url: https://github.com/Sokaka/ai-usage-dashboard/blob/main/SUPPORT.md
+    about: 查看常見問題與回報時需要的最少資訊。
+  - name: 安全問題的私密回報方式
+    url: https://github.com/Sokaka/ai-usage-dashboard/blob/main/SECURITY.md
+    about: 先確認可用的私密聯絡方式，勿在公開 Issue 提供漏洞細節。

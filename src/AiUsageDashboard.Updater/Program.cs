@@ -564,7 +564,8 @@ internal static class Program
 			CreateProcessGate(),
 			new CurrentUserUninstallRegistryStore(),
 			new CurrentUserLogonStartupRegistryStore(),
-			new MaintenanceUpdaterCleanup());
+			new MaintenanceUpdaterCleanup(),
+			new ManagedStartMenuShortcut());
 		ManagedInstallationUninstallResult result =
 			await uninstaller.UninstallAsync(
 				runningUpdaterPath,
@@ -607,15 +608,22 @@ internal static class Program
 				throw new InvalidOperationException(
 					"The running updater executable path is unavailable.");
 			ManagedInstallationRegistrar registrar = new(
-				new CurrentUserUninstallRegistryStore());
-			await registrar.EnsureRegisteredAsync(
+				new CurrentUserUninstallRegistryStore(),
+				new ManagedStartMenuShortcut());
+			string? shortcutWarning = await registrar.EnsureRegisteredAsync(
 				runningUpdaterPath,
 				options.InstallRoot,
 				options.MaintenanceRoot,
 				options.UserDataRoot,
 				installedManifest,
 				cancellationToken);
-			return null;
+
+			if (shortcutWarning is not null)
+			{
+				Console.Error.WriteLine($"Warning: {shortcutWarning}");
+			}
+
+			return shortcutWarning;
 		}
 		catch (Exception exception) when (
 			exception is IOException or UnauthorizedAccessException or

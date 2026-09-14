@@ -1,0 +1,23 @@
+name: 功能建議
+description: 說明你希望改善的操作或使用情境。
+title: '[建議] '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        請先搜尋既有 Issues。不要附上真實帳號、用量輸出、原始 logs、帳號匯出檔或登入資料。
+        安全漏洞請依 [私密回報指引](https://github.com/Sokaka/ai-usage-dashboard/blob/main/SECURITY.md) 處理。
+  - type: textarea
+    id: use-case
+    attributes:
+      label: 想完成什麼，目前在哪裡遇到困難？
+      description: 請用具體操作情境說明，需要時註明 App 版本。
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 希望如何改善？
+      description: 可以描述希望看到的行為，以及目前使用的替代方式；不必提供實作方案。
+    validations:
+      required: true

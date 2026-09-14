@@ -9,15 +9,19 @@ namespace AiUsageDashboard.Updater;
 internal sealed class ManagedInstallationRegistrar
 {
 	private readonly IInstalledApplicationRegistrationStore _registrationStore;
+	private readonly IManagedStartMenuShortcut _startMenuShortcut;
 
 	internal ManagedInstallationRegistrar(
-		IInstalledApplicationRegistrationStore registrationStore)
+		IInstalledApplicationRegistrationStore registrationStore,
+		IManagedStartMenuShortcut startMenuShortcut)
 	{
 		_registrationStore = registrationStore ??
 			throw new ArgumentNullException(nameof(registrationStore));
+		_startMenuShortcut = startMenuShortcut ??
+			throw new ArgumentNullException(nameof(startMenuShortcut));
 	}
 
-	internal async Task EnsureRegisteredAsync(
+	internal async Task<string?> EnsureRegisteredAsync(
 		string runningUpdaterExecutablePath,
 		string installRoot,
 		string maintenanceRoot,
@@ -93,6 +97,7 @@ internal sealed class ManagedInstallationRegistrar
 			quietUninstallCommand,
 			DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture)));
 		DeleteStaleUninstallReceipt(normalizedInstallRoot);
+		return _startMenuShortcut.EnsurePresent(normalizedInstallRoot);
 	}
 
 	private static void DeleteStaleUninstallReceipt(string installRoot)

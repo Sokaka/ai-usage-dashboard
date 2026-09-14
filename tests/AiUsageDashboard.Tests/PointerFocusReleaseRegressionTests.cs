@@ -546,6 +546,7 @@ public sealed class PointerFocusReleaseRegressionTests
 		[
 			LoadAppXaml("AccountEditorWindow.xaml"),
 			LoadAppXaml("CodexWorkspacePromptWindow.xaml"),
+			LoadAppXaml("AboutWindow.xaml"),
 			floatingWindow
 		];
 		XDocument setupWindow = LoadSetupXaml("SetupWindow.xaml");
@@ -564,9 +565,9 @@ public sealed class PointerFocusReleaseRegressionTests
 			.Where(element => element.Attribute("Click") is not null)
 			.ToArray();
 
-		Assert.Equal(30, buttonBaseActions.Length);
+		Assert.Equal(35, buttonBaseActions.Length);
 		Assert.Single(comboBoxActions);
-		Assert.Equal(24, menuItemActions.Length);
+		Assert.Equal(25, menuItemActions.Length);
 		Assert.All(
 			buttonBaseActions
 				.Concat(comboBoxActions)
@@ -697,7 +698,10 @@ public sealed class PointerFocusReleaseRegressionTests
 				element.Elements(Presentation + "MenuItem").Any())
 			.ToArray();
 
-		Assert.Equal(24, leafActions.Length);
+		Assert.Equal(25, leafActions.Length);
+		XElement aboutAction = Assert.Single(leafActions, element =>
+			(string?)element.Attribute("AutomationProperties.AutomationId") == "OpenAbout");
+		Assert.Empty(aboutAction.Elements(Presentation + "MenuItem"));
 		Assert.Equal(3, submenuHeaders.Length);
 		Assert.Contains(
 			"!menuItem.HasItems",

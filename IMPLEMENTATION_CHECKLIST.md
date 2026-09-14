@@ -1,6 +1,6 @@
 # 實作與驗證清單
 
-更新日期：2026-09-13
+更新日期：2026-09-14
 
 讀者：負責 AI Usage Dashboard 開發、測試與交付的人員。本文只列現況、驗證界線與尚待工作。
 
@@ -8,17 +8,34 @@
 
 ## 目前 source
 
+標準安裝新增開始選單捷徑；浮窗與系統匣新增「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 加入合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些變更尚未建立正式候選，驗證結果與下列既有候選分開記錄。
+
+2026-09-14 開始選單路徑修正驗證：
+
+- Programs 路徑改在捷徑操作時才解析；空路徑、無效路徑與存取失敗會回報警告，自訂安裝解除安裝不查詢 Programs。新增 10 案回歸，117 案定向測試通過；Release 建置為 0 warnings／0 errors，完整回歸為 4,027 passed／0 failed／0 skipped，production line coverage 75.75%（51,002／67,332），門檻維持 70%。
+- 修正後的相同捷徑 source 再次通過獨立 trimmed、single-file EXE 的 20 項檢查。空路徑與例外使用合成注入，未改動 Windows 的實際 Programs 目錄，也未重跑正式 Updater 安裝／升級；原本機驗證包保持原件。
+
+2026-09-14 公開入口初版驗證（上述路徑修正前）：
+
+- Release 建置通過，0 warnings／0 errors；修正測試後的完整回歸為 4,017 passed／0 failed／0 skipped，production line coverage 75.73%（50,980／67,318），門檻維持 70%。
+- 首輪為 4,012 passed／5 failed／0 skipped：4 案是新增 About 後的測試預期或 Dispose 觀測方式錯誤，已修正並通過 61 案定向回歸；另 1 案為下述 Codex fixture 清理失敗再次發生，第二輪通過仍不代表根因已修復。清理例外可能覆蓋測試 body 的原始結果，不能宣稱首輪 body 已通過。
+- About 以合成資料完成 5 組 palette × 2 種寬度的 10 張離線預覽，包含窄視窗與長版號。High Contrast 只套用 palette，未切換 Windows 模式；未實際操作剪貼簿、瀏覽器或檢查多螢幕焦點。
+- 捷徑原始碼在獨立的 .NET 8.0.31／win-x64 trimmed、single-file EXE 中通過 20 項檢查，包含建立、欄位回讀、重入保留、衝突保留、舊安裝補建與匹配移除。這是相同 source 的隔離驗證，未執行正式 Updater 安裝或操作使用者開始選單。
+- 本機驗證包 `0.0.0-verify-publication.20260914.1` 封裝、四組實際授權匯出及 ZIP 內容檢查通過；共 328 files、77,738,999 bytes，checksum sidecar 與實際 SHA256 相符。版本 metadata 保留 dirty source 標記；未安裝、簽署、上傳或建立正式候選。
+
 Copilot 改為使用本機安裝的官方 CLI，主包不再隨附第三方 CLI；`GitHub.Copilot.SDK` 保持 `1.0.11`，CLI `1.0.79` 保留為相容性基準，接受正式版 `>=1.0.79` 且 `<2.0.0`。帳號綁定、Credential Manager 與程序隔離要求維持不變。
 
 CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保留既有卡片與 token，安裝／更新後重試。其他 `1.x` 尚未宣稱真人實測通過，精確來源規則見 [CLI 相容性](docs/CLI_COMPATIBILITY.md)。
 
 連接與用量查詢的 CLI 搜尋、驗簽及副本準備已移到背景；取消後晚到的執行檔鎖會清理。這項程式修正完成時，Release 建置通過（0 warnings／0 errors），404／404 項相關回歸測試通過，0 failed／0 skipped，包含阻塞解析器時呼叫先返回、取消、晚到檔案鎖釋放及未啟動 CLI／SDK 的測試。
 
-目前封裝只保留繁中、簡中、英文及日文的執行環境資源，App 自身介面仍為繁中。語系設定後 Release 建置通過（0 warnings／0 errors），62／62 項封裝、授權及隱私相關測試通過；本輪沒有重跑完整套件、coverage 或真人 UI／CLI 驗收。
+目前封裝只保留繁中、簡中、英文及日文的執行環境資源，App 自身介面仍為繁中。語系設定後 Release 建置通過（0 warnings／0 errors），62／62 項封裝、授權及隱私相關測試通過；該次調整未重跑完整套件、coverage 或真人 UI／CLI 驗收。
 
-最新驗證包 `0.0.0-verify-locales.20260913.1` 的封裝及四組實際授權匯出通過。ZIP 從前一驗證包的 82,248,336 bytes 降到 77,735,352 bytes，減少 5.49%；完整列舉共 328 files，只移除其他 10 種語系的 170 個資源檔。保留的 294 個相依元件 binary 與 15 個授權／manifest 檔案均與前包 bytes 相同；繁中、簡中及日文各保留 17 個資源檔，英文內建資源亦保留。主包維持不含第三方 CLI。
+語系調整時的驗證包 `0.0.0-verify-locales.20260913.1` 封裝及四組實際授權匯出通過。ZIP 從前一驗證包的 82,248,336 bytes 降到 77,735,352 bytes，減少 5.49%；完整列舉共 328 files，只移除其他 10 種語系的 170 個資源檔。保留的 294 個相依元件 binary 與 15 個授權／manifest 檔案均與前包 bytes 相同；繁中、簡中及日文各保留 17 個資源檔，英文內建資源亦保留。主包維持不含第三方 CLI。
 
 背景準備修正前的完整測試首輪為 3,982／3,983 通過、1 failed、0 skipped，production line coverage 為 75.79%（50,754／66,966）。唯一失敗為既有 `CodexVersionProbe_WhenRootSpawnsChild_ConfirmsTreeEmptyBeforeGateRelease` 在清理合成 fixture DLL 時遭遇存取拒絕；該案例單獨重跑（未收集 coverage）通過，但首輪失敗原因尚未確定。背景準備修正後只重跑上述相關測試，未重跑完整套件或 coverage，不宣稱完整測試一輪全過。
+
+後續捲動條提交 `8a564747` 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34764614043) 完整測試為 3,985 passed／0 failed／0 skipped，production line coverage 75.77%；這是另一份遠端驗證，沒有改寫上述本機失敗或其未知原因。對應本機 `0.0.0-verify-scrollbar.20260913.4` 已完成 90 案定向回歸、封裝與安裝，尚非正式凍結候選；這些結果也不代替本次新增功能的驗證。
 
 這份 source 尚未建立正式候選，也未執行真人 CLI 登入／用量驗證；下列 `1.0.1` 的六件凍結成品與 13 案離線驗收只適用於原 source，不代表新封裝的安裝／升級驗收。
 

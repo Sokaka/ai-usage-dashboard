@@ -440,6 +440,9 @@
                                 <MenuItem AutomationProperties.AutomationId="OpenUserGuide"
                                           Click="OpenUserGuideMenuItem_Click"
                                           Header="使用說明" />
+                                <MenuItem AutomationProperties.AutomationId="OpenAbout"
+                                          Click="OpenAboutMenuItem_Click"
+                                          Header="關於 AI Usage" />
                                 <Separator />
                                 <MenuItem Click="HideButton_Click"
                                           Header="隱藏浮窗" />
