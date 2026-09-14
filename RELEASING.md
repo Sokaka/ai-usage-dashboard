@@ -8,7 +8,7 @@
 
 程式碼與文件共用 source 隱私規則；候選建置檢查本機可見 refs 的全部歷史，失敗 diagnostics 通過檢查後才可上傳。掃描範圍、限制、本機指令與公開後 required status checks 設定見 [CI 敏感資訊檢查](docs/CI_PRIVACY.md)。
 
-主包不再隨附第三方 CLI；封裝須確認沒有 Copilot CLI 或其他第三方 CLI payload。`GitHub.Copilot.SDK` 保持 `1.0.11`，交付清單與授權文件依實際包含的 SDK 元件核對。本機 Copilot CLI 只接受正式版 `>=1.0.79` 且 `<2.0.0`；來源、版本、隔離與舊卡片升級流程須另行驗證，並確認 CLI 缺少時保留憑證、安裝後可重試；已凍結的 `1.0.1` 成品及其 13 案離線驗收不涵蓋這份尚未建立正式候選的新 source。
+主包不再隨附第三方 CLI；封裝須確認沒有 Copilot CLI 或其他第三方 CLI payload。`GitHub.Copilot.SDK` 保持 `1.0.11`，交付清單與授權文件依實際包含的 SDK 元件核對。本機 Copilot CLI 只接受正式版 `>=1.0.79` 且 `<2.0.0`；來源、版本、隔離與舊卡片升級流程須另行驗證，並確認 CLI 缺少時保留憑證、安裝後可重試。歷史候選的驗收結果只適用於對應 source 與凍結成品；本候選的驗證範圍見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前候選)及 [CLI 相容性](docs/CLI_COMPATIBILITY.md)。
 
 .NET SDK 由 `global.json` 固定，transitive NuGet audit 由 `Directory.Build.props` 啟用。沒有 Git 歷史的原始碼匯出目錄可建置與測試，不能產生符合正式發布契約的候選包。
 

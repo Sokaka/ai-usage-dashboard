@@ -8,7 +8,11 @@
 
 ## 目前 source
 
-標準安裝新增開始選單捷徑；浮窗與系統匣新增「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 加入合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些變更尚未建立正式候選，驗證結果與下列既有候選分開記錄。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些變更已包含於下列 `1.0.2` 候選；候選建置後的版本文件更新不改變凍結成品。
+
+### 候選建置前的 source 驗證
+
+以下保留各階段當時的結果及限制；`1.0.2` 的成品與安裝驗證另列於[目前候選](#目前候選)。
 
 2026-09-14 開始選單路徑修正驗證：
 
@@ -37,11 +41,26 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 後續捲動條提交 `8a564747` 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34764614043) 完整測試為 3,985 passed／0 failed／0 skipped，production line coverage 75.77%；這是另一份遠端驗證，沒有改寫上述本機失敗或其未知原因。對應本機 `0.0.0-verify-scrollbar.20260913.4` 已完成 90 案定向回歸、封裝與安裝，尚非正式凍結候選；這些結果也不代替本次新增功能的驗證。
 
-這份 source 尚未建立正式候選，也未執行真人 CLI 登入／用量驗證；下列 `1.0.1` 的六件凍結成品與 13 案離線驗收只適用於原 source，不代表新封裝的安裝／升級驗收。
+上述 source 現已凍結為 `1.0.2`，真人 CLI 登入／用量驗收暫緩；歷史 `1.0.1` 的六件凍結成品與 13 案離線驗收只適用於原 source，不代替 `1.0.2` 的結果。
 
 ## 目前候選
 
-目前為 `1.0.1 / sequence 1015` 私有候選（[source `d639a8ad7cc1956c7628ae07037051859e25fe53`](https://github.com/Sokaka/ai-usage-dashboard/commit/d639a8ad7cc1956c7628ae07037051859e25fe53)），包含 Claude `/usage` 回應相容性、Antigravity 程序路徑查詢與防毒阻擋提示修正。Repository 維持 private，Release 維持 draft／prerelease。
+目前為 `1.0.2 / sequence 1016` 私有候選（[source `ea92eda861a80894b1d8c4d12d0cffd655ff92a7`](https://github.com/Sokaka/ai-usage-dashboard/commit/ea92eda861a80894b1d8c4d12d0cffd655ff92a7)）。Repository 維持 private，Release 維持 draft／prerelease；變更與下載檔案資訊見 [1.0.2 版本說明](docs/releases/1.0.2.md)。
+
+- [x] [候選 CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34795351636) 的原始 attempt 1 通過歷史隱私檢查、restore、建置與完整測試：4,027 passed／0 failed／0 skipped，production line coverage 75.75%（51,006／67,332），門檻維持 70%。
+- [x] 同 source、原 build run／attempt 的六件成品已簽署、上傳及凍結；下載 bytes、asset ID、size、SHA256、build artifact 與原始 freeze 相符。下載的 feed 另以 pinned production 公鑰完成本機驗簽。
+- [x] 既有 Windows 主機由 `.2` 驗證版以凍結 Updater／ZIP 執行 `apply-local` 換成 `1.0.2`；328 個檔案、App／maintenance 版本、Windows 登錄與開始選單捷徑核對通過，安全退出及重新啟動成功，未回報更新警告，previous 備份相符。
+- [x] App、Setup、Updater、ClaudeCapture、AGYCapture、已安裝 App 與 maintenance Updater 共七組實際離線 license exports 通過；元件、文件、版本及原文 hashes 已核對，acceptance digest 格式有效。這不包含條款接受／拒絕的互動驗收。
+- [x] App／Setup／ClaudeCapture 的三組 dependency profiles 核對通過；App／Setup 的 runtimeconfig 與 deps 固定為 .NET 8.0.31，套件沒有隨附第三方 CLI。
+- [x] 成品有界靜態隱私檢查通過：六件成品與全部 328 ZIP entries，0 findings。可讀文字、檔名及可擷取的 binary strings 已檢查；未解壓 EXE 內嵌壓縮內容或做圖片 OCR，不代表已證明完全沒有敏感資料。
+
+人工 UI、無障礙、首次 Windows 提示與五個 provider 真人登入／用量驗收暫緩，不列為通過，也不作本輪文件及自動檢查的前置條件。逐平台結果見 [1.0.2 實測表](docs/CLI_COMPATIBILITY.md#102-候選版)。
+
+本候選尚未執行乾淨 Windows／VM 安裝、解除安裝／復原、正式 HTTPS 更新與反降級、Updater 自更新及匿名下載驗收。本機 `apply-local` 的 installed manifest 仍為 null sequence；候選 feed 的 sequence 1016 與簽章核對不能代替線上更新驗收。安裝工具沒有讀取帳號設定或 credentials，設定保留未另做真人驗收。
+
+### 1.0.1 歷史候選
+
+`1.0.1 / sequence 1015` 私有候選（[source `d639a8ad7cc1956c7628ae07037051859e25fe53`](https://github.com/Sokaka/ai-usage-dashboard/commit/d639a8ad7cc1956c7628ae07037051859e25fe53)）包含 Claude `/usage` 回應相容性、Antigravity 程序路徑查詢與防毒阻擋提示修正。以下僅適用於該版成品，不代替 `1.0.2` 驗收。
 
 - [x] Source CI 與候選 CI 均完成建置及完整測試，各 3,913／3,913 通過，0 failed／0 skipped；production line coverage 分別為 75.63%／75.65%。
 - [x] 同 source、原 build run／attempt 的六件成品已完成簽署、上傳及 workflow freeze。下載回讀的 bytes、asset ID、size 與 SHA256 均與 build artifact、freeze 相符，未重建或替換成品。
@@ -50,8 +69,8 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 - [x] App、Setup、Updater、ClaudeCapture、AGYCapture 與安裝後 App 共六組實際離線 license exports 通過；components、documents、原文 hashes 與 acceptance digest 均完整核對。這六組不包含 maintenance Updater。
 - [x] reapply 與解除安裝保留測試用未知檔案；兩次解除安裝均保留 synthetic user-data sentinel，驗收後只移除本次建立的 sentinel。驗收排程已刪除，本次產品程序剩餘 0；VM 維持 Running、網路斷線，7 個 checkpoints 未變。
 - [x] 有界靜態公開面檢查通過：六件成品、ZIP 的 500 files（共 502 entries，含兩個目錄）及本次三份文件，0 findings。檢查可讀文字、檔名與 binary strings；未解壓 EXE 內嵌內容或做圖片 OCR，不代表已證明完全沒有敏感資料。共用規則與限制見 [CI 敏感資訊檢查](docs/CI_PRIVACY.md)。
-- [ ] 維護者決定是否公開同一候選 Release。
-- [ ] 公開後完成六件成品匿名下載、hash／size／簽章核對，以及正式網址的安裝、舊版銜接與線上驗收。私有測試 feed 的成功不能取代這一步。
+
+`1.0.1` 未公開，正式網址的匿名下載、安裝及線上驗收未執行。
 
 本候選尚未驗證乾淨 OS／profile、正式 HTTPS 更新與反降級政策、canonical 登錄／maintenance 清理、Updater 自更新，以及真人 UI／provider 登入與用量。離線 `apply-local` 不代替上述範圍；逐平台狀態見 [CLI 相容性](docs/CLI_COMPATIBILITY.md#101-候選版)。
 
@@ -84,7 +103,7 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 候選與歷史驗證的界線
 
-五 provider 登入／帳號隔離、較完整的人工 UI、固定 Windows 18 案與 50 案中斷復原已有歷史驗證；`1.0.1` 沒有整套重跑。歷次 SDK／runtime 與成品 bytes 的變更仍須按適用性評估，歷史 PASS 不能改標為本候選結果。
+五 provider 登入／帳號隔離、較完整的人工 UI、固定 Windows 18 案與 50 案中斷復原已有歷史驗證；`1.0.1` 與 `1.0.2` 都沒有整套重跑。歷次 SDK／runtime 與成品 bytes 的變更仍須按適用性評估，歷史 PASS 不能改標為本候選結果。
 
 後續版本更新、Updater 自更新、HTTPS→HTTP 降級拒絕、磁碟不足／reapply、持久化與 rename 邊界中斷、再次復原失敗等範圍，仍按既有 source 機制證據與適用性評估處理。`1.0.0` 的 27 案不代表已重驗這些範圍，也不代表已涵蓋全部非 canonical 安裝、未知檔案或 Windows 政策環境。
 
