@@ -1,10 +1,14 @@
-# AI Usage Dashboard
+<h1 align="center">AI Usage Dashboard</h1>
 
-[![Windows x64](https://img.shields.io/badge/Windows-x64-0078D4)](#環境需求)
-[![自有程式碼採 MIT 授權](https://img.shields.io/badge/Code_License-MIT-green)](LICENSE)
-[![尚未正式公開](https://img.shields.io/badge/Status-Unreleased-orange)](#目前版本)
+<p align="center">
+  AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務的訂閱用量。
+</p>
 
-AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務的訂閱用量。
+<p align="center">
+  <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-Unreleased-orange" alt="尚未正式公開"></a>
+</p>
 
 <p align="center">
   <a href="docs/images/dashboard-compact.png">
