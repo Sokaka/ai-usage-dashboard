@@ -93,6 +93,6 @@ Claude 保留未修改官方 binary、內建 auth、使用者自己的憑證與�
 
 確認授權後，先在 private Repository 僅把同一候選 Release 改為非 draft、非 prerelease 且為 latest，並回讀 tag、target 及六件 assets；確認一致後才把 Repository 改為 public 並再次回讀。此流程不 dispatch build、不改 bytes，也不把當前操作的 run/attempt 取代原始 build 來源。
 
-不帶 cookie/token，匿名下載正式 feed：`https://github.com/Sokaka/ai-usage-dashboard/releases/latest/download/AiUsageDashboard-update-stable.json`。驗簽後核對 App／Updater URLs、版本／sequence、hash／size 和全部 sidecars，確認與凍結候選相符。再走正式下載的 fresh install、舊 internal→stable 與線上 smoke，通過才宣告發布完成。
+不帶 cookie/token，匿名下載正式 feed：`https://github.com/Sokaka/ai-usage-dashboard/releases/latest/download/AiUsageDashboard-update-stable.json`。驗簽後核對 App／Updater URLs、版本／sequence、hash／size 和全部 sidecars，確認與凍結候選相符。這個 smoke 只證明正式端點的匿名下載與簽章鏈；fresh install、舊 internal→stable、正式線上更新及復原未執行時須繼續列為暫緩，不得記成通過。完成本次公開後回讀及文件回填，才結束正式發布流程。
 
 失敗時停止後續公開操作、保留實際已公開狀態，按當次授權的範圍修正或撤回。source 改回 private 不能消除曝光；修正 bytes 時另定新版本／sequence，再驗收，不用降級或同版本換檔回復服務。
