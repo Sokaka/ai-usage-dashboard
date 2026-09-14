@@ -6,9 +6,24 @@
 
 AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務的訂閱用量。
 
-![AI Usage 浮窗與主題配色預覽，帳號及用量皆為合成示意資料](docs/images/dashboard-preview.png)
+<p align="center">
+  <a href="docs/images/dashboard-compact.png">
+    <img src="docs/images/dashboard-compact.png" alt="AI Usage 經典藍浮窗預覽，展示五種服務的合成帳號與用量卡片" width="410">
+  </a>
+</p>
 
 畫面使用合成帳號與用量展示浮窗及主題配色，不是真實帳號、用量或服務驗收結果。
+
+<details>
+<summary>查看四種主題的完整預覽</summary>
+
+<p align="center">
+  <a href="docs/images/dashboard-preview.png">
+    <img src="docs/images/dashboard-preview.png" alt="AI Usage 四種主題配色，每種皆展示五種服務的合成帳號與用量卡片" width="640">
+  </a>
+</p>
+
+</details>
 
 ## 目前版本
 
