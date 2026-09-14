@@ -69,7 +69,8 @@ internal sealed record CopilotUsageReport(
 	IReadOnlyList<CopilotQuotaSnapshot> Quotas,
 	DateTimeOffset FetchedAt,
 	string? PlanTier = null,
-	bool? IsTokenBasedBilling = null);
+	bool? IsTokenBasedBilling = null,
+	string? SubscriptionWarning = null);
 
 internal sealed class CopilotClientException : Exception
 {

@@ -3,6 +3,8 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 
+using AiUsageDashboard.App;
+using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
 using AiUsageDashboard.App.ViewModels;
 using AiUsageDashboard.Core.Models;
@@ -13,6 +15,14 @@ namespace AiUsageDashboard.Tests;
 
 public sealed class CopilotSdkQuotaIsolationTests
 {
+	private sealed class SubscriptionTestTimeProvider : TimeProvider
+	{
+		public override DateTimeOffset GetUtcNow()
+		{
+			return DateTimeOffset.Parse("2026-09-01T12:00:00Z");
+		}
+	}
+
 	private sealed record FactoryCall(
 		string HomeDirectory,
 		string AccessToken,
@@ -154,6 +164,8 @@ public sealed class CopilotSdkQuotaIsolationTests
 		private readonly IReadOnlyDictionary<string, CopilotSdkQuotaValue> _quota;
 		private readonly Func<CancellationToken, Task> _startAction;
 		private readonly Func<Task> _stopAction;
+		private readonly Func<string, string, CancellationToken, Task<CopilotSdkSubscriptionMetadata?>>?
+			_subscriptionAction;
 		private int _startCount;
 
 		internal int StartCount => Volatile.Read(ref _startCount);
@@ -164,7 +176,9 @@ public sealed class CopilotSdkQuotaIsolationTests
 			IReadOnlyDictionary<string, CopilotSdkQuotaValue>? quota = null,
 			Func<Task>? stopAction = null,
 			Func<Task>? forceStopAction = null,
-			Func<ValueTask>? disposeAction = null)
+			Func<ValueTask>? disposeAction = null,
+			Func<string, string, CancellationToken, Task<CopilotSdkSubscriptionMetadata?>>?
+				subscriptionAction = null)
 		{
 			_currentAuth = currentAuth;
 			_disposeAction = disposeAction ?? (static () => ValueTask.CompletedTask);
@@ -172,6 +186,7 @@ public sealed class CopilotSdkQuotaIsolationTests
 			_quota = quota ?? DefaultQuota;
 			_startAction = startAction ?? (static _ => Task.CompletedTask);
 			_stopAction = stopAction ?? (static () => Task.CompletedTask);
+			_subscriptionAction = subscriptionAction;
 		}
 
 		public Task StartAsync(CancellationToken cancellationToken)
@@ -187,8 +202,12 @@ public sealed class CopilotSdkQuotaIsolationTests
 			CancellationToken cancellationToken)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
+			if (_subscriptionAction is not null)
+			{
+				return _subscriptionAction(expectedHost, expectedLogin, cancellationToken);
+			}
 			return Task.FromResult(
-				CopilotSdkQuotaClient.TryGetMatchingSubscriptionMetadata(
+				ReadSubscriptionMetadata(
 					_currentAuth,
 					expectedHost,
 					expectedLogin));
@@ -247,7 +266,7 @@ public sealed class CopilotSdkQuotaIsolationTests
 
 		CopilotSdkSubscriptionMetadata metadata = Assert.IsType<
 			CopilotSdkSubscriptionMetadata>(
-			CopilotSdkQuotaClient.TryGetMatchingSubscriptionMetadata(
+			ReadSubscriptionMetadata(
 				currentAuth,
 				"github.com",
 				"credits-user"));
@@ -436,6 +455,220 @@ public sealed class CopilotSdkQuotaIsolationTests
 			metric.Key == "copilot-quota-completions");
 		Assert.Equal("已使用 0 次（無上限）", completions.DisplayValue);
 		Assert.Equal("已使用 0 次（無上限）", completions.ToolTipValue);
+	}
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task GetUsageAsync_WithOldOrCredentialFreeResponse_PreservesExistingAccountAndCache(
+		bool includesToken)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		Guid accountId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_UPGRADE", "upgrade-user", 1007);
+		CopilotStoredCredential credential = CreateCredential(principal, "synthetic-upgrade-token");
+		string settingsPath = Path.Combine(temporaryDirectory.Path, "accounts.json");
+		string settingsFixture = JsonSerializer.Serialize(new
+		{
+			schemaVersion = 7,
+			accounts = new[]
+			{
+				new
+				{
+					id = accountId, provider = "Copilot", displayName = "工作帳號",
+					isEnabled = true, providerAccountIdentity = credential.ProviderAccountIdentity,
+					hasAcceptedClaudeQuotaRisk = false, showSubscriptionContext = true
+				},
+				new
+				{
+					id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+					provider = "Copilot", displayName = "第二張卡片", isEnabled = false,
+					providerAccountIdentity = CopilotAccountIdentityRules.Create(
+						CreatePrincipal("NODE_SECOND_UPGRADE", "second-upgrade-user", 1010)),
+					hasAcceptedClaudeQuotaRisk = false, showSubscriptionContext = false
+				}
+			}
+		});
+		await File.WriteAllTextAsync(settingsPath, settingsFixture);
+		JsonAccountProfileStore accountStore = new(settingsPath);
+		var loadedAccounts = await accountStore.LoadAsync();
+		Assert.True(loadedAccounts.CanSave);
+		Assert.Equal(AiUsageDashboard.Core.Persistence.AccountProfileLoadStatus.Loaded, loadedAccounts.Status);
+		Assert.Equal(2, loadedAccounts.Accounts.Count);
+		AccountProfile account = loadedAccounts.Accounts[0];
+		string cachePath = Path.Combine(temporaryDirectory.Path, "usage.json");
+		string cacheFixture = JsonSerializer.Serialize(new
+		{
+			schemaVersion = 3, accountId, provider = "Copilot", sourceTrust = "OfficialExperimental",
+			fetchedAt = "2026-09-01T11:59:00Z", observedAt = "2026-09-01T11:59:00Z",
+			staleAfter = "2026-09-01T12:02:00Z",
+			providerAccountIdentity = credential.ProviderAccountIdentity,
+			providerAccountDisplayIdentity = "@upgrade-user", subscriptionScopeDisplayName = (string?)null,
+			planTier = (string?)null, subscriptionVerificationState = "Verified",
+			metrics = new[]
+			{
+				new
+				{
+					key = "copilot-quota-premium-interactions", label = "Premium usage", usedPercent = 8.33,
+					displayValue = "25 / 300 次", resetsAt = "2026-10-01T00:00:00Z", resetDisplayValue = (string?)null
+				}
+			}
+		});
+		await File.WriteAllTextAsync(cachePath, cacheFixture);
+		JsonUsageSnapshotStore cache = new((_, _) => cachePath, new SubscriptionTestTimeProvider());
+		UsageSnapshot cached = Assert.IsType<UsageSnapshot>(await cache.LoadAsync(account));
+		Assert.Equal(SnapshotStatus.Stale, cached.Status);
+		Assert.Equal("Premium usage", Assert.Single(cached.Metrics).Label);
+		Assert.Null(cached.PlanTier);
+		AccountUsageViewModel viewModel = new(account, canManage: true);
+		viewModel.ApplyLiveSnapshot(cached);
+
+		Dictionary<string, object?> auth = new()
+		{
+			["type"] = "token", ["host"] = "https://github.com",
+			["copilotUser"] = new
+			{
+				login = "upgrade-user", copilot_plan = "individual", token_based_billing = true
+			}
+		};
+		if (includesToken)
+		{
+			auth["token"] = "synthetic-old-response-token";
+		}
+		JsonElement currentAuth = JsonSerializer.SerializeToElement(new { authInfo = auth });
+		Dictionary<Guid, CopilotStoredCredential> credentials = new() { [accountId] = credential };
+		CopilotSdkQuotaClient client = CreateClient(
+			temporaryDirectory.Path, credentials,
+			new Dictionary<string, CopilotAccountIdentity> { [credential.AccessToken] = principal },
+			(_, accessToken) =>
+			{
+				Assert.Equal(credential.AccessToken, accessToken);
+				return new FakeSdkClient(subscriptionAction: (host, login, _) =>
+					Task.FromResult(CopilotSubscriptionMetadataReader.Read(currentAuth, host, login)));
+			});
+		UsageSnapshot refreshed = await new CopilotUsageProvider(client).GetUsageAsync(account, CancellationToken.None);
+		viewModel.ApplyLiveSnapshot(refreshed);
+
+		Assert.Equal(SnapshotStatus.Ready, refreshed.Status);
+		Assert.Equal("Pro", refreshed.PlanTier);
+		Assert.Equal(SubscriptionVerificationState.Verified, refreshed.SubscriptionVerificationState);
+		Assert.Equal(credential.ProviderAccountIdentity, refreshed.ProviderAccountIdentity);
+		Assert.Equal("AI Credits", Assert.Single(viewModel.UsageMetrics).Label);
+		Assert.Equal("Pro", viewModel.SubscriptionPlanDisplayText);
+		Assert.Empty(viewModel.NoticeText);
+		Assert.Same(credential, credentials[accountId]);
+		Assert.Equal(settingsFixture, await File.ReadAllTextAsync(settingsPath));
+		await accountStore.SaveAsync(loadedAccounts.Accounts);
+		Assert.Equal(loadedAccounts.Accounts, (await new JsonAccountProfileStore(settingsPath).LoadAsync()).Accounts);
+		await cache.SaveAsync(refreshed);
+		UsageSnapshot reloaded = Assert.IsType<UsageSnapshot>(await cache.LoadAsync(account));
+		Assert.Equal("AI Credits", Assert.Single(reloaded.Metrics).Label);
+		Assert.Equal("Pro", reloaded.PlanTier);
+		Assert.Equal(account, reloaded.Account);
+		Assert.DoesNotContain(credential.AccessToken, await File.ReadAllTextAsync(cachePath));
+		Assert.DoesNotContain("synthetic-old-response-token", await File.ReadAllTextAsync(cachePath));
+	}
+
+	[Theory]
+	[InlineData("missing", "未提供", true)]
+	[InlineData("json", "格式或帳號無法確認", true)]
+	[InlineData("identity", "格式或帳號無法確認", true)]
+	[InlineData("timeout", "逾時", true)]
+	[InlineData("contract", "介面不相容", true)]
+	[InlineData("rpc", "暫時無法讀取", true)]
+	[InlineData("sync", "暫時無法讀取", true)]
+	[InlineData("rpc", "診斷紀錄無法寫入", false)]
+	public async Task GetUsageAsync_WhenSubscriptionFails_KeepsQuotaAndShowsSafeDiagnostic(
+		string failureKind, string expectedNotice, bool diagnosticWriteSucceeds)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		Guid accountId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_WARNING", "warning-user", 1008);
+		CopilotStoredCredential credential = CreateCredential(principal, "synthetic-private-token");
+		AccountProfile account = new(accountId, ProviderKind.Copilot, "工作帳號",
+			ProviderAccountIdentity: credential.ProviderAccountIdentity);
+		const string privateMessage = "synthetic-sensitive-response-and-login";
+		Exception? failure = failureKind switch
+		{
+			"missing" => null,
+			"json" => new JsonException(privateMessage),
+			"identity" => new InvalidDataException(privateMessage),
+			"timeout" => new TimeoutException(privateMessage),
+			"contract" => new NotSupportedException(privateMessage),
+			"rpc" or "sync" => new IOException(privateMessage),
+			_ => throw new ArgumentException("Unknown synthetic failure kind.", nameof(failureKind))
+		};
+		int diagnosticCount = 0;
+		string diagnosticPath = Path.Combine(temporaryDirectory.Path, "diagnostics.log");
+		CopilotSdkQuotaClient client = CreateClient(
+			temporaryDirectory.Path,
+			new Dictionary<Guid, CopilotStoredCredential> { [accountId] = credential },
+			new Dictionary<string, CopilotAccountIdentity> { [credential.AccessToken] = principal },
+			(_, _) => new FakeSdkClient(subscriptionAction: (_, _, _) =>
+			{
+				if ((failureKind == "sync") && (failure is not null))
+				{
+					throw failure;
+				}
+				return failure is null
+					? Task.FromResult<CopilotSdkSubscriptionMetadata?>(null)
+					: Task.FromException<CopilotSdkSubscriptionMetadata?>(failure);
+			}),
+			reportSubscriptionDiagnostic: (summary, exception) =>
+			{
+				diagnosticCount++;
+				Assert.Same(failure, exception);
+				return diagnosticWriteSucceeds && AppDiagnostics.TryWrite(
+					diagnosticPath, "copilot-subscription", summary, exception,
+					new SubscriptionTestTimeProvider().GetUtcNow()).WasWritten;
+			});
+
+		UsageSnapshot snapshot = await new CopilotUsageProvider(client).GetUsageAsync(account, CancellationToken.None);
+		AccountUsageViewModel viewModel = new(account, canManage: true);
+		viewModel.ApplyLiveSnapshot(snapshot);
+
+		Assert.Equal(1, diagnosticCount);
+		Assert.Equal(SnapshotStatus.Ready, snapshot.Status);
+		Assert.Equal("Premium usage", Assert.Single(viewModel.UsageMetrics).Label);
+		Assert.Null(snapshot.PlanTier);
+		Assert.Equal(credential.ProviderAccountIdentity, snapshot.ProviderAccountIdentity);
+		Assert.Contains(expectedNotice, viewModel.NoticeText);
+		Assert.DoesNotContain(privateMessage, viewModel.NoticeText);
+		if (diagnosticWriteSucceeds)
+		{
+			string diagnostic = await File.ReadAllTextAsync(diagnosticPath);
+			Assert.Contains("copilot-subscription", diagnostic);
+			Assert.DoesNotContain(privateMessage, diagnostic);
+			Assert.DoesNotContain(credential.AccessToken, diagnostic);
+			Assert.DoesNotContain(principal.Login, diagnostic);
+		}
+		viewModel.ApplyLiveSnapshot(snapshot with { Error = null });
+		Assert.Empty(viewModel.NoticeText);
+	}
+
+	[Fact]
+	public async Task GetAccountQuotaAsync_WhenCallerCancelsSubscription_PropagatesCancellation()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		using CancellationTokenSource cancellation = new();
+		Guid accountId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_CANCEL", "cancel-user", 1009);
+		CopilotStoredCredential credential = CreateCredential(principal, "synthetic-cancel-token");
+		int diagnosticCount = 0;
+		CopilotSdkQuotaClient client = CreateClient(
+			temporaryDirectory.Path,
+			new Dictionary<Guid, CopilotStoredCredential> { [accountId] = credential },
+			new Dictionary<string, CopilotAccountIdentity> { [credential.AccessToken] = principal },
+			(_, _) => new FakeSdkClient(subscriptionAction: (_, _, token) =>
+			{
+				cancellation.Cancel();
+				return Task.FromCanceled<CopilotSdkSubscriptionMetadata?>(token);
+			}),
+			reportSubscriptionDiagnostic: (_, _) => { diagnosticCount++; return true; });
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => client.GetAccountQuotaAsync(
+			accountId, credential.ProviderAccountIdentity, cancellation.Token));
+		Assert.Equal(0, diagnosticCount);
 	}
 
 	[Fact]
@@ -871,7 +1104,8 @@ public sealed class CopilotSdkQuotaIsolationTests
 		IReadOnlyDictionary<Guid, CopilotStoredCredential> credentials,
 		IReadOnlyDictionary<string, CopilotAccountIdentity> identitiesByToken,
 		Func<string, string, ICopilotSdkClient> clientFactory,
-		TimeSpan? operationTimeout = null)
+		TimeSpan? operationTimeout = null,
+		Func<string, Exception?, bool>? reportSubscriptionDiagnostic = null)
 	{
 		return new CopilotSdkQuotaClient(
 			accountId => GetExpectedHome(testRoot, accountId),
@@ -882,7 +1116,21 @@ public sealed class CopilotSdkQuotaIsolationTests
 			utcNow: () => DateTimeOffset.Parse("2026-09-01T12:00:00Z"),
 			operationTimeout: operationTimeout ?? TimeSpan.FromSeconds(10),
 			cleanupTimeout: TimeSpan.FromSeconds(2),
-			planProbeTimeout: TimeSpan.FromSeconds(2));
+			planProbeTimeout: TimeSpan.FromSeconds(2),
+			reportSubscriptionDiagnostic: reportSubscriptionDiagnostic);
+	}
+
+	private static CopilotSdkSubscriptionMetadata? ReadSubscriptionMetadata(
+		AccountGetCurrentAuthResult? currentAuth,
+		string? expectedHost,
+		string? expectedLogin)
+	{
+		return currentAuth is null
+			? null
+			: CopilotSubscriptionMetadataReader.Read(
+				JsonSerializer.SerializeToElement(currentAuth),
+				expectedHost,
+				expectedLogin);
 	}
 
 	private static CopilotStoredCredential CreateCredential(

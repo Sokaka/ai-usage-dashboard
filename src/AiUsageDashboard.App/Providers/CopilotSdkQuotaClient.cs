@@ -42,6 +42,10 @@ internal interface ICopilotSdkClient : IAsyncDisposable
 
 internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 {
+	private sealed record SubscriptionProbeResult(
+		CopilotSdkSubscriptionMetadata? Metadata,
+		string? Warning);
+
 	private sealed record QuotaCoreResult(
 		CopilotUsageReport? Report,
 		Exception? Failure,
@@ -131,9 +135,10 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 			string expectedLogin,
 			CancellationToken cancellationToken)
 		{
-			GitHub.Copilot.Rpc.AccountGetCurrentAuthResult currentAuth =
-				await _client.Rpc.Account.GetCurrentAuthAsync(cancellationToken);
-			return TryGetMatchingSubscriptionMetadata(
+			JsonElement currentAuth = await CopilotSubscriptionRpc.ReadAsync(
+				_client.Rpc.Account,
+				cancellationToken);
+			return CopilotSubscriptionMetadataReader.Read(
 				currentAuth,
 				expectedHost,
 				expectedLogin);
@@ -144,8 +149,8 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		{
 			GitHub.Copilot.Rpc.AccountGetQuotaResult result =
 				await _client.Rpc.Account.GetQuotaAsync(
-					_accessToken,
-					cancellationToken);
+					gitHubToken: _accessToken,
+					cancellationToken: cancellationToken);
 			Dictionary<string, CopilotSdkQuotaValue> quotas =
 				new(StringComparer.Ordinal);
 
@@ -181,7 +186,6 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		}
 	}
 
-	private const string CopilotFreeAccessTypeSku = "free_limited_copilot";
 	private static readonly ConcurrentDictionary<long, CleanupLeaseTracker>
 		ActiveCleanupLeaseTrackers = new();
 	private static readonly TimeSpan DefaultCleanupTimeout =
@@ -200,6 +204,7 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 	private readonly Func<Guid, string> _homeDirectoryResolver;
 	private readonly TimeSpan _operationTimeout;
 	private readonly TimeSpan _planProbeTimeout;
+	private readonly Func<string, Exception?, bool>? _reportSubscriptionDiagnostic;
 	private readonly Func<DateTimeOffset> _utcNow;
 
 	internal int ActiveLateCleanupCount => ActiveCleanupLeaseTrackers.Count;
@@ -217,7 +222,9 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 			CopilotCliExecutableResolver.Resolve,
 			static (homeDirectory, accessToken, executablePath) =>
 				new SdkClient(homeDirectory, accessToken, executablePath),
-			static () => DateTimeOffset.UtcNow)
+			static () => DateTimeOffset.UtcNow,
+			reportSubscriptionDiagnostic: static (summary, exception) =>
+				AppDiagnostics.TryWrite("copilot-subscription", summary, exception).WasWritten)
 	{
 	}
 
@@ -230,7 +237,8 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		Func<DateTimeOffset>? utcNow = null,
 		TimeSpan? operationTimeout = null,
 		TimeSpan? cleanupTimeout = null,
-		TimeSpan? planProbeTimeout = null)
+		TimeSpan? planProbeTimeout = null,
+		Func<string, Exception?, bool>? reportSubscriptionDiagnostic = null)
 		: this(
 			homeDirectoryResolver,
 			accountOperationGate,
@@ -241,7 +249,8 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 			utcNow,
 			operationTimeout,
 			cleanupTimeout,
-			planProbeTimeout)
+			planProbeTimeout,
+			reportSubscriptionDiagnostic)
 	{
 	}
 
@@ -255,7 +264,8 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		Func<DateTimeOffset>? utcNow = null,
 		TimeSpan? operationTimeout = null,
 		TimeSpan? cleanupTimeout = null,
-		TimeSpan? planProbeTimeout = null)
+		TimeSpan? planProbeTimeout = null,
+		Func<string, Exception?, bool>? reportSubscriptionDiagnostic = null)
 	{
 		_homeDirectoryResolver = homeDirectoryResolver ??
 			throw new ArgumentNullException(nameof(homeDirectoryResolver));
@@ -272,6 +282,7 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		_operationTimeout = operationTimeout ?? DefaultOperationTimeout;
 		_cleanupTimeout = cleanupTimeout ?? DefaultCleanupTimeout;
 		_planProbeTimeout = planProbeTimeout ?? DefaultPlanProbeTimeout;
+		_reportSubscriptionDiagnostic = reportSubscriptionDiagnostic;
 
 		if (_operationTimeout <= TimeSpan.Zero)
 		{
@@ -441,7 +452,7 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 			IReadOnlyDictionary<string, CopilotSdkQuotaValue> quotaValues =
 				await quotaTask.WaitAsync(operationSource.Token);
 			IReadOnlyList<CopilotQuotaSnapshot> quotas = MapQuotas(quotaValues);
-			CopilotSdkSubscriptionMetadata? subscriptionMetadata =
+			SubscriptionProbeResult subscription =
 				await TryGetSubscriptionMetadataAsync(
 				client,
 				principal,
@@ -452,8 +463,9 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 				principal,
 				quotas,
 				_utcNow().ToUniversalTime(),
-				subscriptionMetadata?.PlanTier,
-				subscriptionMetadata?.IsTokenBasedBilling);
+				subscription.Metadata?.PlanTier,
+				subscription.Metadata?.IsTokenBasedBilling,
+				subscription.Warning);
 		}
 		catch (OperationCanceledException exception) when (
 			!cancellationToken.IsCancellationRequested &&
@@ -634,8 +646,7 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		}
 	}
 
-	private async Task<CopilotSdkSubscriptionMetadata?>
-		TryGetSubscriptionMetadataAsync(
+	private async Task<SubscriptionProbeResult> TryGetSubscriptionMetadataAsync(
 		ICopilotSdkClient client,
 		CopilotAccountIdentity principal,
 		CancellationToken callerCancellationToken,
@@ -643,110 +654,52 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		ICollection<Task> lifecycleTasks)
 	{
 		using CancellationTokenSource planProbeSource =
-			CancellationTokenSource.CreateLinkedTokenSource(
-				operationCancellationToken);
+			CancellationTokenSource.CreateLinkedTokenSource(operationCancellationToken);
 		planProbeSource.CancelAfter(_planProbeTimeout);
 
-		Task<CopilotSdkSubscriptionMetadata?> planProbeTask;
 		try
 		{
-			planProbeTask = client.GetSubscriptionMetadataAsync(
+			Task<CopilotSdkSubscriptionMetadata?> probe = client.GetSubscriptionMetadataAsync(
 				principal.Host,
 				principal.Login,
 				planProbeSource.Token);
+			lifecycleTasks.Add(probe);
+			CopilotSdkSubscriptionMetadata? metadata = await probe.WaitAsync(planProbeSource.Token);
+			return metadata is null
+				? RecordSubscriptionFailure("Copilot 未提供訂閱資訊；用量仍可使用。")
+				: new SubscriptionProbeResult(metadata, Warning: null);
 		}
-		catch (OperationCanceledException) when (
-			callerCancellationToken.IsCancellationRequested)
+		catch (OperationCanceledException) when (callerCancellationToken.IsCancellationRequested)
 		{
 			throw;
 		}
-		catch
+		catch (Exception exception)
 		{
 			callerCancellationToken.ThrowIfCancellationRequested();
-			return null;
-		}
-
-		lifecycleTasks.Add(planProbeTask);
-		try
-		{
-			return await planProbeTask.WaitAsync(planProbeSource.Token);
-		}
-		catch (OperationCanceledException) when (
-			callerCancellationToken.IsCancellationRequested)
-		{
-			throw;
-		}
-		catch
-		{
-			callerCancellationToken.ThrowIfCancellationRequested();
-			return null;
+			string summary = exception switch
+			{
+				OperationCanceledException or TimeoutException =>
+					"Copilot 訂閱資訊查詢逾時；用量仍可使用。",
+				JsonException or InvalidDataException =>
+					"Copilot 訂閱資訊格式或帳號無法確認；用量仍可使用。",
+				NotSupportedException =>
+					"Copilot 訂閱查詢介面不相容；用量仍可使用。",
+				_ => "Copilot 訂閱資訊暫時無法讀取；用量仍可使用。"
+			};
+			return RecordSubscriptionFailure(summary, exception);
 		}
 	}
 
-	internal static CopilotSdkSubscriptionMetadata?
-		TryGetMatchingSubscriptionMetadata(
-		GitHub.Copilot.Rpc.AccountGetCurrentAuthResult? currentAuth,
-		string? expectedHost,
-		string? expectedLogin)
+	private SubscriptionProbeResult RecordSubscriptionFailure(
+		string summary,
+		Exception? exception = null)
 	{
-		(string? Host, string? Login, GitHub.Copilot.Rpc.CopilotUserResponse? User)
-			metadata = currentAuth?.AuthInfo switch
-			{
-				GitHub.Copilot.Rpc.AuthInfoHmac value =>
-					(value.Host, null, value.CopilotUser),
-				GitHub.Copilot.Rpc.AuthInfoEnv value =>
-					(value.Host, value.Login, value.CopilotUser),
-				GitHub.Copilot.Rpc.AuthInfoToken value =>
-					(value.Host, null, value.CopilotUser),
-				GitHub.Copilot.Rpc.AuthInfoCopilotApiToken value =>
-					(value.Host, null, value.CopilotUser),
-				GitHub.Copilot.Rpc.AuthInfoUser value =>
-					(value.Host, value.Login, value.CopilotUser),
-				GitHub.Copilot.Rpc.AuthInfoGhCli value =>
-					(value.Host, value.Login, value.CopilotUser),
-				GitHub.Copilot.Rpc.AuthInfoApiKey value =>
-					(value.Host, null, value.CopilotUser),
-				_ => (null, null, null)
-			};
-
-		bool hasFreeAccessTypeSku = string.Equals(
-			metadata.User?.AccessTypeSku?.Trim(),
-			CopilotFreeAccessTypeSku,
-			StringComparison.OrdinalIgnoreCase);
-		if (!CopilotAccountIdentityRules.TryNormalizeHost(
-				expectedHost,
-				out string normalizedExpectedHost) ||
-			!CopilotAccountIdentityRules.TryNormalizeHost(
-				metadata.Host,
-				out string normalizedObservedHost) ||
-			!string.Equals(
-				normalizedExpectedHost,
-				normalizedObservedHost,
-				StringComparison.Ordinal) ||
-			string.IsNullOrWhiteSpace(expectedLogin) ||
-			(metadata.User is null) ||
-			!string.Equals(
-				metadata.User.Login?.Trim(),
-				expectedLogin.Trim(),
-				StringComparison.OrdinalIgnoreCase) ||
-			(!string.IsNullOrWhiteSpace(metadata.Login) &&
-				!string.Equals(
-					metadata.Login.Trim(),
-					expectedLogin.Trim(),
-					StringComparison.OrdinalIgnoreCase)))
+		if ((_reportSubscriptionDiagnostic is not null) &&
+			!_reportSubscriptionDiagnostic(summary, exception))
 		{
-			return null;
+			summary += " 診斷紀錄無法寫入。";
 		}
-
-		string? planTier = hasFreeAccessTypeSku
-			? "free"
-			: metadata.User.CopilotPlan;
-		bool? isTokenBasedBilling = metadata.User.QuotaSnapshots?
-			.PremiumInteractions?.TokenBasedBilling ??
-			metadata.User.TokenBasedBilling;
-		return new CopilotSdkSubscriptionMetadata(
-			planTier,
-			isTokenBasedBilling);
+		return new SubscriptionProbeResult(Metadata: null, summary);
 	}
 
 	private static Task RetainLeaseUntilLifecycleCompletes(

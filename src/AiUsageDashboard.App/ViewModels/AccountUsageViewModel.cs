@@ -1669,6 +1669,10 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			!string.IsNullOrWhiteSpace(snapshot.Error)
 			? CreateStaleNoticeText(snapshot)
 			: string.Empty;
+		if (IsCopilot && (snapshot.Status == SnapshotStatus.Ready))
+		{
+			NoticeText = snapshot.Error ?? string.Empty;
+		}
 
 		switch (snapshot.Status)
 		{

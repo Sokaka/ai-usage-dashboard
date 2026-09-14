@@ -382,6 +382,7 @@ internal sealed class CopilotUsageProvider : IUsageProvider
 				report.FetchedAt,
 				report.FetchedAt,
 				report.FetchedAt + StaleAfter,
+				Error: report.SubscriptionWarning,
 				ProviderAccountIdentity: observedIdentity,
 				ProviderAccountDisplayIdentity:
 					$"@{report.Account.Login.Trim()}",

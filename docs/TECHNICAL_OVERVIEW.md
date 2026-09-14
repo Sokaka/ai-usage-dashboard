@@ -82,7 +82,7 @@ Copilot 只在使用者明確連接時，透過受控的官方 CLI 網頁登入�
 | --- | --- | --- | --- |
 | Claude | `2.1.169` | 格式固定的三段版本 `>=2.1.169` | `<2.1.169` 缺少目前命令參數（argv）所需的 `--safe-mode` 功能；產品身分、來源、簽章與路徑仍須通過 |
 | Codex | `0.144.1` | 可辨識為 `codex-cli x.y.z` 的非零三段版本 | 無法確認產品、版號、執行檔來源或程序能安全隔離時停止 |
-| GitHub Copilot | SDK `1.0.11`；CLI 基準 `1.0.79` | 本機官方 CLI 的三段式正式版 `>=1.0.79` 且 `<2.0.0` | 核對 `GitHub, Inc.` Authenticode 與 ProductName，再執行受保護副本；只接受 `github.com`、每張卡片明確提供的 token 與 Experimental RPC 格式；任一身分或回應驗證失敗就停止 |
+| GitHub Copilot | SDK `1.0.11`；CLI 基準 `1.0.79` | 本機官方 CLI 的三段式正式版 `>=1.0.79` 且 `<2.0.0` | 核對 `GitHub, Inc.` Authenticode 與 ProductName，再執行受保護副本；只接受 `github.com` 與每張卡片明確提供的 token；帳號主體或額度驗證失敗時停止採用，訂閱資訊失敗另行提示 |
 | Grok | `1.0.3` | 通過來源驗證的官方執行檔；版號不同或無法解析都可進行 ACP 初始交握（handshake） | 只接受固定預設路徑、固定磁碟、所有上層路徑都不是 reparse point、安全 ACL、通過 WinVerifyTrust，且簽署者必須精確符合程式固定的 `X.AI LLC` |
 | AGY | `1.1.11` | 標準三段穩定版 `1.1.11 <= version < 2.0.0` | `<1.1.11` 缺少官方 print mode 功能；`>=2.0.0`、預發行格式（prerelease）與非標準版本格式一律在執行前拒絕，因為執行後無法撤回可能影響；舊版方式仍限已審查的精確 SHA-256 |
 
@@ -497,7 +497,13 @@ AI Usage 會交叉比對 `auth status`、`current auth` 與 `all-users`，且只
 
 SDK 以該卡片明確提供的 token 查詢額度，不使用從執行環境繼承的憑證。同一帳號的操作會依序執行，不同帳號則可並行。只有正規化後的額度、方案與穩定帳號識別能寫入用量快取；token 與原始回應不會進入快取或診斷紀錄。
 
-SDK 啟動後會讀取 `account.getCurrentAuth` 的訂閱資料。主機名稱、Copilot 使用者登入名稱與必要的 auth login，都必須符合這張卡片已由 `GET /user` 驗證的帳號，否則不採用。
+SDK 啟動並取得額度後，會讀取 `account.getCurrentAuth` 的訂閱資料。`CopilotSubscriptionMetadataReader` 只讀取核對帳號、方案與計費模式所需的 JSON 欄位，不讀取回應中的 token；舊格式含有 token、新格式省略 token，或該欄位為 null，都使用相同的訂閱解析規則。這不改變查詢時必須明確提供該卡片憑證的要求。
+
+Reader 支援 `hmac`、`env`、`token`、`copilot-api-token`、`user`、`gh-cli` 與 `api-key` 七種 auth type。主機名稱、Copilot 使用者 login，以及 `env`／`user`／`gh-cli` 的非空 auth login，都必須符合這張卡片已由 `GET /user` 驗證的帳號；`user`／`gh-cli` 保留 SDK 對 auth login 欄位存在的要求。未知 auth type、身分不符、必要資料缺失、已知欄位型別錯誤或重複關鍵欄位，均拒絕採用訂閱資訊；未知輔助欄位不影響解析。
+
+SDK `1.0.11` 的 `AuthInfoToken` model 要求回應包含 token，但訂閱讀取不需要這個欄位。該版本沒有公開的 raw RPC 入口，因此 `CopilotSubscriptionRpc` 以限定用途的 reflection adapter 取得 `JsonElement`，只呼叫固定的 `account.getCurrentAuth`。Adapter 檢查 SDK assembly 版本、`ServerAccountApi._rpc` 欄位型別、`InvokeRpcAsync` 的唯一方法與六個參數型別，以及 `Task<JsonElement>` 回傳契約；不符合時拒絕這次訂閱讀取。通訊、取消與程序清理仍由原 SDK transport／lifecycle 處理，不另建通訊管道，也不變更 SDK 相依版本。後續升級 SDK 時須重新檢查此契約並重跑新舊回應的回歸測試。
+
+訂閱查詢失敗或無法確認時，保留已驗證的額度，顯示安全警告並透過 `AppDiagnostics` 寫入診斷；寫入失敗也會出現在警告中。診斷只使用固定摘要及 exception 型別、HResult、stack trace，不寫入 token、原始回應或 exception message。缺少方案時不猜測方案，計費模式不明時也不強制顯示 AI Credits。實作及實測狀態見[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md#目前-source)與 [CLI 相容性](CLI_COMPATIBILITY.md#102-候選版)。
 
 計費模式優先讀取 `quota_snapshots.premium_interactions.token_based_billing`；該欄位缺少時，才改讀帳號最上層的 `token_based_billing`。帳號不符、查詢失敗或兩個欄位都缺少時，計費模式維持 `unknown`。
 

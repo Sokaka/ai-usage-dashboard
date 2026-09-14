@@ -8,7 +8,15 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些變更已包含於下列 `1.0.2` 候選；候選建置後的版本文件更新不改變凍結成品。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。上述 App 功能已包含於下列 `1.0.2` 候選；目前 source 另有以下 Copilot 訂閱資訊修正，尚未包含於凍結成品或已安裝 App。
+
+### Copilot 訂閱資訊相容性修正
+
+- [x] 已定位 `1.0.2` 搭配 CLI `1.0.82` 的訂閱解析失敗：受控診斷的 `GET /user` 與 quota 成功，訂閱回應因缺少 SDK `1.0.11` 要求的 token 而解析失敗。範圍見 [1.0.2 實測表](docs/CLI_COMPATIBILITY.md#102-候選版)，不列為完整 provider 驗收通過。
+- [x] Source 新增不讀取回應 token 的訂閱 reader，支援舊格式含 token 與新格式省略 token，保留 host／login 核對、billing 三態與 quota 欄位優先權；未知 auth type、錯誤型別與重複關鍵欄位會拒絕採用。
+- [x] Source 以固定 SDK 契約的 reflection adapter 讀取 `account.getCurrentAuth`，沿用既有 transport／lifecycle；訂閱失敗保留已驗證 quota，顯示安全警告並寫入不含原始回應或 exception message 的診斷。SDK 相依版本、CLI 支援範圍與帳號／憑證／快取格式未變更。
+- [x] 2026-09-14 修正版 restore／Release 建置成功，0 warnings／errors；Copilot 相關測試 102/102、完整測試 4,115/4,115 通過，0 skipped，production line coverage 75.79%（51,100／67,421，門檻 70%）。涵蓋新舊合成回應、SDK 記憶體 RPC、既有 schema 7 帳號及 schema 3 用量快取、憑證沿用與失敗提示；不包含真實 CLI 或安裝升級驗收。
+- [ ] 修正版尚未封裝安裝或執行真實查詢；既有 `1.0.2` 安裝與凍結成品保持原件。
 
 ### 候選建置前的 source 驗證
 
@@ -54,7 +62,7 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 - [x] App／Setup／ClaudeCapture 的三組 dependency profiles 核對通過；App／Setup 的 runtimeconfig 與 deps 固定為 .NET 8.0.31，套件沒有隨附第三方 CLI。
 - [x] 成品有界靜態隱私檢查通過：六件成品與全部 328 ZIP entries，0 findings。可讀文字、檔名及可擷取的 binary strings 已檢查；未解壓 EXE 內嵌壓縮內容或做圖片 OCR，不代表已證明完全沒有敏感資料。
 
-人工 UI、無障礙、首次 Windows 提示與五個 provider 真人登入／用量驗收暫緩，不列為通過，也不作本輪文件及自動檢查的前置條件。逐平台結果見 [1.0.2 實測表](docs/CLI_COMPATIBILITY.md#102-候選版)。
+人工 UI、無障礙、首次 Windows 提示與五個 provider 的完整真人登入／用量驗收暫緩，不列為通過，也不作本輪文件及自動檢查的前置條件。Copilot 已另做部分受控診斷，quota 成功、訂閱解析失敗；逐平台結果見 [1.0.2 實測表](docs/CLI_COMPATIBILITY.md#102-候選版)。
 
 本候選尚未執行乾淨 Windows／VM 安裝、解除安裝／復原、正式 HTTPS 更新與反降級、Updater 自更新及匿名下載驗收。本機 `apply-local` 的 installed manifest 仍為 null sequence；候選 feed 的 sequence 1016 與簽章核對不能代替線上更新驗收。安裝工具沒有讀取帳號設定或 credentials，設定保留未另做真人驗收。
 
