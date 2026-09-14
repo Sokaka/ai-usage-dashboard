@@ -76,8 +76,8 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 
 使用前請留意：
 
-- **相容性**：五項服務串接仍屬實驗性功能，官方登入或用量格式變更可能影響讀取。
-- **Claude 費用**：查詢可能增加用量或費用，請先閱讀[Claude 注意事項](使用說明.md#連接-claude-前必讀)。
+- **相容性**：AI Usage 透過各服務的官方 CLI 或 SDK 取得用量。上游工具更新可能改變登入流程、通訊協定或回傳格式；若無法讀取，請核對 [CLI 相容性](docs/CLI_COMPATIBILITY.md)與支援版本。
+- **Claude 查詢**：AI Usage 會透過 Claude Code 的 `/usage` 讀取額度。這類狀態檢查可能消耗少量 token；若已啟用 usage credits，也可能產生額外費用。連接前請閱讀[Claude 注意事項](使用說明.md#連接-claude-前必讀)。
 - **本機資料**：帳號設定與上次用量保存在目前 Windows 使用者的電腦中。
 - **匯出隱私**：匯出檔不含密碼或 token，但可能含電子郵件及暱稱，請存放在可信任位置。
 - **Windows 安全**：自有 EXE 尚無 Authenticode 簽章，可能提示或受系統政策阻擋；更新清單的簽章不提供 Windows 已驗證發布者身分。不要關閉 SmartScreen 或安全防護。

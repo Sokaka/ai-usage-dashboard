@@ -32,7 +32,7 @@ body:
     id: reproduction
     attributes:
       label: 重現步驟、預期結果與實際結果
-      description: 請說明從哪個操作開始出現問題，以及是否在 App／CLI 更新後發生。Claude 查詢可能增加用量或費用，不需為了回報反覆重試。
+      description: 請說明從哪個操作開始出現問題，以及是否在 App／CLI 更新後發生。Claude `/usage` 狀態檢查可能消耗少量 token；不需為了回報反覆重試。
     validations:
       required: true
   - type: textarea
