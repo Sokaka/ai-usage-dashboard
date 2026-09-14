@@ -25,9 +25,9 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 
 ## 目前版本
 
-本專案目前仍為 private，尚無正式公開下載。最新凍結候選版為 **`1.0.2`**，包含「關於 AI Usage」、開始選單捷徑、Copilot 改用本機官方 CLI，以及較精簡的安裝包。版本內容與檔案資訊見 [1.0.2 版本說明](docs/releases/1.0.2.md)。
+本專案目前仍為 private，尚無正式公開下載。最新凍結候選版為 **`1.0.3`**，包含「關於 AI Usage」、開始選單捷徑、Copilot 改用本機官方 CLI、Copilot 新舊訂閱回應相容，以及較精簡的安裝包。版本內容與檔案資訊見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
 
-本候選已通過自動檢查及既有 Windows 主機的離線換版；人工 UI／provider 驗收暫緩，乾淨 Windows、VM 與正式線上更新仍未驗證。完整範圍見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前候選)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#102-候選版)。正式公開後，安裝檔將由 [GitHub Releases](https://github.com/Sokaka/ai-usage-dashboard/releases)提供。
+本候選的 workflow、自動檢查、六件成品獨立回讀與有界靜態隱私檢查均已通過；exact frozen Updater／ZIP 也已在既有 Windows 主機完成離線換版、核對及重新啟動。人工 UI／provider 驗收暫緩，乾淨 Windows、VM 與正式線上更新仍未驗證；完整範圍見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前候選)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#103-候選版)。正式公開後，安裝檔將由 [GitHub Releases](https://github.com/Sokaka/ai-usage-dashboard/releases) 提供。
 
 ## 支援平台
 

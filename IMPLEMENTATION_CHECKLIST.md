@@ -8,18 +8,18 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。上述 App 功能已包含於下列 `1.0.2` 候選；目前 source 另有以下 Copilot 訂閱資訊修正，已以 `1.0.3-local.20260914.1` 完成本機更新，尚未納入正式凍結成品。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。上述功能與下列 Copilot 訂閱資訊修正已一併凍結於 `1.0.3 / sequence 1017` 私有候選。
 
 ### Copilot 訂閱資訊相容性修正
 
-- [x] 已定位 `1.0.2` 搭配 CLI `1.0.82` 的訂閱解析失敗：受控診斷的 `GET /user` 與 quota 成功，訂閱回應因缺少 SDK `1.0.11` 要求的 token 而解析失敗。範圍見 [1.0.2 實測表](docs/CLI_COMPATIBILITY.md#102-候選版)，不列為完整 provider 驗收通過。
+- [x] 已定位 `1.0.2` 搭配 CLI `1.0.82` 的訂閱解析失敗：受控診斷的 `GET /user` 與 quota 成功，訂閱回應因缺少 SDK `1.0.11` 要求的 token 而解析失敗。範圍見 [1.0.2 歷史實測表](docs/CLI_COMPATIBILITY.md#102-候選版)，不列為完整 provider 驗收通過。
 - [x] Source 新增不讀取回應 token 的訂閱 reader，支援舊格式含 token 與新格式省略 token，保留 host／login 核對、billing 三態與 quota 欄位優先權；未知 auth type、錯誤型別與重複關鍵欄位會拒絕採用。
 - [x] Source 以固定 SDK 契約的 reflection adapter 讀取 `account.getCurrentAuth`，沿用既有 transport／lifecycle；訂閱失敗保留已驗證 quota，顯示安全警告並寫入不含原始回應或 exception message 的診斷。SDK 相依版本、CLI 支援範圍與帳號／憑證／快取格式未變更。
 - [x] 2026-09-14 修正版 restore／Release 建置成功，0 warnings／errors；Copilot 相關測試 102/102、完整測試 4,115/4,115 通過，0 skipped，production line coverage 75.79%（51,100／67,421，門檻 70%）。涵蓋新舊合成回應、SDK 記憶體 RPC、既有 schema 7 帳號及 schema 3 用量快取、憑證沿用與失敗提示；不包含真實 CLI 或安裝升級驗收。
 - [x] 修正版 `1.0.3-local.20260914.1`（source `88a3b8dfd7dc188392ad078b83e33184199459b3`）已由乾淨 source 完成封裝、四組實際離線授權匯出及本機 `1.0.2` → 新版 `apply-local` 更新；328 個 payload、完整 App 版本、Windows 登錄、開始選單與 previous 備份核對通過，安全退出及重新啟動成功，無更新警告。沿用原 maintenance Updater；更新工具未讀取帳號設定或 credentials，未另驗收卡片內容及有效登入狀態。
-- [ ] 同 source 的 [Windows CI attempt 1](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34819937211) 為 4,114 passed／1 failed；既有 `ClaudeAccountLoginTests.LoginAsync_WhenProcessRunnerBlocksSynchronously_StillHonorsTimeout` 等待模擬 runner 啟動時逾時，後續 coverage／package gates 未執行。相同測試在本機帶 coverage 重跑通過；該次執行未記錄精確排程原因，後續測試時序修正見[Claude 登入逾時測試穩定性](#claude-登入逾時測試穩定性)。遠端仍待含修正的新 commit 驗證，不列為 CI 通過或正式候選驗證完成。
+- [x] Source `88a3b8dfd7dc188392ad078b83e33184199459b3` 的首個 [Windows CI attempt 1](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34819937211) 為 4,114 passed／1 failed；既有 Claude 登入逾時測試等待模擬 runner 啟動時逾時，後續 coverage／package gates 未執行。修正測試時序後，exact candidate source `0b7a5d922e56b9590370d776a99642d5dd671b2c` 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34822636429) 完成 4,115 passed／0 failed／0 skipped，production line coverage 75.78%（51,094／67,423），並通過後續 package gates；原失敗紀錄仍保留。
 - [x] 2026-09-14 使用者回報 `1.0.3-local.20260914.1` 更新後「看起來有正常了」；記為本機畫面觀察，尚未逐項核對訂閱欄位或完成受控 provider 驗收。
-- [ ] 新版尚未另做受控真實 CLI／訂閱顯示驗收；本機更新成功不代表 provider 功能已驗收。`1.0.2` 凍結成品保持原件，正式公開仍暫緩。
+- [ ] `1.0.3` 尚未另做受控真實 CLI／訂閱顯示驗收；本機更新成功不代表 provider 功能已驗收。`1.0.2` 歷史凍結成品保持原件，正式公開仍暫緩。
 
 ### Claude 登入逾時測試穩定性
 
@@ -27,11 +27,11 @@
 - [x] 2026-09-14 Release 建置通過，0 warnings／errors；Claude 登入測試 18/18、完整測試 4,115/4,115 通過，0 failed／skipped，production line coverage 75.78%（51,092／67,423，門檻 70%）。
 - [x] 獨立副本在 `DOTNET_PROCESSOR_COUNT=1` 下的原版測試通過；分別忽略 deadline token、移除 runner 的 `Task.Run`、移除 cleanup tracking 的三個故障版本均被測試抓出，且完成清理後自行退出，未觸發外層 watchdog。驗證涵蓋逾時返回、同步阻塞及清理前保留帳號鎖。
 - [x] `0.0.0-verify-claude-timeout.20260914.1` 通過封裝 gate、三組 dependency profiles 與四組實際離線授權匯出。這是帶未提交 source 標記的驗證包，未安裝或發布。
-- [ ] 遠端 Windows CI 尚待包含此修正的新 commit 執行；上述本機結果不改寫先前失敗的 CI 紀錄。
+- [x] Exact candidate source 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34822636429) 與[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34839329802) 均包含此修正並通過完整測試；上述結果不改寫先前失敗的 CI 紀錄。
 
 ### 候選建置前的 source 驗證
 
-以下保留各階段當時的結果及限制；`1.0.2` 的成品與安裝驗證另列於[目前候選](#目前候選)。
+以下保留各階段當時的結果及限制；`1.0.2` 的成品與安裝驗證另列於 [1.0.2 歷史候選](#102-歷史候選)，目前成品狀態列於[目前候選](#目前候選)。
 
 2026-09-14 開始選單路徑修正驗證：
 
@@ -60,11 +60,25 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 後續捲動條提交 `8a564747` 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34764614043) 完整測試為 3,985 passed／0 failed／0 skipped，production line coverage 75.77%；這是另一份遠端驗證，沒有改寫上述本機失敗或其未知原因。對應本機 `0.0.0-verify-scrollbar.20260913.4` 已完成 90 案定向回歸、封裝與安裝，尚非正式凍結候選；這些結果也不代替本次新增功能的驗證。
 
-上述 source 現已凍結為 `1.0.2`，真人 CLI 登入／用量驗收暫緩；歷史 `1.0.1` 的六件凍結成品與 13 案離線驗收只適用於原 source，不代替 `1.0.2` 的結果。
+上述公開入口及 Copilot 相容性修正現已凍結為 `1.0.3`，真人 CLI 登入／用量驗收暫緩；歷史候選的成品與驗收只適用於各自 source，不代替 `1.0.3` 的結果。
 
 ## 目前候選
 
-目前為 `1.0.2 / sequence 1016` 私有候選（[source `ea92eda861a80894b1d8c4d12d0cffd655ff92a7`](https://github.com/Sokaka/ai-usage-dashboard/commit/ea92eda861a80894b1d8c4d12d0cffd655ff92a7)）。Repository 維持 private，Release 維持 draft／prerelease；變更與下載檔案資訊見 [1.0.2 版本說明](docs/releases/1.0.2.md)。
+目前為 `1.0.3 / sequence 1017` 私有候選（[source `0b7a5d922e56b9590370d776a99642d5dd671b2c`](https://github.com/Sokaka/ai-usage-dashboard/commit/0b7a5d922e56b9590370d776a99642d5dd671b2c)）。Repository 維持 private，GitHub Release 維持 draft／prerelease，tag metadata 為 `v1.0.3`。變更與下載檔案資訊見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
+
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34839329802) 的原始 attempt 1 通過 source 歷史隱私檢查、restore、Release 建置與完整測試：0 warnings／0 errors，4,115 passed／0 failed／0 skipped，production line coverage 75.79%（51,103／67,423），門檻維持 70%。
+- [x] 同一 workflow 完成更新清單簽署與驗簽，並凍結正好六件成品；Release 保持 private repository 內的 draft／prerelease。三個主要檔案的 size 與 workflow 紀錄 SHA256 已列於 [1.0.3 版本說明](docs/releases/1.0.3.md)。
+- [x] 已從 Release 獨立下載六件成品；asset ID、size、SHA256、三個 sidecar、build artifact 與原始 workflow freeze 全部一致。下載的 feed 另以 pinned production 公鑰完成驗簽，內容的 source、version、sequence、網址與兩個主要成品的 size／SHA256 均相符。
+- [x] 六件成品、全部 328 個 ZIP 檔案與候選 workflow log 的有界靜態隱私檢查通過，0 findings；ZIP 亦通過完整 CRC、路徑、重複名稱、symlink、dependency profile、runtime pin 與五組離線 license export 檢查。Binary 檢查有可擷取字串與容器邊界，未遞迴拆解單檔 EXE 內嵌內容，也未對圖片做 OCR。
+- [x] 已在既有 Windows 主機使用 exact frozen Updater／ZIP 執行 `apply-local`。Updater 自然關閉 App，transaction 狀態為 `Committed`；328 個 payload、candidate archive、previous 完整舊樹、App 與 maintenance Updater 版本、Windows 登錄及開始選單均核對相符。App 已重新啟動並正常回應，未強制終止程序或產生更新警告；離線 installed manifest 的 source／release sequence 依設計為 null，不冒充線上更新結果。
+
+人工 UI、無障礙、首次 Windows 提示與五個 provider 的完整真人登入／用量驗收暫緩，不列為通過，也不作本輪文件及自動檢查的前置條件。Copilot 的舊版診斷及先前修正版畫面觀察範圍見 [1.0.3 實測表](docs/CLI_COMPATIBILITY.md#103-候選版)。
+
+本候選尚未執行乾淨 Windows／VM 安裝、解除安裝／復原、正式 HTTPS 更新與反降級、Updater 自更新及匿名下載驗收。候選 feed 的 sequence 1017 與 workflow 驗簽不能代替線上更新驗收。本次成品掃描與安裝驗證未讀取帳號設定或 credentials，也未執行 provider 驗收；既有帳號與設定的保留尚未另做真人驗收。
+
+### 1.0.2 歷史候選
+
+`1.0.2 / sequence 1016` 私有候選（[source `ea92eda861a80894b1d8c4d12d0cffd655ff92a7`](https://github.com/Sokaka/ai-usage-dashboard/commit/ea92eda861a80894b1d8c4d12d0cffd655ff92a7)）未公開，Release 保持 draft／prerelease；變更與下載檔案資訊見 [1.0.2 版本說明](docs/releases/1.0.2.md)。以下僅適用於該版成品，不代替 `1.0.3` 驗收。
 
 - [x] [候選 CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34795351636) 的原始 attempt 1 通過歷史隱私檢查、restore、建置與完整測試：4,027 passed／0 failed／0 skipped，production line coverage 75.75%（51,006／67,332），門檻維持 70%。
 - [x] 同 source、原 build run／attempt 的六件成品已簽署、上傳及凍結；下載 bytes、asset ID、size、SHA256、build artifact 與原始 freeze 相符。下載的 feed 另以 pinned production 公鑰完成本機驗簽。
@@ -73,13 +87,13 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 - [x] App／Setup／ClaudeCapture 的三組 dependency profiles 核對通過；App／Setup 的 runtimeconfig 與 deps 固定為 .NET 8.0.31，套件沒有隨附第三方 CLI。
 - [x] 成品有界靜態隱私檢查通過：六件成品與全部 328 ZIP entries，0 findings。可讀文字、檔名及可擷取的 binary strings 已檢查；未解壓 EXE 內嵌壓縮內容或做圖片 OCR，不代表已證明完全沒有敏感資料。
 
-人工 UI、無障礙、首次 Windows 提示與五個 provider 的完整真人登入／用量驗收暫緩，不列為通過，也不作本輪文件及自動檢查的前置條件。Copilot 已另做部分受控診斷，quota 成功、訂閱解析失敗；逐平台結果見 [1.0.2 實測表](docs/CLI_COMPATIBILITY.md#102-候選版)。
+人工 UI、無障礙、首次 Windows 提示與五個 provider 的完整真人登入／用量驗收暫緩。Copilot 已另做部分受控診斷，quota 成功、訂閱解析失敗；逐平台結果見 [1.0.2 歷史實測表](docs/CLI_COMPATIBILITY.md#102-候選版)。
 
-本候選尚未執行乾淨 Windows／VM 安裝、解除安裝／復原、正式 HTTPS 更新與反降級、Updater 自更新及匿名下載驗收。本機 `apply-local` 的 installed manifest 仍為 null sequence；候選 feed 的 sequence 1016 與簽章核對不能代替線上更新驗收。安裝工具沒有讀取帳號設定或 credentials，設定保留未另做真人驗收。
+此歷史候選未執行乾淨 Windows／VM 安裝、解除安裝／復原、正式 HTTPS 更新與反降級、Updater 自更新及匿名下載驗收。本機 `apply-local` 的 installed manifest 為 null sequence；候選 feed 的 sequence 1016 與簽章核對不代替線上更新驗收。安裝工具沒有讀取帳號設定或 credentials，設定保留未另做真人驗收。
 
 ### 1.0.1 歷史候選
 
-`1.0.1 / sequence 1015` 私有候選（[source `d639a8ad7cc1956c7628ae07037051859e25fe53`](https://github.com/Sokaka/ai-usage-dashboard/commit/d639a8ad7cc1956c7628ae07037051859e25fe53)）包含 Claude `/usage` 回應相容性、Antigravity 程序路徑查詢與防毒阻擋提示修正。以下僅適用於該版成品，不代替 `1.0.2` 驗收。
+`1.0.1 / sequence 1015` 私有候選（[source `d639a8ad7cc1956c7628ae07037051859e25fe53`](https://github.com/Sokaka/ai-usage-dashboard/commit/d639a8ad7cc1956c7628ae07037051859e25fe53)）包含 Claude `/usage` 回應相容性、Antigravity 程序路徑查詢與防毒阻擋提示修正。以下僅適用於該版成品，不代替後續候選驗收。
 
 - [x] Source CI 與候選 CI 均完成建置及完整測試，各 3,913／3,913 通過，0 failed／0 skipped；production line coverage 分別為 75.63%／75.65%。
 - [x] 同 source、原 build run／attempt 的六件成品已完成簽署、上傳及 workflow freeze。下載回讀的 bytes、asset ID、size 與 SHA256 均與 build artifact、freeze 相符，未重建或替換成品。
@@ -117,12 +131,12 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 | Claude | 以未修改的官方 Claude Code、每卡獨立設定與官方登入查詢 `/usage`；仍屬實驗性，回傳後檢查 turn／token／cost 為零。 |
 | Codex | 以官方 `app-server` 查詢帳號及多個 rate-limit 區間；每卡隔離登入與 state，仍須持續驗證上游格式相容。 |
 | Grok | 以官方 Grok Build CLI 的 auth／billing 支援多帳號、重複帳號拒絕與連接復原；仍屬實驗性。 |
-| GitHub Copilot | 目前 source 改用固定版本的官方 SDK 與本機官方 CLI；只支援不同的 `github.com` 帳號，登入資料按卡片存於 Windows Credential Manager，不把 organization／subscription 拆成不同帳號。 |
+| GitHub Copilot | `1.0.3` 使用固定版本的官方 SDK 與本機官方 CLI，並相容新舊訂閱回應；只支援不同的 `github.com` 帳號，登入資料按卡片存於 Windows Credential Manager，不把 organization／subscription 拆成不同帳號。 |
 | Antigravity／AGY | 使用 user-installed、unmodified 官方 CLI `/usage`；每位 Windows 使用者只允許一張卡片，保留受限的舊版相容路徑，回傳後檢查 turn／token 為零。 |
 
 ## 候選與歷史驗證的界線
 
-五 provider 登入／帳號隔離、較完整的人工 UI、固定 Windows 18 案與 50 案中斷復原已有歷史驗證；`1.0.1` 與 `1.0.2` 都沒有整套重跑。歷次 SDK／runtime 與成品 bytes 的變更仍須按適用性評估，歷史 PASS 不能改標為本候選結果。
+五 provider 登入／帳號隔離、較完整的人工 UI、固定 Windows 18 案與 50 案中斷復原已有歷史驗證；`1.0.1` 至 `1.0.3` 都沒有整套重跑。歷次 SDK／runtime 與成品 bytes 的變更仍須按適用性評估，歷史 PASS 不能改標為本候選結果。
 
 後續版本更新、Updater 自更新、HTTPS→HTTP 降級拒絕、磁碟不足／reapply、持久化與 rename 邊界中斷、再次復原失敗等範圍，仍按既有 source 機制證據與適用性評估處理。`1.0.0` 的 27 案不代表已重驗這些範圍，也不代表已涵蓋全部非 canonical 安裝、未知檔案或 Windows 政策環境。
 

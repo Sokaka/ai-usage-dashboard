@@ -1,6 +1,6 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.2` 私有候選版的 CLI 版本要求及實測狀態，並保留歷史候選紀錄。本候選的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。一般真人登入與完整用量驗收仍暫緩；Copilot 已另做受控相容性診斷，範圍見下方實測表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.3` 私有候選版的 CLI 版本要求及實測狀態，並保留歷史候選紀錄。本候選的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。一般真人登入與完整用量驗收仍暫緩；Copilot 已另做受控相容性診斷與先前修正版的畫面觀察，範圍見下方實測表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
 ## 版本要求
 
@@ -23,9 +23,27 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同候選官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
+### 1.0.3 候選版
+
+本表對應 `1.0.3 / sequence 1017`（[source `0b7a5d922e56b9590370d776a99642d5dd671b2c`](https://github.com/Sokaka/ai-usage-dashboard/commit/0b7a5d922e56b9590370d776a99642d5dd671b2c)），是目前候選逐平台實測狀態的唯一紀錄表。五個平台皆維持實驗性串接；一般真人驗收暫緩，Copilot 的受控診斷及先前修正版觀察不列為整項通過。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| Codex | 未實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| GitHub Copilot | CLI `1.0.82`／SDK `1.0.11`；2026-09-14 受控診斷與先前修正版觀察 | 暫緩，未驗證 | 先前修正版畫面觀察正常；exact candidate 未逐欄核對或執行真人驗收 |
+| Grok | 未實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| Antigravity | 未實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+
+`1.0.3` 改以不讀取回應 token 的 reader 處理新舊訂閱格式，SDK 仍固定 `1.0.11`，host／login／billing 驗證與 CLI 支援範圍維持不變；設計見[技術總覽](TECHNICAL_OVERVIEW.md#額度匯入與清理)。候選 workflow 的 Release 建置為 0 warnings／0 errors，完整自動測試 4,115 項全部通過，包含 SDK 記憶體 RPC、新舊合成回應及帳號／快取相容性；這些測試不代替真實 CLI 或 provider 驗收。
+
+先前相同 Copilot 功能的 `1.0.3-local.20260914.1` 已完成本機封裝、安裝內容核對及重新啟動；2026-09-14 使用者回報更新後「看起來有正常了」。目前 exact frozen candidate 也已完成本機離線換版、內容核對及重新啟動。這些結果沒有逐項核對訂閱方案或 AI Credits，也不列為真人 provider 驗收；候選成品的驗證範圍見[實作與驗證清單](../IMPLEMENTATION_CHECKLIST.md#目前候選)。
+
+後續真人實測仍依[受控驗收規範](../INTERNAL_DISTRIBUTION.md#cli-相容性維護)確認平台、操作與次數，Claude 須先接受可能產生用量或費用的風險。
+
 ### 1.0.2 候選版
 
-本表對應 `1.0.2 / sequence 1016`（[source `ea92eda861a80894b1d8c4d12d0cffd655ff92a7`](https://github.com/Sokaka/ai-usage-dashboard/commit/ea92eda861a80894b1d8c4d12d0cffd655ff92a7)），是本候選逐平台實測狀態的唯一紀錄表。五個平台皆維持實驗性串接；一般真人驗收暫緩，Copilot 的部分診斷結果不列為整項通過。
+本表對應 `1.0.2 / sequence 1016`（[source `ea92eda861a80894b1d8c4d12d0cffd655ff92a7`](https://github.com/Sokaka/ai-usage-dashboard/commit/ea92eda861a80894b1d8c4d12d0cffd655ff92a7)），保留該歷史候選當時的逐平台實測狀態。五個平台皆維持實驗性串接；一般真人驗收暫緩，Copilot 的部分診斷結果不列為整項通過。
 
 | 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
 | --- | --- | --- | --- |
@@ -37,13 +55,13 @@
 
 2026-09-14 的 Copilot 診斷沿用既有憑證，未執行登入。已核對凍結 `1.0.2` App／SDK 與本機 CLI `1.0.82`，GitHub `GET /user` 與 `account.getQuota` 成功；`account.getCurrentAuth` 回應具有訂閱欄位，但省略 token，SDK `1.0.11` 因 `AuthInfoToken` model 的必填 token 而發生 `JsonException`。這會讓原候選顯示 `Premium usage` 並缺少方案。紀錄只保留安全欄位形狀與結果，不包含原始回應或私人帳號資訊。
 
-目前 source 的相容性修正改以不讀取回應 token 的 reader 處理新舊格式，SDK 仍固定 `1.0.11`，host／login／billing 驗證與 CLI 支援範圍維持不變；設計見[技術總覽](TECHNICAL_OVERVIEW.md#額度匯入與清理)。2026-09-14 修正版 Release 建置與 Copilot 102 項合成回歸均通過，包括 SDK 記憶體 RPC、新舊回應及帳號／快取相容性；完整自動測試結果見[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md#copilot-訂閱資訊相容性修正)。修正版已以 `1.0.3-local.20260914.1` 完成本機封裝、安裝內容核對及重新啟動；2026-09-14 使用者回報 `1.0.3-local.20260914.1` 更新後「看起來有正常了」；記為本機畫面觀察，尚未逐項核對訂閱欄位或完成受控 provider 驗收。`1.0.2` 凍結成品保持原件。
+這個訂閱相容性問題由 `1.0.3` 修正；`1.0.2` 凍結成品保持原件。修正的實作與驗證範圍見 [1.0.3 候選版](#103-候選版)及[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md#copilot-訂閱資訊相容性修正)。
 
-本候選的 CI、安裝與封裝驗證範圍見[實作與驗證清單](../IMPLEMENTATION_CHECKLIST.md#目前候選)，不代填本表；`1.0.0`／`1.0.1` 的歷史結果也不列為 `1.0.2` 通過。後續真人實測仍依[受控驗收規範](../INTERNAL_DISTRIBUTION.md#cli-相容性維護)確認平台、操作與次數，Claude 須先接受可能產生用量或費用的風險。
+此歷史候選的 CI、安裝與封裝驗證範圍見[實作與驗證清單](../IMPLEMENTATION_CHECKLIST.md#102-歷史候選)，不代填本表；`1.0.0`／`1.0.1` 的歷史結果也不列為 `1.0.2` 通過。
 
 ### 1.0.1 候選版
 
-本表對應 `1.0.1 / sequence 1015`（[source `d639a8ad7cc1956c7628ae07037051859e25fe53`](https://github.com/Sokaka/ai-usage-dashboard/commit/d639a8ad7cc1956c7628ae07037051859e25fe53)）。此候選仍使用原隨附 CLI，尚無真人登入／用量實測；已完成的離線安裝與授權匯出不涵蓋 provider 功能，也不適用於改用本機 CLI 的 `1.0.2` 候選版。
+本表對應 `1.0.1 / sequence 1015`（[source `d639a8ad7cc1956c7628ae07037051859e25fe53`](https://github.com/Sokaka/ai-usage-dashboard/commit/d639a8ad7cc1956c7628ae07037051859e25fe53)）。此候選仍使用原隨附 CLI，尚無真人登入／用量實測；已完成的離線安裝與授權匯出不涵蓋 provider 功能，也不適用於改用本機 CLI 的後續候選版。
 
 | 平台 | CLI 版本紀錄 | 登入／用量結果 |
 | --- | --- | --- |
