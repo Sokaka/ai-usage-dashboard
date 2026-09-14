@@ -8,7 +8,7 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。上述功能與下列 Copilot 訂閱資訊修正已一併凍結於 `1.0.3 / sequence 1017` 私有候選。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。上述功能與下列 Copilot 訂閱資訊修正已一併凍結於 `1.0.3 / sequence 1017`，並已核准為首個正式公開版本。
 
 ### Copilot 訂閱資訊相容性修正
 
@@ -19,7 +19,7 @@
 - [x] 修正版 `1.0.3-local.20260914.1`（source `88a3b8dfd7dc188392ad078b83e33184199459b3`）已由乾淨 source 完成封裝、四組實際離線授權匯出及本機 `1.0.2` → 新版 `apply-local` 更新；328 個 payload、完整 App 版本、Windows 登錄、開始選單與 previous 備份核對通過，安全退出及重新啟動成功，無更新警告。沿用原 maintenance Updater；更新工具未讀取帳號設定或 credentials，未另驗收卡片內容及有效登入狀態。
 - [x] Source `88a3b8dfd7dc188392ad078b83e33184199459b3` 的首個 [Windows CI attempt 1](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34819937211) 為 4,114 passed／1 failed；既有 Claude 登入逾時測試等待模擬 runner 啟動時逾時，後續 coverage／package gates 未執行。修正測試時序後，exact candidate source `0b7a5d922e56b9590370d776a99642d5dd671b2c` 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34822636429) 完成 4,115 passed／0 failed／0 skipped，production line coverage 75.78%（51,094／67,423），並通過後續 package gates；原失敗紀錄仍保留。
 - [x] 2026-09-14 使用者回報 `1.0.3-local.20260914.1` 更新後「看起來有正常了」；記為本機畫面觀察，尚未逐項核對訂閱欄位或完成受控 provider 驗收。
-- [ ] `1.0.3` 尚未另做受控真實 CLI／訂閱顯示驗收；本機更新成功不代表 provider 功能已驗收。`1.0.2` 歷史凍結成品保持原件，正式公開仍暫緩。
+- [ ] `1.0.3` 尚未另做受控真實 CLI／訂閱顯示驗收；本機更新成功不代表 provider 功能已驗收。維護者已決定在保留這項未驗證界線的前提下公開；`1.0.2` 歷史凍結成品保持原件。
 
 ### Claude 登入逾時測試穩定性
 
@@ -31,7 +31,7 @@
 
 ### 候選建置前的 source 驗證
 
-以下保留各階段當時的結果及限制；`1.0.2` 的成品與安裝驗證另列於 [1.0.2 歷史候選](#102-歷史候選)，目前成品狀態列於[目前候選](#目前候選)。
+以下保留各階段當時的結果及限制；`1.0.2` 的成品與安裝驗證另列於 [1.0.2 歷史候選](#102-歷史候選)，目前成品狀態列於[目前正式版本](#目前正式版本)。
 
 2026-09-14 開始選單路徑修正驗證：
 
@@ -62,19 +62,19 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 上述公開入口及 Copilot 相容性修正現已凍結為 `1.0.3`，真人 CLI 登入／用量驗收暫緩；歷史候選的成品與驗收只適用於各自 source，不代替 `1.0.3` 的結果。
 
-## 目前候選
+## 目前正式版本
 
-目前為 `1.0.3 / sequence 1017` 私有候選（[source `0b7a5d922e56b9590370d776a99642d5dd671b2c`](https://github.com/Sokaka/ai-usage-dashboard/commit/0b7a5d922e56b9590370d776a99642d5dd671b2c)）。Repository 維持 private，GitHub Release 維持 draft／prerelease，tag metadata 為 `v1.0.3`。變更與下載檔案資訊見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
+`1.0.3 / sequence 1017` 的凍結候選已核准為正式版本（[source `0b7a5d922e56b9590370d776a99642d5dd671b2c`](https://github.com/Sokaka/ai-usage-dashboard/commit/0b7a5d922e56b9590370d776a99642d5dd671b2c)）。Repository 與同一筆 `v1.0.3` GitHub Release 正依既定順序轉正；任何成品都不會重建、重簽或替換。變更與下載檔案資訊見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
 
 - [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34839329802) 的原始 attempt 1 通過 source 歷史隱私檢查、restore、Release 建置與完整測試：0 warnings／0 errors，4,115 passed／0 failed／0 skipped，production line coverage 75.79%（51,103／67,423），門檻維持 70%。
-- [x] 同一 workflow 完成更新清單簽署與驗簽，並凍結正好六件成品；Release 保持 private repository 內的 draft／prerelease。三個主要檔案的 size 與 workflow 紀錄 SHA256 已列於 [1.0.3 版本說明](docs/releases/1.0.3.md)。
+- [x] 同一 workflow 完成更新清單簽署與驗簽，並在 private repository 內以 draft／prerelease 凍結正好六件成品。正式發布沿用同一筆 Release；三個主要檔案的 size 與 workflow 紀錄 SHA256 已列於 [1.0.3 版本說明](docs/releases/1.0.3.md)。
 - [x] 已從 Release 獨立下載六件成品；asset ID、size、SHA256、三個 sidecar、build artifact 與原始 workflow freeze 全部一致。下載的 feed 另以 pinned production 公鑰完成驗簽，內容的 source、version、sequence、網址與兩個主要成品的 size／SHA256 均相符。
 - [x] 六件成品、全部 328 個 ZIP 檔案與候選 workflow log 的有界靜態隱私檢查通過，0 findings；ZIP 亦通過完整 CRC、路徑、重複名稱、symlink、dependency profile、runtime pin 與五組離線 license export 檢查。Binary 檢查有可擷取字串與容器邊界，未遞迴拆解單檔 EXE 內嵌內容，也未對圖片做 OCR。
 - [x] 已在既有 Windows 主機使用 exact frozen Updater／ZIP 執行 `apply-local`。Updater 自然關閉 App，transaction 狀態為 `Committed`；328 個 payload、candidate archive、previous 完整舊樹、App 與 maintenance Updater 版本、Windows 登錄及開始選單均核對相符。App 已重新啟動並正常回應，未強制終止程序或產生更新警告；離線 installed manifest 的 source／release sequence 依設計為 null，不冒充線上更新結果。
 
-人工 UI、無障礙、首次 Windows 提示與五個 provider 的完整真人登入／用量驗收暫緩，不列為通過，也不作本輪文件及自動檢查的前置條件。Copilot 的舊版診斷及先前修正版畫面觀察範圍見 [1.0.3 實測表](docs/CLI_COMPATIBILITY.md#103-候選版)。
+人工 UI、無障礙、首次 Windows 提示與五個 provider 的完整真人登入／用量驗收暫緩，不列為通過，也不作本輪文件及自動檢查的前置條件。Copilot 的舊版診斷及先前修正版畫面觀察範圍見 [1.0.3 實測表](docs/CLI_COMPATIBILITY.md#103-正式版)。
 
-本候選尚未執行乾淨 Windows／VM 安裝、解除安裝／復原、正式 HTTPS 更新與反降級、Updater 自更新及匿名下載驗收。候選 feed 的 sequence 1017 與 workflow 驗簽不能代替線上更新驗收。本次成品掃描與安裝驗證未讀取帳號設定或 credentials，也未執行 provider 驗收；既有帳號與設定的保留尚未另做真人驗收。
+本版本尚未執行乾淨 Windows／VM 安裝、解除安裝／復原、正式 HTTPS 更新與反降級及 Updater 自更新；這些項目維持暫緩。Repository 公開後會立即執行匿名下載與簽章驗證，但該 smoke 不代替完整線上更新驗收。候選 feed 的 sequence 1017 與 workflow 驗簽也不能代替線上更新驗收。本次成品掃描與安裝驗證未讀取帳號設定或 credentials，也未執行 provider 驗收；既有帳號與設定的保留尚未另做真人驗收。
 
 ### 1.0.2 歷史候選
 

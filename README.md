@@ -7,7 +7,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-Unreleased-orange" alt="尚未正式公開"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.3-0078D4" alt="目前正式版本 1.0.3"></a>
 </p>
 
 <p align="center">
@@ -29,9 +29,9 @@
 
 ## 目前版本
 
-本專案目前仍為 private，尚無正式公開下載。最新凍結候選版為 **`1.0.3`**，包含「關於 AI Usage」、開始選單捷徑、Copilot 改用本機官方 CLI、Copilot 新舊訂閱回應相容，以及較精簡的安裝包。版本內容與檔案資訊見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
+首個正式版本為 **`1.0.3`**，包含「關於 AI Usage」、開始選單捷徑、Copilot 改用本機官方 CLI、Copilot 新舊訂閱回應相容，以及較精簡的安裝包。版本內容與檔案資訊見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
 
-本候選的 workflow、自動檢查、六件成品獨立回讀與有界靜態隱私檢查均已通過；exact frozen Updater／ZIP 也已在既有 Windows 主機完成離線換版、核對及重新啟動。人工 UI／provider 驗收暫緩，乾淨 Windows、VM 與正式線上更新仍未驗證；完整範圍見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前候選)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#103-候選版)。正式公開後，安裝檔將由 [GitHub Releases](https://github.com/Sokaka/ai-usage-dashboard/releases) 提供。
+本版本的候選 workflow、自動檢查、六件成品獨立回讀與有界靜態隱私檢查均已通過；exact frozen Updater／ZIP 也已在既有 Windows 主機完成離線換版、核對及重新啟動。人工 UI／provider 驗收暫緩，乾淨 Windows、VM 與正式線上更新仍未驗證；完整範圍見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#103-正式版)。安裝檔由 [v1.0.3 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.3) 提供；Repository 與 Release 公開後會立即以未登入的 client 驗證六件檔案、stable feed 與簽章，結果完成前不列為已通過。
 
 ## 支援平台
 
@@ -67,7 +67,7 @@
 
 ## 安裝與第一次使用
 
-正式版本公開後，從該版本的 GitHub Release 選擇：
+從目前版本的 GitHub Release 選擇：
 
 | 使用方式 | 下載檔案 | 啟動方式 |
 | --- | --- | --- |

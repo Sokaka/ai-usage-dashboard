@@ -503,7 +503,7 @@ Reader 支援 `hmac`、`env`、`token`、`copilot-api-token`、`user`、`gh-cli`
 
 SDK `1.0.11` 的 `AuthInfoToken` model 要求回應包含 token，但訂閱讀取不需要這個欄位。該版本沒有公開的 raw RPC 入口，因此 `CopilotSubscriptionRpc` 以限定用途的 reflection adapter 取得 `JsonElement`，只呼叫固定的 `account.getCurrentAuth`。Adapter 檢查 SDK assembly 版本、`ServerAccountApi._rpc` 欄位型別、`InvokeRpcAsync` 的唯一方法與六個參數型別，以及 `Task<JsonElement>` 回傳契約；不符合時拒絕這次訂閱讀取。通訊、取消與程序清理仍由原 SDK transport／lifecycle 處理，不另建通訊管道，也不變更 SDK 相依版本。後續升級 SDK 時須重新檢查此契約並重跑新舊回應的回歸測試。
 
-訂閱查詢失敗或無法確認時，保留已驗證的額度，顯示安全警告並透過 `AppDiagnostics` 寫入診斷；寫入失敗也會出現在警告中。診斷只使用固定摘要及 exception 型別、HResult、stack trace，不寫入 token、原始回應或 exception message。缺少方案時不猜測方案，計費模式不明時也不強制顯示 AI Credits。實作及實測狀態見[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md#目前-source)與 [CLI 相容性](CLI_COMPATIBILITY.md#103-候選版)。
+訂閱查詢失敗或無法確認時，保留已驗證的額度，顯示安全警告並透過 `AppDiagnostics` 寫入診斷；寫入失敗也會出現在警告中。診斷只使用固定摘要及 exception 型別、HResult、stack trace，不寫入 token、原始回應或 exception message。缺少方案時不猜測方案，計費模式不明時也不強制顯示 AI Credits。實作及實測狀態見[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md#目前-source)與 [CLI 相容性](CLI_COMPATIBILITY.md#103-正式版)。
 
 計費模式優先讀取 `quota_snapshots.premium_interactions.token_based_billing`；該欄位缺少時，才改讀帳號最上層的 `token_based_billing`。帳號不符、查詢失敗或兩個欄位都缺少時，計費模式維持 `unknown`。
 

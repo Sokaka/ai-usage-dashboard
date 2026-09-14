@@ -2,7 +2,7 @@
 
 一般操作問題與功能建議請使用 [GitHub Issues](https://github.com/Sokaka/ai-usage-dashboard/issues/new/choose)。提交前，先查閱[使用說明](使用說明.md#常見問題)與[既有 Issues](https://github.com/Sokaka/ai-usage-dashboard/issues)，CLI 問題另見[相容性表](docs/CLI_COMPATIBILITY.md)。
 
-本專案目前仍為 private，尚未正式公開。現階段 GitHub 入口需要儲存庫存取權；正式公開後供一般使用者回報。AI Usage 是個人維護的實驗性工具，不承諾回覆或修復期限。
+GitHub Issues 是一般問題與功能建議的公開回報入口。AI Usage 是個人維護的實驗性工具，不承諾回覆或修復期限。
 
 ## 回報內容
 

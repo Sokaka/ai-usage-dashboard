@@ -8,7 +8,7 @@
 
 程式碼與文件共用 source 隱私規則；候選建置檢查本機可見 refs 的全部歷史，失敗 diagnostics 通過檢查後才可上傳。掃描範圍、限制、本機指令與公開後 required status checks 設定見 [CI 敏感資訊檢查](docs/CI_PRIVACY.md)。
 
-主包不再隨附第三方 CLI；封裝須確認沒有 Copilot CLI 或其他第三方 CLI payload。`GitHub.Copilot.SDK` 保持 `1.0.11`，交付清單與授權文件依實際包含的 SDK 元件核對。本機 Copilot CLI 只接受正式版 `>=1.0.79` 且 `<2.0.0`；來源、版本、隔離與舊卡片升級流程須另行驗證，並確認 CLI 缺少時保留憑證、安裝後可重試。歷史候選的驗收結果只適用於對應 source 與凍結成品；本候選的驗證範圍見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前候選)及 [CLI 相容性](docs/CLI_COMPATIBILITY.md)。
+主包不再隨附第三方 CLI；封裝須確認沒有 Copilot CLI 或其他第三方 CLI payload。`GitHub.Copilot.SDK` 保持 `1.0.11`，交付清單與授權文件依實際包含的 SDK 元件核對。本機 Copilot CLI 只接受正式版 `>=1.0.79` 且 `<2.0.0`；來源、版本、隔離與舊卡片升級流程須另行驗證，並確認 CLI 缺少時保留憑證、安裝後可重試。歷史候選的驗收結果只適用於對應 source 與凍結成品；目前正式版本的驗證範圍見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 相容性](docs/CLI_COMPATIBILITY.md)。
 
 .NET SDK 由 `global.json` 固定，transitive NuGet audit 由 `Directory.Build.props` 啟用。沒有 Git 歷史的原始碼匯出目錄可建置與測試，不能產生符合正式發布契約的候選包。
 
@@ -91,7 +91,7 @@ Claude 保留未修改官方 binary、內建 auth、使用者自己的憑證與�
 
 公開前重新核對凍結記錄與遠端六件。任何 identity、source、run/attempt、asset ID、size 或 digest 不符，立即停止。缺件不重建補件。
 
-確認授權後，公開新 repo，僅把同一候選 Release 改為非 draft、非 prerelease 且為 latest，再回讀。此步不 dispatch build、不改 bytes、不把當前操作的 run/attempt 取代原始 build 來源。
+確認授權後，先在 private Repository 僅把同一候選 Release 改為非 draft、非 prerelease 且為 latest，並回讀 tag、target 及六件 assets；確認一致後才把 Repository 改為 public 並再次回讀。此流程不 dispatch build、不改 bytes，也不把當前操作的 run/attempt 取代原始 build 來源。
 
 不帶 cookie/token，匿名下載正式 feed：`https://github.com/Sokaka/ai-usage-dashboard/releases/latest/download/AiUsageDashboard-update-stable.json`。驗簽後核對 App／Updater URLs、版本／sequence、hash／size 和全部 sidecars，確認與凍結候選相符。再走正式下載的 fresh install、舊 internal→stable 與線上 smoke，通過才宣告發布完成。
 
