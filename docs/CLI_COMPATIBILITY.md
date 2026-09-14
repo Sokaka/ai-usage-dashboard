@@ -37,7 +37,7 @@
 
 2026-09-14 的 Copilot 診斷沿用既有憑證，未執行登入。已核對凍結 `1.0.2` App／SDK 與本機 CLI `1.0.82`，GitHub `GET /user` 與 `account.getQuota` 成功；`account.getCurrentAuth` 回應具有訂閱欄位，但省略 token，SDK `1.0.11` 因 `AuthInfoToken` model 的必填 token 而發生 `JsonException`。這會讓原候選顯示 `Premium usage` 並缺少方案。紀錄只保留安全欄位形狀與結果，不包含原始回應或私人帳號資訊。
 
-目前 source 的相容性修正改以不讀取回應 token 的 reader 處理新舊格式，SDK 仍固定 `1.0.11`，host／login／billing 驗證與 CLI 支援範圍維持不變；設計見[技術總覽](TECHNICAL_OVERVIEW.md#額度匯入與清理)。2026-09-14 修正版 Release 建置與 Copilot 102 項合成回歸均通過，包括 SDK 記憶體 RPC、新舊回應及帳號／快取相容性；完整自動測試結果見[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md#copilot-訂閱資訊相容性修正)。修正版尚未重新安裝或進行真實查詢，上述結果不代表已安裝 App 已修復。
+目前 source 的相容性修正改以不讀取回應 token 的 reader 處理新舊格式，SDK 仍固定 `1.0.11`，host／login／billing 驗證與 CLI 支援範圍維持不變；設計見[技術總覽](TECHNICAL_OVERVIEW.md#額度匯入與清理)。2026-09-14 修正版 Release 建置與 Copilot 102 項合成回歸均通過，包括 SDK 記憶體 RPC、新舊回應及帳號／快取相容性；完整自動測試結果見[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md#copilot-訂閱資訊相容性修正)。修正版已以 `1.0.3-local.20260914.1` 完成本機封裝、安裝內容核對及重新啟動；2026-09-14 使用者回報 `1.0.3-local.20260914.1` 更新後「看起來有正常了」；記為本機畫面觀察，尚未逐項核對訂閱欄位或完成受控 provider 驗收。`1.0.2` 凍結成品保持原件。
 
 本候選的 CI、安裝與封裝驗證範圍見[實作與驗證清單](../IMPLEMENTATION_CHECKLIST.md#目前候選)，不代填本表；`1.0.0`／`1.0.1` 的歷史結果也不列為 `1.0.2` 通過。後續真人實測仍依[受控驗收規範](../INTERNAL_DISTRIBUTION.md#cli-相容性維護)確認平台、操作與次數，Claude 須先接受可能產生用量或費用的風險。
 

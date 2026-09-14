@@ -33,6 +33,7 @@ internal sealed class ClaudeAccountLogin : IClaudeAccountLogin
 		CancellationToken,
 		Task<ProcessResult>> _processRunner;
 	private readonly TimeSpan _statusTimeout;
+	private readonly TimeProvider _timeProvider;
 
 	public ClaudeAccountLogin(Func<Guid, string> configDirectoryResolver)
 		: this(
@@ -145,7 +146,8 @@ internal sealed class ClaudeAccountLogin : IClaudeAccountLogin
 			ProcessStartInfo,
 			ProviderProcessOperationTracker,
 			CancellationToken,
-			Task<ProcessResult>>? trackedProcessRunner = null)
+			Task<ProcessResult>>? trackedProcessRunner = null,
+		TimeProvider? timeProvider = null)
 	{
 		_configDirectoryResolver = configDirectoryResolver ??
 			throw new ArgumentNullException(nameof(configDirectoryResolver));
@@ -172,6 +174,7 @@ internal sealed class ClaudeAccountLogin : IClaudeAccountLogin
 
 		_loginTimeout = loginTimeout;
 		_statusTimeout = statusTimeout;
+		_timeProvider = timeProvider ?? TimeProvider.System;
 	}
 
 	public async Task<ClaudeAccountLoginResult> LoginAsync(
@@ -183,7 +186,7 @@ internal sealed class ClaudeAccountLogin : IClaudeAccountLogin
 			throw new ArgumentException("Claude 帳號識別碼不可為空。", nameof(accountId));
 		}
 
-		using CancellationTokenSource gateTimeoutSource = new(_statusTimeout);
+		using CancellationTokenSource gateTimeoutSource = new(_statusTimeout, _timeProvider);
 		using CancellationTokenSource gateLinkedSource =
 			CancellationTokenSource.CreateLinkedTokenSource(
 				cancellationToken,
@@ -347,7 +350,7 @@ internal sealed class ClaudeAccountLogin : IClaudeAccountLogin
 			ProviderProcessOperationTracker operationTracker,
 			CancellationToken cancellationToken)
 	{
-		using CancellationTokenSource timeoutSource = new(_statusTimeout);
+		using CancellationTokenSource timeoutSource = new(_statusTimeout, _timeProvider);
 		using CancellationTokenSource linkedSource =
 			CancellationTokenSource.CreateLinkedTokenSource(
 				cancellationToken,
@@ -834,7 +837,7 @@ internal sealed class ClaudeAccountLogin : IClaudeAccountLogin
 		ProviderProcessOperationTracker operationTracker,
 		CancellationToken cancellationToken)
 	{
-		using CancellationTokenSource timeoutSource = new(timeout);
+		using CancellationTokenSource timeoutSource = new(timeout, _timeProvider);
 		using CancellationTokenSource linkedSource =
 			CancellationTokenSource.CreateLinkedTokenSource(
 				cancellationToken,

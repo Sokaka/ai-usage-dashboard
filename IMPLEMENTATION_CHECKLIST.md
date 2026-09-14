@@ -8,7 +8,7 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。上述 App 功能已包含於下列 `1.0.2` 候選；目前 source 另有以下 Copilot 訂閱資訊修正，尚未包含於凍結成品或已安裝 App。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。上述 App 功能已包含於下列 `1.0.2` 候選；目前 source 另有以下 Copilot 訂閱資訊修正，已以 `1.0.3-local.20260914.1` 完成本機更新，尚未納入正式凍結成品。
 
 ### Copilot 訂閱資訊相容性修正
 
@@ -16,7 +16,18 @@
 - [x] Source 新增不讀取回應 token 的訂閱 reader，支援舊格式含 token 與新格式省略 token，保留 host／login 核對、billing 三態與 quota 欄位優先權；未知 auth type、錯誤型別與重複關鍵欄位會拒絕採用。
 - [x] Source 以固定 SDK 契約的 reflection adapter 讀取 `account.getCurrentAuth`，沿用既有 transport／lifecycle；訂閱失敗保留已驗證 quota，顯示安全警告並寫入不含原始回應或 exception message 的診斷。SDK 相依版本、CLI 支援範圍與帳號／憑證／快取格式未變更。
 - [x] 2026-09-14 修正版 restore／Release 建置成功，0 warnings／errors；Copilot 相關測試 102/102、完整測試 4,115/4,115 通過，0 skipped，production line coverage 75.79%（51,100／67,421，門檻 70%）。涵蓋新舊合成回應、SDK 記憶體 RPC、既有 schema 7 帳號及 schema 3 用量快取、憑證沿用與失敗提示；不包含真實 CLI 或安裝升級驗收。
-- [ ] 修正版尚未封裝安裝或執行真實查詢；既有 `1.0.2` 安裝與凍結成品保持原件。
+- [x] 修正版 `1.0.3-local.20260914.1`（source `88a3b8dfd7dc188392ad078b83e33184199459b3`）已由乾淨 source 完成封裝、四組實際離線授權匯出及本機 `1.0.2` → 新版 `apply-local` 更新；328 個 payload、完整 App 版本、Windows 登錄、開始選單與 previous 備份核對通過，安全退出及重新啟動成功，無更新警告。沿用原 maintenance Updater；更新工具未讀取帳號設定或 credentials，未另驗收卡片內容及有效登入狀態。
+- [ ] 同 source 的 [Windows CI attempt 1](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34819937211) 為 4,114 passed／1 failed；既有 `ClaudeAccountLoginTests.LoginAsync_WhenProcessRunnerBlocksSynchronously_StillHonorsTimeout` 等待模擬 runner 啟動時逾時，後續 coverage／package gates 未執行。相同測試在本機帶 coverage 重跑通過；該次執行未記錄精確排程原因，後續測試時序修正見[Claude 登入逾時測試穩定性](#claude-登入逾時測試穩定性)。遠端仍待含修正的新 commit 驗證，不列為 CI 通過或正式候選驗證完成。
+- [x] 2026-09-14 使用者回報 `1.0.3-local.20260914.1` 更新後「看起來有正常了」；記為本機畫面觀察，尚未逐項核對訂閱欄位或完成受控 provider 驗收。
+- [ ] 新版尚未另做受控真實 CLI／訂閱顯示驗收；本機更新成功不代表 provider 功能已驗收。`1.0.2` 凍結成品保持原件，正式公開仍暫緩。
+
+### Claude 登入逾時測試穩定性
+
+- [x] 測試改以非同步訊號等待模擬 runner 進入，再明確觸發登入及帳號鎖等待的 deadline，排除固定計時先取消尚未啟動工作的競態。計時控制沿用既有 Grok 測試做法；`ClaudeAccountLogin` 的內部建構子可注入 `TimeProvider`，正式入口仍預設系統計時與原有逾時設定。
+- [x] 2026-09-14 Release 建置通過，0 warnings／errors；Claude 登入測試 18/18、完整測試 4,115/4,115 通過，0 failed／skipped，production line coverage 75.78%（51,092／67,423，門檻 70%）。
+- [x] 獨立副本在 `DOTNET_PROCESSOR_COUNT=1` 下的原版測試通過；分別忽略 deadline token、移除 runner 的 `Task.Run`、移除 cleanup tracking 的三個故障版本均被測試抓出，且完成清理後自行退出，未觸發外層 watchdog。驗證涵蓋逾時返回、同步阻塞及清理前保留帳號鎖。
+- [x] `0.0.0-verify-claude-timeout.20260914.1` 通過封裝 gate、三組 dependency profiles 與四組實際離線授權匯出。這是帶未提交 source 標記的驗證包，未安裝或發布。
+- [ ] 遠端 Windows CI 尚待包含此修正的新 commit 執行；上述本機結果不改寫先前失敗的 CI 紀錄。
 
 ### 候選建置前的 source 驗證
 

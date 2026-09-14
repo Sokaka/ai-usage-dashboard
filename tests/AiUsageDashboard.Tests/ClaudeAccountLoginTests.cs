@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 
 using AiUsageDashboard.App.Providers;
@@ -6,6 +7,31 @@ namespace AiUsageDashboard.Tests;
 
 public sealed class ClaudeAccountLoginTests
 {
+	private sealed class ControlledDeadlineTimeProvider : TimeProvider
+	{
+		private readonly ConcurrentDictionary<TimeSpan, ITimer> _latestTimers = new();
+
+		public override ITimer CreateTimer(
+			TimerCallback callback,
+			object? state,
+			TimeSpan dueTime,
+			TimeSpan period)
+		{
+			Assert.Equal(Timeout.InfiniteTimeSpan, period);
+			ITimer timer = TimeProvider.System.CreateTimer(
+				callback, state, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+			_latestTimers[dueTime] = timer;
+			return timer;
+		}
+
+		internal void ExpireDeadline(TimeSpan timeout)
+		{
+			Assert.True(_latestTimers.TryGetValue(timeout, out ITimer? timer));
+			Assert.NotNull(timer);
+			Assert.True(timer.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan));
+		}
+	}
+
 	private const string AuthStatusJson =
 		"{\"loggedIn\":true,\"authMethod\":\"claude.ai\"," +
 		"\"apiProvider\":\"firstParty\",\"email\":\"claude@example.com\"," +
@@ -452,8 +478,15 @@ public sealed class ClaudeAccountLoginTests
 	public async Task LoginAsync_WhenProcessRunnerBlocksSynchronously_StillHonorsTimeout()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
-		using ManualResetEventSlim runnerEntered = new();
 		using ManualResetEventSlim releaseRunner = new();
+		using CancellationTokenSource cleanupSource = new();
+		TaskCompletionSource runnerEntered = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource runnerExited = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TimeSpan loginTimeout = TimeSpan.FromMilliseconds(250);
+		TimeSpan statusTimeout = TimeSpan.FromSeconds(1);
+		ControlledDeadlineTimeProvider timeProvider = new();
 		string executablePath = CreateExecutable(temporaryDirectory.Path);
 		ClaudeAccountOperationGate operationGate = new();
 		Guid accountId = Guid.NewGuid();
@@ -464,29 +497,53 @@ public sealed class ClaudeAccountLoginTests
 			(_, _) =>
 			{
 				Interlocked.Increment(ref runnerCallCount);
-				runnerEntered.Set();
-				releaseRunner.Wait();
-				return Task.FromResult(new ClaudeAccountLogin.ProcessResult(
-					0,
-					string.Empty,
-					string.Empty));
+				try
+				{
+					runnerEntered.SetResult();
+					releaseRunner.Wait();
+					return Task.FromResult(new ClaudeAccountLogin.ProcessResult(
+						0,
+						string.Empty,
+						string.Empty));
+				}
+				finally
+				{
+					runnerExited.TrySetResult();
+				}
 			},
 			operationGate,
-			TimeSpan.FromMilliseconds(250),
-			TimeSpan.FromSeconds(1));
-		Task<ClaudeAccountLoginResult> loginTask = login.LoginAsync(accountId);
+			loginTimeout,
+			statusTimeout,
+			(_, _, _) => Task.CompletedTask,
+			timeProvider: timeProvider);
+		Task<Task<ClaudeAccountLoginResult>> invocation = Task.Factory.StartNew(
+			() => login.LoginAsync(accountId, cleanupSource.Token),
+			CancellationToken.None,
+			TaskCreationOptions.LongRunning,
+			TaskScheduler.Default);
+		Task<ClaudeAccountLoginResult>? blockedLoginTask = null;
 
 		try
 		{
-			Assert.True(runnerEntered.Wait(TimeSpan.FromSeconds(5)));
+			Task<ClaudeAccountLoginResult> loginTask =
+				await invocation.WaitAsync(AsyncWatchdogTimeout);
+			await runnerEntered.Task.WaitAsync(AsyncWatchdogTimeout);
+			Assert.False(loginTask.IsCompleted);
+			// 先確認同步 runner 已進入，再觸發 deadline，避免排程延遲取消尚未啟動的工作。
+			timeProvider.ExpireDeadline(loginTimeout);
 			ClaudeAccountLoginException exception =
 				await Assert.ThrowsAsync<ClaudeAccountLoginException>(() => loginTask)
-					.WaitAsync(TimeSpan.FromSeconds(5));
+					.WaitAsync(AsyncWatchdogTimeout);
 			Assert.Contains("登入逾時", exception.Message, StringComparison.Ordinal);
+			Assert.Null(exception.InnerException);
+			Assert.False(runnerExited.Task.IsCompleted);
+
+			blockedLoginTask = login.LoginAsync(accountId, cleanupSource.Token);
+			Assert.False(blockedLoginTask.IsCompleted);
+			timeProvider.ExpireDeadline(statusTimeout);
 			ClaudeAccountLoginException blockedException =
-				await Assert.ThrowsAsync<ClaudeAccountLoginException>(() =>
-					login.LoginAsync(accountId))
-					.WaitAsync(TimeSpan.FromSeconds(5));
+				await Assert.ThrowsAsync<ClaudeAccountLoginException>(() => blockedLoginTask)
+					.WaitAsync(AsyncWatchdogTimeout);
 			Assert.Contains(
 				"等待前一個",
 				blockedException.Message,
@@ -496,13 +553,26 @@ public sealed class ClaudeAccountLoginTests
 		finally
 		{
 			releaseRunner.Set();
-		}
+			cleanupSource.Cancel();
+			Task<ClaudeAccountLoginResult> loginTask =
+				await invocation.WaitAsync(AsyncWatchdogTimeout);
+			// 保留原斷言失敗，同時觀察釋放後的工作；watchdog 逾時仍須回報。
+			await Record.ExceptionAsync(() => loginTask).WaitAsync(AsyncWatchdogTimeout);
+			if (blockedLoginTask is not null)
+			{
+				await Record.ExceptionAsync(() => blockedLoginTask)
+					.WaitAsync(AsyncWatchdogTimeout);
+			}
 
-		using CancellationTokenSource gateReleaseTimeout = new(
-			TimeSpan.FromSeconds(5));
-		using IDisposable releasedLease = await operationGate.EnterAsync(
-			accountId,
-			gateReleaseTimeout.Token);
+			using CancellationTokenSource gateReleaseTimeout = new(AsyncWatchdogTimeout);
+			using IDisposable releasedLease = await operationGate.EnterAsync(
+				accountId,
+				gateReleaseTimeout.Token);
+			if (runnerEntered.Task.IsCompleted)
+			{
+				await runnerExited.Task.WaitAsync(AsyncWatchdogTimeout);
+			}
+		}
 	}
 
 	[Fact]
