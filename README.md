@@ -31,7 +31,7 @@
 
 首個正式版本為 **`1.0.3`**，包含「關於 AI Usage」、開始選單捷徑、Copilot 改用本機官方 CLI、Copilot 新舊訂閱回應相容，以及較精簡的安裝包。版本內容與檔案資訊見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
 
-本版本的候選 workflow、自動檢查、六件成品獨立回讀與有界靜態隱私檢查均已通過；exact frozen Updater／ZIP 也已在既有 Windows 主機完成離線換版、核對及重新啟動。人工 UI／provider 驗收暫緩，乾淨 Windows、VM 與正式線上更新仍未驗證；完整範圍見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#103-正式版)。安裝檔由 [v1.0.3 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.3) 提供；Repository 與 Release 公開後會立即以未登入的 client 驗證六件檔案、stable feed 與簽章，結果完成前不列為已通過。
+本版本的候選 workflow、自動檢查、六件成品獨立回讀與有界靜態隱私檢查均已通過；exact frozen Updater／ZIP 也已在既有 Windows 主機完成離線換版、核對及重新啟動。人工 UI／provider 驗收暫緩，乾淨 Windows、VM 與正式線上更新仍未驗證；完整範圍見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#103-正式版)。安裝檔由 [v1.0.3 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.3) 提供；2026-09-15 已以未登入的 client 匿名下載六件正式檔案，核對 frozen asset ID、113,016,854 bytes、SHA256 與三份 sidecar，並以 pinned production 公鑰驗證 stable feed 簽章。這項 smoke 不代替尚未執行的正式線上更新驗收。
 
 ## 支援平台
 

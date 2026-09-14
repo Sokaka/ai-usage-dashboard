@@ -4,10 +4,10 @@
 
 ## 私密回報方式
 
-Repository 公開後會立即確認 GitHub private vulnerability reporting 是否可用；只有依 GitHub 方案能力實際啟用並回讀確認後，才把該入口列為已提供。
+GitHub private vulnerability reporting 已啟用並回讀確認；請使用 [Report a vulnerability](https://github.com/Sokaka/ai-usage-dashboard/security/advisories/new) 私密回報安全問題。
 
-1. 先查看專案的 [Security 頁面](https://github.com/Sokaka/ai-usage-dashboard/security)。若確實顯示 **Report a vulnerability**，可透過該入口私密回報；本文件不代表入口已啟用。
-2. 若沒有此入口，但你能開啟專案 Issues，只需建立一則[一般 Issue](https://github.com/Sokaka/ai-usage-dashboard/issues/new)，詢問私密聯絡方式。不要在標題、內文或附件放入漏洞細節、重現方式或敏感資料，等維護者提供私密管道後再繼續。
+1. 從專案的 [Security 頁面](https://github.com/Sokaka/ai-usage-dashboard/security) 選擇 **Report a vulnerability**，透過 private vulnerability reporting 提交內容。
+2. 若 GitHub 暫時無法顯示此入口，只需建立一則[一般 Issue](https://github.com/Sokaka/ai-usage-dashboard/issues/new)，詢問私密聯絡方式。不要在標題、內文或附件放入漏洞細節、重現方式或敏感資料，等維護者提供私密管道後再繼續。
 3. 若無法使用上述入口，請使用既有的私密聯絡管道；不要為了聯絡而公開漏洞細節或敏感資料。
 
 ## 私密回報內容
