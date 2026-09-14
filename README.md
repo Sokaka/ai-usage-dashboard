@@ -17,7 +17,7 @@ AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務�
 
 <p align="center">
   <a href="docs/images/dashboard-preview.png">
-    <img src="docs/images/dashboard-preview.png" alt="AI Usage 四種主題配色，每種皆展示五種服務的合成帳號與用量卡片" width="640">
+    <img src="docs/images/dashboard-preview.png" alt="AI Usage 四種主題配色，每種皆展示五種服務的合成帳號與用量卡片" width="820">
   </a>
 </p>
 
