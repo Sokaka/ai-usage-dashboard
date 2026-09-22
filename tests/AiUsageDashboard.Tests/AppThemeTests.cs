@@ -633,6 +633,30 @@ public sealed class AppThemeTests
 	}
 
 	[Fact]
+	public void ThemeLogoStyle_AllowsPerInstanceBorderOverride()
+	{
+		XDocument controls = XDocument.Load(Path.Combine(
+			RepositoryTestPaths.Root,
+			"src",
+			"AiUsageDashboard.App",
+			"Themes",
+			"Controls.xaml"));
+		XElement style = GetKeyedStyle(controls, "ThemeLogoStyle");
+		XElement logoSurface = Assert.Single(
+			style.Descendants(Presentation + "Ellipse"),
+			element => element.Attribute(Xaml + "Name") is null);
+
+		AssertSetter(
+			style,
+			"BorderBrush",
+			"{DynamicResource LogoBorderBrush}");
+		Assert.Equal(
+			"{TemplateBinding BorderBrush}",
+			(string?)logoSurface.Attribute("Stroke"));
+		Assert.Equal("1.25", (string?)logoSurface.Attribute("StrokeThickness"));
+	}
+
+	[Fact]
 	public void ThemeLogoStyle_UsesCenteredCircularProgressOrbit()
 	{
 		XDocument controls = XDocument.Load(Path.Combine(

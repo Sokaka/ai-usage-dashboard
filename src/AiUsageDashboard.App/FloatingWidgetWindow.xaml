@@ -916,7 +916,7 @@
                 AutomationProperties.Name="展開 AI Usage 浮窗"
                 Background="{DynamicResource WindowBackgroundBrush}"
                 BorderBrush="{DynamicResource InfoBrush}"
-                BorderThickness="1"
+                BorderThickness="2"
                 Click="CollapsedButton_Click"
                 FocusVisualStyle="{StaticResource CircularButtonKeyboardFocusVisualStyle}"
                 LostMouseCapture="CollapsedButton_LostMouseCapture"
@@ -949,6 +949,7 @@
                   Height="46">
                 <ContentControl Width="46"
                                 Height="46"
+                                BorderBrush="{DynamicResource TransparentBrush}"
                                 Focusable="False"
                                 IsHitTestVisible="False"
                                 Style="{StaticResource ThemeLogoStyle}" />
