@@ -8,9 +8,9 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。上述功能與下列 Copilot 訂閱資訊修正已一併凍結於 `1.0.3 / sequence 1017`，並已核准為首個正式公開版本。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些功能與 Copilot 訂閱資訊修正始於首個正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.4 / sequence 1018`。
 
-### App 更新偵測與提示（`1.0.3` 後的目前 source）
+### App 更新偵測與提示（`1.0.4` 正式版）
 
 - [x] Production App 與 Updater 共用解析後的 stable feed URL、channel 與 public trust keys。`Publish-Internal.ps1` 要求明確提供三項；`Publish-UpdateBundle.ps1` 預設 `stable` channel 與該 channel 的 GitHub latest download feed URL，但仍要求外部 trust file。正式 publish 會在缺少必要輸入或 URL／trust 格式無效時 fail fast，並從發布後的 App DLL 讀回 feed／channel metadata 與 embedded trust bytes 逐值核對。App 的 feed client 只讀取、限制大小、核對最終 HTTPS URI 並驗簽，不下載 artifact；Updater 安裝時仍獨立重新驗證。
 - [x] Source 以 exact executable layout 與 adjacent installed manifest 分成 canonical managed、custom managed、unmanaged／portable。只有 canonical、固定 maintenance Updater 存在且 shutdown listener 已 ready 時提供 **更新並重新啟動**；其餘只開固定 Releases，portable 無法解析 `ProductVersion` 時明確顯示無法判斷。
@@ -77,11 +77,22 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 後續捲動條提交 `8a564747` 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34764614043) 完整測試為 3,985 passed／0 failed／0 skipped，production line coverage 75.77%；這是另一份遠端驗證，沒有改寫上述本機失敗或其未知原因。對應本機 `0.0.0-verify-scrollbar.20260913.4` 已完成 90 案定向回歸、封裝與安裝，尚非正式凍結候選；這些結果也不代替本次新增功能的驗證。
 
-上述公開入口及 Copilot 相容性修正現已凍結為 `1.0.3`，真人 CLI 登入／用量驗收暫緩；歷史候選的成品與驗收只適用於各自 source，不代替 `1.0.3` 的結果。
+上述公開入口及 Copilot 相容性修正已在 `1.0.3` 凍結，真人 CLI 登入／用量驗收仍暫緩；歷史候選的成品與驗收只適用於各自 source，不代替 `1.0.4` 的結果。
 
 ## 目前正式版本
 
-`1.0.3 / sequence 1017` 已沿用原凍結候選正式公開（[source `0b7a5d922e56b9590370d776a99642d5dd671b2c`](https://github.com/Sokaka/ai-usage-dashboard/commit/0b7a5d922e56b9590370d776a99642d5dd671b2c)）。Repository 為 public，同一筆 `v1.0.3` GitHub Release 為 stable／latest；成品未重建、重簽或替換。變更與下載檔案資訊見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
+`1.0.4 / sequence 1018` 已沿用原凍結候選正式公開（[source `4fa5b3c578c2e9a8bd22f53ff72a8ef8b91d200b`](https://github.com/Sokaka/ai-usage-dashboard/commit/4fa5b3c578c2e9a8bd22f53ff72a8ef8b91d200b)）。同一筆 [v1.0.4 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.4) 現為 stable／latest，Release ID 與六件成品的 asset ID、大小及 SHA256 均維持凍結值。變更與下載檔案資訊見 [1.0.4 版本說明](docs/releases/1.0.4.md)。
+
+- [x] 原始[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35682687386) attempt 1 通過 Release 建置與完整測試：0 warnings／0 errors，4,304 passed／0 failed／0 skipped，production line coverage 75.17%（54,119／71,995）。同一個 run 完成更新清單簽署、驗簽與六件成品凍結。
+- [x] 從候選 Release 獨立下載六件成品並核對 asset ID、大小、SHA256 與三份 sidecar；以 production public trust 驗證 feed 簽章與 version、sequence、source、正式網址及兩個主要成品的大小／SHA256。
+- [x] 正式公開後，以未帶 GitHub 憑證、cookie 或 application proxy handler 的 client，從 latest URL 匿名下載 feed 與其餘五件成品。六件共 113,099,569 bytes，asset ID、大小、SHA256、sidecar 與原凍結候選一致；feed 簽章再次驗證通過。
+- [x] 下載的 ZIP 基本結構已核對：單一頂層目錄與 328 個項目，包含 LICENSE、元件清單、App 與 Setup EXE。這不是安裝驗收。
+
+`1.0.4` 的 exact frozen 成品尚未完成乾淨 Windows／既有版本的實際安裝、正式 HTTPS 線上更新與 Updater 自我更新、custom／portable 操作、完整 UI／無障礙，以及五個 provider 的真人登入與用量驗收。上方 `1.0.6-verify` → `1.0.7-verify` canonical managed E2E 雖通過 17 項 assertion，但使用不同的合成候選與成品，不能改列為 `1.0.4` 的實機驗收。逐平台狀態見 [1.0.4 CLI 實測表](docs/CLI_COMPATIBILITY.md#104-正式版)。
+
+### 1.0.3 歷史正式版
+
+`1.0.3 / sequence 1017` 已沿用原凍結候選正式公開（[source `0b7a5d922e56b9590370d776a99642d5dd671b2c`](https://github.com/Sokaka/ai-usage-dashboard/commit/0b7a5d922e56b9590370d776a99642d5dd671b2c)）。當時同一筆 `v1.0.3` GitHub Release 為 stable／latest；成品未重建、重簽或替換。變更與下載檔案資訊見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
 
 - [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34839329802) 的原始 attempt 1 通過 source 歷史隱私檢查、restore、Release 建置與完整測試：0 warnings／0 errors，4,115 passed／0 failed／0 skipped，production line coverage 75.79%（51,103／67,423），門檻維持 70%。
 - [x] 同一 workflow 完成更新清單簽署與驗簽，並在 private repository 內以 draft／prerelease 凍結正好六件成品。正式發布沿用同一筆 Release；三個主要檔案的 size 與 workflow 紀錄 SHA256 已列於 [1.0.3 版本說明](docs/releases/1.0.3.md)。
@@ -154,7 +165,7 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 候選與歷史驗證的界線
 
-五 provider 登入／帳號隔離、較完整的人工 UI、固定 Windows 18 案與 50 案中斷復原已有歷史驗證；`1.0.1` 至 `1.0.3` 都沒有整套重跑。歷次 SDK／runtime 與成品 bytes 的變更仍須按適用性評估，歷史 PASS 不能改標為本候選結果。
+五 provider 登入／帳號隔離、較完整的人工 UI、固定 Windows 18 案與 50 案中斷復原已有歷史驗證；`1.0.1` 至 `1.0.4` 都沒有整套重跑。歷次 SDK／runtime 與成品 bytes 的變更仍須按適用性評估，歷史 PASS 不能改標為本候選結果。
 
 後續版本更新、Updater 自更新、HTTPS→HTTP 降級拒絕、磁碟不足／reapply、持久化與 rename 邊界中斷、再次復原失敗等範圍，仍按既有 source 機制證據與適用性評估處理。`1.0.0` 的 27 案不代表已重驗這些範圍，也不代表已涵蓋全部非 canonical 安裝、未知檔案或 Windows 政策環境。
 

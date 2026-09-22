@@ -1,6 +1,6 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.3` 正式版本的 CLI 版本要求及實測狀態，並保留歷史候選紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。一般真人登入與完整用量驗收仍暫緩；Claude 已另做受控 `/usage` 查詢，Copilot 已另做受控相容性診斷與先前修正版的畫面觀察，範圍見下方實測表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.4` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.4` 的五個平台尚未完成真人登入與完整用量驗收；舊版 Claude／Copilot 的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
 ## 版本要求
 
@@ -23,9 +23,23 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同候選官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
+### 1.0.4 正式版
+
+本表對應 `1.0.4 / sequence 1018`（[source `4fa5b3c578c2e9a8bd22f53ff72a8ef8b91d200b`](https://github.com/Sokaka/ai-usage-dashboard/commit/4fa5b3c578c2e9a8bd22f53ff72a8ef8b91d200b)）。五個平台的串接與上列 CLI 版本要求仍在，但沒有這六件正式成品的真人登入或用量查詢實測紀錄。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| Codex | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| GitHub Copilot | 未以本版實測；App 固定 SDK `1.0.11` | 暫緩，未驗證 | 暫緩，未驗證 |
+| Grok | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| Antigravity | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+
+[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35682687386) 的 Release 建置為 0 warnings／0 errors、完整自動測試 4,304 項通過；這些結果不代替真人 CLI 或 provider 驗收。先前 `1.0.3` 的受控 Claude 查詢與 Copilot 診斷，以及合成版本的 App 更新 E2E，均不改列為本版結果。成品與發布驗證範圍見[實作與驗證清單](../IMPLEMENTATION_CHECKLIST.md#目前正式版本)。
+
 ### 1.0.3 正式版
 
-本表對應 `1.0.3 / sequence 1017`（[source `0b7a5d922e56b9590370d776a99642d5dd671b2c`](https://github.com/Sokaka/ai-usage-dashboard/commit/0b7a5d922e56b9590370d776a99642d5dd671b2c)），是目前正式版本所用候選之逐平台實測狀態唯一紀錄表。五個平台均已實作串接，所依賴的上游介面成熟度各異；一般真人驗收仍暫緩，Claude／Copilot 的受控查證不列為整項通過。
+本表對應 `1.0.3 / sequence 1017`（[source `0b7a5d922e56b9590370d776a99642d5dd671b2c`](https://github.com/Sokaka/ai-usage-dashboard/commit/0b7a5d922e56b9590370d776a99642d5dd671b2c)），保留該版候選的逐平台實測紀錄。五個平台均已實作串接，所依賴的上游介面成熟度各異；一般真人驗收仍暫緩，Claude／Copilot 的受控查證不列為整項通過。
 
 | 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
 | --- | --- | --- | --- |
@@ -39,7 +53,7 @@
 
 2026-09-14 使用已登入的 Claude Code `2.1.270`，依 App 的安全參數執行 3 次 `/usage`。三次 result envelope 均回報 0 turns、0 cost、0 token 與 0 model usage；10.5 秒後的可見用量百分比未變，52.3 秒後兩個額度視窗各增加 1 個百分點。當時 App 仍在背景更新，也無法排除帳號的其他活動，因此不能將增幅歸因於特定一次查詢，也不能宣稱查詢保證不影響用量。這項受控查證沒有重新登入或透過候選 App 完成真人驗收。
 
-先前相同 Copilot 功能的 `1.0.3-local.20260914.1` 已完成本機封裝、安裝內容核對及重新啟動；2026-09-14 使用者回報更新後「看起來有正常了」。目前 exact frozen candidate 也已完成本機離線換版、內容核對及重新啟動。這些結果沒有逐項核對訂閱方案或 AI Credits，也不列為真人 provider 驗收；候選成品的驗證範圍見[實作與驗證清單](../IMPLEMENTATION_CHECKLIST.md#目前正式版本)。
+先前相同 Copilot 功能的 `1.0.3-local.20260914.1` 已完成本機封裝、安裝內容核對及重新啟動；2026-09-14 使用者回報更新後「看起來有正常了」。該版 exact frozen candidate 也已完成本機離線換版、內容核對及重新啟動。這些結果沒有逐項核對訂閱方案或 AI Credits，也不列為真人 provider 驗收；該版成品的驗證範圍見[實作與驗證清單](../IMPLEMENTATION_CHECKLIST.md#103-歷史正式版)。
 
 後續真人實測仍依[受控驗收規範](../INTERNAL_DISTRIBUTION.md#cli-相容性維護)確認平台、操作與次數。Claude 狀態查詢可能消耗少量 token；啟用 usage credits 時也可能產生額外費用，執行前須先接受這項風險。
 
