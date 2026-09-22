@@ -87,8 +87,9 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 - [x] 從候選 Release 獨立下載六件成品並核對 asset ID、大小、SHA256 與三份 sidecar；以 production public trust 驗證 feed 簽章與 version、sequence、source、正式網址及兩個主要成品的大小／SHA256。
 - [x] 正式公開後，以未帶 GitHub 憑證、cookie 或 application proxy handler 的 client，從 latest URL 匿名下載 feed 與其餘五件成品。六件共 113,099,569 bytes，asset ID、大小、SHA256、sidecar 與原凍結候選一致；feed 簽章再次驗證通過。
 - [x] 下載的 ZIP 基本結構已核對：單一頂層目錄與 328 個項目，包含 LICENSE、元件清單、App 與 Setup EXE。這不是安裝驗收。
+- [x] 2026-09-22 在既有標準安裝上，以正式 `1.0.4` Updater 的 `update-online` 從 `1.0.3` 經 stable HTTPS feed 更新成功。Updater 退出碼 `0`，交易 `Committed`；manifest 的版本、sequence 與 source、Windows 安裝紀錄和 App 版本均相符，維護 Updater SHA256 與正式成品相同，App 重新啟動且正常回應。舊版 `1.0.3` 保留在交易中；詳細範圍見 [1.0.4 版本說明](docs/releases/1.0.4.md)。
 
-`1.0.4` 的 exact frozen 成品尚未完成乾淨 Windows／既有版本的實際安裝、正式 HTTPS 線上更新與 Updater 自我更新、custom／portable 操作、完整 UI／無障礙，以及五個 provider 的真人登入與用量驗收。上方 `1.0.6-verify` → `1.0.7-verify` canonical managed E2E 雖通過 17 項 assertion，但使用不同的合成候選與成品，不能改列為 `1.0.4` 的實機驗收。逐平台狀態見 [1.0.4 CLI 實測表](docs/CLI_COMPATIBILITY.md#104-正式版)。
+`1.0.4` 的 exact frozen 成品仍未完成乾淨 Windows 初裝、App 內一鍵更新、舊版 Updater 自我交接、custom／portable 操作、完整 UI／無障礙，以及五個 provider 的真人登入與用量驗收。本次正式線上更新由 `1.0.4` 獨立 Updater 發起，維護 Updater 已升至 `1.0.4`，不等於上述兩種發起流程通過。上方 `1.0.6-verify` → `1.0.7-verify` canonical managed E2E 雖通過 17 項 assertion，但使用不同的合成候選與成品，不能改列為 `1.0.4` 的實機驗收。逐平台狀態見 [1.0.4 CLI 實測表](docs/CLI_COMPATIBILITY.md#104-正式版)。
 
 ### 1.0.3 歷史正式版
 

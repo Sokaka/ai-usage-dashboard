@@ -31,7 +31,7 @@
 
 目前正式版本為 **`1.0.4`**，加入 App 自動更新提示與標準安裝版的「更新並重新啟動」，並修正 Updater 自我更新交接。從 [v1.0.4 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.4) 下載；檔案資訊見 [1.0.4 版本說明](docs/releases/1.0.4.md)。首個正式版本 `1.0.3` 的紀錄仍見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
 
-`1.0.4` 的候選 workflow 與 4,304 項自動測試通過；公開後已匿名下載六件原凍結成品，核對 SHA256、sidecar 與 stable feed 簽章。這些檢查尚未涵蓋本版實際安裝、正式線上更新、完整 UI／無障礙及真人 provider 驗收。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#104-正式版)。
+`1.0.4` 的候選 workflow 與 4,304 項自動測試通過；公開後已匿名下載六件原凍結成品，核對 SHA256、sidecar 與 stable feed 簽章。2026-09-22 已在既有標準安裝上，使用正式 `1.0.4` 獨立 Updater 從 `1.0.3` 線上更新至 `1.0.4`，App 重新啟動且正常回應。乾淨 Windows 初裝、App 內一鍵更新、完整 UI／無障礙及真人 provider 驗收仍未完成。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#104-正式版)。
 
 ## 支援平台
 
