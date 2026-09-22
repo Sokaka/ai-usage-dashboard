@@ -1,6 +1,6 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.4` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.4` 的五個平台尚未完成真人登入與完整用量驗收；舊版 Claude／Copilot 的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.5` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.5` 的五個平台尚未完成真人登入與完整用量驗收；舊版 Claude／Copilot 的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
 ## 版本要求
 
@@ -23,6 +23,20 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同候選官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
+### 1.0.5 正式版
+
+本表對應 `1.0.5 / sequence 1019`（[source `9f3a77a6cb340eb7ea5a89398bb8f774fce8a2dc`](https://github.com/Sokaka/ai-usage-dashboard/commit/9f3a77a6cb340eb7ea5a89398bb8f774fce8a2dc)）。五個平台的串接與上列 CLI 版本要求仍在，但沒有這六件正式成品的真人登入或用量查詢實測紀錄。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| Codex | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| GitHub Copilot | 未以本版實測；App 固定 SDK `1.0.11` | 暫緩，未驗證 | 暫緩，未驗證 |
+| Grok | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| Antigravity | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+
+[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35698661125) 的 Release 建置為 0 warnings／0 errors、完整自動測試 4,305 項通過；這些結果不代替真人 CLI 或 provider 驗收。正式 `1.0.5` Updater 已在既有標準安裝上，將本機預覽版更新為正式版並重新啟動 App；這項安裝結果也不代替真人 provider 驗收。先前版本的受控 Claude 查詢、Copilot 診斷及合成版本的 App 更新 E2E，均不改列為本版結果。成品與發布驗證範圍見[實作與驗證清單](../IMPLEMENTATION_CHECKLIST.md#目前正式版本)。
+
 ### 1.0.4 正式版
 
 本表對應 `1.0.4 / sequence 1018`（[source `4fa5b3c578c2e9a8bd22f53ff72a8ef8b91d200b`](https://github.com/Sokaka/ai-usage-dashboard/commit/4fa5b3c578c2e9a8bd22f53ff72a8ef8b91d200b)）。五個平台的串接與上列 CLI 版本要求仍在，但沒有這六件正式成品的真人登入或用量查詢實測紀錄。
@@ -35,7 +49,7 @@
 | Grok | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
 | Antigravity | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
 
-[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35682687386) 的 Release 建置為 0 warnings／0 errors、完整自動測試 4,304 項通過；這些結果不代替真人 CLI 或 provider 驗收。先前 `1.0.3` 的受控 Claude 查詢與 Copilot 診斷，以及合成版本的 App 更新 E2E，均不改列為本版結果。成品與發布驗證範圍見[實作與驗證清單](../IMPLEMENTATION_CHECKLIST.md#目前正式版本)。
+[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35682687386) 的 Release 建置為 0 warnings／0 errors、完整自動測試 4,304 項通過；這些結果不代替真人 CLI 或 provider 驗收。先前 `1.0.3` 的受控 Claude 查詢與 Copilot 診斷，以及合成版本的 App 更新 E2E，均不改列為本版結果。成品與發布驗證範圍見[實作與驗證清單](../IMPLEMENTATION_CHECKLIST.md#104-歷史正式版)。
 
 ### 1.0.3 正式版
 
