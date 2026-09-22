@@ -5,6 +5,8 @@
                     xmlns:viewModels="clr-namespace:AiUsageDashboard.App.ViewModels">
     <Style x:Key="ThemeLogoStyle"
            TargetType="{x:Type ContentControl}">
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource LogoBorderBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ContentControl}">
@@ -13,7 +15,7 @@
                               Height="48">
                             <Ellipse Margin="1"
                                      Fill="{DynamicResource LogoSurfaceBrush}"
-                                     Stroke="{DynamicResource LogoBorderBrush}"
+                                     Stroke="{TemplateBinding BorderBrush}"
                                      StrokeThickness="1.25" />
                             <Path x:Name="LogoBlossom"
                                   Data="M 24,23 C 18,20 17,14 21,11 C 25,12 26,18 24,23 M 25,24 C 28,18 34,17 37,21 C 35,25 29,27 25,24 M 25,25 C 31,26 33,32 29,36 C 25,34 23,29 25,25 M 23,25 C 22,31 16,34 12,30 C 13,26 18,23 23,25 M 23,23 C 17,25 12,21 14,16 C 18,14 23,18 23,23"

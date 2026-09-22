@@ -291,8 +291,14 @@ public sealed class XamlUsabilityRegressionTests
 			"CollapsedUpdateBadge");
 		XElement glyph = Assert.Single(
 			badge.Elements(Presentation + "Path"));
+		XElement logo = Assert.Single(
+			collapsedButton.Descendants(Presentation + "ContentControl"));
 
 		Assert.Contains(collapsedButton, badge.Ancestors());
+		Assert.Equal("2", (string?)collapsedButton.Attribute("BorderThickness"));
+		Assert.Equal(
+			"{DynamicResource TransparentBrush}",
+			(string?)logo.Attribute("BorderBrush"));
 		Assert.Equal(
 			"CollapsedButton_Click",
 			(string?)collapsedButton.Attribute("Click"));
