@@ -170,6 +170,77 @@ public sealed class XamlUsabilityRegressionTests
 	}
 
 	[Fact]
+	public void FloatingCollapseButton_UsesStandardIconButtonColors()
+	{
+		XDocument window = LoadAppXaml("FloatingWidgetWindow.xaml");
+		XElement style = GetKeyedElement(
+			window,
+			"Style",
+			"AnchorToggleButtonStyle");
+
+		Assert.Equal(
+			"{StaticResource IconButtonStyle}",
+			(string?)style.Attribute("BasedOn"));
+		Assert.DoesNotContain(
+			style.Elements(Presentation + "Setter"),
+			setter => string.Equals(
+				(string?)setter.Attribute("Property"),
+				"Background",
+				StringComparison.Ordinal) ||
+				string.Equals(
+					(string?)setter.Attribute("Property"),
+					"BorderBrush",
+					StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public void FloatingWidgetExpansion_AppliesPlacementBeforeReturningToRender()
+	{
+		string source = LoadAppSource("FloatingWidgetWindow.xaml.cs");
+		string setCollapsedSource = GetMethodSource(
+			source,
+			"private void SetCollapsed(",
+			"private void QueuePointerFocusRelease(");
+		int layoutIndex = setCollapsedSource.IndexOf(
+			"UpdateLayout();",
+			StringComparison.Ordinal);
+		int placementIndex = setCollapsedSource.IndexOf(
+			"ApplyCurrentPlacement();",
+			StringComparison.Ordinal);
+		int hideIndex = setCollapsedSource.IndexOf(
+			"TryHideNativeWindowForLayoutTransition(",
+			StringComparison.Ordinal);
+		int layoutMutationIndex = setCollapsedSource.IndexOf(
+			"ExpandedView.Visibility = Visibility.Collapsed;",
+			StringComparison.Ordinal);
+		int collapsedButtonHiddenIndex = setCollapsedSource.IndexOf(
+			"CollapsedButton.Visibility = Visibility.Collapsed;",
+			StringComparison.Ordinal);
+		int expandedViewVisibleIndex = setCollapsedSource.IndexOf(
+			"ExpandedView.Visibility = Visibility.Visible;",
+			StringComparison.Ordinal);
+		int showIndex = setCollapsedSource.IndexOf(
+			"ShowNativeWindowAfterLayoutTransition(windowHandle);",
+			StringComparison.Ordinal);
+		int announcementIndex = setCollapsedSource.IndexOf(
+			"TryAnnouncePendingUpdateBanner();",
+			StringComparison.Ordinal);
+
+		Assert.True(layoutIndex >= 0);
+		Assert.True(placementIndex > layoutIndex);
+		Assert.True(hideIndex >= 0);
+		Assert.True(layoutMutationIndex > hideIndex);
+		Assert.True(collapsedButtonHiddenIndex > hideIndex);
+		Assert.True(expandedViewVisibleIndex > hideIndex);
+		Assert.True(showIndex > placementIndex);
+		Assert.True(announcementIndex > showIndex);
+		Assert.DoesNotContain(
+			"QueueCurrentPlacement();",
+			setCollapsedSource,
+			StringComparison.Ordinal);
+	}
+
+	[Fact]
 	public void FloatingAccountList_SupportsMouseDragScrolling()
 	{
 		XDocument window = LoadAppXaml("FloatingWidgetWindow.xaml");

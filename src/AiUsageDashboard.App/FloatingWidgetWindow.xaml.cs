@@ -58,8 +58,12 @@ public partial class FloatingWidgetWindow : Window
 	private const double ExpandedDefaultHeight = 720;
 	private const double ExpandedWidth = 390;
 	private const uint SetWindowPositionNoActivate = 0x0010;
+	private const uint SetWindowPositionNoMove = 0x0002;
 	private const uint SetWindowPositionNoSize = 0x0001;
 	private const uint SetWindowPositionNoZOrder = 0x0004;
+	private const uint SetWindowPositionHideWindow = 0x0080;
+	private const uint SetWindowPositionShowWindow = 0x0040;
+	private const int ShowWindowWithoutActivation = 4;
 	private static readonly TimeSpan CompactRefreshStatusDisplayDuration =
 		TimeSpan.FromSeconds(5);
 	private readonly AccountConnectionCoordinator _accountConnectionCoordinator;
@@ -533,6 +537,12 @@ public partial class FloatingWidgetWindow : Window
 		int width,
 		int height,
 		uint flags);
+
+	[DllImport("user32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static extern bool ShowWindow(
+		IntPtr windowHandle,
+		int command);
 
 	private static bool TryGetWindowBounds(
 		IntPtr windowHandle,
@@ -3190,28 +3200,42 @@ public partial class FloatingWidgetWindow : Window
 
 		bool shouldTransferFocus = IsKeyboardFocusWithin;
 		ResetAccountScrollDrag(releaseMouseCapture: true);
+		bool wasNativeWindowHidden = TryHideNativeWindowForLayoutTransition(
+			out IntPtr windowHandle);
 		_isCollapsed = isCollapsed;
 		_isCollapsedDragPending = false;
 		_isCollapsedDragging = false;
 		CollapsedButton.ReleaseMouseCapture();
 
-		if (isCollapsed)
+		try
 		{
-			SizeToContent = SizeToContent.Manual;
-			MaxHeight = double.PositiveInfinity;
-			ExpandedView.Visibility = Visibility.Collapsed;
-			CollapsedButton.Visibility = Visibility.Visible;
-			Width = CollapsedSize;
-			Height = CollapsedSize;
+			if (isCollapsed)
+			{
+				SizeToContent = SizeToContent.Manual;
+				MaxHeight = double.PositiveInfinity;
+				ExpandedView.Visibility = Visibility.Collapsed;
+				CollapsedButton.Visibility = Visibility.Visible;
+				Width = CollapsedSize;
+				Height = CollapsedSize;
+			}
+			else
+			{
+				CollapsedButton.Visibility = Visibility.Collapsed;
+				ExpandedView.Visibility = Visibility.Visible;
+				UpdateExpandedSize(ExpandedWidth, ExpandedDefaultHeight);
+			}
+
+			UpdateLayout();
+			ApplyCurrentPlacement();
 		}
-		else
+		finally
 		{
-			CollapsedButton.Visibility = Visibility.Collapsed;
-			ExpandedView.Visibility = Visibility.Visible;
-			UpdateExpandedSize(ExpandedWidth, ExpandedDefaultHeight);
+			if (wasNativeWindowHidden)
+			{
+				ShowNativeWindowAfterLayoutTransition(windowHandle);
+			}
 		}
 
-		UpdateLayout();
 		TryAnnouncePendingUpdateBanner();
 
 		FrameworkElement focusTarget = isCollapsed
@@ -3232,8 +3256,6 @@ public partial class FloatingWidgetWindow : Window
 				pointerFocusOwner,
 				focusTarget);
 		}
-
-		QueueCurrentPlacement();
 
 		if (notifyPreferences)
 		{
@@ -3456,6 +3478,113 @@ public partial class FloatingWidgetWindow : Window
 	private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
 	{
 		QueueCurrentPlacement();
+	}
+
+	private bool TryHideNativeWindowForLayoutTransition(
+		out IntPtr windowHandle)
+	{
+		windowHandle = IntPtr.Zero;
+
+		if (!IsVisible)
+		{
+			return false;
+		}
+
+		windowHandle = new WindowInteropHelper(this).Handle;
+
+		if (windowHandle == IntPtr.Zero)
+		{
+			return false;
+		}
+
+		bool wasHidden = SetWindowPos(
+			windowHandle,
+			IntPtr.Zero,
+			0,
+			0,
+			0,
+			0,
+			SetWindowPositionNoActivate |
+			SetWindowPositionNoMove |
+			SetWindowPositionNoSize |
+			SetWindowPositionNoZOrder |
+			SetWindowPositionHideWindow);
+
+		if (!wasHidden)
+		{
+			int errorCode = Marshal.GetLastWin32Error();
+			AppDiagnostics.TryWrite(
+				"floating-window-layout-transition",
+				$"無法在切換版面前隱藏浮窗；windowHandle={windowHandle}。",
+				new Win32Exception(errorCode));
+		}
+
+		return wasHidden;
+	}
+
+	private void ShowNativeWindowAfterLayoutTransition(IntPtr windowHandle)
+	{
+		try
+		{
+			DrawingRectangle workingArea = GetTargetWorkingArea(windowHandle);
+			DpiScale dpi = VisualTreeHelper.GetDpi(this);
+			int margin = Math.Max(
+				0,
+				(int)Math.Round(CornerMargin * dpi.DpiScaleX));
+			UpdateExpandedBounds(workingArea, margin, dpi);
+			UpdateLayout();
+
+			if (!TryGetWindowBounds(
+					windowHandle,
+					out DrawingRectangle windowBounds))
+			{
+				throw new Win32Exception(
+					Marshal.GetLastWin32Error(),
+					$"無法取得切換版面後的浮窗範圍；windowHandle={windowHandle}。");
+			}
+
+			DrawingPoint topLeft = FloatingWidgetPlacement.GetTopLeft(
+				windowBounds.Size,
+				workingArea,
+				_corner,
+				margin);
+			_isApplyingPlacement = true;
+
+			bool wasShown;
+
+			try
+			{
+				wasShown = SetWindowPos(
+					windowHandle,
+					IntPtr.Zero,
+					topLeft.X,
+					topLeft.Y,
+					windowBounds.Width,
+					windowBounds.Height,
+					SetWindowPositionNoActivate |
+					SetWindowPositionNoZOrder |
+					SetWindowPositionShowWindow);
+			}
+			finally
+			{
+				_isApplyingPlacement = false;
+			}
+
+			if (!wasShown)
+			{
+				throw new Win32Exception(
+					Marshal.GetLastWin32Error(),
+					$"無法顯示切換版面後的浮窗；windowHandle={windowHandle}。");
+			}
+		}
+		catch (Exception exception)
+		{
+			_ = ShowWindow(windowHandle, ShowWindowWithoutActivation);
+			AppDiagnostics.TryWrite(
+				"floating-window-layout-transition",
+				$"完成切換版面後無法定位並顯示浮窗；windowHandle={windowHandle}。",
+				exception);
+		}
 	}
 
 	private IntPtr WindowMessageHook(
