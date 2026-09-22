@@ -7,7 +7,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.3-0078D4" alt="目前正式版本 1.0.3"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.4-0078D4" alt="目前正式版本 1.0.4"></a>
 </p>
 
 <p align="center">
@@ -29,9 +29,9 @@
 
 ## 目前版本
 
-首個正式版本為 **`1.0.3`**，包含「關於 AI Usage」、開始選單捷徑、Copilot 改用本機官方 CLI、Copilot 新舊訂閱回應相容，以及較精簡的安裝包。版本內容與檔案資訊見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
+目前正式版本為 **`1.0.4`**，加入 App 自動更新提示與標準安裝版的「更新並重新啟動」，並修正 Updater 自我更新交接。從 [v1.0.4 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.4) 下載；檔案資訊見 [1.0.4 版本說明](docs/releases/1.0.4.md)。首個正式版本 `1.0.3` 的紀錄仍見 [1.0.3 版本說明](docs/releases/1.0.3.md)。
 
-本版本的候選 workflow、自動檢查、六件成品獨立回讀與有界靜態隱私檢查均已通過；exact frozen Updater／ZIP 也已在既有 Windows 主機完成離線換版、核對及重新啟動。人工 UI／provider 驗收暫緩，乾淨 Windows、VM 與正式線上更新仍未驗證；完整範圍見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#103-正式版)。安裝檔由 [v1.0.3 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.3) 提供；2026-09-15 已以未登入的 client 匿名下載六件正式檔案，核對 frozen asset ID、113,016,854 bytes、SHA256 與三份 sidecar，並以 pinned production 公鑰驗證 stable feed 簽章。這項 smoke 不代替尚未執行的正式線上更新驗收。
+`1.0.4` 的候選 workflow 與 4,304 項自動測試通過；公開後已匿名下載六件原凍結成品，核對 SHA256、sidecar 與 stable feed 簽章。這些檢查尚未涵蓋本版實際安裝、正式線上更新、完整 UI／無障礙及真人 provider 驗收。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#104-正式版)。
 
 ## 支援平台
 
@@ -51,6 +51,7 @@
 | --- | --- |
 | 查看還能用多少 | 集中查看各帳號用量，切換已使用／剩餘顯示，並查看來源提供的重置時間。 |
 | 更新剛用過的帳號 | 自動更新之外，也能手動檢查全部或單一帳號；暫時失敗時可保留上次資料並標示狀態。 |
+| 檢查 App 新版本 | 啟動後自動檢查已簽署的更新清單，也可從系統匣手動檢查；標準安裝版符合條件時可選擇更新並重新啟動。 |
 | 分清不同帳號 | 為卡片設定暱稱；Claude 可顯示組織，Codex 可顯示工作區。暫時不用的卡片可停止檢查。 |
 | 排列常用卡片 | 手動調整順序，或依服務、主要用量週期與重置時間自動排序。 |
 | 邊工作邊看用量 | 浮窗可置頂、移動、停靠角落及收合；隱藏後仍在背景更新，可從系統匣叫回。 |
