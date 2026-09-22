@@ -19,6 +19,82 @@ public sealed class UpdaterPackageInvariantsTests
 		Assert.DoesNotContain("PackageReference", project);
 	}
 
+	[Theory]
+	[InlineData("Publish-Internal.ps1")]
+	[InlineData("Publish-Updater.ps1")]
+	[InlineData("Publish-UpdateBundle.ps1")]
+	public void ProductionPublishEntryPoints_RequirePowerShell74(
+		string scriptName)
+	{
+		string script = ReadRepositoryFile("tools", scriptName);
+
+		Assert.StartsWith("#Requires -Version 7.4", script);
+	}
+
+	[Fact]
+	public void AppProductionPublishEntryPoints_RequireSignedFeedMetadata()
+	{
+		string appProject = ReadRepositoryFile(
+			"src",
+			"AiUsageDashboard.App",
+			"AiUsageDashboard.App.csproj");
+		string internalPublish = ReadRepositoryFile(
+			"tools",
+			"Publish-Internal.ps1");
+		string bundlePublish = ReadRepositoryFile(
+			"tools",
+			"Publish-UpdateBundle.ps1");
+		string windowsCi = ReadRepositoryFile(
+			".github",
+			"workflows",
+			"windows-ci.yml");
+
+		Assert.Contains("RequireUpdateFeedMetadataForPublish", appProject);
+		Assert.Contains("Publishing the app requires UpdateFeedUrl.", appProject);
+		Assert.Contains("Publishing the app requires UpdateChannel.", appProject);
+		Assert.Contains("UpdateTrustedKeysFile", appProject);
+		Assert.Contains("-p:UpdateFeedUrl=$FeedUrl", internalPublish);
+		Assert.Contains("-p:UpdateChannel=$Channel", internalPublish);
+		Assert.Contains(
+			"-p:UpdateTrustedKeysFile=$resolvedTrustedKeysFile",
+			internalPublish);
+		Assert.Contains("$parsedFeedUri.Host", internalPublish);
+		Assert.Contains("validate-trust", internalPublish);
+		Assert.Contains(
+			"function Assert-PublishedAppUpdateConfiguration",
+			internalPublish);
+		Assert.Contains(
+			"GetCustomAttributes(",
+			internalPublish);
+		Assert.Contains(
+			"[Reflection.AssemblyMetadataAttribute]",
+			internalPublish);
+		Assert.Contains(
+			"GetManifestResourceStream($resourceName)",
+			internalPublish);
+		Assert.Contains(
+			"StructuralEqualityComparer.Equals(",
+			internalPublish);
+		Assert.Contains(
+			"-ExpectedFeedUrl $FeedUrl",
+			internalPublish);
+		Assert.Contains(
+			"-ExpectedChannel $Channel",
+			internalPublish);
+		Assert.Contains(
+			"-ExpectedTrustedKeysFile $resolvedTrustedKeysFile",
+			internalPublish);
+		Assert.Contains("-FeedUrl $FeedUrl", bundlePublish);
+		Assert.Contains("-Channel $Channel", bundlePublish);
+		Assert.Contains(
+			"-TrustedKeysFile $resolvedTrustedKeysFile",
+			bundlePublish);
+		Assert.Contains("./tools/Publish-Internal.ps1", windowsCi);
+		Assert.Contains("-FeedUrl 'https://updates.example.test/ci/stable.json'", windowsCi);
+		Assert.Contains("-Channel 'ci'", windowsCi);
+		Assert.Contains("-TrustedKeysFile $trustPath", windowsCi);
+	}
+
 	[Fact]
 	public void PublishUpdaterScript_IsBomEncodedAndPinsSingleFileRuntime()
 	{
@@ -217,6 +293,212 @@ public sealed class UpdaterPackageInvariantsTests
 	}
 
 	[Fact]
+	public void Program_DelegatedChildSchedulesPromotionOnlyAfterRegistrationCompletes()
+	{
+		string source = ReadRepositoryFile(
+			"src",
+			"AiUsageDashboard.Updater",
+			"Program.cs");
+		int signedUpdaterValidationIndex = source.IndexOf(
+			"UpdaterRefreshPolicy.EnsureMatchesSignedInstaller(",
+			StringComparison.Ordinal);
+		int updateResultIndex = source.IndexOf(
+			"UpdaterExecutionResult updateResult = await ApplyPackageAsync(",
+			signedUpdaterValidationIndex,
+			StringComparison.Ordinal);
+		int promotionIndex = source.IndexOf(
+			"await CompleteDelegatedMaintenanceUpdaterPromotionAsync(",
+			updateResultIndex,
+			StringComparison.Ordinal);
+		int alreadyCurrentResultIndex = source.IndexOf(
+			"currentResult = await RegisterAndRestartCurrentAsync(",
+			signedUpdaterValidationIndex,
+			StringComparison.Ordinal);
+		int alreadyCurrentPromotionIndex = source.IndexOf(
+			"await CompleteDelegatedMaintenanceUpdaterPromotionAsync(",
+			alreadyCurrentResultIndex,
+			StringComparison.Ordinal);
+
+		Assert.True(signedUpdaterValidationIndex >= 0);
+		Assert.True(updateResultIndex > signedUpdaterValidationIndex);
+		Assert.True(promotionIndex > updateResultIndex);
+		Assert.True(alreadyCurrentResultIndex > signedUpdaterValidationIndex);
+		Assert.True(alreadyCurrentPromotionIndex > alreadyCurrentResultIndex);
+		Assert.Contains(
+			"result.ExitCode is not SuccessExitCode and not RestartFailureExitCode",
+			source);
+		string coordinator = ReadRepositoryFile(
+			"src",
+			"AiUsageDashboard.Updater",
+			"DelegatedMaintenanceUpdaterPromotionCoordinator.cs");
+		Assert.Contains("UpdaterArtifactCache.GetExecutablePath(", coordinator);
+		Assert.Contains("lineage.ParentExecutablePath", coordinator);
+		Assert.Contains("GetMaintenanceUpdaterGeneration(", coordinator);
+		Assert.Contains("_promotionLauncher.LaunchAsync(", coordinator);
+	}
+
+	[Fact]
+	public void Program_AlreadyCurrentPromotion_ReleasesInstallLockAfterRegistration()
+	{
+		string source = ReadRepositoryFile(
+			"src",
+			"AiUsageDashboard.Updater",
+			"Program.cs").Replace("\r\n", "\n", StringComparison.Ordinal);
+		int branchStart = source.IndexOf(
+			"if (preflightAction == OnlinePayloadUpdateAction.UseInstalled)",
+			StringComparison.Ordinal);
+		Assert.True(branchStart >= 0);
+		int branchEnd = source.IndexOf(
+			"UpdateDownloadWorkspace workspace =",
+			branchStart,
+			StringComparison.Ordinal);
+		Assert.True(branchEnd > branchStart);
+		string branch = source[branchStart..branchEnd];
+		int lockStart = branch.IndexOf(
+			"using (UpdateInstallLock updateLock = UpdateInstallLock.Acquire(",
+			StringComparison.Ordinal);
+		Assert.True(lockStart >= 0);
+		int recoveryIndex = branch.IndexOf(
+			"RecoverInterruptedTransactionsWhileLocked(options.InstallRoot);",
+			lockStart,
+			StringComparison.Ordinal);
+		Assert.True(recoveryIndex > lockStart);
+		int manifestIndex = branch.IndexOf(
+			"await ReadInstalledManifestAsync(",
+			recoveryIndex,
+			StringComparison.Ordinal);
+		Assert.True(manifestIndex > recoveryIndex);
+		int policyIndex = branch.IndexOf(
+			"OnlinePayloadUpdatePolicy.Evaluate(",
+			manifestIndex,
+			StringComparison.Ordinal);
+		Assert.True(policyIndex > manifestIndex);
+		int registrationIndex = branch.IndexOf(
+			"currentResult = await RegisterAndRestartCurrentAsync(",
+			policyIndex,
+			StringComparison.Ordinal);
+		Assert.True(registrationIndex > policyIndex);
+		int lockEnd = branch.IndexOf(
+			"\n\t\t\t}\n\n\t\t\tif (currentResult is not null)",
+			registrationIndex,
+			StringComparison.Ordinal);
+		Assert.True(lockEnd > registrationIndex);
+		int promotionIndex = branch.IndexOf(
+			"return await CompleteDelegatedMaintenanceUpdaterPromotionAsync(",
+			lockEnd,
+			StringComparison.Ordinal);
+		Assert.True(promotionIndex > lockEnd);
+	}
+
+	[Fact]
+	public void Promotion_HoldsInstallLockAcrossFinalValidationAndAtomicReplace()
+	{
+		string source = ReadRepositoryFile(
+			"src",
+			"AiUsageDashboard.Updater",
+			"MaintenanceUpdaterPromotion.cs");
+		int parentExitIndex = source.IndexOf(
+			"await _processExitWaiter.WaitForExitAsync(",
+			StringComparison.Ordinal);
+		int lockIndex = source.IndexOf(
+			"UpdateInstallLock.AcquireExisting(",
+			parentExitIndex,
+			StringComparison.Ordinal);
+		int finalValidationIndex = source.IndexOf(
+			"await ValidateSourceAndCanonicalAsync(",
+			lockIndex,
+			StringComparison.Ordinal);
+		int replaceIndex = source.IndexOf(
+			"File.Move(temporaryPath, canonicalPath, overwrite: true)",
+			finalValidationIndex,
+			StringComparison.Ordinal);
+
+		Assert.True(parentExitIndex >= 0);
+		Assert.True(lockIndex > parentExitIndex);
+		Assert.True(finalValidationIndex > lockIndex);
+		Assert.True(replaceIndex > finalValidationIndex);
+	}
+
+	[Fact]
+	public void PromotionLauncher_StartsGenerationBeforeReleasingInstallLock()
+	{
+		string source = ReadRepositoryFile(
+			"src",
+			"AiUsageDashboard.Updater",
+			"MaintenanceUpdaterPromotionLauncher.cs");
+		int lockIndex = source.IndexOf(
+			"using (UpdateInstallLock updateLock = UpdateInstallLock.AcquireExisting(",
+			StringComparison.Ordinal);
+		int receiptIndex = source.IndexOf(
+			"bool receiptWasSaved = expectedReceipt is null",
+			lockIndex,
+			StringComparison.Ordinal);
+		int processStartIndex = source.IndexOf(
+			"Process.Start(startInfo)",
+			receiptIndex,
+			StringComparison.Ordinal);
+		int failureReceiptIndex = source.IndexOf(
+			"SaveFailureIfCurrentAsync(",
+			processStartIndex,
+			StringComparison.Ordinal);
+
+		Assert.True(lockIndex >= 0);
+		Assert.True(receiptIndex > lockIndex);
+		Assert.True(processStartIndex > receiptIndex);
+		Assert.True(failureReceiptIndex > processStartIndex);
+	}
+
+	[Fact]
+	public void Program_PropagatesIncompleteMaintenancePromotionAsFailure()
+	{
+		string source = ReadRepositoryFile(
+			"src",
+			"AiUsageDashboard.Updater",
+			"Program.cs");
+
+		Assert.Contains(
+			"private const int MaintenanceUpdaterIncompleteExitCode = 4;",
+			source);
+		Assert.Contains("ApplyMaintenanceUpdaterWarning(", source);
+		Assert.Contains(
+			"? MaintenanceUpdaterIncompleteExitCode",
+			source);
+		Assert.Contains(
+			"TryRetryPendingMaintenanceUpdaterPromotionAsync(",
+			source);
+	}
+
+	[Fact]
+	public void Program_RetriesPersistedPromotionBeforeFetchingFutureFeed()
+	{
+		string source = ReadRepositoryFile(
+			"src",
+			"AiUsageDashboard.Updater",
+			"Program.cs");
+		int retryIndex = source.IndexOf(
+			"await TryRetryPendingMaintenanceUpdaterPromotionAsync(",
+			StringComparison.Ordinal);
+		int feedFetchIndex = source.IndexOf(
+			"await feedClient.FetchFeedAsync(",
+			retryIndex,
+			StringComparison.Ordinal);
+
+		Assert.True(retryIndex >= 0);
+		Assert.True(feedFetchIndex > retryIndex);
+		string receiptStore = ReadRepositoryFile(
+			"src",
+			"AiUsageDashboard.Updater",
+			"MaintenanceUpdaterPromotionReceiptStore.cs");
+		Assert.Contains("FileOptions.WriteThrough", receiptStore);
+		Assert.Contains("stream.Flush(flushToDisk: true)", receiptStore);
+		Assert.Contains("DeleteIfMatchesAsync", receiptStore);
+		Assert.Contains(
+			"SavePendingIfSnapshotMatchesWhileInstallLockHeldAsync",
+			receiptStore);
+		Assert.Contains("LaunchRetryAsync(", source);
+	}
+
+	[Fact]
 	public void Program_RegistersOnlyAfterSwitchAndBeforeRestart()
 	{
 		string source = ReadRepositoryFile(
@@ -239,7 +521,7 @@ public sealed class UpdaterPackageInvariantsTests
 		Assert.True(registrationIndex > switchIndex);
 		Assert.True(restartIndex > registrationIndex);
 		Assert.True(
-			source.Split("return await RegisterAndRestartCurrentAsync(").Length >= 3);
+			source.Split("await RegisterAndRestartCurrentAsync(").Length >= 3);
 	}
 
 	[Fact]
@@ -275,10 +557,14 @@ public sealed class UpdaterPackageInvariantsTests
 		Assert.Contains("--install-root", source);
 		Assert.Contains("--no-restart", source);
 		Assert.Contains("LocalApplicationData", source);
-		Assert.Contains("\"Programs\"", source);
-		Assert.Contains("\"AiUsageDashboard\"", source);
+		Assert.Contains(
+			"WindowsLogonStartupRegistrationContract",
+			source);
 		Assert.Contains("uninstall --confirm", source);
-		Assert.Contains("\"AiUsageDashboardUpdater\"", source);
+		Assert.Contains(
+			"MaintenanceUpdaterPathContract",
+			source);
+		Assert.DoesNotContain("\"AiUsageDashboardUpdater\"", source);
 	}
 
 	private static string ReadRepositoryFile(params string[] pathParts)

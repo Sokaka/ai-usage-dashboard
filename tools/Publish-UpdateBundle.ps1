@@ -1,4 +1,5 @@
-﻿[CmdletBinding()]
+﻿#Requires -Version 7.4
+[CmdletBinding()]
 param(
 	[Parameter(Mandatory = $true)]
 	[string] $Version,
@@ -243,7 +244,11 @@ try {
 		$publishArguments['AllowDirtyTreeForVerification'] = $true
 	}
 
-	& (Join-Path $PSScriptRoot 'Publish-Internal.ps1') @publishArguments
+	& (Join-Path $PSScriptRoot 'Publish-Internal.ps1') `
+		@publishArguments `
+		-FeedUrl $FeedUrl `
+		-Channel $Channel `
+		-TrustedKeysFile $resolvedTrustedKeysFile
 	& (Join-Path $PSScriptRoot 'Publish-Updater.ps1') `
 		@publishArguments `
 		-FeedUrl $FeedUrl `

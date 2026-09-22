@@ -254,6 +254,7 @@
             <Grid Margin="12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition x:Name="ExpandedFooterRow" Height="Auto" />
                 </Grid.RowDefinitions>
@@ -451,8 +452,59 @@
                     </Button>
                 </Grid>
 
+                <Border x:Name="UpdateBanner"
+                        Grid.Row="1"
+                        Margin="0,0,0,8"
+                        Padding="10,8"
+                        AutomationProperties.AutomationId="UpdateBanner"
+                        Background="{DynamicResource ControlBackgroundBrush}"
+                        BorderBrush="{DynamicResource InfoBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Visibility="Collapsed">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="UpdateBannerTextBlock"
+                                   AutomationProperties.LiveSetting="Polite"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                   TextWrapping="Wrap" />
+                        <WrapPanel Grid.Row="1"
+                                   Margin="0,8,0,0"
+                                   KeyboardNavigation.TabNavigation="Local">
+                            <Button x:Name="UpdatePrimaryActionButton"
+                                    Margin="0,0,8,8"
+                                    AutomationProperties.AutomationId="UpdatePrimaryAction"
+                                    Click="UpdatePrimaryActionButton_Click"
+                                    Content="檢查更新"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                            <Button x:Name="UpdateReleaseHistoryButton"
+                                    Margin="0,0,8,8"
+                                    AutomationProperties.AutomationId="UpdateReleaseHistory"
+                                    Click="UpdateReleaseHistoryButton_Click"
+                                    Content="版本紀錄"
+                                    Style="{StaticResource SecondaryButtonStyle}" />
+                            <Button x:Name="UpdateSnoozeButton"
+                                    Margin="0,0,8,8"
+                                    AutomationProperties.AutomationId="UpdateSnooze"
+                                    Click="UpdateSnoozeButton_Click"
+                                    Content="稍後提醒"
+                                    Style="{StaticResource SecondaryButtonStyle}" />
+                            <Button x:Name="DisableAutomaticUpdateChecksButton"
+                                    Margin="0,0,0,8"
+                                    AutomationProperties.AutomationId="DisableAutomaticUpdateChecks"
+                                    Click="DisableAutomaticUpdateChecksButton_Click"
+                                    Content="關閉自動檢查"
+                                    Style="{StaticResource GhostButtonStyle}"
+                                    Visibility="Collapsed" />
+                        </WrapPanel>
+                    </Grid>
+                </Border>
+
                 <ScrollViewer x:Name="AccountScrollViewer"
-                              Grid.Row="1"
+                              Grid.Row="2"
                               AutomationProperties.HelpText="可用滾輪、捲軸，或按住帳號卡片上下拖曳來捲動畫面。"
                               HorizontalScrollBarVisibility="Disabled"
                               LostMouseCapture="AccountScrollViewer_LostMouseCapture"
@@ -804,7 +856,7 @@
                 </ScrollViewer>
 
                 <Grid x:Name="ExpandedFooter"
-                      Grid.Row="2"
+                      Grid.Row="3"
                       Margin="2,7,2,0"
                       VerticalAlignment="Bottom"
                       Visibility="Collapsed">
@@ -893,11 +945,38 @@
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Button.Template>
-            <ContentControl Width="46"
-                            Height="46"
-                            Focusable="False"
-                            IsHitTestVisible="False"
-                            Style="{StaticResource ThemeLogoStyle}" />
+            <Grid Width="46"
+                  Height="46">
+                <ContentControl Width="46"
+                                Height="46"
+                                Focusable="False"
+                                IsHitTestVisible="False"
+                                Style="{StaticResource ThemeLogoStyle}" />
+                <Border x:Name="CollapsedUpdateBadge"
+                        Width="20"
+                        Height="20"
+                        Margin="0,-2,-2,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        IsHitTestVisible="False"
+                        Background="{DynamicResource UpdateBadgeBrush}"
+                        BorderBrush="{DynamicResource UpdateBadgeForegroundBrush}"
+                        BorderThickness="2"
+                        CornerRadius="10"
+                        Visibility="Collapsed">
+                    <Path Width="10"
+                          Height="11"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Data="M 1,5 L 5,1 L 9,5 M 5,1 L 5,10"
+                          SnapsToDevicePixels="True"
+                          Stroke="{DynamicResource UpdateBadgeForegroundBrush}"
+                          StrokeEndLineCap="Round"
+                          StrokeLineJoin="Round"
+                          StrokeStartLineCap="Round"
+                          StrokeThickness="2" />
+                </Border>
+            </Grid>
         </Button>
     </Grid>
 </Window>

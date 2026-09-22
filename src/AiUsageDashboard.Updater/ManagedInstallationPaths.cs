@@ -7,7 +7,7 @@ internal static class ManagedInstallationPaths
 	internal const string MaintenanceUpdaterGenerationPrefix =
 		"AiUsageDashboard.Updater.";
 	internal const string MaintenanceUpdaterFileName =
-		"AiUsageDashboard.Updater.exe";
+		MaintenanceUpdaterPathContract.ApplicationFileName;
 	internal const string UninstallReceiptFileName =
 		".uninstalling-v1.json";
 
@@ -185,7 +185,7 @@ internal static class ManagedInstallationPaths
 			((character >= 'a') && (character <= 'f'));
 	}
 
-	private static string NormalizeSha256(string sha256)
+	internal static string NormalizeSha256(string sha256)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(sha256);
 		string normalizedHash = sha256.ToLowerInvariant();

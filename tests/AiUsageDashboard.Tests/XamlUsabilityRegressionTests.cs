@@ -203,6 +203,263 @@ public sealed class XamlUsabilityRegressionTests
 	}
 
 	[Fact]
+	public void FloatingUpdateBanner_UsesDedicatedRowAndKeyboardActionOrder()
+	{
+		XDocument window = LoadAppXaml("FloatingWidgetWindow.xaml");
+		XElement expandedView = GetNamedElement(
+			window,
+			"Border",
+			"ExpandedView");
+		XElement contentGrid = Assert.Single(
+			expandedView.Elements(Presentation + "Grid"));
+		XElement rowDefinitions = Assert.IsType<XElement>(
+			contentGrid.Element(Presentation + "Grid.RowDefinitions"));
+		XElement[] rows = rowDefinitions
+			.Elements(Presentation + "RowDefinition")
+			.ToArray();
+
+		Assert.Collection(
+			rows,
+			row => Assert.Equal("Auto", (string?)row.Attribute("Height")),
+			row => Assert.Equal("Auto", (string?)row.Attribute("Height")),
+			row => Assert.Equal("*", (string?)row.Attribute("Height")),
+			row =>
+			{
+				Assert.Equal("ExpandedFooterRow", (string?)row.Attribute(Xaml + "Name"));
+				Assert.Equal("Auto", (string?)row.Attribute("Height"));
+			});
+
+		XElement header = GetNamedElement(window, "Grid", "ExpandedHeader");
+		XElement updateBanner = GetNamedElement(window, "Border", "UpdateBanner");
+		XElement accountScrollViewer = GetNamedElement(
+			window,
+			"ScrollViewer",
+			"AccountScrollViewer");
+		XElement footer = GetNamedElement(window, "Grid", "ExpandedFooter");
+
+		Assert.Same(contentGrid, header.Parent);
+		Assert.Null(header.Attribute("Grid.Row"));
+		Assert.Same(contentGrid, updateBanner.Parent);
+		Assert.Equal("1", (string?)updateBanner.Attribute("Grid.Row"));
+		Assert.Same(contentGrid, accountScrollViewer.Parent);
+		Assert.Equal("2", (string?)accountScrollViewer.Attribute("Grid.Row"));
+		Assert.Same(contentGrid, footer.Parent);
+		Assert.Equal("3", (string?)footer.Attribute("Grid.Row"));
+		Assert.DoesNotContain(updateBanner, accountScrollViewer.Descendants());
+
+		XElement bannerText = GetNamedElement(
+			window,
+			"TextBlock",
+			"UpdateBannerTextBlock");
+		Assert.Contains(updateBanner, bannerText.Ancestors());
+		Assert.Equal(
+			"Polite",
+			(string?)bannerText.Attribute("AutomationProperties.LiveSetting"));
+		Assert.Equal("Wrap", (string?)bannerText.Attribute("TextWrapping"));
+
+		XElement actionPanel = Assert.Single(
+			updateBanner.Descendants(Presentation + "WrapPanel"));
+		Assert.Equal(
+			"Local",
+			(string?)actionPanel.Attribute("KeyboardNavigation.TabNavigation"));
+		string[] actionOrder = actionPanel
+			.Elements(Presentation + "Button")
+			.Select(button => (string?)button.Attribute(Xaml + "Name"))
+			.OfType<string>()
+			.ToArray();
+		Assert.Equal(
+			[
+				"UpdatePrimaryActionButton",
+				"UpdateReleaseHistoryButton",
+				"UpdateSnoozeButton",
+				"DisableAutomaticUpdateChecksButton"
+			],
+			actionOrder);
+	}
+
+	[Fact]
+	public void CollapsedUpdateBadge_UsesDedicatedPaletteVectorAndExpandOnlyAction()
+	{
+		XDocument window = LoadAppXaml("FloatingWidgetWindow.xaml");
+		XElement collapsedButton = GetNamedElement(
+			window,
+			"Button",
+			"CollapsedButton");
+		XElement badge = GetNamedElement(
+			window,
+			"Border",
+			"CollapsedUpdateBadge");
+		XElement glyph = Assert.Single(
+			badge.Elements(Presentation + "Path"));
+
+		Assert.Contains(collapsedButton, badge.Ancestors());
+		Assert.Equal(
+			"CollapsedButton_Click",
+			(string?)collapsedButton.Attribute("Click"));
+		Assert.Equal("False", (string?)badge.Attribute("IsHitTestVisible"));
+		Assert.Equal("20", (string?)badge.Attribute("Width"));
+		Assert.Equal("20", (string?)badge.Attribute("Height"));
+		Assert.Equal("0,-2,-2,0", (string?)badge.Attribute("Margin"));
+		Assert.Equal("10", (string?)badge.Attribute("CornerRadius"));
+		Assert.Equal("2", (string?)badge.Attribute("BorderThickness"));
+		Assert.Equal(
+			"{DynamicResource UpdateBadgeBrush}",
+			(string?)badge.Attribute("Background"));
+		Assert.Equal(
+			"{DynamicResource UpdateBadgeForegroundBrush}",
+			(string?)badge.Attribute("BorderBrush"));
+		Assert.Empty(badge.Elements(Presentation + "TextBlock"));
+		Assert.Equal("10", (string?)glyph.Attribute("Width"));
+		Assert.Equal("11", (string?)glyph.Attribute("Height"));
+		Assert.Equal(
+			"M 1,5 L 5,1 L 9,5 M 5,1 L 5,10",
+			(string?)glyph.Attribute("Data"));
+		Assert.Equal(
+			"{DynamicResource UpdateBadgeForegroundBrush}",
+			(string?)glyph.Attribute("Stroke"));
+		Assert.Equal("2", (string?)glyph.Attribute("StrokeThickness"));
+		Assert.Equal("Round", (string?)glyph.Attribute("StrokeStartLineCap"));
+		Assert.Equal("Round", (string?)glyph.Attribute("StrokeEndLineCap"));
+		Assert.Equal("Round", (string?)glyph.Attribute("StrokeLineJoin"));
+
+		XDocument highContrastPalette = LoadAppXaml(
+			"Themes",
+			"HighContrastPalette.xaml");
+		string backgroundColor = GetColorMarkup(
+			highContrastPalette,
+			"UpdateBadgeForegroundColor");
+		string indicatorColor = GetColorMarkup(
+			highContrastPalette,
+			"UpdateBadgeColor");
+		Assert.Contains("WindowColor", backgroundColor, StringComparison.Ordinal);
+		Assert.Contains("WindowTextColor", indicatorColor, StringComparison.Ordinal);
+		Assert.NotEqual(backgroundColor, indicatorColor);
+
+		string source = LoadAppSource("FloatingWidgetWindow.xaml.cs");
+		string clickHandler = GetMethodSource(
+			source,
+			"private void CollapsedButton_Click(",
+			"private void CollapsedButton_PreviewMouseLeftButtonDown(");
+		Assert.Matches(
+			new Regex(
+				@"SetCollapsed\(\s*false,",
+				RegexOptions.CultureInvariant),
+			clickHandler);
+		Assert.Contains(
+			"PointerFocusRelease.WasInvokedByPointer(sender)",
+			clickHandler,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"FocusTransitionMode.Release",
+			clickHandler,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"FocusTransitionMode.Transfer",
+			clickHandler,
+			StringComparison.Ordinal);
+		Assert.DoesNotContain(
+			"UpdatePrimaryActionRequested",
+			clickHandler,
+			StringComparison.Ordinal);
+		Assert.DoesNotContain(
+			"AboutLinkLauncher",
+			clickHandler,
+			StringComparison.Ordinal);
+
+		string pointerUpHandler = GetMethodSource(
+			source,
+			"private void CollapsedButton_PreviewMouseLeftButtonUp(",
+			"private void CollapsedButton_PreviewMouseMove(");
+		Assert.Contains(
+			"else if (shouldExpand)",
+			pointerUpHandler,
+			StringComparison.Ordinal);
+		Assert.Matches(
+			new Regex(
+				@"else if \(shouldExpand\)[\s\S]*?SetCollapsed\(\s*false,",
+				RegexOptions.CultureInvariant),
+			pointerUpHandler);
+		Assert.Contains(
+			"focusTransitionMode: FocusTransitionMode.Release",
+			pointerUpHandler,
+			StringComparison.Ordinal);
+		Assert.DoesNotContain(
+			"UpdatePrimaryActionRequested",
+			pointerUpHandler,
+			StringComparison.Ordinal);
+		Assert.DoesNotContain(
+			"AboutLinkLauncher",
+			pointerUpHandler,
+			StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void AboutWindow_ExposesPoliteUpdateStatusAndManualCheckAction()
+	{
+		XDocument window = LoadAppXaml("AboutWindow.xaml");
+		XElement status = GetNamedElement(
+			window,
+			"TextBlock",
+			"UpdateStatusTextBlock");
+		XElement checkButton = GetNamedElement(
+			window,
+			"Button",
+			"CheckForUpdatesButton");
+		XElement releasesButton = Assert.Single(
+			window.Descendants(Presentation + "Button"),
+			button => string.Equals(
+				(string?)button.Attribute("Click"),
+				"ReleasesButton_Click",
+				StringComparison.Ordinal));
+
+		Assert.Equal(
+			"AboutUpdateStatus",
+			(string?)status.Attribute("AutomationProperties.AutomationId"));
+		Assert.Equal(
+			"Polite",
+			(string?)status.Attribute("AutomationProperties.LiveSetting"));
+		Assert.Equal("Wrap", (string?)status.Attribute("TextWrapping"));
+		Assert.Equal("尚未檢查更新。", (string?)status.Attribute("Text"));
+		Assert.Equal(
+			"CheckForUpdates",
+			(string?)checkButton.Attribute("AutomationProperties.AutomationId"));
+		Assert.Equal(
+			"CheckForUpdatesButton_Click",
+			(string?)checkButton.Attribute("Click"));
+		Assert.Equal("檢查更新", (string?)checkButton.Attribute("Content"));
+		Assert.Equal(
+			"{StaticResource SecondaryButtonStyle}",
+			(string?)checkButton.Attribute("Style"));
+		Assert.Equal(
+			"下載與版本紀錄",
+			(string?)releasesButton.Attribute("Content"));
+
+		string source = LoadAppSource("AboutWindow.xaml.cs");
+		string statusUpdater = GetMethodSource(
+			source,
+			"internal void UpdateUpdateStatus(",
+			"private void UpdateWorkAreaConstraints()");
+		Assert.Contains(
+			"UpdateStatusTextBlock.Text = statusText;",
+			statusUpdater,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"CheckForUpdatesButton.IsEnabled = canCheck && !isChecking;",
+			statusUpdater,
+			StringComparison.Ordinal);
+		Assert.Contains("檢查中…", statusUpdater, StringComparison.Ordinal);
+
+		string clickHandler = GetMethodSource(
+			source,
+			"private void CheckForUpdatesButton_Click(",
+			"private void ReleasesButton_Click(");
+		Assert.Contains(
+			"UpdateCheckRequested?.Invoke(this, EventArgs.Empty);",
+			clickHandler,
+			StringComparison.Ordinal);
+	}
+
+	[Fact]
 	public void ButtonFocusVisual_UsesKeyboardOnlyFocusAdorner()
 	{
 		const string FocusVisual =
@@ -917,6 +1174,101 @@ public sealed class XamlUsabilityRegressionTests
 	}
 
 	[Fact]
+	public void TrayMenu_ProvidesPermanentAndContextualUpdateActions()
+	{
+		string source = LoadAppSource("App.xaml.cs");
+		string initializer = GetMethodSource(
+			source,
+			"private void InitializeNotifyIcon()",
+			"internal void ShowAboutWindow()");
+		int contextualActionStart = initializer.IndexOf(
+			"_updateAvailableMenuItem =",
+			StringComparison.Ordinal);
+		int manualActionStart = initializer.IndexOf(
+			"_checkForUpdatesMenuItem =",
+			StringComparison.Ordinal);
+		int automaticActionStart = initializer.IndexOf(
+			"_automaticUpdateChecksMenuItem =",
+			StringComparison.Ordinal);
+		int logonStartupActionStart = initializer.IndexOf(
+			"_logonStartupMenuItem =",
+			StringComparison.Ordinal);
+
+		Assert.True(contextualActionStart >= 0);
+		Assert.True(manualActionStart > contextualActionStart);
+		Assert.True(automaticActionStart > manualActionStart);
+		Assert.True(logonStartupActionStart > automaticActionStart);
+
+		string contextualAction = initializer[
+			contextualActionStart..manualActionStart];
+		Assert.Contains(
+			"Visible = false",
+			contextualAction,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"ExecutePrimaryUpdateActionAsync",
+			contextualAction,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"menu.Items.Add(_updateAvailableMenuItem);",
+			contextualAction,
+			StringComparison.Ordinal);
+
+		string manualAction = initializer[
+			manualActionStart..automaticActionStart];
+		Assert.Contains("檢查更新", manualAction, StringComparison.Ordinal);
+		Assert.Contains(
+			"CheckForUpdatesManuallyAsync",
+			manualAction,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"menu.Items.Add(_checkForUpdatesMenuItem);",
+			manualAction,
+			StringComparison.Ordinal);
+
+		string automaticAction = initializer[
+			automaticActionStart..logonStartupActionStart];
+		Assert.Contains("自動檢查更新", automaticAction, StringComparison.Ordinal);
+		Assert.Contains(
+			"SetAutomaticUpdateChecksEnabledAsync(",
+			automaticAction,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"!_updatePresentationState.IsAutoCheckEnabled",
+			automaticAction,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"menu.Items.Add(_automaticUpdateChecksMenuItem);",
+			automaticAction,
+			StringComparison.Ordinal);
+
+		string presentationUpdater = GetMethodSource(
+			source,
+			"private void UpdateUpdateTrayMenuItems(",
+			"private void InitializeUpdateCheckTimer()");
+		Assert.Contains(
+			"presentation.CanCheckManually",
+			presentationUpdater,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"_updatePresentationState.IsAutoCheckEnabled",
+			presentationUpdater,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"!string.IsNullOrWhiteSpace(presentation.TrayUpdateActionText)",
+			presentationUpdater,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"presentation.IsPrimaryActionEnabled",
+			presentationUpdater,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"presentation.TrayUpdateActionText ?? \"開啟下載頁\"",
+			presentationUpdater,
+			StringComparison.Ordinal);
+	}
+
+	[Fact]
 	public void TrayMenu_PortableActionsCaptureStateWithoutShowingOrExpandingWidget()
 	{
 		string appSource = LoadAppSource("App.xaml.cs");
@@ -945,14 +1297,32 @@ public sealed class XamlUsabilityRegressionTests
 				@"_dashboardViewModel\?\.CanUndoLastPortableSettingsImport == true;",
 				RegexOptions.CultureInvariant),
 			appSource);
-		Assert.Matches(
-			new Regex(
-				@"menu\.Opening\s*\+=\s*\(_, _\) => Dispatcher\.Invoke\(\s*" +
-				@"\(\) =>\s*\{\s*" +
-				@"UpdatePortableSettingsMenuItems\(\);\s*" +
-				@"UpdateLogonStartupMenuItem\(\);\s*\}\);",
-				RegexOptions.CultureInvariant),
-			appSource);
+		string notifyIconInitializer = GetMethodSource(
+			appSource,
+			"private void InitializeNotifyIcon()",
+			"internal void ShowAboutWindow()");
+		int openingHandlerStart = notifyIconInitializer.IndexOf(
+			"menu.Opening +=",
+			StringComparison.Ordinal);
+		int firstMenuItemDefinition = notifyIconInitializer.IndexOf(
+			"_widgetVisibilityMenuItem =",
+			StringComparison.Ordinal);
+		Assert.True(openingHandlerStart >= 0);
+		Assert.True(firstMenuItemDefinition > openingHandlerStart);
+		string openingHandler = notifyIconInitializer[
+			openingHandlerStart..firstMenuItemDefinition];
+		Assert.Contains(
+			"UpdatePortableSettingsMenuItems();",
+			openingHandler,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"UpdateLogonStartupMenuItem();",
+			openingHandler,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"UpdateUpdateTrayMenuItems(presentation);",
+			openingHandler,
+			StringComparison.Ordinal);
 
 		string exportEntry = GetMethodSource(
 			windowSource,
@@ -1162,6 +1532,15 @@ public sealed class XamlUsabilityRegressionTests
 		int topmostDefinitionIndex = method.IndexOf(
 			"new FormsToolStripMenuItem(\"置頂\")",
 			StringComparison.Ordinal);
+		int contextualUpdateIndex = method.IndexOf(
+			"menu.Items.Add(_updateAvailableMenuItem);",
+			StringComparison.Ordinal);
+		int manualUpdateIndex = method.IndexOf(
+			"menu.Items.Add(_checkForUpdatesMenuItem);",
+			StringComparison.Ordinal);
+		int automaticUpdateIndex = method.IndexOf(
+			"menu.Items.Add(_automaticUpdateChecksMenuItem);",
+			StringComparison.Ordinal);
 		int logonStartupIndex = method.IndexOf(
 			"menu.Items.Add(_logonStartupMenuItem);",
 			StringComparison.Ordinal);
@@ -1177,9 +1556,13 @@ public sealed class XamlUsabilityRegressionTests
 		int userGuideIndex = method.IndexOf(
 			"\"使用說明\"",
 			StringComparison.Ordinal);
-		int startupSeparatorIndex = method.IndexOf(
+		int updateSeparatorIndex = method.IndexOf(
 			"menu.Items.Add(\"-\");",
 			topmostIndex,
+			StringComparison.Ordinal);
+		int startupSeparatorIndex = method.IndexOf(
+			"menu.Items.Add(\"-\");",
+			updateSeparatorIndex + 1,
 			StringComparison.Ordinal);
 		int settingsSeparatorIndex = method.IndexOf(
 			"menu.Items.Add(\"-\");",
@@ -1197,7 +1580,11 @@ public sealed class XamlUsabilityRegressionTests
 		Assert.True(visibilityIndex >= 0);
 		Assert.True(topmostDefinitionIndex > visibilityIndex);
 		Assert.True(topmostIndex > visibilityIndex);
-		Assert.True(startupSeparatorIndex > topmostIndex);
+		Assert.True(updateSeparatorIndex > topmostIndex);
+		Assert.True(contextualUpdateIndex > updateSeparatorIndex);
+		Assert.True(manualUpdateIndex > contextualUpdateIndex);
+		Assert.True(automaticUpdateIndex > manualUpdateIndex);
+		Assert.True(startupSeparatorIndex > automaticUpdateIndex);
 		Assert.True(logonStartupIndex > startupSeparatorIndex);
 		Assert.True(startupSettingsIndex > logonStartupIndex);
 		Assert.True(settingsSeparatorIndex > startupSettingsIndex);

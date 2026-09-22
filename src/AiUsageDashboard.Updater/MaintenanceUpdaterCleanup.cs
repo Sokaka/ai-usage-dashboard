@@ -60,6 +60,18 @@ internal sealed class MaintenanceUpdaterCleanup : IMaintenanceUpdaterCleanup
 		UpdateTransaction.ThrowIfNotOrdinaryDirectory(
 			normalizedMaintenanceRoot,
 			mustExist: true);
+		if (!TryValidateOwnedMaintenanceFiles(normalizedMaintenanceRoot))
+		{
+			return CreatePreservationWarning(normalizedMaintenanceRoot);
+		}
+		if (!TryDeleteOwnedPromotionReceiptFiles(normalizedMaintenanceRoot))
+		{
+			return CreatePreservationWarning(normalizedMaintenanceRoot);
+		}
+		if (!TryDeleteOwnedPromotionTemporaryFiles(normalizedMaintenanceRoot))
+		{
+			return CreatePreservationWarning(normalizedMaintenanceRoot);
+		}
 
 		if (!TryReadOwnedUpdaterFiles(
 				normalizedMaintenanceRoot,
@@ -99,9 +111,13 @@ internal sealed class MaintenanceUpdaterCleanup : IMaintenanceUpdaterCleanup
 					normalizedRunningPath,
 					StringComparison.OrdinalIgnoreCase)))
 			{
-				ValidateOwnedUpdaterFile(file);
-				ClearReadOnlyAttribute(file.FullPath);
-				File.Delete(file.FullPath);
+				MaintenanceUpdaterCleanupResult? deletionFailure =
+					TryDeleteOwnedUpdaterFile(file);
+
+				if (deletionFailure is not null)
+				{
+					return deletionFailure;
+				}
 			}
 
 			ValidateOwnedUpdaterFile(runningUpdater);
@@ -156,9 +172,13 @@ internal sealed class MaintenanceUpdaterCleanup : IMaintenanceUpdaterCleanup
 
 		foreach (OwnedUpdaterFile file in ownedFiles)
 		{
-			ValidateOwnedUpdaterFile(file);
-			ClearReadOnlyAttribute(file.FullPath);
-			File.Delete(file.FullPath);
+			MaintenanceUpdaterCleanupResult? deletionFailure =
+				TryDeleteOwnedUpdaterFile(file);
+
+			if (deletionFailure is not null)
+			{
+				return deletionFailure;
+			}
 		}
 
 		UpdateTransaction.ThrowIfNotOrdinaryDirectory(
@@ -221,6 +241,18 @@ internal sealed class MaintenanceUpdaterCleanup : IMaintenanceUpdaterCleanup
 				$"'{maintenanceRoot}'.");
 	}
 
+	private static MaintenanceUpdaterCleanupResult CreateRetryWarning(
+		string updaterPath,
+		Exception exception)
+	{
+		return new MaintenanceUpdaterCleanupResult(
+			false,
+			$"Maintenance updater cleanup canceled any pending promotion but " +
+				$"could not remove updater '{updaterPath}'. Close all updater " +
+				$"processes and run uninstall again. Windows reported: " +
+				exception.Message);
+	}
+
 	private static string GetSha256(string filePath)
 	{
 		using FileStream stream = new(
@@ -235,11 +267,18 @@ internal sealed class MaintenanceUpdaterCleanup : IMaintenanceUpdaterCleanup
 		string maintenanceRoot,
 		out List<OwnedUpdaterFile> ownedFiles)
 	{
-		ownedFiles = [];
-		FileSystemInfo[] entries = new DirectoryInfo(maintenanceRoot)
-			.GetFileSystemInfos();
+		return TryReadOwnedUpdaterFiles(
+			new DirectoryInfo(maintenanceRoot).GetFileSystemInfos(),
+			out ownedFiles);
+	}
 
-		if (entries.Length > MaximumOwnedUpdaterFiles)
+	private static bool TryReadOwnedUpdaterFiles(
+		IReadOnlyCollection<FileSystemInfo> entries,
+		out List<OwnedUpdaterFile> ownedFiles)
+	{
+		ownedFiles = [];
+
+		if (entries.Count > MaximumOwnedUpdaterFiles)
 		{
 			return false;
 		}
@@ -300,6 +339,118 @@ internal sealed class MaintenanceUpdaterCleanup : IMaintenanceUpdaterCleanup
 		return true;
 	}
 
+	private static bool TryValidateOwnedMaintenanceFiles(
+		string maintenanceRoot)
+	{
+		List<FileSystemInfo> updaterEntries = [];
+
+		foreach (FileSystemInfo entry in new DirectoryInfo(maintenanceRoot)
+			.GetFileSystemInfos())
+		{
+			bool isPromotionReceipt =
+				MaintenanceUpdaterPromotionReceiptStore.IsOwnedFileName(
+					entry.Name);
+			bool isPromotionTemporary =
+				IsOwnedPromotionTemporaryFileName(entry.Name);
+
+			if (!isPromotionReceipt && !isPromotionTemporary)
+			{
+				updaterEntries.Add(entry);
+				continue;
+			}
+
+			entry.Refresh();
+			if ((entry is DirectoryInfo) ||
+				((entry.Attributes & FileAttributes.ReparsePoint) != 0))
+			{
+				return false;
+			}
+
+			UpdateTransaction.ThrowIfNotOrdinaryFile(
+				entry.FullName,
+				mustExist: true);
+		}
+
+		return TryReadOwnedUpdaterFiles(updaterEntries, out _);
+	}
+
+	private static bool TryDeleteOwnedPromotionReceiptFiles(
+		string maintenanceRoot)
+	{
+		foreach (FileSystemInfo entry in new DirectoryInfo(maintenanceRoot)
+			.GetFileSystemInfos())
+		{
+			if (!MaintenanceUpdaterPromotionReceiptStore.IsOwnedFileName(
+					entry.Name))
+			{
+				continue;
+			}
+
+			entry.Refresh();
+			if ((entry is DirectoryInfo) ||
+				((entry.Attributes & FileAttributes.ReparsePoint) != 0))
+			{
+				return false;
+			}
+
+			UpdateTransaction.ThrowIfNotOrdinaryFile(
+				entry.FullName,
+				mustExist: true);
+			ClearReadOnlyAttribute(entry.FullName);
+			File.Delete(entry.FullName);
+		}
+
+		return true;
+	}
+
+	private static bool TryDeleteOwnedPromotionTemporaryFiles(
+		string maintenanceRoot)
+	{
+		foreach (FileSystemInfo entry in new DirectoryInfo(maintenanceRoot)
+			.GetFileSystemInfos())
+		{
+			if (!IsOwnedPromotionTemporaryFileName(entry.Name))
+			{
+				continue;
+			}
+
+			entry.Refresh();
+			if ((entry is DirectoryInfo) ||
+				((entry.Attributes & FileAttributes.ReparsePoint) != 0))
+			{
+				return false;
+			}
+
+			UpdateTransaction.ThrowIfNotOrdinaryFile(
+				entry.FullName,
+				mustExist: true);
+			ClearReadOnlyAttribute(entry.FullName);
+			File.Delete(entry.FullName);
+		}
+
+		return true;
+	}
+
+	private static bool IsOwnedPromotionTemporaryFileName(string fileName)
+	{
+		const string temporarySuffix = ".promoting";
+		string temporaryPrefix =
+			ManagedInstallationPaths.MaintenanceUpdaterFileName + ".";
+		if (!fileName.StartsWith(temporaryPrefix, StringComparison.Ordinal) ||
+			!fileName.EndsWith(temporarySuffix, StringComparison.Ordinal))
+		{
+			return false;
+		}
+
+		string generationId = fileName.Substring(
+			temporaryPrefix.Length,
+			fileName.Length - temporaryPrefix.Length - temporarySuffix.Length);
+		return (generationId.Length == 32) &&
+			generationId.All(character =>
+				((character >= '0') && (character <= '9')) ||
+				((character >= 'a') && (character <= 'f')));
+	}
+
 	private static void ClearReadOnlyAttribute(string filePath)
 	{
 		FileAttributes attributes = File.GetAttributes(filePath);
@@ -323,6 +474,25 @@ internal sealed class MaintenanceUpdaterCleanup : IMaintenanceUpdaterCleanup
 		{
 			throw new InvalidDataException(
 				"A maintenance updater changed before cleanup.");
+		}
+	}
+
+	private static MaintenanceUpdaterCleanupResult?
+		TryDeleteOwnedUpdaterFile(OwnedUpdaterFile file)
+	{
+		try
+		{
+			ValidateOwnedUpdaterFile(file);
+			ClearReadOnlyAttribute(file.FullPath);
+			File.Delete(file.FullPath);
+			return null;
+		}
+		catch (Exception exception) when (
+			((exception is IOException) &&
+				(exception is not InvalidDataException)) ||
+			(exception is UnauthorizedAccessException))
+		{
+			return CreateRetryWarning(file.FullPath, exception);
 		}
 	}
 }

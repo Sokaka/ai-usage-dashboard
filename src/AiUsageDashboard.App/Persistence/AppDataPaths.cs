@@ -43,6 +43,7 @@ internal static class AppDataPaths
 	private const string PortableSettingsImportTransactionDirectoryName =
 		"portable-settings-import-transaction-v1";
 	private const string UsageSnapshotCacheFileName = "usage-snapshot-v1.json";
+	private const string UpdateCheckStateFileName = "update-check-state-v1.json";
 
 	internal static string GetAccountSettingsFilePath()
 	{
@@ -151,6 +152,13 @@ internal static class AppDataPaths
 		return Path.Combine(
 			GetClaudeAccountDirectory(accountId),
 			ClaudeConfigDirectoryName);
+	}
+
+	internal static string GetUpdateCheckStateFilePath()
+	{
+		return Path.Combine(
+			GetApplicationDataDirectory(),
+			UpdateCheckStateFileName);
 	}
 
 	internal static string GetClaudeAccountBindingFilePath(Guid accountId)

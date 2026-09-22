@@ -5,64 +5,19 @@ using AiUsageDashboard.Updater.Core;
 
 namespace AiUsageDashboard.Updater;
 
-internal sealed record ResolvedUpdateReleaseFeed(
-	UpdateReleaseFeed Feed,
-	Uri ResponseUri);
-
 internal sealed class OnlineUpdateClient
 {
 	private const int DownloadBufferSizeBytes = 81920;
-	private const int MaximumFeedSizeBytes =
-		SignedUpdateFeed.MaximumEnvelopeSizeBytes;
 	private readonly bool _allowInsecureLoopbackForTests;
 	private readonly HttpClient _httpClient;
-	private readonly UpdateFeedTrustStore? _trustedKeys;
 
 	internal OnlineUpdateClient(
 		HttpClient httpClient,
-		bool allowInsecureLoopbackForTests = false,
-		UpdateFeedTrustStore? trustedKeys = null)
+		bool allowInsecureLoopbackForTests = false)
 	{
 		_httpClient = httpClient ?? throw new ArgumentNullException(
 			nameof(httpClient));
 		_allowInsecureLoopbackForTests = allowInsecureLoopbackForTests;
-		_trustedKeys = trustedKeys;
-	}
-
-	internal async Task<ResolvedUpdateReleaseFeed> FetchFeedAsync(
-		Uri feedUri,
-		string expectedChannel,
-		CancellationToken cancellationToken = default)
-	{
-		ArgumentNullException.ThrowIfNull(feedUri);
-		ArgumentException.ThrowIfNullOrWhiteSpace(expectedChannel);
-		EnsureAllowedUri(feedUri);
-
-		using HttpRequestMessage request = new(HttpMethod.Get, feedUri);
-		using HttpResponseMessage response = await _httpClient.SendAsync(
-			request,
-			HttpCompletionOption.ResponseHeadersRead,
-			cancellationToken);
-		Uri responseUri = GetAndValidateResponseUri(response);
-		response.EnsureSuccessStatusCode();
-
-		long? contentLength = response.Content.Headers.ContentLength;
-		if (contentLength > MaximumFeedSizeBytes)
-		{
-			throw new InvalidDataException(
-				"Update release feed exceeds the size limit.");
-		}
-
-		await using Stream feedStream = await response.Content.ReadAsStreamAsync(
-			cancellationToken);
-		byte[] feedBytes = await ReadBoundedFeedAsync(
-			feedStream,
-			cancellationToken);
-		UpdateReleaseFeed feed = SignedUpdateFeed.VerifyAndParse(
-			feedBytes,
-			_trustedKeys ?? UpdaterBuildDefaults.LoadTrustedKeys(),
-			expectedChannel);
-		return new ResolvedUpdateReleaseFeed(feed, responseUri);
 	}
 
 	internal async Task DownloadArtifactAsync(
@@ -212,33 +167,6 @@ internal sealed class OnlineUpdateClient
 		return responseUri;
 	}
 
-	private static async Task<byte[]> ReadBoundedFeedAsync(
-		Stream stream,
-		CancellationToken cancellationToken)
-	{
-		byte[] buffer = new byte[MaximumFeedSizeBytes + 1];
-		int totalBytes = 0;
-
-		while (true)
-		{
-			int bytesRead = await stream.ReadAsync(
-				buffer.AsMemory(totalBytes, buffer.Length - totalBytes),
-				cancellationToken);
-			totalBytes += bytesRead;
-
-			if (totalBytes > MaximumFeedSizeBytes)
-			{
-				throw new InvalidDataException(
-					"Update release feed exceeds the size limit.");
-			}
-
-			if (bytesRead == 0)
-			{
-				return buffer[..totalBytes];
-			}
-		}
-	}
-
 	private static void ValidateArtifact(UpdateReleaseArtifact artifact)
 	{
 		if (!Uri.TryCreate(
@@ -324,28 +252,8 @@ internal sealed class OnlineUpdateClient
 
 	private void EnsureAllowedUri(Uri uri)
 	{
-		if (!uri.IsAbsoluteUri ||
-			string.IsNullOrEmpty(uri.Host) ||
-			!string.IsNullOrEmpty(uri.UserInfo) ||
-			!string.IsNullOrEmpty(uri.Fragment))
-		{
-			throw new InvalidDataException(
-				"Update URI must be an absolute server URI without userinfo or a fragment.");
-		}
-
-		if (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.Ordinal))
-		{
-			return;
-		}
-
-		if (_allowInsecureLoopbackForTests &&
-			string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.Ordinal) &&
-			uri.IsLoopback)
-		{
-			return;
-		}
-
-		throw new InvalidDataException(
-			"Update URI must use HTTPS. HTTP is permitted only for loopback tests.");
+		UpdateHttpUriPolicy.EnsureAllowed(
+			uri,
+			_allowInsecureLoopbackForTests);
 	}
 }

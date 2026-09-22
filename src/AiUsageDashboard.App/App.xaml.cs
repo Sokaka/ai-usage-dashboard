@@ -14,6 +14,7 @@ using System.Windows.Threading;
 using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
+using AiUsageDashboard.App.Updates;
 using AiUsageDashboard.App.ViewModels;
 using AiUsageDashboard.Licensing;
 using AiUsageDashboard.LegalUi;
@@ -61,6 +62,8 @@ public partial class App : System.Windows.Application
 		"ms-settings:startupapps";
 	private static readonly TimeSpan AccountConnectionShutdownTimeout =
 		TimeSpan.FromSeconds(7);
+	private static readonly TimeSpan AutomaticUpdateCheckTimerInterval =
+		TimeSpan.FromSeconds(30);
 	private static readonly TimeSpan ActivationRequestTimeout = TimeSpan.FromSeconds(3);
 	private static readonly TimeSpan ClaudeSafetyStateStartupRecoveryTimeout =
 		TimeSpan.FromSeconds(5);
@@ -79,6 +82,8 @@ public partial class App : System.Windows.Application
 		TimeSpan.FromSeconds(10);
 	private static readonly TimeSpan UpdateMutationShutdownTimeout =
 		TimeSpan.FromSeconds(5);
+	private static readonly TimeSpan UpdateHttpTimeout =
+		TimeSpan.FromSeconds(20);
 	private static readonly TimeSpan UpdateShutdownRecoveryRetryInterval =
 		TimeSpan.FromMilliseconds(250);
 	private static readonly TimeSpan RestartShutdownFinalizationAllowance =
@@ -110,6 +115,7 @@ public partial class App : System.Windows.Application
 			new CurrentUserLogonStartupRegistryStore();
 	private readonly ShutdownOperationScheduler _shutdownOperationScheduler = new();
 	private readonly SemaphoreSlim _shellPreferencesSaveGate = new(1, 1);
+	private readonly MaintenanceUpdaterLauncher _maintenanceUpdaterLauncher = new();
 	private readonly CancellationTokenSource _startupRecoverySource = new();
 	private AccountConnectionCoordinator? _accountConnectionCoordinator;
 	private AboutWindow? _aboutWindow;
@@ -118,11 +124,25 @@ public partial class App : System.Windows.Application
 	private Icon? _applicationIcon;
 	private DashboardViewModel? _dashboardViewModel;
 	private FloatingWidgetWindow? _floatingWidgetWindow;
+	private AppInstallationContext _appInstallationContext =
+		AppInstallationContext.CreateUnmanaged();
+	private UpdatePresentationState _updatePresentationState =
+		UpdatePresentationState.CreateInitial(
+			isFeatureAvailableInBuild: false,
+			currentVersion: null);
+	private UpdateUiPresentation? _updateUiPresentation;
+	private UpdateCheckCoordinator? _updateCheckCoordinator;
+	private HttpClient? _updateHttpClient;
 	private bool _hasReportedShellPreferencesSaveFailure;
 	private bool _isDashboardPreferencesRecoveryRequested;
 	private bool _isPeriodicRefreshRunning;
 	private bool _isRestoringShellPreferences = true;
-	private bool _isUpdateShutdownReady;
+	private bool _isUpdateAutomaticCheckRunning;
+	private bool _isUpdateAutomaticNoticePresentationRunning;
+	private bool _isUpdateBalloonAttemptRunning;
+	private bool _isUpdatePowerModeSubscribed;
+	private bool _isUpdateShutdownChannelReady;
+	private bool _isUpdateShutdownReservationReady;
 	private bool _isUpdateShutdownReserved;
 	private int _dashboardPreferencesRecoveryRequestPendingAfterTransaction;
 	private AppTheme _selectedTheme = AppTheme.ClassicBlue;
@@ -130,13 +150,18 @@ public partial class App : System.Windows.Application
 	private Task _dashboardPreferencesRecoveryTask = Task.CompletedTask;
 	private Task _postStartupRecoveryTask = Task.CompletedTask;
 	private DispatcherTimer? _refreshTimer;
+	private DispatcherTimer? _updateCheckTimer;
+	private DateTimeOffset? _automaticUpdateNoticePresentedAtUtc;
 	private Mutex? _singleInstanceMutex;
 	private DashboardShellPreferences? _latestDashboardShellPreferences;
 	private IDashboardPreferencesRecoveryStore?
 		_dashboardPreferencesRecoveryStore;
 	private IWidgetPreferencesStore? _widgetPreferencesStore;
 	private FormsToolStripMenuItem? _exportPortableSettingsMenuItem;
+	private FormsToolStripMenuItem? _automaticUpdateChecksMenuItem;
+	private FormsToolStripMenuItem? _checkForUpdatesMenuItem;
 	private FormsToolStripMenuItem? _logonStartupMenuItem;
+	private FormsToolStripMenuItem? _updateAvailableMenuItem;
 	private FormsToolStripMenuItem? _undoPortableSettingsImportMenuItem;
 	private FormsToolStripMenuItem? _widgetTopmostMenuItem;
 	private FormsToolStripMenuItem? _widgetVisibilityMenuItem;
@@ -160,6 +185,20 @@ public partial class App : System.Windows.Application
 
 	internal static bool CanStartInteractiveShutdown(
 		bool isUpdateShutdownReserved) => !isUpdateShutdownReserved;
+
+	internal static bool CanShowInteractiveUpdateResult(
+		bool isQuitting) => !isQuitting;
+
+	internal static bool ShouldRunUpdateCheckTimer(
+		bool isQuitting,
+		bool hasCoordinator,
+		bool isAutoCheckEnabled,
+		bool isSnoozed)
+	{
+		return !isQuitting &&
+			hasCoordinator &&
+			(isAutoCheckEnabled || isSnoozed);
+	}
 
 	protected override async void OnStartup(StartupEventArgs e)
 	{
@@ -598,6 +637,7 @@ public partial class App : System.Windows.Application
 			{
 				_accountConnectionCoordinator.ReserveShutdown();
 			}
+			await InitializeUpdateServicesAsync();
 			_floatingWidgetWindow = new FloatingWidgetWindow(
 				viewModel,
 				_accountConnectionCoordinator,
@@ -608,8 +648,16 @@ public partial class App : System.Windows.Application
 			}
 			MainWindow = _floatingWidgetWindow;
 			_floatingWidgetWindow.IsVisibleChanged += ShellWindow_IsVisibleChanged;
+			_floatingWidgetWindow.Activated += ShellWindow_ActivityChanged;
+			_floatingWidgetWindow.Deactivated += ShellWindow_ActivityChanged;
+			_floatingWidgetWindow.AutomaticUpdateChecksDisableRequested +=
+				FloatingWidgetWindow_AutomaticUpdateChecksDisableRequested;
 			_floatingWidgetWindow.PreferencesChanged +=
 				FloatingWidgetWindow_PreferencesChanged;
+			_floatingWidgetWindow.UpdatePrimaryActionRequested +=
+				FloatingWidgetWindow_UpdatePrimaryActionRequested;
+			_floatingWidgetWindow.UpdateSnoozeRequested +=
+				FloatingWidgetWindow_UpdateSnoozeRequested;
 
 			InitializeNotifyIcon();
 			InitializeRefreshTimer(viewModel);
@@ -628,8 +676,12 @@ public partial class App : System.Windows.Application
 				claudeUsageSafetyStateStore,
 				accountRuntimeStatePurger,
 				grokStartupRecovery);
-			_isUpdateShutdownReady = true;
-			await TryStartUpdateShutdownChannelAsync();
+			_isUpdateShutdownReservationReady = true;
+			TryStartUpdateShutdownChannel();
+			InitializeUpdateCheckTimer();
+			RefreshUpdatePresentation();
+			BeginAutomaticUpdateNoticePresentation();
+			BeginUpdateBalloonAttempt();
 		}
 		catch (Exception exception)
 		{
@@ -1089,6 +1141,7 @@ public partial class App : System.Windows.Application
 		}
 
 		_refreshTimer?.Stop();
+		StopUpdateServicesOnExit();
 		_dashboardViewModel?.StopRefreshing();
 		_accountConnectionCoordinator?.Dispose();
 		_dashboardViewModel?.Dispose();
@@ -1304,41 +1357,936 @@ public partial class App : System.Windows.Application
 		return true;
 	}
 
-	private async Task TryStartUpdateShutdownChannelAsync()
+	private async Task InitializeUpdateServicesAsync()
 	{
-		string manifestPath = Path.GetFullPath(Path.Combine(
-			AppContext.BaseDirectory,
-			"..",
-			UpdateManifest.InstalledFileName));
+		_appInstallationContext = await new AppInstallationContextDetector()
+			.DetectAsync(Environment.ProcessPath);
+		string? currentProductVersion = GetCurrentProductVersion();
+		AppUpdateBuildDefaults? buildDefaults = AppUpdateBuildDefaults.Load();
 
-		if (!File.Exists(manifestPath))
+		if (buildDefaults is null)
+		{
+			_updatePresentationState = UpdatePresentationState.CreateInitial(
+				isFeatureAvailableInBuild: false,
+				currentProductVersion);
+			return;
+		}
+
+		HttpClient httpClient = new()
+		{
+			Timeout = UpdateHttpTimeout
+		};
+		UpdateCheckCoordinator coordinator = new(
+			SignedFeedUpdateAvailabilityChecker.Create(
+				httpClient,
+				buildDefaults),
+			new JsonUpdateCheckStateStore(
+				AppDataPaths.GetUpdateCheckStateFilePath()),
+			new UpdateCheckCoordinatorOptions(
+				_appInstallationContext,
+				currentProductVersion,
+				IsFeatureAvailableInBuild: true,
+				ReportDiagnostic: (summary, exception) =>
+				{
+					_ = AppDiagnostics.TryWrite(
+						"update-check-coordinator",
+						summary,
+						exception);
+				}));
+
+		try
+		{
+			await coordinator.InitializeAsync();
+		}
+		catch
+		{
+			await coordinator.DisposeAsync();
+			httpClient.Dispose();
+			throw;
+		}
+
+		_updateHttpClient = httpClient;
+		_updateCheckCoordinator = coordinator;
+		_updatePresentationState = coordinator.CurrentState;
+		coordinator.StateChanged += UpdateCheckCoordinator_StateChanged;
+	}
+
+	private static string? GetCurrentProductVersion()
+	{
+		string? executablePath = Environment.ProcessPath;
+
+		if (string.IsNullOrWhiteSpace(executablePath))
+		{
+			return null;
+		}
+
+		try
+		{
+			return FileVersionInfo.GetVersionInfo(executablePath).ProductVersion;
+		}
+		catch (Exception exception) when (
+			exception is ArgumentException or FileNotFoundException or
+				SecurityException or Win32Exception)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"update-current-version",
+				"目前執行檔的 ProductVersion 無法讀取。",
+				exception);
+			return null;
+		}
+	}
+
+	private void TryStartUpdateShutdownChannel()
+	{
+		UpdateManifest? manifest = _appInstallationContext.InstalledManifest;
+
+		if (manifest is null)
 		{
 			return;
 		}
 
 		try
 		{
-			UpdateManifest manifest = await UpdateManifest.ReadAsync(manifestPath);
 			UpdateProcessIdentity identity =
 				UpdateProcessIdentity.CaptureCurrent(
 					manifest.PayloadGenerationId);
-			_updateShutdownChannel = new UpdateShutdownChannel(
+			UpdateShutdownChannel channel = new(
 				UpdateShutdownChannel.CreateCurrentUserPipeName(),
 				identity,
 				TryReserveStructuredUpdateShutdown,
 				RollbackStructuredUpdateShutdownReservation,
 				DispatchStructuredUpdateShutdown);
-			_updateShutdownChannel.Start();
+			_updateShutdownChannel = channel;
+			Task readinessTask = channel.StartAsync();
+			_ = ObserveUpdateShutdownChannelReadinessAsync(
+				channel,
+				readinessTask);
 		}
 		catch (Exception exception) when (
 			exception is IOException or InvalidDataException or
-				UnauthorizedAccessException or ArgumentException)
+				UnauthorizedAccessException or ArgumentException or
+				InvalidOperationException)
 		{
 			AppDiagnostics.TryWrite(
 				"update-shutdown-channel-startup",
 				AppDiagnostics.GetUserFacingFailureReason(exception),
 				exception);
 		}
+	}
+
+	private async Task ObserveUpdateShutdownChannelReadinessAsync(
+		UpdateShutdownChannel channel,
+		Task readinessTask)
+	{
+		try
+		{
+			await readinessTask;
+		}
+		catch (Exception exception)
+		{
+			string summary = exception is ObjectDisposedException
+				? "更新安全關閉通道在完成啟動前已被釋放。"
+				: AppDiagnostics.GetUserFacingFailureReason(exception);
+			ReportUpdateShutdownChannelStopped(
+				channel,
+				"update-shutdown-channel-readiness",
+				summary,
+				exception);
+			return;
+		}
+
+		if (IsQuitting || !ReferenceEquals(_updateShutdownChannel, channel))
+		{
+			return;
+		}
+
+		_isUpdateShutdownChannelReady = true;
+		TryRefreshUpdatePresentationForShutdownChannel();
+
+		try
+		{
+			await channel.ListenerCompletion;
+		}
+		catch (Exception exception)
+		{
+			ReportUpdateShutdownChannelStopped(
+				channel,
+				"update-shutdown-channel-listener",
+				"更新安全關閉通道意外停止。",
+				exception);
+			return;
+		}
+
+		ReportUpdateShutdownChannelStopped(
+			channel,
+			"update-shutdown-channel-listener",
+			"更新安全關閉通道意外停止。");
+	}
+
+	private void ReportUpdateShutdownChannelStopped(
+		UpdateShutdownChannel channel,
+		string operation,
+		string summary,
+		Exception? exception = null)
+	{
+		if (IsQuitting ||
+			Dispatcher.HasShutdownStarted ||
+			Dispatcher.HasShutdownFinished ||
+			!ReferenceEquals(_updateShutdownChannel, channel))
+		{
+			return;
+		}
+
+		_isUpdateShutdownChannelReady = false;
+		_ = AppDiagnostics.TryWrite(
+			operation,
+			summary,
+			exception);
+		TryRefreshUpdatePresentationForShutdownChannel();
+	}
+
+	private void TryRefreshUpdatePresentationForShutdownChannel()
+	{
+		try
+		{
+			RefreshUpdatePresentation();
+		}
+		catch (Exception presentationException)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"update-shutdown-channel-presentation",
+				"更新安全關閉通道狀態變更後無法更新畫面。",
+				presentationException);
+		}
+	}
+
+	private void UpdateCheckCoordinator_StateChanged(
+		object? sender,
+		UpdatePresentationStateChangedEventArgs e)
+	{
+		if (!Dispatcher.CheckAccess())
+		{
+			try
+			{
+				_ = Dispatcher.BeginInvoke(
+					() => ApplyUpdatePresentationState(e.State),
+					DispatcherPriority.Normal);
+			}
+			catch (InvalidOperationException) when (
+				Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished)
+			{
+				// 從這裡開始由 App 關閉流程負責釋放更新檢查資源。
+			}
+
+			return;
+		}
+
+		ApplyUpdatePresentationState(e.State);
+	}
+
+	private void ApplyUpdatePresentationState(UpdatePresentationState state)
+	{
+		_updatePresentationState = state;
+		RefreshUpdatePresentation();
+		BeginUpdateBalloonAttempt();
+	}
+
+	private void RefreshUpdatePresentation()
+	{
+		if (!Dispatcher.CheckAccess())
+		{
+			try
+			{
+				_ = Dispatcher.BeginInvoke(
+					RefreshUpdatePresentation,
+					DispatcherPriority.Normal);
+			}
+			catch (InvalidOperationException) when (
+				Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished)
+			{
+				// 從這裡開始由 App 關閉流程負責剩餘的 UI 工作。
+			}
+
+			return;
+		}
+
+		bool shouldShowAutomaticCheckNotice =
+			_updateCheckCoordinator?.ShouldShowAutomaticCheckNotice == true;
+		bool canLaunchUpdater = _maintenanceUpdaterLauncher.CanLaunch(
+			_appInstallationContext,
+			_isUpdateShutdownChannelReady);
+		UpdateUiPresentation presentation =
+			UpdateUiPresentationFactory.Create(
+				_updatePresentationState,
+				shouldShowAutomaticCheckNotice,
+				_appInstallationContext.Kind,
+				canLaunchUpdater,
+				_maintenanceUpdaterLauncher.IsRunning,
+				DateTimeOffset.Now);
+		UpdateBannerAnnouncementKey? bannerAnnouncementKey =
+			UpdateBannerAnnouncementPolicy.CreateKey(
+				presentation,
+				_updatePresentationState.ReleaseSequence,
+				shouldShowAutomaticCheckNotice);
+		_updateUiPresentation = presentation;
+		UpdateAutomaticUpdateCheckTimerState();
+		_floatingWidgetWindow?.ApplyUpdatePresentation(
+			presentation,
+			bannerAnnouncementKey);
+		_aboutWindow?.UpdateUpdateStatus(
+			presentation.AboutStatusText,
+			presentation.CanCheckManually,
+			presentation.IsChecking);
+		UpdateUpdateTrayMenuItems(presentation);
+
+		// 只有提示介面全部套用成功後，才開始首次自動連線的 30 秒 gate。
+		if (shouldShowAutomaticCheckNotice &&
+			(_automaticUpdateNoticePresentedAtUtc is null) &&
+			(_floatingWidgetWindow is FloatingWidgetWindow window) &&
+			window.IsVisible &&
+			!window.IsCollapsed)
+		{
+			_automaticUpdateNoticePresentedAtUtc = DateTimeOffset.UtcNow;
+		}
+
+		if (!shouldShowAutomaticCheckNotice)
+		{
+			_automaticUpdateNoticePresentedAtUtc = null;
+		}
+	}
+
+	private void UpdateUpdateTrayMenuItems(UpdateUiPresentation presentation)
+	{
+		bool isFeatureAvailable = _updateCheckCoordinator is not null;
+
+		if (_checkForUpdatesMenuItem is not null)
+		{
+			_checkForUpdatesMenuItem.Enabled =
+				isFeatureAvailable && presentation.CanCheckManually;
+			_checkForUpdatesMenuItem.Text = presentation.IsChecking
+				? "正在檢查更新…"
+				: "檢查更新";
+		}
+
+		if (_automaticUpdateChecksMenuItem is not null)
+		{
+			_automaticUpdateChecksMenuItem.Enabled = isFeatureAvailable;
+			_automaticUpdateChecksMenuItem.Checked =
+				isFeatureAvailable &&
+				_updatePresentationState.IsAutoCheckEnabled;
+		}
+
+		if (_updateAvailableMenuItem is not null)
+		{
+			_updateAvailableMenuItem.Visible =
+				!string.IsNullOrWhiteSpace(presentation.TrayUpdateActionText);
+			_updateAvailableMenuItem.Enabled =
+				presentation.IsPrimaryActionEnabled;
+			_updateAvailableMenuItem.Text =
+				presentation.TrayUpdateActionText ?? "開啟下載頁";
+		}
+	}
+
+	private void InitializeUpdateCheckTimer()
+	{
+		if (_updateCheckCoordinator is null)
+		{
+			return;
+		}
+
+		_updateCheckTimer = new DispatcherTimer
+		{
+			Interval = AutomaticUpdateCheckTimerInterval
+		};
+		_updateCheckTimer.Tick += UpdateCheckTimer_Tick;
+		UpdateAutomaticUpdateCheckTimerState();
+
+		try
+		{
+			Microsoft.Win32.SystemEvents.PowerModeChanged +=
+				SystemEvents_PowerModeChanged;
+			_isUpdatePowerModeSubscribed = true;
+		}
+		catch (Exception exception) when (
+			exception is ExternalException or InvalidOperationException)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"update-resume-monitor-startup",
+				"無法監聽 Windows 從睡眠恢復事件；定時更新檢查仍會繼續。",
+				exception);
+		}
+	}
+
+	private void UpdateAutomaticUpdateCheckTimerState()
+	{
+		if (_updateCheckTimer is not DispatcherTimer timer)
+		{
+			return;
+		}
+
+		bool shouldRun = ShouldRunUpdateCheckTimer(
+			IsQuitting,
+			_updateCheckCoordinator is not null,
+			_updatePresentationState.IsAutoCheckEnabled,
+			_updatePresentationState.IsSnoozed);
+		if (shouldRun && !timer.IsEnabled)
+		{
+			timer.Start();
+		}
+		else if (!shouldRun && timer.IsEnabled)
+		{
+			timer.Stop();
+		}
+	}
+
+	private void UpdateCheckTimer_Tick(object? sender, EventArgs e)
+	{
+		BeginAutomaticUpdateCheck(isResume: false);
+	}
+
+	private void SystemEvents_PowerModeChanged(
+		object sender,
+		Microsoft.Win32.PowerModeChangedEventArgs e)
+	{
+		if (e.Mode != Microsoft.Win32.PowerModes.Resume)
+		{
+			return;
+		}
+
+		try
+		{
+			_ = Dispatcher.BeginInvoke(
+				() => BeginAutomaticUpdateCheck(isResume: true),
+				DispatcherPriority.Normal);
+		}
+		catch (InvalidOperationException) when (
+			Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished)
+		{
+			// 從這裡開始由 App 關閉流程負責釋放更新檢查資源。
+		}
+	}
+
+	private void BeginAutomaticUpdateCheck(bool isResume)
+	{
+		if (IsQuitting ||
+			_isUpdateAutomaticCheckRunning ||
+			(_updateCheckCoordinator is null))
+		{
+			return;
+		}
+
+		_isUpdateAutomaticCheckRunning = true;
+		_ = CompleteAutomaticUpdateCheckAsync(isResume);
+	}
+
+	private async Task CompleteAutomaticUpdateCheckAsync(bool isResume)
+	{
+		try
+		{
+			UpdateCheckCoordinator? coordinator = _updateCheckCoordinator;
+			if ((coordinator is null) ||
+				!await CanStartAutomaticUpdateCheckAsync(coordinator))
+			{
+				return;
+			}
+
+			_ = isResume
+				? await coordinator.HandleResumeAsync()
+				: await coordinator.TryCheckAutomaticallyAsync();
+		}
+		catch (ObjectDisposedException) when (IsQuitting)
+		{
+			// 從這裡開始由 App 關閉流程負責取消作業。
+		}
+		catch (Exception exception)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"automatic-update-check",
+				AppDiagnostics.GetUserFacingFailureReason(exception),
+				exception);
+		}
+		finally
+		{
+			_isUpdateAutomaticCheckRunning = false;
+		}
+	}
+
+	private async Task<bool> CanStartAutomaticUpdateCheckAsync(
+		UpdateCheckCoordinator coordinator)
+	{
+		DateTimeOffset utcNow = DateTimeOffset.UtcNow;
+		FloatingWidgetWindow? window = _floatingWidgetWindow;
+		AutomaticUpdateCheckGateAction action =
+			AutomaticUpdateNoticePolicy.GetAutomaticCheckAction(
+				coordinator.ShouldShowAutomaticCheckNotice,
+				window?.IsVisible == true,
+				window?.IsCollapsed == true,
+				_automaticUpdateNoticePresentedAtUtc,
+				utcNow);
+
+		switch (action)
+		{
+			case AutomaticUpdateCheckGateAction.Allow:
+				return true;
+			case AutomaticUpdateCheckGateAction.ShowInlineNotice:
+				RefreshUpdatePresentation();
+				return false;
+			case AutomaticUpdateCheckGateAction.ShowBalloonNotice:
+				if (TryShowAutomaticUpdateNoticeBalloon())
+				{
+					_automaticUpdateNoticePresentedAtUtc = DateTimeOffset.UtcNow;
+				}
+
+				return false;
+			case AutomaticUpdateCheckGateAction.WaitForDelay:
+				return false;
+			case AutomaticUpdateCheckGateAction.RestartDelay:
+				_automaticUpdateNoticePresentedAtUtc = utcNow;
+				_ = AppDiagnostics.TryWrite(
+					"automatic-update-notice-clock-rollback",
+					"系統時間往回調整；已重新開始首次更新檢查的 30 秒等候時間。");
+				return false;
+			case AutomaticUpdateCheckGateAction.MarkNoticeShownAndAllow:
+				await coordinator.MarkAutomaticCheckNoticeShownAsync();
+				return true;
+			default:
+				throw new ArgumentOutOfRangeException(
+					nameof(action),
+					action,
+					"未知的首次更新檢查告知狀態。");
+		}
+	}
+
+	private void PresentAutomaticUpdateNoticeIfNeeded()
+	{
+		UpdateCheckCoordinator? coordinator = _updateCheckCoordinator;
+		if (coordinator is null)
+		{
+			return;
+		}
+
+		FloatingWidgetWindow? window = _floatingWidgetWindow;
+		AutomaticUpdateNoticePresentationAction action =
+			AutomaticUpdateNoticePolicy.GetPresentationAction(
+				coordinator.ShouldShowAutomaticCheckNotice,
+				window?.IsVisible == true,
+				window?.IsCollapsed == true,
+				_automaticUpdateNoticePresentedAtUtc is not null);
+
+		switch (action)
+		{
+			case AutomaticUpdateNoticePresentationAction.None:
+				return;
+			case AutomaticUpdateNoticePresentationAction.ShowInline:
+				RefreshUpdatePresentation();
+				return;
+			case AutomaticUpdateNoticePresentationAction.ShowBalloon:
+				if (TryShowAutomaticUpdateNoticeBalloon())
+				{
+					_automaticUpdateNoticePresentedAtUtc = DateTimeOffset.UtcNow;
+				}
+
+				return;
+			default:
+				throw new ArgumentOutOfRangeException(
+					nameof(action),
+					action,
+					"未知的首次更新檢查告知呈現方式。");
+		}
+	}
+
+	private bool TryShowAutomaticUpdateNoticeBalloon()
+	{
+		if (_notifyIcon is null)
+		{
+			return false;
+		}
+
+		try
+		{
+			_notifyIcon.ShowBalloonTip(
+				7000,
+				"已啟用更新檢查",
+				"AI Usage 會定期檢查已簽署的穩定版更新，不會自動下載或安裝。成功後 24 小時內不再檢查；失敗時會在 15 分鐘至 24 小時後重試，可從 tray 關閉。",
+				System.Windows.Forms.ToolTipIcon.Info);
+			return true;
+		}
+		catch (Exception exception) when (
+			exception is InvalidOperationException or SecurityException)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"automatic-update-check-notice",
+				"無法顯示自動更新檢查通知；在通知成功前不會自動連線。",
+				exception);
+			return false;
+		}
+	}
+
+	private void BeginUpdateBalloonAttempt()
+	{
+		if (IsQuitting ||
+			_isUpdateBalloonAttemptRunning ||
+			(_notifyIcon is null) ||
+			(_updateCheckCoordinator is null) ||
+			_updateCheckCoordinator.ShouldShowAutomaticCheckNotice)
+		{
+			return;
+		}
+
+		_isUpdateBalloonAttemptRunning = true;
+		_ = CompleteUpdateBalloonAttemptAsync();
+	}
+
+	private async Task CompleteUpdateBalloonAttemptAsync()
+	{
+		try
+		{
+			UpdateCheckCoordinator? coordinator = _updateCheckCoordinator;
+			FormsNotifyIcon? notifyIcon = _notifyIcon;
+			FloatingWidgetWindow? window = _floatingWidgetWindow;
+			UpdateWindowActivity activity = new(
+				window?.IsVisible == true,
+				window?.IsCollapsed == true,
+				window?.IsActive == true);
+			if ((coordinator is null) ||
+				(notifyIcon is null) ||
+				!coordinator.TryGetBalloonAttemptKey(
+					activity,
+					out UpdateNotificationKey key))
+			{
+				return;
+			}
+
+			try
+			{
+				notifyIcon.ShowBalloonTip(
+					7000,
+					"AI Usage 有新版",
+					$"版本 {key.Version} 已可使用。開啟 AI Usage 查看更新選項。",
+					System.Windows.Forms.ToolTipIcon.Info);
+			}
+			catch (Exception exception) when (
+				exception is InvalidOperationException or SecurityException)
+			{
+				_ = AppDiagnostics.TryWrite(
+					"update-availability-balloon",
+					"Windows 無法顯示新版通知；浮窗與 tray 狀態仍會保留。",
+					exception);
+				return;
+			}
+
+			_ = await coordinator.RecordBalloonAttemptAsync(key);
+		}
+		catch (ObjectDisposedException) when (IsQuitting)
+		{
+			// 從這裡開始由 App 關閉流程負責取消作業。
+		}
+		catch (Exception exception)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"update-availability-balloon",
+				AppDiagnostics.GetUserFacingFailureReason(exception),
+				exception);
+		}
+		finally
+		{
+			_isUpdateBalloonAttemptRunning = false;
+		}
+	}
+
+	private void FloatingWidgetWindow_AutomaticUpdateChecksDisableRequested(
+		object? sender,
+		EventArgs e)
+	{
+		StartUpdateUiOperation(
+			() => SetAutomaticUpdateChecksEnabledAsync(isEnabled: false),
+			"disable-automatic-update-checks");
+	}
+
+	private void FloatingWidgetWindow_UpdatePrimaryActionRequested(
+		object? sender,
+		EventArgs e)
+	{
+		StartUpdateUiOperation(
+			ExecutePrimaryUpdateActionAsync,
+			"update-primary-action");
+	}
+
+	private void FloatingWidgetWindow_UpdateSnoozeRequested(
+		object? sender,
+		EventArgs e)
+	{
+		StartUpdateUiOperation(SnoozeUpdateAsync, "snooze-update");
+	}
+
+	private void AboutWindow_UpdateCheckRequested(
+		object? sender,
+		EventArgs e)
+	{
+		StartUpdateUiOperation(
+			CheckForUpdatesManuallyAsync,
+			"manual-update-check");
+	}
+
+	private void StartUpdateUiOperation(
+		Func<Task> operation,
+		string diagnosticOperation)
+	{
+		ArgumentNullException.ThrowIfNull(operation);
+		ArgumentException.ThrowIfNullOrWhiteSpace(diagnosticOperation);
+		_ = CompleteUpdateUiOperationAsync(operation, diagnosticOperation);
+	}
+
+	private async Task CompleteUpdateUiOperationAsync(
+		Func<Task> operation,
+		string diagnosticOperation)
+	{
+		try
+		{
+			await operation();
+		}
+		catch (ObjectDisposedException) when (IsQuitting)
+		{
+			// 從這裡開始由 App 關閉流程負責取消作業。
+		}
+		catch (Exception exception)
+		{
+			string reason = AppDiagnostics.GetUserFacingFailureReason(exception);
+			_ = AppDiagnostics.TryWrite(
+				diagnosticOperation,
+				reason,
+				exception);
+			if (!CanShowInteractiveUpdateResult(IsQuitting))
+			{
+				return;
+			}
+
+			ShowShellMessage(
+				$"無法完成更新操作。\n\n原因：{reason}",
+				"更新操作失敗",
+				MessageBoxButton.OK,
+				MessageBoxImage.Warning);
+		}
+	}
+
+	private Task CheckForUpdatesManuallyAsync()
+	{
+		return CheckForUpdatesManuallyAsync(
+			ManualUpdateCheckInvocationSurface.Inline);
+	}
+
+	private async Task CheckForUpdatesManuallyAsync(
+		ManualUpdateCheckInvocationSurface invocationSurface)
+	{
+		UpdateCheckCoordinator? coordinator = _updateCheckCoordinator;
+		if (coordinator is null)
+		{
+			return;
+		}
+
+		if (coordinator.ShouldShowAutomaticCheckNotice)
+		{
+			await coordinator.MarkAutomaticCheckNoticeShownAsync();
+		}
+
+		UpdateCheckExecutionResult result =
+			await coordinator.CheckManuallyAsync();
+		ShowManualUpdateCheckFeedbackIfNeeded(invocationSurface, result);
+	}
+
+	private void ShowManualUpdateCheckFeedbackIfNeeded(
+		ManualUpdateCheckInvocationSurface invocationSurface,
+		UpdateCheckExecutionResult result)
+	{
+		if (!CanShowInteractiveUpdateResult(IsQuitting))
+		{
+			return;
+		}
+
+		FloatingWidgetWindow? window = _floatingWidgetWindow;
+		ManualUpdateCheckFeedback? feedback =
+			ManualUpdateCheckFeedbackPolicy.Create(
+				invocationSurface,
+				window?.IsVisible == true,
+				window?.IsCollapsed == true,
+				result);
+		if (feedback is null)
+		{
+			return;
+		}
+
+		ShowShellMessage(
+			feedback.Message,
+			feedback.Title,
+			MessageBoxButton.OK,
+			feedback.IsWarning
+				? MessageBoxImage.Warning
+				: MessageBoxImage.Information);
+	}
+
+	private async Task SetAutomaticUpdateChecksEnabledAsync(bool isEnabled)
+	{
+		UpdateCheckCoordinator? coordinator = _updateCheckCoordinator;
+		if (coordinator is null)
+		{
+			return;
+		}
+
+		AutoCheckPreferenceChangeResult result =
+			await coordinator.SetAutoCheckEnabledAsync(isEnabled);
+		RefreshUpdatePresentation();
+		if (!result.IsPersisted)
+		{
+			ShowShellMessage(
+				result.PersistenceWarning ??
+					"無法儲存自動檢查更新設定。請確認 AI Usage 本機資料夾可寫入，再重新設定。",
+				"無法儲存更新設定",
+				MessageBoxButton.OK,
+				MessageBoxImage.Warning);
+		}
+
+		if (result.IsEnabled)
+		{
+			BeginAutomaticUpdateNoticePresentation();
+		}
+	}
+
+	private async Task SnoozeUpdateAsync()
+	{
+		if (_updateCheckCoordinator is UpdateCheckCoordinator coordinator)
+		{
+			SnoozeUpdateResult result = await coordinator.SnoozeAsync();
+			if (!result.IsPersisted)
+			{
+				ShowShellMessage(
+					result.PersistenceWarning ??
+						"無法儲存稍後提醒設定。請確認 AI Usage 本機資料夾可寫入，再重新設定。",
+					"無法儲存更新設定",
+					MessageBoxButton.OK,
+					MessageBoxImage.Warning);
+			}
+		}
+	}
+
+	private async Task ExecutePrimaryUpdateActionAsync()
+	{
+		UpdateUiPresentation? presentation = _updateUiPresentation;
+		if (presentation is null)
+		{
+			return;
+		}
+
+		switch (presentation.PrimaryAction)
+		{
+			case UpdatePrimaryActionKind.None:
+				return;
+			case UpdatePrimaryActionKind.CheckNow:
+				await CheckForUpdatesManuallyAsync();
+				return;
+			case UpdatePrimaryActionKind.OpenReleases:
+				OpenUpdateReleases();
+				return;
+			case UpdatePrimaryActionKind.LaunchUpdater:
+				await LaunchMaintenanceUpdaterAsync();
+				return;
+			default:
+				throw new ArgumentOutOfRangeException(
+					nameof(presentation),
+					presentation.PrimaryAction,
+					"未知的更新操作。");
+		}
+	}
+
+	private async Task LaunchMaintenanceUpdaterAsync()
+	{
+		Task<MaintenanceUpdaterLaunchResult> launchTask =
+			_maintenanceUpdaterLauncher.LaunchAsync(
+				_appInstallationContext,
+				_isUpdateShutdownChannelReady);
+		RefreshUpdatePresentation();
+		MaintenanceUpdaterLaunchResult result = await launchTask;
+		if (!CanShowInteractiveUpdateResult(IsQuitting))
+		{
+			if ((result.Failure != MaintenanceUpdaterLaunchFailure.None) ||
+				(result.ExitCode is int shutdownExitCode &&
+					(shutdownExitCode != 0)))
+			{
+				_ = AppDiagnostics.TryWrite(
+					"maintenance-updater-completion-during-shutdown",
+					$"維護 Updater 在 App 關閉期間完成：" +
+					$"failure={result.Failure}, exitCode={result.ExitCode?.ToString() ?? "none"}。",
+					result.Exception);
+			}
+
+			return;
+		}
+
+		RefreshUpdatePresentation();
+
+		if (result.Failure is
+			MaintenanceUpdaterLaunchFailure.NotCanonicalInstallation or
+			MaintenanceUpdaterLaunchFailure.ShutdownChannelUnavailable or
+			MaintenanceUpdaterLaunchFailure.ExecutableUnavailable)
+		{
+			OfferOpenUpdateReleases(
+				"目前無法啟動這份安裝所需的維護 Updater。",
+				"無法啟動 Updater");
+			return;
+		}
+
+		if (result.Failure == MaintenanceUpdaterLaunchFailure.AlreadyRunning)
+		{
+			return;
+		}
+
+		if (result.Failure == MaintenanceUpdaterLaunchFailure.StartFailed)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"maintenance-updater-launch",
+				"Windows 無法啟動維護 Updater。",
+				result.Exception);
+			OfferOpenUpdateReleases(
+				"Windows 無法啟動維護 Updater。",
+				"無法啟動 Updater");
+			return;
+		}
+
+		if (!result.WasStarted || (result.ExitCode is not int exitCode))
+		{
+			throw new InvalidOperationException(
+				"維護 Updater 沒有回報可辨識的執行結果。",
+				result.Exception);
+		}
+
+		if (exitCode != 0)
+		{
+			OfferOpenUpdateReleases(
+				$"維護 Updater 未完成更新（exit code {exitCode}）。",
+				"更新未完成",
+				defaultResult: MessageBoxResult.Yes);
+		}
+	}
+
+	private void OfferOpenUpdateReleases(
+		string reason,
+		string title,
+		MessageBoxResult defaultResult = MessageBoxResult.No)
+	{
+		MessageBoxResult result = ShowShellMessage(
+			$"{reason}\n\n要開啟下載頁查看最新版本嗎？",
+			title,
+			MessageBoxButton.YesNo,
+			MessageBoxImage.Warning,
+			defaultResult);
+		if (result == MessageBoxResult.Yes)
+		{
+			OpenUpdateReleases();
+		}
+	}
+
+	private static void OpenUpdateReleases()
+	{
+		AboutLinkLauncher.Open(AboutLink.Releases);
 	}
 
 	private UpdateShutdownOutcome TryReserveStructuredUpdateShutdown()
@@ -1367,7 +2315,7 @@ public partial class App : System.Windows.Application
 			return UpdateShutdownOutcome.AlreadyShuttingDown;
 		}
 
-		if (!_isUpdateShutdownReady ||
+		if (!_isUpdateShutdownReservationReady ||
 			(_floatingWidgetWindow is not FloatingWidgetWindow window) ||
 			(_dashboardViewModel is not DashboardViewModel viewModel) ||
 			(_accountConnectionCoordinator is not
@@ -1856,6 +2804,7 @@ public partial class App : System.Windows.Application
 		IsQuitting = true;
 		StopActivationListener();
 		_refreshTimer?.Stop();
+		await StopUpdateServicesAsync();
 		bool wasStartupRecoveryDrained =
 			await CancelAndDrainPostStartupRecoveryForShutdownAsync();
 		bool wereUsageRefreshesDrained =
@@ -1910,6 +2859,100 @@ public partial class App : System.Windows.Application
 		_notifyIcon?.Dispose();
 		_floatingWidgetWindow?.Close();
 		Shutdown();
+	}
+
+	private void StopUpdateServicesOnExit()
+	{
+		try
+		{
+			StopUpdateServicesAsync().GetAwaiter().GetResult();
+		}
+		catch (Exception exception)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"update-check-shutdown",
+				AppDiagnostics.GetUserFacingFailureReason(exception),
+				exception);
+		}
+	}
+
+	private async Task StopUpdateServicesAsync()
+	{
+		DispatcherTimer? timer = _updateCheckTimer;
+		_updateCheckTimer = null;
+		if (timer is not null)
+		{
+			try
+			{
+				timer.Stop();
+				timer.Tick -= UpdateCheckTimer_Tick;
+			}
+			catch (Exception exception)
+			{
+				ReportUpdateServiceShutdownFailure(
+					"update-check-timer-shutdown",
+					exception);
+			}
+		}
+
+		if (_isUpdatePowerModeSubscribed)
+		{
+			_isUpdatePowerModeSubscribed = false;
+			try
+			{
+				Microsoft.Win32.SystemEvents.PowerModeChanged -=
+					SystemEvents_PowerModeChanged;
+			}
+			catch (Exception exception)
+			{
+				ReportUpdateServiceShutdownFailure(
+					"update-resume-monitor-shutdown",
+					exception);
+			}
+		}
+
+		UpdateCheckCoordinator? coordinator = _updateCheckCoordinator;
+		_updateCheckCoordinator = null;
+		if (coordinator is not null)
+		{
+			try
+			{
+				coordinator.StateChanged -= UpdateCheckCoordinator_StateChanged;
+				await coordinator.DisposeAsync();
+			}
+			catch (Exception exception)
+			{
+				ReportUpdateServiceShutdownFailure(
+					"update-check-coordinator-shutdown",
+					exception);
+			}
+		}
+
+		HttpClient? httpClient = _updateHttpClient;
+		_updateHttpClient = null;
+		if (httpClient is not null)
+		{
+			try
+			{
+				httpClient.Dispose();
+			}
+			catch (Exception exception)
+			{
+				ReportUpdateServiceShutdownFailure(
+					"update-http-client-shutdown",
+					exception);
+			}
+		}
+	}
+
+	private static void ReportUpdateServiceShutdownFailure(
+		string operation,
+		Exception exception)
+	{
+		_ = AppDiagnostics.TryWrite(
+			operation,
+			AppDiagnostics.GetUserFacingFailureReason(exception),
+			exception);
 	}
 
 	private async Task<bool> LockAccountMutationsForUpdateShutdownAsync()
@@ -2437,7 +3480,47 @@ public partial class App : System.Windows.Application
 		}
 
 		UpdateWidgetTopmostMenuItem();
+		RefreshUpdatePresentation();
+		BeginAutomaticUpdateNoticePresentation();
+		BeginUpdateBalloonAttempt();
 		QueueShellPreferencesSave();
+	}
+
+	private void ShellWindow_ActivityChanged(object? sender, EventArgs e)
+	{
+		RefreshUpdatePresentation();
+		BeginUpdateBalloonAttempt();
+	}
+
+	private void BeginAutomaticUpdateNoticePresentation()
+	{
+		if (IsQuitting ||
+			_isUpdateAutomaticNoticePresentationRunning ||
+			(_updateCheckCoordinator is null))
+		{
+			return;
+		}
+
+		_isUpdateAutomaticNoticePresentationRunning = true;
+		try
+		{
+			PresentAutomaticUpdateNoticeIfNeeded();
+		}
+		catch (ObjectDisposedException) when (IsQuitting)
+		{
+			// 從這裡開始由 App 關閉流程負責釋放更新檢查資源。
+		}
+		catch (Exception exception)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"automatic-update-check-notice",
+				AppDiagnostics.GetUserFacingFailureReason(exception),
+				exception);
+		}
+		finally
+		{
+			_isUpdateAutomaticNoticePresentationRunning = false;
+		}
 	}
 
 	private void QueueShellPreferencesSave()
@@ -2613,6 +3696,9 @@ public partial class App : System.Windows.Application
 		DependencyPropertyChangedEventArgs e)
 	{
 		UpdateWidgetVisibilityMenuItem();
+		RefreshUpdatePresentation();
+		BeginAutomaticUpdateNoticePresentation();
+		BeginUpdateBalloonAttempt();
 
 		QueueShellPreferencesSave();
 	}
@@ -2928,6 +4014,10 @@ public partial class App : System.Windows.Application
 		{
 			UpdatePortableSettingsMenuItems();
 			UpdateLogonStartupMenuItem();
+			if (_updateUiPresentation is UpdateUiPresentation presentation)
+			{
+				UpdateUpdateTrayMenuItems(presentation);
+			}
 		});
 		_widgetVisibilityMenuItem = new FormsToolStripMenuItem("顯示浮窗")
 		{
@@ -2943,6 +4033,35 @@ public partial class App : System.Windows.Application
 		_widgetTopmostMenuItem.Click +=
 			(_, _) => Dispatcher.Invoke(ToggleFloatingWidgetTopmost);
 		menu.Items.Add(_widgetTopmostMenuItem);
+		menu.Items.Add("-");
+		_updateAvailableMenuItem = new FormsToolStripMenuItem(
+			"開啟下載頁")
+		{
+			Visible = false
+		};
+		_updateAvailableMenuItem.Click += (_, _) => Dispatcher.Invoke(() =>
+			StartUpdateUiOperation(
+				ExecutePrimaryUpdateActionAsync,
+				"tray-update-primary-action"));
+		menu.Items.Add(_updateAvailableMenuItem);
+		_checkForUpdatesMenuItem = new FormsToolStripMenuItem("檢查更新");
+		_checkForUpdatesMenuItem.Click += (_, _) => Dispatcher.Invoke(() =>
+			StartUpdateUiOperation(
+				() => CheckForUpdatesManuallyAsync(
+					ManualUpdateCheckInvocationSurface.Tray),
+				"tray-manual-update-check"));
+		menu.Items.Add(_checkForUpdatesMenuItem);
+		_automaticUpdateChecksMenuItem = new FormsToolStripMenuItem(
+			"自動檢查更新")
+		{
+			CheckOnClick = false
+		};
+		_automaticUpdateChecksMenuItem.Click += (_, _) =>
+			Dispatcher.Invoke(() => StartUpdateUiOperation(
+				() => SetAutomaticUpdateChecksEnabledAsync(
+					!_updatePresentationState.IsAutoCheckEnabled),
+				"toggle-automatic-update-checks"));
+		menu.Items.Add(_automaticUpdateChecksMenuItem);
 		menu.Items.Add("-");
 		_logonStartupMenuItem = new FormsToolStripMenuItem(
 			"Windows 登入啟動項：無法讀取")
@@ -2997,10 +4116,16 @@ public partial class App : System.Windows.Application
 
 		_notifyIcon.DoubleClick +=
 			(_, _) => Dispatcher.Invoke(ShowFloatingWidget);
+		_notifyIcon.BalloonTipClicked +=
+			(_, _) => Dispatcher.Invoke(ShowFloatingWidget);
 		UpdateWidgetVisibilityMenuItem();
 		UpdateWidgetTopmostMenuItem();
 		UpdatePortableSettingsMenuItems();
 		UpdateLogonStartupMenuItem();
+		if (_updateUiPresentation is UpdateUiPresentation presentation)
+		{
+			UpdateUpdateTrayMenuItems(presentation);
+		}
 	}
 
 	internal void ShowAboutWindow()
@@ -3022,6 +4147,7 @@ public partial class App : System.Windows.Application
 		}
 
 		AboutWindow aboutWindow = new();
+		aboutWindow.UpdateCheckRequested += AboutWindow_UpdateCheckRequested;
 
 		if (_floatingWidgetWindow?.IsVisible == true)
 		{
@@ -3034,6 +4160,13 @@ public partial class App : System.Windows.Application
 		}
 
 		_aboutWindow = aboutWindow;
+		if (_updateUiPresentation is UpdateUiPresentation presentation)
+		{
+			aboutWindow.UpdateUpdateStatus(
+				presentation.AboutStatusText,
+				presentation.CanCheckManually,
+				presentation.IsChecking);
+		}
 
 		try
 		{
@@ -3041,6 +4174,7 @@ public partial class App : System.Windows.Application
 		}
 		finally
 		{
+			aboutWindow.UpdateCheckRequested -= AboutWindow_UpdateCheckRequested;
 			_aboutWindow = null;
 		}
 	}

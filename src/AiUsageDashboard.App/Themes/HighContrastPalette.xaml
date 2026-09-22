@@ -31,6 +31,8 @@
     <x:Static x:Key="DangerColor" Member="system:SystemColors.WindowTextColor" />
     <x:Static x:Key="DangerTextColor" Member="system:SystemColors.WindowTextColor" />
     <x:Static x:Key="InfoColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="UpdateBadgeColor" Member="system:SystemColors.WindowTextColor" />
+    <x:Static x:Key="UpdateBadgeForegroundColor" Member="system:SystemColors.WindowColor" />
 
     <x:Static x:Key="LogoSurfaceColor" Member="system:SystemColors.WindowColor" />
     <x:Static x:Key="LogoBorderColor" Member="system:SystemColors.WindowTextColor" />
@@ -122,6 +124,10 @@
                      Color="{DynamicResource DangerTextColor}" />
     <SolidColorBrush x:Key="InfoBrush"
                      Color="{DynamicResource InfoColor}" />
+    <SolidColorBrush x:Key="UpdateBadgeBrush"
+                     Color="{DynamicResource UpdateBadgeColor}" />
+    <SolidColorBrush x:Key="UpdateBadgeForegroundBrush"
+                     Color="{DynamicResource UpdateBadgeForegroundColor}" />
 
     <SolidColorBrush x:Key="LogoSurfaceBrush"
                      Color="{DynamicResource LogoSurfaceColor}" />

@@ -26,6 +26,40 @@ public sealed class AppActivationTests
 				isUpdateShutdownReserved));
 	}
 
+	[Theory]
+	[InlineData(false, true)]
+	[InlineData(true, false)]
+	public void CanShowInteractiveUpdateResult_SuppressesDialogsWhileQuitting(
+		bool isQuitting,
+		bool expected)
+	{
+		Assert.Equal(
+			expected,
+			AiUsageDashboard.App.App.CanShowInteractiveUpdateResult(isQuitting));
+	}
+
+	[Theory]
+	[InlineData(false, true, false, false, false)]
+	[InlineData(false, true, true, false, true)]
+	[InlineData(false, true, false, true, true)]
+	[InlineData(true, true, true, true, false)]
+	[InlineData(false, false, true, true, false)]
+	public void ShouldRunUpdateCheckTimer_IncludesLocalSnoozeExpiry(
+		bool isQuitting,
+		bool hasCoordinator,
+		bool isAutoCheckEnabled,
+		bool isSnoozed,
+		bool expected)
+	{
+		Assert.Equal(
+			expected,
+			AiUsageDashboard.App.App.ShouldRunUpdateCheckTimer(
+				isQuitting,
+				hasCoordinator,
+				isAutoCheckEnabled,
+				isSnoozed));
+	}
+
 	[Fact]
 	public async Task RecoverClaudeUsageSafetyStateFilesAsync_ClearsRemovedAccountAndPreservesKnownDisabledLatch()
 	{

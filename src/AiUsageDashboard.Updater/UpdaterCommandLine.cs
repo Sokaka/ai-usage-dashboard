@@ -33,6 +33,13 @@ internal sealed class UpdaterCommandLineException : Exception
 		: base(message)
 	{
 	}
+
+	internal UpdaterCommandLineException(
+		string message,
+		Exception innerException)
+		: base(message, innerException)
+	{
+	}
 }
 
 internal static class UpdaterCommandLine
@@ -214,10 +221,8 @@ internal static class UpdaterCommandLine
 		string defaultInstallRoot =
 			WindowsLogonStartupRegistrationContract.GetCanonicalInstallRoot(
 				localApplicationDataDirectory);
-		string maintenanceRoot = Path.Combine(
-			localApplicationDataDirectory,
-			"Programs",
-			"AiUsageDashboardUpdater");
+		string maintenanceRoot = MaintenanceUpdaterPathContract
+			.GetCanonicalRoot(localApplicationDataDirectory);
 		string userDataRoot = Path.Combine(
 			localApplicationDataDirectory,
 			"AiUsageDashboard");

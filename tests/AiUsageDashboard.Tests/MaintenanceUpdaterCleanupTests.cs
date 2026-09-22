@@ -37,6 +37,10 @@ public sealed class MaintenanceUpdaterCleanupTests
 			ManagedInstallationPaths.GetMaintenanceUpdater(maintenanceRoot));
 		string unexpectedFile = Path.Combine(maintenanceRoot, "keep.txt");
 		File.WriteAllText(unexpectedFile, "keep");
+		string receiptPath = Path.Combine(
+			maintenanceRoot,
+			MaintenanceUpdaterPromotionReceiptStore.FileName);
+		File.WriteAllText(receiptPath, "pending");
 		MaintenanceUpdaterCleanup cleanup = new();
 
 		MaintenanceUpdaterCleanupResult result = cleanup.Cleanup(
@@ -46,6 +50,7 @@ public sealed class MaintenanceUpdaterCleanupTests
 		Assert.False(result.IsCompleteOrScheduled);
 		Assert.NotNull(result.Warning);
 		Assert.True(File.Exists(unexpectedFile));
+		Assert.True(File.Exists(receiptPath));
 	}
 
 	[Fact]
@@ -193,6 +198,159 @@ public sealed class MaintenanceUpdaterCleanupTests
 
 		Assert.True(result.IsCompleteOrScheduled);
 		Assert.False(Directory.Exists(maintenanceRoot));
+	}
+
+	[Fact]
+	public void Cleanup_WithLockedPromotionGeneration_CancelsAndCanRetry()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string maintenanceRoot = Path.Combine(
+			temporaryDirectory.Path,
+			"maintenance");
+		string sourceUpdater = GetUpdaterExecutablePath();
+		string stableUpdater = ManagedInstallationPaths.GetMaintenanceUpdater(
+			maintenanceRoot);
+		Directory.CreateDirectory(maintenanceRoot);
+		File.Copy(sourceUpdater, stableUpdater);
+		string generationUpdater =
+			ManagedInstallationPaths.GetMaintenanceUpdaterGeneration(
+				maintenanceRoot,
+				GetSha256(sourceUpdater));
+		File.Copy(sourceUpdater, generationUpdater);
+		string receiptPath = Path.Combine(
+			maintenanceRoot,
+			MaintenanceUpdaterPromotionReceiptStore.FileName);
+		File.WriteAllText(receiptPath, "pending");
+		MaintenanceUpdaterCleanup cleanup = new();
+		MaintenanceUpdaterCleanupResult lockedResult;
+
+		using (FileStream generationLock = new(
+			generationUpdater,
+			FileMode.Open,
+			FileAccess.Read,
+			FileShare.Read))
+		{
+			lockedResult = cleanup.Cleanup(
+				maintenanceRoot,
+				Path.Combine(
+					temporaryDirectory.Path,
+					"external",
+					"Updater.exe"));
+
+			Assert.False(lockedResult.IsCompleteOrScheduled);
+			Assert.NotNull(lockedResult.Warning);
+			Assert.Contains(
+				generationUpdater,
+				lockedResult.Warning,
+				StringComparison.OrdinalIgnoreCase);
+			Assert.Contains(
+				"run uninstall again",
+				lockedResult.Warning,
+				StringComparison.OrdinalIgnoreCase);
+			Assert.False(File.Exists(receiptPath));
+			Assert.True(File.Exists(generationUpdater));
+		}
+
+		MaintenanceUpdaterCleanupResult retryResult = cleanup.Cleanup(
+			maintenanceRoot,
+			Path.Combine(
+				temporaryDirectory.Path,
+				"external",
+				"Updater.exe"));
+
+		Assert.True(retryResult.IsCompleteOrScheduled);
+		Assert.Null(retryResult.Warning);
+		Assert.False(Directory.Exists(maintenanceRoot));
+	}
+
+	[Fact]
+	public void Cleanup_WithPromotionReceiptAndCrashedTemp_DeletesOwnedMaintenanceRoot()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string maintenanceRoot = Path.Combine(
+			temporaryDirectory.Path,
+			"maintenance");
+		string updaterPath = ManagedInstallationPaths.GetMaintenanceUpdater(
+			maintenanceRoot);
+		Directory.CreateDirectory(maintenanceRoot);
+		File.Copy(GetUpdaterExecutablePath(), updaterPath);
+		File.WriteAllText(
+			Path.Combine(
+				maintenanceRoot,
+				MaintenanceUpdaterPromotionReceiptStore.FileName),
+			"pending");
+		File.WriteAllText(
+			Path.Combine(
+				maintenanceRoot,
+				$"{MaintenanceUpdaterPromotionReceiptStore.FileName}." +
+					$"{new string('a', 32)}.writing"),
+			"partial");
+		File.WriteAllText(
+			updaterPath + $".{new string('b', 32)}.promoting",
+			"partial");
+		MaintenanceUpdaterCleanup cleanup = new();
+
+		MaintenanceUpdaterCleanupResult result = cleanup.Cleanup(
+			maintenanceRoot,
+			Path.Combine(temporaryDirectory.Path, "external", "Updater.exe"));
+
+		Assert.True(result.IsCompleteOrScheduled);
+		Assert.Null(result.Warning);
+		Assert.False(Directory.Exists(maintenanceRoot));
+	}
+
+	[Theory]
+	[InlineData("ABCDEF0123456789abcdef0123456789")]
+	[InlineData("abcdef0123456789abcdef012345678")]
+	[InlineData("abcdef0123456789abcdef01234567890")]
+	[InlineData("abcdef0123456789abcdef012345678g")]
+	public void Cleanup_WithApproximatePromotionTempName_PreservesMaintenanceRoot(
+		string generationId)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string maintenanceRoot = Path.Combine(
+			temporaryDirectory.Path,
+			"maintenance");
+		string updaterPath = ManagedInstallationPaths.GetMaintenanceUpdater(
+			maintenanceRoot);
+		Directory.CreateDirectory(maintenanceRoot);
+		File.Copy(GetUpdaterExecutablePath(), updaterPath);
+		string approximatePath = updaterPath + $".{generationId}.promoting";
+		File.WriteAllText(approximatePath, "keep");
+		MaintenanceUpdaterCleanup cleanup = new();
+
+		MaintenanceUpdaterCleanupResult result = cleanup.Cleanup(
+			maintenanceRoot,
+			Path.Combine(temporaryDirectory.Path, "external", "Updater.exe"));
+
+		Assert.False(result.IsCompleteOrScheduled);
+		Assert.NotNull(result.Warning);
+		Assert.True(File.Exists(approximatePath));
+	}
+
+	[Fact]
+	public void Cleanup_WithPromotionTempDirectory_PreservesMaintenanceRoot()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string maintenanceRoot = Path.Combine(
+			temporaryDirectory.Path,
+			"maintenance");
+		string updaterPath = ManagedInstallationPaths.GetMaintenanceUpdater(
+			maintenanceRoot);
+		Directory.CreateDirectory(maintenanceRoot);
+		File.Copy(GetUpdaterExecutablePath(), updaterPath);
+		string promotionDirectory =
+			updaterPath + $".{new string('c', 32)}.promoting";
+		Directory.CreateDirectory(promotionDirectory);
+		MaintenanceUpdaterCleanup cleanup = new();
+
+		MaintenanceUpdaterCleanupResult result = cleanup.Cleanup(
+			maintenanceRoot,
+			Path.Combine(temporaryDirectory.Path, "external", "Updater.exe"));
+
+		Assert.False(result.IsCompleteOrScheduled);
+		Assert.NotNull(result.Warning);
+		Assert.True(Directory.Exists(promotionDirectory));
 	}
 
 	[Fact]

@@ -12,13 +12,15 @@
 
 .NET SDK 由 `global.json` 固定，transitive NuGet audit 由 `Directory.Build.props` 啟用。沒有 Git 歷史的原始碼匯出目錄可建置與測試，不能產生符合正式發布契約的候選包。
 
+正式發布腳本 `Publish-Internal.ps1`、`Publish-Updater.ps1` 與 `Publish-UpdateBundle.ps1` 必須使用 PowerShell 7.4 以上的 `pwsh` 執行；Windows PowerShell 5.1 不支援成品使用的 .NET 8 assembly inspection，腳本會在任何發布工作前停止。
+
 每次發布須依[升級與相容性原則](docs/COMPATIBILITY_POLICY.md)確認舊資料、既有安裝與 CLI 的受影響範圍及驗證結果。必要的不相容變更須在 Release 說明原因、受影響版本、使用者步驟與復原限制；不以要求刪除設定、全部重新登入或強制換 CLI 取代相容性處理。
 
 .NET 8.0.31 是目前固定的 runtime；依 [Microsoft 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)，.NET 8 於 2026-11-10 結束支援。每次候選重新核對 patch 與 advisory；逾期或出現未處理風險時先修正，再建候選。
 
 `Microsoft.Extensions.AI.Abstractions` 固定為 10.10.0，適用另行更新的 [Platform Extensions 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/extensions)。App、Setup 與 ClaudeCapture 共用的 `System.Text.Json` 固定為 10.0.12；各自的 dependency manifest 必須涵蓋相同版本及其依賴，並通過合併成品的實際離線授權匯出。
 
-private repo 的 Actions 額度由 owner 共用。首次 push 前關閉新 repo Actions 並回讀；按 [GitHub 計費規則](https://docs.github.com/en/billing/concepts/product-billing/github-actions)核對帳號額度、已用量、artifact/cache 儲存、預定成功／失敗執行量及超額停止措施，再受控啟用。無法確認免費範圍時只做本機驗證，不啟用付費 runner 或更動全帳號預算。候選 artifact 與失敗 diagnostics 的 retention 也計入前檢。
+候選 workflow 在公開 repository 使用 GitHub-hosted Windows runner。執行前核對帳號的 [GitHub Actions 計費規則](https://docs.github.com/en/billing/concepts/product-billing/github-actions)、額度與已用量。正式六件成品只在 runner 暫存目錄與 draft Release，不上傳 Actions artifact；Actions artifact 僅保存不含成品的凍結紀錄，以及通過隱私檢查的失敗 diagnostics。執行失敗時先查實際遠端 Release 狀態，不重用同版本替換或補傳成品。
 
 ## 版本、序號與信任鍵
 
@@ -27,6 +29,8 @@ private repo 的 Actions 額度由 owner 共用。首次 push 前關閉新 repo 
 App 與 Updater 版本都須高於舊版。重新建置造成 bytes 改變時使用新版本與新序號，不替換同版本的檔案。舊 installed manifest 的 sequence 有值與 null 兩種情況都要驗收。
 
 feed 使用 [固定簽章格式](docs/UPDATE_FEED_FORMAT.md)。正式 build 從受控外部檔案嵌入可信公鑰，簽署使用對應私鑰；未知 signer 或無效簽章必須在信任 feed 欄位前失敗。公鑰不可從同一未驗證 feed 學習。私鑰不進 source、Git、成品或 logs。
+
+App 與 Updater 必須嵌入相同的 stable `FeedUrl`、`Channel` 與 production public `TrustedKeysFile`。`Publish-Internal.ps1` 要求明確提供三項；`Publish-UpdateBundle.ps1` 的 `Channel` 預設為 `stable`，省略 `FeedUrl` 時會使用該 channel 的 GitHub latest download URL，但仍須提供 `TrustedKeysFile`。URL 不是完整 HTTPS host、trust store 無法通過 runtime parser，或發布後讀回的 App feed／channel metadata 與 embedded trust bytes 不符合輸入時，必須停止。一般未帶 metadata 的 dev build 只顯示 `UnavailableInThisBuild`，不得當成候選。
 
 | 情況 | 處理 |
 | --- | --- |
@@ -40,9 +44,9 @@ feed 使用 [固定簽章格式](docs/UPDATE_FEED_FORMAT.md)。正式 build 從�
 
 ## 候選建置與凍結
 
-所有 workflow、版本、條款及簽章變更先完成，再建立候選。候選 workflow 必須綁定指定 main SHA、原始 build run 與 attempt；原 workflow 檔名保留為相容入口，實際參數以 repository 中的 workflow 為準。
+所有 workflow、版本、條款及簽章變更先完成，再建立候選。候選 workflow 必須勾選 `acknowledge_draft_candidate` 與 `publish_github_prerelease`；任一未勾選會在建置前停止，避免簽署後沒有可保存的候選。workflow 綁定指定 main SHA，確認同 SHA 的 Windows CI push run 已成功，再在同一個 job 建置、簽署、驗證並凍結 draft Release。run 與 attempt 來自本次建置，原 workflow 檔名保留為相容入口，實際參數以 repository 中的 workflow 為準。
 
-build job 保存原始 run／attempt 及上傳的 artifact ID／digest。發布 job 先核對來源，再依該 ID 下載；只重跑發布 job 時，Release 說明與凍結紀錄仍沿用原 build attempt。來源 outputs 缺失或 artifact 核對失敗時停止，不以目前發布 attempt 補值；Actions artifact 名稱包含 build run／attempt，六件正式成品名稱不變。
+同一 job 產出的六件正式成品不經 Actions artifact 搬運；建置、驗證或上傳失敗時，不能單獨重跑發布步驟來補件。重跑 job 會重新建置，因此須先確認該版本尚未建立 Release；已有部分上傳的 draft 也不能用重跑取代原成品。凍結紀錄保存原始 run／attempt、Release ID 及六件 asset identity。
 
 封裝順序固定為：最終 binaries → App ZIP → ZIP／Updater EXE 的 size 與 SHA256 → 帶正式 stable URL 與完整版本／sequence 的 feed → 簽署 → 最終 feed 的 SHA256。任何受簽欄位改變都須重簽。
 
@@ -56,13 +60,13 @@ build job 保存原始 run／attempt 及上傳的 artifact ID／digest。發布 
 
 ZIP 包含自有 LICENSE、精確第三方原約/notices 及元件交付清單。Updater、maintenance 副本、capture helper 的適用文字須由真正 trim/single-file 成品離線匯出後核對；缺件或 digest 不符就停止。接受紀錄按同 Windows 使用者、條款版本與範圍共用，不上傳；首次接受、拒絕、條款變更、portable／Setup／Updater／helper／委派及非互動入口都要測試。
 
-凍結前把六件保存為 private 候選 Release，使用最終 tag 與 asset 名稱，維持 draft／prerelease。保留 repo identity、Release identity、tag、source SHA、原 build run／attempt、每個 asset ID／名稱／size／SHA256。凍結後不得重建補件、重新打包、重簽或替換 assets。
+凍結前把六件直接保存為公開 repository 中的 draft 候選 Release，使用最終 tag 與 asset 名稱，維持 draft／prerelease。draft 不提供匿名下載；候選建立後仍要以無 Authorization 的請求確認 Release API，以及凍結 API 回傳的 sidecar 實際 `browser_download_url`，都無法匿名取得。draft 的實際下載路徑可能使用 `untagged-<id>`，不可用最終 tag 自行拼出測試 URL。保留 repo identity、Release identity、tag、source SHA、原 build run／attempt、每個 asset ID／名稱／size／SHA256。凍結後不得重建補件、重新打包、重簽或替換 assets。
 
 draft Release 先以 `gh release view` 取得數值 `databaseId`，再依 Release ID 回讀，核對同一候選、source 及六件成品後才保存凍結紀錄。draft 尚未建立 tag ref 時，by-tag API 可能回傳 404；因此凍結回讀使用 [Release ID API](https://docs.github.com/en/rest/releases/releases#get-a-release)。
 
-## Private 驗收
+## 候選驗收
 
-用受控 HTTPS 測試 feed 與同一候選 App／Updater bytes 驗收。測試 feed 的 URL／簽章另存，不覆蓋正式 feed；保持正式 channel、TLS 與簽章檢查，不增加產品 GitHub token 或略過驗證。private GitHub Release 不能證明匿名下載成功。
+用受控 HTTPS 測試 feed 與同一候選 App／Updater bytes 驗收。測試 feed 的 URL／簽章另存，不覆蓋正式 feed；保持正式 channel、TLS 與簽章檢查，不增加產品 GitHub token 或略過驗證。draft GitHub Release 不能證明公開後匿名下載成功。
 
 在乾淨 Windows x64 記錄 OS、每個官方 CLI 實際版本、使用版本／序號、步驟與結果：
 
@@ -74,6 +78,7 @@ draft Release 先以 `gh release view` 取得數值 `databaseId`，再依 Releas
 6. 解除安裝、maintenance 自清理、使用者資料與 Credential Manager 保留；接受提示不阻擋控制、唯讀與復原路徑。
 7. 首次下載的 Windows 提示、啟動／重新啟動、浮窗、鍵盤與 High Contrast。不得關閉全域防護來通過。
 8. source、新歷史、logs/artifacts、圖片與 binaries 的公開面掃描，文件連結、license/source provenance 與六件 bytes 核對。
+9. App 更新提示：首次說明與 30 秒 delay、自動檢查關閉、24 小時成功節流、四級失敗退避、resume、manual join、snooze／balloon dedupe，以及 canonical／custom／portable 三種 action。用實際候選確認 App checker 驗證 signed feed，但不在使用者點擊前下載任何 artifact；一鍵路徑仍由 Updater 重新驗證並安全關閉 App。
 
 安裝、支援及資料保留細節見 [Windows 分發與支援手冊](INTERNAL_DISTRIBUTION.md)。沒有測試環境就記為待驗；本機 build、單元測試或 `apply-local` 都不代替正式線上 E2E。
 
@@ -91,7 +96,7 @@ Claude 保留未修改官方 binary、內建 auth、使用者自己的憑證與�
 
 公開前重新核對凍結記錄與遠端六件。任何 identity、source、run/attempt、asset ID、size 或 digest 不符，立即停止。缺件不重建補件。
 
-確認授權後，先在 private Repository 僅把同一候選 Release 改為非 draft、非 prerelease 且為 latest，並回讀 tag、target 及六件 assets；確認一致後才把 Repository 改為 public 並再次回讀。此流程不 dispatch build、不改 bytes，也不把當前操作的 run/attempt 取代原始 build 來源。
+確認授權後，在同一公開 Repository 僅把同一候選 Release 改為非 draft、非 prerelease 且為 latest，並回讀 tag、target 及六件 assets。此流程不 dispatch build、不改 bytes，也不把當前操作的 run/attempt 取代原始 build 來源。
 
 不帶 cookie/token，匿名下載正式 feed：`https://github.com/Sokaka/ai-usage-dashboard/releases/latest/download/AiUsageDashboard-update-stable.json`。驗簽後核對 App／Updater URLs、版本／sequence、hash／size 和全部 sidecars，確認與凍結候選相符。這個 smoke 只證明正式端點的匿名下載與簽章鏈；fresh install、舊 internal→stable、正式線上更新及復原未執行時須繼續列為暫緩，不得記成通過。完成本次公開後回讀及文件回填，才結束正式發布流程。
 

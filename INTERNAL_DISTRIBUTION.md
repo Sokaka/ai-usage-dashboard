@@ -199,9 +199,21 @@ dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
 
 ## 更新、回復舊版與更換電腦
 
+### App 內建更新檢查
+
+執行正式發布腳本時使用 PowerShell 7.4 以上的 `pwsh`。Windows PowerShell 5.1 不支援成品使用的 .NET 8 assembly inspection，三個發布入口會在任何發布工作前停止。
+
+Production App 與 Updater 必須使用相同的 `FeedUrl`、`Channel` 與外部 `TrustedKeysFile`。`tools\Publish-Internal.ps1` 要求明確提供三項；`tools\Publish-UpdateBundle.ps1` 的 `Channel` 預設為 `stable`，省略 `FeedUrl` 時會使用該 channel 的 GitHub latest download URL，但仍須提供外部 `TrustedKeysFile`。`Publish-UpdateBundle.ps1` 會把解析後的同一組值分別交給 App 與 Updater 的 publish 入口；URL 或 trust store 無效時會停止，App package gate 也會從已發布 DLL 讀回 feed／channel metadata 與 embedded trust bytes 逐值核對。一般 dev build 可不嵌入，About 會標成此 build 無更新來源。App 只讀取並驗證 signed feed，不下載 artifacts，也不接受本機 cache 提供 URL 或安裝決策。
+
+首次啟用會先以浮窗 banner 或 tray balloon 說明網路行為，至少保留 30 秒後才走 automatic path。成功後 24 小時內不再自動查詢；失敗依 15 分鐘、1 小時、4 小時、24 小時退避。自動檢查可從 banner 或 tray 關閉；關閉後不再自動連線，若仍有 snooze，只保留不連網的本機到期檢查。若開關無法寫入狀態檔，當次執行仍立即套用，但會警告重新啟動後可能恢復舊設定；排除本機資料夾寫入問題後必須再設定一次。Tray 與 About 的手動檢查仍立即可用；可見介面會顯示 inline 結果，從 tray 發起且浮窗隱藏／收合時，失敗會顯示結果 dialog，UpToDate 也會顯示完成提示。測試與支援時要分清楚用量背景更新和 App 版本檢查，兩者有獨立狀態及排程。
+
+App 依 running executable 與 adjacent installed manifest 分流：canonical managed install 才能在 shutdown listener ready 且固定 maintenance EXE 存在時顯示 **更新並重新啟動**；custom managed 只開 Releases，且一般 Updater 可能建立 canonical install；portable／unmanaged 以 `ProductVersion` 偵測後只開 Releases，完整 ZIP 必須 side-by-side 解壓，不能覆蓋 running tree。任何路徑、manifest、版本或 shutdown identity 歧義都降級為 Releases，不得猜 `--install-root`。
+
+新版提示以 banner、收合 `↑` badge 與 tray action 持續保留；balloon 只是每個 `version + releaseSequence` 最多嘗試一次的補充。Banner 的 live-region announcement 會在刷新結束、浮窗重新啟用或展開後補發，並在 snooze 到期重新出現時再次宣告。**稍後提醒**只暫停該 key 的 banner／balloon 24 小時，不隱藏 badge 或 tray action。狀態檔 `%LOCALAPPDATA%\AiUsageDashboard\update-check-state-v1.json` 是可刪除的 strict cache，不是簽章或 anti-downgrade 信任根。
+
 ### 使用獨立更新程式安裝或更新
 
-確認獨立更新程式（updater）可直接存取更新清單（feed）與檔案網址後，使用者只需要保留 `AiUsageDashboard-Updater-<version>-win-x64.exe`。直接執行時，它會檢查指定管道的最新版；若有較新的更新程式，會先下載並驗證，再交由新版完成 App 安裝。舊的啟動 EXE 不必手動替換。
+確認獨立更新程式（updater）可直接存取更新清單（feed）與檔案網址後，使用者只需要保留 `AiUsageDashboard-Updater-<version>-win-x64.exe`。直接執行時，它會檢查指定管道的最新版；若有較新的更新程式，會先下載並驗證，再交由新版完成 App 安裝。固定 maintenance Updater 正在執行而無法立即覆寫時，delegated 新版會先確認自身是 signed feed 指定的 cache artifact、direct parent 是固定 maintenance Updater，再保留已驗證 generation 與 promotion receipt。promoter 會持續等待舊程序的 exact PID／start time 自然離開，再取得 install lock；只有仍持有相符 receipt lease 的工作能以預期 canonical hash 提升固定入口，被後續 generation 取代的舊工作會安全結束。這項 handoff 由新版負責，已發布的舊 Updater 不需要預先具備 promotion 功能。失敗狀態會留在 maintenance root；固定入口已具 retry 能力時，下次 online 啟動會在讀取 feed 前以完整 receipt snapshot 安全重試。若初次 bootstrap 後固定入口仍是尚無此能力的舊版，必須保留相容 transition feed，讓下次 delegation 重建 promotion；不應先撤除舊版可驗證的簽章鏈。Windows 登錄修正成功後才會清理不再使用的 generation；解除安裝會清理由 promotion 硬中止留下、且符合嚴格自有命名的 temporary file，其他近似或不安全項目仍保留並警告。
 
 更新程式只接受格式、管道、版本、大小、SHA-256、檔名與 HTTPS URL 全部正確的更新清單與檔案。它會拒絕降版、同版本不同內容、較舊的發布順序、轉址到非 HTTPS，以及大小或 SHA-256 不符的下載。
 
@@ -337,6 +349,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 
 - `%LOCALAPPDATA%\AiUsageDashboard\accounts.json*`：AI Usage 帳號設定。
 - `%LOCALAPPDATA%\AiUsageDashboard\preferences.json`：介面偏好設定。
+- `%LOCALAPPDATA%\AiUsageDashboard\update-check-state-v1.json`：更新檢查開關、節流、前次結果、snooze 與通知 attempt cache；不含 feed URL、下載 URL 或簽章信任鍵。
 - `%LOCALAPPDATA%\AiUsageDashboard\<provider>\<account-id>\usage-snapshot-v1.json`：各帳號分開保存的上次用量。
 - `%LOCALAPPDATA%\AiUsageDashboard\diagnostics.log`：有容量上限的診斷紀錄。
 - `%LOCALAPPDATA%\AiUsageDashboard\claude\<account-id>`：帳號專屬的 Claude CLI 設定與登入資料。
@@ -415,7 +428,10 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - [ ] 使用浮窗完成所有一般操作；把浮窗移到不同螢幕，確認能貼齊螢幕角落、收合／展開與切換置頂。
 - [ ] 分別從全域選單與系統匣隱藏浮窗，再用 **顯示浮窗** 與雙擊系統匣圖示恢復；接著完全結束並重新啟動，確認帳號、卡片順序、偏好設定與上次用量。
 - [ ] 使用含 `Dashboard` 或 `DashboardAndWidget` 舊格式偏好設定的版本升級一次，確認浮窗會顯示；再以 `Tray` 重複測試，確認應用程式保持隱藏，直到從系統匣恢復。
-- [ ] 保留一份較舊更新程式，在乾淨安裝目錄執行首次安裝，再讓更新清單提供新版更新程式與 App。確認舊版會交由已驗證的新版接手、固定啟動路徑不含版本、`previous` 保留舊版，且帳號資料仍只在 `%LOCALAPPDATA%\AiUsageDashboard`。若可攜版 AI Usage 尚未結束，首次安裝必須拒絕且不替換檔案。
+- [ ] 使用受控 HTTPS signed feed 驗證首次 non-modal 說明先於自動連線、30 秒 delay、24 小時成功節流、四級失敗退避、Windows resume、關閉自動檢查及 tray／About 手動 bypass；確認背景失敗只寫 diagnostic，手動失敗才顯示可操作訊息。
+- [ ] 分別以 canonical managed、custom managed 與 portable 成品提供新版：核對 banner、收合 `↑`、tooltip／螢幕閱讀器名稱、tray action、24 小時 snooze 與每 release 一次的 balloon attempt。只有 canonical 且 shutdown listener ready、maintenance EXE 存在時可啟動一鍵更新；其他兩類只能開固定 Releases。
+- [ ] 移除或破壞 portable `ProductVersion`、managed manifest、maintenance EXE 與 shutdown listener，各自確認 fail closed：不能顯示 up-to-date、不能猜安裝目錄、不能提前關閉 App。以舊 sequence、同版本不同 bytes、壞簽、錯誤 channel 與 redirect 降級重跑 App checker；Updater 安裝時仍須獨立再驗一次。
+- [ ] 保留一份較舊更新程式，在乾淨安裝目錄執行首次安裝，再讓更新清單提供新版更新程式與 App。確認舊版會交由已驗證的新版接手、執行中的固定入口會經 generation／receipt／exact parent identity 提升且下次從新版固定入口啟動，並以 `A → A+B → B` 信任鍵過渡確認舊版不會卡住更新鏈；固定啟動路徑不含版本、`previous` 保留舊版，且帳號資料仍只在 `%LOCALAPPDATA%\AiUsageDashboard`。若可攜版 AI Usage 尚未結束，首次安裝必須拒絕且不替換檔案。
 - [ ] 分別在已是最新版、沒有服務工作、可正常等待工作結束，以及等待逾時時執行更新程式。可更新時只允許 App 自然退出；等待逾時須保留原 `current` 與失敗紀錄，不得強制結束程序。
 - [ ] 再測更新清單／管道不符、降版、發布順序重播、SHA-256／大小錯誤、轉址到非 HTTPS、ZIP 路徑穿越或含重新解析點、同時執行更新程式、檔案鎖定及重啟失敗。
 - [ ] 一般解除安裝：在 `%LOCALAPPDATA%\AiUsageDashboard` 建立測試檔，再從 Windows **已安裝的應用程式**解除安裝。確認 App 安全關閉、顯示完成通知、程式檔與 **AI Usage** 登錄項目已移除，測試檔仍保留。

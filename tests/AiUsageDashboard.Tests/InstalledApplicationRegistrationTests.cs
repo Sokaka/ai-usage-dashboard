@@ -132,7 +132,7 @@ public sealed class InstalledApplicationRegistrationTests
 
 	[Fact]
 	[Trait("Category", "WindowsIntegration")]
-	public async Task EnsureRegisteredAsync_WhenStableUpdaterIsLocked_UsesVerifiedGeneration()
+	public async Task LockedStableUpdater_AfterExactParentExit_PromotesVerifiedGenerationToCanonicalPath()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string installRoot = Path.Combine(temporaryDirectory.Path, "install");
@@ -151,6 +151,7 @@ public sealed class InstalledApplicationRegistrationTests
 		Directory.CreateDirectory(maintenanceRoot);
 		File.Copy(sourceUpdater, stableUpdater);
 		await File.AppendAllTextAsync(stableUpdater, "stale");
+		string staleHash = GetSha256(stableUpdater).ToLowerInvariant();
 		string sourceHash = GetSha256(sourceUpdater).ToLowerInvariant();
 		string generationUpdater =
 			ManagedInstallationPaths.GetMaintenanceUpdaterGeneration(
@@ -178,18 +179,102 @@ public sealed class InstalledApplicationRegistrationTests
 				StringComparison.OrdinalIgnoreCase);
 		}
 
-		Assert.Null(await registrar.EnsureRegisteredAsync(
-			generationUpdater,
+		ExactProcessIdentity parentIdentity = new(1234, 5678);
+		FakeExactProcessExitWaiter processExitWaiter = new();
+		MaintenanceUpdaterPromotion promotion = new(processExitWaiter);
+		MaintenanceUpdaterPromotionOptions promotionOptions = new(
+				installRoot,
+				maintenanceRoot,
+				sourceHash,
+				staleHash,
+				parentIdentity);
+		MaintenanceUpdaterPromotionReceiptStore receiptStore = new(
+			maintenanceRoot);
+		await receiptStore.SavePendingAsync(promotionOptions);
+		await promotion.PromoteAndRecordAsync(
+			promotionOptions,
+			generationUpdater);
+
+		Assert.Equal(parentIdentity, processExitWaiter.ObservedIdentity);
+		Assert.Equal(Timeout.InfiniteTimeSpan, processExitWaiter.ObservedTimeout);
+		Assert.Equal(GetSha256(sourceUpdater), GetSha256(stableUpdater));
+		Assert.True(File.Exists(generationUpdater));
+		Assert.Null(await receiptStore.LoadAsync());
+		CurrentUpdaterIdentity nextCanonicalUpdater =
+			await CurrentUpdaterIdentity.ReadAsync(stableUpdater);
+		Assert.Equal(sourceHash, nextCanonicalUpdater.Sha256);
+	}
+
+	[Fact]
+	public async Task CanonicalRegistration_CleansStaleGenerationAfterRegistryRepair()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string installRoot = Path.Combine(temporaryDirectory.Path, "install");
+		string maintenanceRoot = Path.Combine(
+			temporaryDirectory.Path,
+			"maintenance");
+		string userDataRoot = Path.Combine(temporaryDirectory.Path, "data");
+		UpdateManifest manifest = CreateInstalledPayload(installRoot, "1.2.3");
+		string canonicalUpdater = ManagedInstallationPaths.GetMaintenanceUpdater(
+			maintenanceRoot);
+		Directory.CreateDirectory(maintenanceRoot);
+		File.Copy(GetUpdaterExecutablePath(), canonicalUpdater);
+		string staleGeneration = await CreateStaleGenerationAsync(
+			maintenanceRoot);
+		FakeRegistrationStore store = new();
+		ManagedInstallationRegistrar registrar = new(
+			store,
+			new ManagedStartMenuShortcut(Path.Combine(
+				temporaryDirectory.Path,
+				"Programs")));
+
+		await registrar.EnsureRegisteredAsync(
+			canonicalUpdater,
 			installRoot,
 			maintenanceRoot,
 			userDataRoot,
-			manifest));
+			manifest);
 
-		Assert.Equal(GetSha256(sourceUpdater), GetSha256(stableUpdater));
+		InstalledApplicationRegistration registration = Assert.Single(
+			store.Upserts);
 		Assert.Contains(
-			$"\"{stableUpdater}\" uninstall",
-			store.Upserts[^1].UninstallCommand,
+			$"\"{canonicalUpdater}\" uninstall",
+			registration.UninstallCommand,
 			StringComparison.OrdinalIgnoreCase);
+		Assert.False(File.Exists(staleGeneration));
+	}
+
+	[Fact]
+	public async Task CanonicalRegistration_WhenRegistryRepairFails_KeepsGeneration()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string installRoot = Path.Combine(temporaryDirectory.Path, "install");
+		string maintenanceRoot = Path.Combine(
+			temporaryDirectory.Path,
+			"maintenance");
+		string userDataRoot = Path.Combine(temporaryDirectory.Path, "data");
+		UpdateManifest manifest = CreateInstalledPayload(installRoot, "1.2.3");
+		string canonicalUpdater = ManagedInstallationPaths.GetMaintenanceUpdater(
+			maintenanceRoot);
+		Directory.CreateDirectory(maintenanceRoot);
+		File.Copy(GetUpdaterExecutablePath(), canonicalUpdater);
+		string staleGeneration = await CreateStaleGenerationAsync(
+			maintenanceRoot);
+		ManagedInstallationRegistrar registrar = new(
+			new ThrowingRegistrationStore(),
+			new ManagedStartMenuShortcut(Path.Combine(
+				temporaryDirectory.Path,
+				"Programs")));
+
+		await Assert.ThrowsAsync<InvalidOperationException>(() =>
+			registrar.EnsureRegisteredAsync(
+				canonicalUpdater,
+				installRoot,
+				maintenanceRoot,
+				userDataRoot,
+				manifest));
+
+		Assert.True(File.Exists(staleGeneration));
 	}
 
 	[Fact]
@@ -376,6 +461,20 @@ public sealed class InstalledApplicationRegistrationTests
 		return Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
 	}
 
+	private static async Task<string> CreateStaleGenerationAsync(
+		string maintenanceRoot)
+	{
+		string temporaryPath = Path.Combine(maintenanceRoot, "stale.exe");
+		File.Copy(GetUpdaterExecutablePath(), temporaryPath);
+		await File.AppendAllTextAsync(temporaryPath, "stale-generation");
+		string generationPath = ManagedInstallationPaths
+			.GetMaintenanceUpdaterGeneration(
+				maintenanceRoot,
+				GetSha256(temporaryPath));
+		File.Move(temporaryPath, generationPath);
+		return generationPath;
+	}
+
 	private static string GetUpdaterExecutablePath()
 	{
 		string path = Path.Combine(
@@ -406,6 +505,42 @@ public sealed class InstalledApplicationRegistrationTests
 		public bool RemoveIfMatches(string installRoot)
 		{
 			return HasMatchingInstallLocation(installRoot);
+		}
+	}
+
+	private sealed class FakeExactProcessExitWaiter : IExactProcessExitWaiter
+	{
+		internal ExactProcessIdentity? ObservedIdentity { get; private set; }
+
+		internal TimeSpan ObservedTimeout { get; private set; }
+
+		public Task WaitForExitAsync(
+			ExactProcessIdentity identity,
+			TimeSpan timeout,
+			CancellationToken cancellationToken)
+		{
+			ObservedIdentity = identity;
+			ObservedTimeout = timeout;
+			return Task.CompletedTask;
+		}
+	}
+
+	private sealed class ThrowingRegistrationStore :
+		IInstalledApplicationRegistrationStore
+	{
+		public void Upsert(InstalledApplicationRegistration registration)
+		{
+			throw new InvalidOperationException("Synthetic registry failure.");
+		}
+
+		public bool HasMatchingInstallLocation(string installRoot)
+		{
+			return false;
+		}
+
+		public bool RemoveIfMatches(string installRoot)
+		{
+			return false;
 		}
 	}
 }

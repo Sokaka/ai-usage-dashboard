@@ -27,6 +27,9 @@ internal sealed class UpdateShutdownChannel : IDisposable
 
 	private readonly TimeSpan _connectedClientTimeout;
 	private readonly Action _dispatchAcceptedShutdown;
+	private readonly object _lifecycleGate = new();
+	private readonly TaskCompletionSource _listenerReadySource = new(
+		TaskCreationOptions.RunContinuationsAsynchronously);
 	private readonly string _pipeName;
 	private readonly Func<UpdateShutdownOutcome> _reserveShutdown;
 	private readonly Action _rollbackAcceptedShutdown;
@@ -34,6 +37,19 @@ internal sealed class UpdateShutdownChannel : IDisposable
 	private readonly UpdateProcessIdentity _targetIdentity;
 	private bool _isDisposed;
 	private Task? _listenerTask;
+
+	internal Task ListenerCompletion
+	{
+		get
+		{
+			lock (_lifecycleGate)
+			{
+				return _listenerTask ??
+					throw new InvalidOperationException(
+						"The update shutdown listener has not been started.");
+			}
+		}
+	}
 
 	internal UpdateShutdownChannel(
 		string pipeName,
@@ -182,22 +198,45 @@ internal sealed class UpdateShutdownChannel : IDisposable
 
 	internal void Start()
 	{
-		ObjectDisposedException.ThrowIf(_isDisposed, this);
-
-		if (_listenerTask is null)
+		lock (_lifecycleGate)
 		{
-			_listenerTask = ListenAsync(_shutdownTokenSource.Token);
+			ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+			if (_listenerTask is null)
+			{
+				_listenerTask = ListenAsync(_shutdownTokenSource.Token);
+				ObserveListenerFailure(_listenerTask);
+			}
+		}
+	}
+
+	internal async Task StartAsync(
+		CancellationToken cancellationToken = default)
+	{
+		Start();
+		await _listenerReadySource.Task.WaitAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		lock (_lifecycleGate)
+		{
+			ObjectDisposedException.ThrowIf(_isDisposed, this);
 		}
 	}
 
 	public void Dispose()
 	{
-		if (_isDisposed)
+		lock (_lifecycleGate)
 		{
-			return;
+			if (_isDisposed)
+			{
+				return;
+			}
+
+			_isDisposed = true;
 		}
 
-		_isDisposed = true;
+		_listenerReadySource.TrySetException(
+			new ObjectDisposedException(nameof(UpdateShutdownChannel)));
 		_shutdownTokenSource.Cancel();
 		_shutdownTokenSource.Dispose();
 	}
@@ -244,6 +283,7 @@ internal sealed class UpdateShutdownChannel : IDisposable
 					maxNumberOfServerInstances: 1,
 					PipeTransmissionMode.Message,
 					PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+				_listenerReadySource.TrySetResult();
 				await server.WaitForConnectionAsync(cancellationToken)
 					.ConfigureAwait(false);
 				using CancellationTokenSource requestTimeoutTokenSource =
@@ -363,6 +403,25 @@ internal sealed class UpdateShutdownChannel : IDisposable
 				}
 			}
 		}
+	}
+
+	private void ObserveListenerFailure(Task listenerTask)
+	{
+		_ = listenerTask.ContinueWith(
+			task =>
+			{
+				Exception listenerFailure = task.Exception?.GetBaseException() ??
+					new InvalidOperationException(
+						"The update shutdown listener stopped unexpectedly.");
+				_listenerReadySource.TrySetException(
+					new InvalidOperationException(
+						"The update shutdown listener failed before it became ready.",
+						listenerFailure));
+			},
+			CancellationToken.None,
+			TaskContinuationOptions.ExecuteSynchronously |
+				TaskContinuationOptions.OnlyOnFaulted,
+			TaskScheduler.Default);
 	}
 
 	private void TryRollbackAcceptedShutdown()

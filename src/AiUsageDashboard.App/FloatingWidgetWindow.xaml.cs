@@ -11,6 +11,7 @@ using System.Windows.Threading;
 
 using AiUsageDashboard.App.ViewModels;
 using AiUsageDashboard.App.Persistence;
+using AiUsageDashboard.App.Updates;
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Persistence;
 using AiUsageDashboard.Presentation;
@@ -68,11 +69,14 @@ public partial class FloatingWidgetWindow : Window
 	private readonly SemaphoreSlim _portableSettingsOperationGate = new(1, 1);
 	private readonly CancellationTokenSource _portableSettingsLifetime = new();
 	private readonly VerticalDragScrollSession _accountScrollDragSession = new();
+	private readonly UpdateBannerAnnouncementTracker
+		_updateBannerAnnouncementTracker = new();
 	private readonly DispatcherTimer _compactRefreshStatusTimer;
 	private readonly DispatcherTimer _inlineStatusTimer;
 	private DrawingPoint _collapsedDragStart;
 	private FloatingWidgetCorner _corner = FloatingWidgetCorner.BottomRight;
 	private string? _lastViewModelAnnouncement;
+	private string? _updateAvailableVersion;
 	private PortableWidgetPreferences?
 		_portableWidgetPreferencesBeforeLastImport;
 	private string _screenDeviceName = string.Empty;
@@ -95,16 +99,59 @@ public partial class FloatingWidgetWindow : Window
 	private bool _isPlacementPending;
 	private bool _isPortableSettingsGateReservedForUpdateShutdown;
 	private bool _isWorkAreaRefreshPending;
+	private bool _hasUpdateBadge;
 	private AppTheme _theme = AppTheme.ClassicBlue;
 	private HwndSource? _windowSource;
 
 	internal event EventHandler? PreferencesChanged;
+
+	internal event EventHandler? AutomaticUpdateChecksDisableRequested;
+
+	internal event EventHandler? UpdatePrimaryActionRequested;
+
+	internal event EventHandler? UpdateSnoozeRequested;
 
 	internal bool IsCollapsed => _isCollapsed;
 
 	internal FloatingWidgetCorner Corner => _corner;
 
 	internal AppTheme Theme => _theme;
+
+	internal void ApplyUpdatePresentation(
+		UpdateUiPresentation presentation,
+		UpdateBannerAnnouncementKey? announcementKey)
+	{
+		ArgumentNullException.ThrowIfNull(presentation);
+		_updateBannerAnnouncementTracker.Observe(
+			presentation.IsBannerVisible ? announcementKey : null);
+
+		UpdateBannerTextBlock.Text = presentation.BannerText;
+		UpdateBanner.Visibility = presentation.IsBannerVisible
+			? Visibility.Visible
+			: Visibility.Collapsed;
+		UpdatePrimaryActionButton.Content = presentation.PrimaryActionText;
+		UpdatePrimaryActionButton.IsEnabled =
+			presentation.IsPrimaryActionEnabled;
+		UpdatePrimaryActionButton.Visibility =
+			presentation.PrimaryAction == UpdatePrimaryActionKind.None
+				? Visibility.Collapsed
+				: Visibility.Visible;
+		UpdateReleaseHistoryButton.Visibility =
+			presentation.IsReleaseHistoryVisible
+				? Visibility.Visible
+				: Visibility.Collapsed;
+		UpdateSnoozeButton.Visibility = presentation.IsSnoozeVisible
+			? Visibility.Visible
+			: Visibility.Collapsed;
+		DisableAutomaticUpdateChecksButton.Visibility =
+			presentation.IsDisableAutomaticChecksVisible
+				? Visibility.Visible
+				: Visibility.Collapsed;
+		_hasUpdateBadge = presentation.HasUpdateBadge;
+		_updateAvailableVersion = presentation.AvailableVersion;
+		UpdateCornerDependentVisuals();
+		TryAnnouncePendingUpdateBanner();
+	}
 
 	internal FloatingWidgetWindow(
 		DashboardViewModel viewModel,
@@ -397,6 +444,12 @@ public partial class FloatingWidgetWindow : Window
 		}
 
 		base.OnClosing(e);
+	}
+
+	protected override void OnActivated(EventArgs e)
+	{
+		base.OnActivated(e);
+		TryAnnouncePendingUpdateBanner();
 	}
 
 	protected override void OnSourceInitialized(EventArgs e)
@@ -1950,6 +2003,11 @@ public partial class FloatingWidgetWindow : Window
 			UpdateCompactRefreshStatus(viewModel);
 		}
 
+		if (e.PropertyName == nameof(DashboardViewModel.IsRefreshing))
+		{
+			TryAnnouncePendingUpdateBanner();
+		}
+
 		if (!CanAnnounceLiveRegion())
 		{
 			return;
@@ -2735,6 +2793,64 @@ public partial class FloatingWidgetWindow : Window
 		}
 	}
 
+	private void TryAnnouncePendingUpdateBanner()
+	{
+		if (!_updateBannerAnnouncementTracker.TryBeginDispatch(
+				CanAnnounceUpdateBanner(),
+				out UpdateBannerAnnouncementDispatch dispatch))
+		{
+			return;
+		}
+
+		_ = Dispatcher.BeginInvoke(
+			() => CompleteUpdateBannerAnnouncement(dispatch),
+			DispatcherPriority.Loaded);
+	}
+
+	private bool CanAnnounceUpdateBanner()
+	{
+		return !_isCollapsed &&
+			(UpdateBanner.Visibility == Visibility.Visible) &&
+			(DataContext is DashboardViewModel viewModel) &&
+			!viewModel.IsRefreshing &&
+			CanAnnounceLiveRegion();
+	}
+
+	private void CompleteUpdateBannerAnnouncement(
+		UpdateBannerAnnouncementDispatch dispatch)
+	{
+		bool isCurrent =
+			_updateBannerAnnouncementTracker.IsCurrent(dispatch);
+		bool wasRaised = isCurrent && TryRaiseUpdateBannerLiveRegion();
+		_updateBannerAnnouncementTracker.CompleteDispatch(
+			dispatch,
+			wasRaised);
+		if (!isCurrent)
+		{
+			TryAnnouncePendingUpdateBanner();
+		}
+	}
+
+	private bool TryRaiseUpdateBannerLiveRegion()
+	{
+		if (!CanAnnounceUpdateBanner() || !UpdateBannerTextBlock.IsVisible)
+		{
+			return false;
+		}
+
+		AutomationPeer? peer =
+			UIElementAutomationPeer.FromElement(UpdateBannerTextBlock) ??
+			UIElementAutomationPeer.CreatePeerForElement(
+				UpdateBannerTextBlock);
+		if (peer is null)
+		{
+			return false;
+		}
+
+		peer.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
+		return true;
+	}
+
 	private void OpenUserGuideMenuItem_Click(object sender, RoutedEventArgs e)
 	{
 		LocalUserGuideOpenResult result = LocalUserGuideLauncher.Open();
@@ -2763,6 +2879,45 @@ public partial class FloatingWidgetWindow : Window
 		NotifyPreferencesChanged();
 	}
 
+	private void UpdatePrimaryActionButton_Click(
+		object sender,
+		RoutedEventArgs e)
+	{
+		UpdatePrimaryActionRequested?.Invoke(this, EventArgs.Empty);
+	}
+
+	private void UpdateReleaseHistoryButton_Click(
+		object sender,
+		RoutedEventArgs e)
+	{
+		try
+		{
+			AboutLinkLauncher.Open(AboutLink.Releases);
+		}
+		catch (Exception exception) when (
+			exception is Win32Exception or InvalidOperationException)
+		{
+			ReportInlineStatus(
+				$"Windows 無法開啟下載與版本紀錄：{exception.Message}",
+				autoDismiss: false,
+				preserveAgainstAsyncUpdates: true);
+		}
+	}
+
+	private void UpdateSnoozeButton_Click(
+		object sender,
+		RoutedEventArgs e)
+	{
+		UpdateSnoozeRequested?.Invoke(this, EventArgs.Empty);
+	}
+
+	private void DisableAutomaticUpdateChecksButton_Click(
+		object sender,
+		RoutedEventArgs e)
+	{
+		AutomaticUpdateChecksDisableRequested?.Invoke(this, EventArgs.Empty);
+	}
+
 	private void FloatingWidgetWindow_IsVisibleChanged(
 		object sender,
 		DependencyPropertyChangedEventArgs e)
@@ -2771,6 +2926,8 @@ public partial class FloatingWidgetWindow : Window
 		{
 			NotifyPortableWidgetPreferencesChanged();
 		}
+
+		TryAnnouncePendingUpdateBanner();
 	}
 
 	private async void RefreshAccountMenuItem_Click(
@@ -3055,6 +3212,7 @@ public partial class FloatingWidgetWindow : Window
 		}
 
 		UpdateLayout();
+		TryAnnouncePendingUpdateBanner();
 
 		FrameworkElement focusTarget = isCollapsed
 			? CollapsedButton
@@ -3192,13 +3350,7 @@ public partial class FloatingWidgetWindow : Window
 		string collapseText = $"收合 AI Usage 到{cornerText}";
 		AutomationProperties.SetName(AnchorToggleButton, collapseText);
 		AnchorToggleButton.ToolTip = collapseText;
-		AutomationProperties.SetName(
-			CollapsedButton,
-			$"展開 AI Usage 浮窗，目前停靠在{cornerText}");
-		string expandHelpText =
-			$"按一下展開 AI Usage；拖曳可變更停靠角落。目前停靠在{cornerText}。";
-		AutomationProperties.SetHelpText(CollapsedButton, expandHelpText);
-		CollapsedButton.ToolTip = expandHelpText;
+		UpdateCollapsedButtonPresentation(cornerText);
 		TopLeftCornerMenuItem.IsChecked =
 			_corner == FloatingWidgetCorner.TopLeft;
 		TopRightCornerMenuItem.IsChecked =
@@ -3223,6 +3375,25 @@ public partial class FloatingWidgetWindow : Window
 		ExpandedFooter.Margin = isLeft
 			? new Thickness(CornerToggleContentInset, 0, 2, 0)
 			: new Thickness(2, 0, CornerToggleContentInset, 0);
+	}
+
+	private void UpdateCollapsedButtonPresentation(string cornerText)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(cornerText);
+		string updateHint = _hasUpdateBadge &&
+			!string.IsNullOrWhiteSpace(_updateAvailableVersion)
+				? $"；有新版 {_updateAvailableVersion} 可用"
+				: string.Empty;
+		AutomationProperties.SetName(
+			CollapsedButton,
+			$"展開 AI Usage 浮窗，目前停靠在{cornerText}{updateHint}");
+		string expandHelpText =
+			$"按一下展開 AI Usage；拖曳可變更停靠角落。目前停靠在{cornerText}{updateHint}。";
+		AutomationProperties.SetHelpText(CollapsedButton, expandHelpText);
+		CollapsedButton.ToolTip = expandHelpText;
+		CollapsedUpdateBadge.Visibility = _hasUpdateBadge
+			? Visibility.Visible
+			: Visibility.Collapsed;
 	}
 
 	private void UpdateExpandedBounds(

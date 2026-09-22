@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="AiUsageDashboard.Tests" />
+    <InternalsVisibleTo Include="AiUsageDashboard.UpdaterProcessFixture" />
     <AssemblyMetadata Include="AiUsageDashboard.UpdateFeedUrl" Value="$(UpdateFeedUrl)" />
     <AssemblyMetadata Include="AiUsageDashboard.UpdateChannel" Value="$(UpdateChannel)" />
   </ItemGroup>

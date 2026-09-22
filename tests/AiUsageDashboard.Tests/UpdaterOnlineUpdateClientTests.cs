@@ -136,7 +136,9 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 		}
 		StubHttpMessageHandler handler = new((_, _) => CreateResponse(responseBytes));
 		using HttpClient httpClient = new(handler);
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		SignedUpdateFeedClient client = new(
+			httpClient,
+			_signingKeys.Trust("test-first"));
 		await Assert.ThrowsAsync<InvalidDataException>(() => client.FetchFeedAsync(new Uri(FeedUri), "internal"));
 		Assert.Equal(1, handler.SendCount);
 	}
@@ -149,7 +151,9 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 			"https://cdn.example.test/releases/internal/latest.json");
 		using HttpClient httpClient = CreateClient(
 			_ => CreateResponse(feedBytes, finalUri: finalUri));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		SignedUpdateFeedClient client = new(
+			httpClient,
+			_signingKeys.Trust("test-first"));
 
 		ResolvedUpdateReleaseFeed result = await client.FetchFeedAsync(
 			new Uri(FeedUri),
@@ -170,7 +174,9 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 			return CreateResponse(content, request.RequestUri);
 		});
 		using HttpClient httpClient = new(handler);
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		SignedUpdateFeedClient client = new(
+			httpClient,
+			_signingKeys.Trust("test-first"));
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			client.FetchFeedAsync(new Uri(FeedUri), "internal"));
@@ -182,10 +188,31 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 		byte[] oversizedFeed = new byte[SignedUpdateFeed.MaximumEnvelopeSizeBytes + 1];
 		using HttpClient httpClient = CreateClient(
 			_ => CreateUnknownLengthResponse(oversizedFeed));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		SignedUpdateFeedClient client = new(
+			httpClient,
+			_signingKeys.Trust("test-first"));
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			client.FetchFeedAsync(new Uri(FeedUri), "internal"));
+	}
+
+	[Fact]
+	public async Task FetchFeedAsync_WhenCancelled_PropagatesCancellation()
+	{
+		using HttpClient httpClient = CreateClient(_ =>
+			CreateUnknownLengthResponse(
+				new CancelAfterFirstReadStream([1, 2, 3])));
+		SignedUpdateFeedClient client = new(
+			httpClient,
+			_signingKeys.Trust("test-first"));
+		using CancellationTokenSource cancellationSource = new(
+			TimeSpan.FromMilliseconds(250));
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+			client.FetchFeedAsync(
+				new Uri(FeedUri),
+				"internal",
+				cancellationSource.Token));
 	}
 
 	[Fact]
@@ -194,7 +221,9 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 		StubHttpMessageHandler handler = new((_, _) =>
 			throw new InvalidOperationException("Request must not be sent."));
 		using HttpClient httpClient = new(handler);
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		SignedUpdateFeedClient client = new(
+			httpClient,
+			_signingKeys.Trust("test-first"));
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			client.FetchFeedAsync(
@@ -212,7 +241,9 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 		StubHttpMessageHandler handler = new((_, _) =>
 			throw new InvalidOperationException("Request must not be sent."));
 		using HttpClient httpClient = new(handler);
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		SignedUpdateFeedClient client = new(
+			httpClient,
+			_signingKeys.Trust("test-first"));
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			client.FetchFeedAsync(new Uri(feedUri), "internal"));
@@ -225,10 +256,10 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 		StubHttpMessageHandler handler = new((_, _) =>
 			throw new InvalidOperationException("Request must not be sent."));
 		using HttpClient httpClient = new(handler);
-		OnlineUpdateClient client = new(
+		SignedUpdateFeedClient client = new(
 			httpClient,
-			allowInsecureLoopbackForTests: true,
-			trustedKeys: _signingKeys.Trust("test-first"));
+			_signingKeys.Trust("test-first"),
+			allowInsecureLoopbackForTests: true);
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			client.FetchFeedAsync(
@@ -242,10 +273,10 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 	{
 		using HttpClient httpClient = CreateClient(
 			_ => CreateResponse(CreateFeedBytes()));
-		OnlineUpdateClient client = new(
+		SignedUpdateFeedClient client = new(
 			httpClient,
-			allowInsecureLoopbackForTests: true,
-			trustedKeys: _signingKeys.Trust("test-first"));
+			_signingKeys.Trust("test-first"),
+			allowInsecureLoopbackForTests: true);
 
 		ResolvedUpdateReleaseFeed result = await client.FetchFeedAsync(
 			new Uri("http://127.0.0.1:32123/latest.json"),
@@ -260,7 +291,9 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 		Uri downgradedUri = new("http://127.0.0.1:32123/latest.json");
 		using HttpClient httpClient = CreateClient(
 			_ => CreateResponse(CreateFeedBytes(), finalUri: downgradedUri));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		SignedUpdateFeedClient client = new(
+			httpClient,
+			_signingKeys.Trust("test-first"));
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			client.FetchFeedAsync(new Uri(FeedUri), "internal"));
@@ -271,7 +304,9 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 	{
 		using HttpClient httpClient = CreateClient(_ => new HttpResponseMessage(
 			HttpStatusCode.NotFound));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		SignedUpdateFeedClient client = new(
+			httpClient,
+			_signingKeys.Trust("test-first"));
 
 		await Assert.ThrowsAsync<HttpRequestException>(() =>
 			client.FetchFeedAsync(new Uri(FeedUri), "internal"));
@@ -288,7 +323,7 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 			artifact.FileName);
 		using HttpClient httpClient = CreateClient(
 			_ => CreateResponse(body));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		OnlineUpdateClient client = new(httpClient);
 
 		await client.DownloadArtifactAsync(artifact, destinationPath);
 
@@ -306,7 +341,7 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 			artifact.FileName);
 		using HttpClient httpClient = CreateClient(
 			_ => CreateUnknownLengthResponse([1, 2, 3, 4]));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		OnlineUpdateClient client = new(httpClient);
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			client.DownloadArtifactAsync(artifact, destinationPath));
@@ -324,7 +359,7 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 			artifact.FileName);
 		using HttpClient httpClient = CreateClient(
 			_ => CreateUnknownLengthResponse([1, 2, 3]));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		OnlineUpdateClient client = new(httpClient);
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			client.DownloadArtifactAsync(artifact, destinationPath));
@@ -345,7 +380,7 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 			artifact.FileName);
 		using HttpClient httpClient = CreateClient(
 			_ => CreateResponse(body));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		OnlineUpdateClient client = new(httpClient);
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			client.DownloadArtifactAsync(artifact, destinationPath));
@@ -368,7 +403,7 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 			response.Content.Headers.ContentLength = body.Length + 1;
 			return response;
 		});
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		OnlineUpdateClient client = new(httpClient);
 
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			client.DownloadArtifactAsync(artifact, destinationPath));
@@ -386,7 +421,7 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 			artifact.FileName);
 		using HttpClient httpClient = CreateClient(_ => new HttpResponseMessage(
 			HttpStatusCode.BadGateway));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		OnlineUpdateClient client = new(httpClient);
 
 		await Assert.ThrowsAsync<HttpRequestException>(() =>
 			client.DownloadArtifactAsync(artifact, destinationPath));
@@ -406,7 +441,7 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 		using HttpClient httpClient = CreateClient(_ =>
 			CreateUnknownLengthResponse(
 				new CancelAfterFirstReadStream(firstChunk)));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		OnlineUpdateClient client = new(httpClient);
 		using CancellationTokenSource cancellationSource = new(
 			TimeSpan.FromMilliseconds(250));
 
@@ -432,7 +467,7 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 		await File.WriteAllBytesAsync(destinationPath, existingBody);
 		using HttpClient httpClient = CreateClient(
 			_ => CreateResponse(downloadedBody));
-		OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+		OnlineUpdateClient client = new(httpClient);
 
 		await Assert.ThrowsAsync<IOException>(() =>
 			client.DownloadArtifactAsync(artifact, destinationPath));
@@ -460,7 +495,7 @@ public sealed class UpdaterOnlineUpdateClientTests : IClassFixture<FeedSigningTe
 			StubHttpMessageHandler handler = new((_, _) =>
 				throw new InvalidOperationException("Request must not be sent."));
 			using HttpClient httpClient = new(handler);
-			OnlineUpdateClient client = new(httpClient, trustedKeys: _signingKeys.Trust("test-first"));
+			OnlineUpdateClient client = new(httpClient);
 
 			await Assert.ThrowsAsync<InvalidDataException>(() =>
 				client.DownloadArtifactAsync(

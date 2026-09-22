@@ -6,7 +6,6 @@
 $ErrorActionPreference = 'Stop'
 $request = Get-Content -LiteralPath $RequestPath -Raw | ConvertFrom-Json -AsHashtable
 $fixtureRoot = Split-Path -Parent $RequestPath
-$script:FixtureArtifactReadCount = 0
 $script:FixtureRemoteMutationCount = 0
 $script:FixtureReleaseViewReadCount = 0
 $script:FixtureReleaseApiPaths = [Collections.Generic.List[string]]::new()
@@ -19,12 +18,14 @@ $env:GITHUB_SHA = 'a' * 40
 $env:GITHUB_REF = 'refs/heads/main'
 $env:RELEASE_VERSION = '0.2.0'
 $env:EXPECTED_SHA = $env:GITHUB_SHA
-$env:PRIVATE_CANDIDATE = 'true'
+$env:DRAFT_CANDIDATE = 'true'
+$env:CREATE_DRAFT_RELEASE = if ($request.CreateDraftRelease) { 'true' } else { 'false' }
 $env:SEQUENCE_AUDIT = 'true'
 $env:RELEASE_SEQUENCE = '2'
 $env:PREVIOUS_RELEASE_SEQUENCE = '1'
 $env:GITHUB_OUTPUT = Join-Path $fixtureRoot 'build-output.txt'
 $env:GITHUB_STEP_SUMMARY = Join-Path $fixtureRoot 'summary.md'
+$script:FixtureRemoteMainSha = if ($request.RemoteMainSha) { $request.RemoteMainSha } else { $env:GITHUB_SHA }
 
 function Get-WorkflowScript([string] $StepName) {
   $lines = [IO.File]::ReadAllLines($WorkflowPath)
@@ -65,6 +66,8 @@ function git {
   $global:LASTEXITCODE = 0
   switch ($args -join ' ') {
     'rev-parse HEAD' { return $env:GITHUB_SHA }
+    'ls-remote origin refs/heads/main' { return "$script:FixtureRemoteMainSha`trefs/heads/main" }
+    'ls-remote origin refs/tags/v0.2.0' { return }
     'tag --list v0.2.0' { return }
     'status --porcelain=v1 --untracked-files=all' { return }
     default { throw "Unexpected git call in workflow fixture: $($args -join ' ')" }
@@ -78,25 +81,8 @@ function gh {
       $script:FixtureReleaseApiPaths.Add($args[1])
     }
     switch ($args[1]) {
-      "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:CANDIDATE_ARTIFACT_ID" {
-        $script:FixtureArtifactReadCount++
-        switch ($request.ArtifactReadFailure) {
-          'exit-code' {
-            $global:LASTEXITCODE = 1
-            return 'Fixture artifact API failure.'
-          }
-          'malformed-json' { return '{ invalid-json' }
-          $null { }
-          default { throw "Unsupported fixture artifact API failure: $($request.ArtifactReadFailure)" }
-        }
-        return $script:FixtureArtifact | ConvertTo-Json -Depth 5
-      }
       "repos/$env:GITHUB_REPOSITORY" {
-        return @{ id = 6789; private = $true } | ConvertTo-Json
-      }
-      "repos/$env:GITHUB_REPOSITORY/releases/tags/v0.2.0" {
-        $global:LASTEXITCODE = 1
-        return '{"message":"Not Found","status":"404"}'
+        return @{ id = 6789; private = $request.RepositoryPrivate } | ConvertTo-Json
       }
       "repos/$env:GITHUB_REPOSITORY/releases/3456" {
         return Get-ReleaseApiResponse -BaseResponse $script:FixtureRelease -Behavior $request.FreezeRead
@@ -115,7 +101,15 @@ function gh {
       isPrerelease = $true
       tagName = $script:FixtureRelease.tag_name
       targetCommitish = $script:FixtureRelease.target_commitish
-      assets = $script:FixtureRelease.assets
+      assets = @($script:FixtureRelease.assets | ForEach-Object {
+        @{
+          id = "RA_kwDOUQKKmc4hg9X$($_.id)"
+          apiUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/assets/$($_.id)"
+          name = $_.name
+          size = $_.size
+          digest = $_.digest
+        }
+      })
       url = $script:FixtureRelease.html_url
     }
     $jsonIndex = [Array]::IndexOf($args, '--json')
@@ -144,8 +138,21 @@ function Get-ReleaseApiResponse([hashtable] $BaseResponse, [hashtable] $Behavior
     }
   }
   if ($null -ne $Behavior.AssetOverrides) {
+    $assetIndex = 0
+    if ($Behavior.AssetName) {
+      $assetIndex = -1
+      for ($index = 0; $index -lt $response.assets.Count; $index++) {
+        if ($response.assets[$index].name -ceq $Behavior.AssetName) {
+          $assetIndex = $index
+          break
+        }
+      }
+      if ($assetIndex -lt 0) {
+        throw "Unknown fixture asset name: $($Behavior.AssetName)"
+      }
+    }
     foreach ($entry in $Behavior.AssetOverrides.GetEnumerator()) {
-      $response.assets[0][$entry.Key] = $entry.Value
+      $response.assets[$assetIndex][$entry.Key] = $entry.Value
     }
   }
   if ($Behavior.OmitAsset) {
@@ -160,7 +167,7 @@ function Get-ReleaseApiResponse([hashtable] $BaseResponse, [hashtable] $Behavior
   return $response | ConvertTo-Json -Depth 5
 }
 
-# 驗簽與 GitHub transport 是此測試的外部邊界；checksum 與發佈 script 仍實際執行。
+# 驗簽與 GitHub transport 是此測試的外部邊界；checksum 與凍結 script 仍實際執行。
 function dotnet {
   $outputIndex = [Array]::IndexOf($args, '--output')
   if (($args[0] -cne 'run') -or ($args -cnotcontains 'verify') -or
@@ -172,7 +179,7 @@ function dotnet {
 }
 
 function Initialize-ReleaseFiles {
-  $releaseRoot = Join-Path $fixtureRoot 'github-prerelease'
+  $releaseRoot = Join-Path $fixtureRoot 'internal-release'
   New-Item -ItemType Directory -Path $releaseRoot | Out-Null
   $packageName = 'AiUsageDashboard-0.2.0-win-x64.zip'
   $updaterName = 'AiUsageDashboard-Updater-0.2.0-win-x64.exe'
@@ -214,15 +221,16 @@ function Initialize-ReleaseFiles {
         name = $_.Name
         size = $_.Length
         digest = 'sha256:' + (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        browser_download_url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/untagged-fixture-uuid/$($_.Name)"
       }
     })
   }
 }
 
-$phase = 'build'
+$phase = 'source'
 $failure = $null
 $buildOutputs = @()
-$provenanceOutputPath = Join-Path $fixtureRoot 'provenance-output.txt'
+$releaseOutputPath = Join-Path $fixtureRoot 'release-output.txt'
 try {
   & (Get-WorkflowScript 'Validate release source') | Out-Null
   $buildOutputs = @([IO.File]::ReadAllLines($env:GITHUB_OUTPUT))
@@ -234,46 +242,30 @@ try {
   $env:BUILD_RUN_ID = $outputValues.build_run_id
   $env:BUILD_RUN_ATTEMPT = $outputValues.build_run_attempt
   $env:RELEASE_VERSION = $outputValues.candidate_version
+  $env:GITHUB_OUTPUT = $releaseOutputPath
   $env:GITHUB_RUN_ATTEMPT = [string] $request.PublishAttempt
-  $env:CANDIDATE_ARTIFACT_ID = $request.BuildArtifactId
-  $env:CANDIDATE_ARTIFACT_DIGEST = 'b' * 64
-  $env:GITHUB_OUTPUT = $provenanceOutputPath
-  $script:FixtureArtifact = @{
-    id = [long] $request.BuildArtifactId
-    name = "AiUsageDashboard-0.2.0-win-x64-12345-$($request.BuildAttempt)"
-    digest = 'sha256:' + ('b' * 64)
-    expired = $false
-    workflow_run = @{ id = 12345; head_sha = 'a' * 40 }
+  if ($request.RemoteMainShaAtFreeze) {
+    $script:FixtureRemoteMainSha = $request.RemoteMainShaAtFreeze
   }
-  foreach ($entry in $request.EnvironmentOverrides.GetEnumerator()) {
-    [Environment]::SetEnvironmentVariable($entry.Key, $entry.Value)
-  }
-  foreach ($entry in $request.ArtifactOverrides.GetEnumerator()) {
-    $script:FixtureArtifact[$entry.Key] = $entry.Value
-  }
-
-  $phase = 'provenance'
-  & (Get-WorkflowScript 'Validate candidate provenance')
-  $phase = 'publish'
+  $phase = 'freeze'
   Initialize-ReleaseFiles
-  & (Get-WorkflowScript 'Reverify and publish private prerelease')
+  & (Get-WorkflowScript 'Reverify and freeze draft candidate')
   $phase = 'complete'
 }
 catch {
   $failure = $_.Exception.Message
 }
 
-$notesPath = Join-Path $fixtureRoot 'github-prerelease-notes.md'
+$notesPath = Join-Path $fixtureRoot 'draft-candidate-notes.md'
 $receiptPath = Join-Path $fixtureRoot 'candidate-freeze.json'
 $result = @{
   Phase = $phase
   Error = $failure
-  ArtifactReadCount = $script:FixtureArtifactReadCount
   RemoteMutationCount = $script:FixtureRemoteMutationCount
   ReleaseViewReadCount = $script:FixtureReleaseViewReadCount
   ReleaseApiPaths = @($script:FixtureReleaseApiPaths)
   BuildOutputs = $buildOutputs
-  ProvenanceOutputs = @(if (Test-Path -LiteralPath $provenanceOutputPath) { [IO.File]::ReadAllLines($provenanceOutputPath) })
+  ReleaseOutputs = @(if (Test-Path -LiteralPath $releaseOutputPath) { [IO.File]::ReadAllLines($releaseOutputPath) })
   Notes = if (Test-Path -LiteralPath $notesPath) { [IO.File]::ReadAllText($notesPath) } else { $null }
   Receipt = if (Test-Path -LiteralPath $receiptPath) { Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json } else { $null }
 }
