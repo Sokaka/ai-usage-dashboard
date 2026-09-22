@@ -13,8 +13,8 @@ on:
         description: Full 40-character commit SHA currently at main
         required: true
         type: string
-      acknowledge_private_candidate:
-        description: Build a private candidate; publication is a separate decision
+      acknowledge_draft_candidate:
+        description: Build a draft candidate; publication is a separate decision
         required: true
         default: false
         type: boolean
@@ -32,13 +32,14 @@ on:
         default: false
         type: boolean
       publish_github_prerelease:
-        description: Save the verified six-file bundle as a private draft prerelease with the final tag
+        description: Required; save the verified six-file bundle as a draft prerelease with the final tag
         required: true
         default: false
         type: boolean
 
 permissions:
-  contents: read
+  actions: read
+  contents: write
 
 concurrency:
   group: internal-release-candidate
@@ -47,13 +48,7 @@ concurrency:
 jobs:
   build-candidate:
     runs-on: windows-latest
-    timeout-minutes: 30
-    outputs:
-      candidate_version: ${{ steps.release_source.outputs.candidate_version }}
-      build_run_id: ${{ steps.release_source.outputs.build_run_id }}
-      build_run_attempt: ${{ steps.release_source.outputs.build_run_attempt }}
-      artifact_id: ${{ steps.candidate_upload.outputs.artifact-id }}
-      artifact_digest: ${{ steps.candidate_upload.outputs.artifact-digest }}
+    timeout-minutes: 45
 
     steps:
       - name: Check out requested source
@@ -68,7 +63,8 @@ jobs:
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           EXPECTED_SHA: ${{ inputs.expected_sha }}
-          PRIVATE_CANDIDATE: ${{ inputs.acknowledge_private_candidate }}
+          DRAFT_CANDIDATE: ${{ inputs.acknowledge_draft_candidate }}
+          CREATE_DRAFT_RELEASE: ${{ inputs.publish_github_prerelease }}
           RELEASE_SEQUENCE: ${{ inputs.release_sequence }}
           PREVIOUS_RELEASE_SEQUENCE: ${{ inputs.previous_release_sequence }}
           SEQUENCE_AUDIT: ${{ inputs.acknowledge_sequence_audit }}
@@ -81,8 +77,11 @@ jobs:
           $headSha = (git rev-parse HEAD).Trim()
           if ($LASTEXITCODE -ne 0) { throw 'Unable to inspect candidate source HEAD.' }
 
-          if ($env:PRIVATE_CANDIDATE -ne 'true') {
-            throw 'The private candidate acknowledgement must be selected.'
+          if ($env:DRAFT_CANDIDATE -ne 'true') {
+            throw 'The draft candidate acknowledgement must be selected.'
+          }
+          if ($env:CREATE_DRAFT_RELEASE -ne 'true') {
+            throw 'Saving the verified candidate as a draft Release must be selected.'
           }
 
           [long] $releaseSequence = 0
@@ -113,6 +112,12 @@ jobs:
           if (($headSha -ne $expectedSha) -or ($headSha -ne $env:GITHUB_SHA)) {
             throw "Commit confirmation failed. Checked out $headSha; expected $expectedSha."
           }
+          $remoteMain = @(git ls-remote origin refs/heads/main)
+          if (($LASTEXITCODE -ne 0) -or ($remoteMain.Count -ne 1) -or
+              ($remoteMain[0] -cnotmatch '^([0-9a-fA-F]{40})\s+refs/heads/main$') -or
+              ($Matches[1] -cne $headSha)) {
+            throw "Remote main does not point to candidate source $headSha."
+          }
 
           $candidateVersion = $version
           $existingTag = git tag --list "v$candidateVersion"
@@ -131,7 +136,29 @@ jobs:
           "candidate_version=$candidateVersion" >> $env:GITHUB_OUTPUT
           "build_run_id=$env:GITHUB_RUN_ID" >> $env:GITHUB_OUTPUT
           "build_run_attempt=$env:GITHUB_RUN_ATTEMPT" >> $env:GITHUB_OUTPUT
-          "Validated private release candidate $candidateVersion from $headSha."
+          "Validated draft release candidate $candidateVersion from $headSha."
+
+      - name: Require passing Windows CI for this main commit
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runsJson = gh api "repos/$env:GITHUB_REPOSITORY/actions/workflows/windows-ci.yml/runs?head_sha=$env:GITHUB_SHA&event=push&status=success&per_page=100"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to inspect Windows CI runs for $env:GITHUB_REPOSITORY at $env:GITHUB_SHA."
+          }
+          $runs = $runsJson | ConvertFrom-Json
+          $passed = @($runs.workflow_runs | Where-Object {
+            ($_.head_sha -ceq $env:GITHUB_SHA) -and
+            ($_.head_branch -ceq 'main') -and
+            ($_.event -ceq 'push') -and
+            ($_.status -ceq 'completed') -and
+            ($_.conclusion -ceq 'success')
+          })
+          if ($passed.Count -eq 0) {
+            throw "Windows CI verify must pass for main commit $env:GITHUB_SHA before signing."
+          }
 
       - name: Set up pinned .NET SDK
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -231,7 +258,6 @@ jobs:
         env:
           RELEASE_VERSION: ${{ steps.release_source.outputs.candidate_version }}
           RELEASE_SEQUENCE: ${{ inputs.release_sequence }}
-          PUBLISH_GITHUB_PRERELEASE: ${{ inputs.publish_github_prerelease }}
         run: |
           $ErrorActionPreference = 'Stop'
 
@@ -326,15 +352,8 @@ jobs:
             throw 'Update feed does not match the generated package, updater, or source.'
           }
 
-          $result = if ($env:PUBLISH_GITHUB_PRERELEASE -eq 'true') {
-            'verified artifact; private prerelease publication requested'
-          }
-          else {
-            'verified Actions artifact only; no tag or GitHub Release was created'
-          }
-
           @"
-          ## Private release candidate
+          ## Draft release candidate
 
           - Version: ``$env:RELEASE_VERSION``
           - Commit: ``$env:GITHUB_SHA``
@@ -342,142 +361,27 @@ jobs:
           - Updater SHA-256: ``$actualUpdaterHash``
           - Feed SHA-256: ``$actualFeedHash``
           - Feed: ``AiUsageDashboard-update-stable.json``
-          - Result: $result
+          - Result: verified candidate on runner; draft Release requested
           "@ | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
 
-      - name: Upload versioned candidate
-        id: candidate_upload
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: AiUsageDashboard-${{ steps.release_source.outputs.candidate_version }}-win-x64-${{ steps.release_source.outputs.build_run_id }}-${{ steps.release_source.outputs.build_run_attempt }}
-          path: |
-            ${{ runner.temp }}/internal-release/AiUsageDashboard-${{ steps.release_source.outputs.candidate_version }}-win-x64.zip
-            ${{ runner.temp }}/internal-release/AiUsageDashboard-${{ steps.release_source.outputs.candidate_version }}-win-x64.zip.sha256
-            ${{ runner.temp }}/internal-release/AiUsageDashboard-Updater-${{ steps.release_source.outputs.candidate_version }}-win-x64.exe
-            ${{ runner.temp }}/internal-release/AiUsageDashboard-Updater-${{ steps.release_source.outputs.candidate_version }}-win-x64.exe.sha256
-            ${{ runner.temp }}/internal-release/AiUsageDashboard-update-stable.json
-            ${{ runner.temp }}/internal-release/AiUsageDashboard-update-stable.json.sha256
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Prepare checked test diagnostics on failure
-        id: diagnostic_preparation
-        if: failure() && steps.repository_history.outcome == 'success' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
-        shell: pwsh
-        run: |
-          dotnet run --project tools/AiUsageDashboard.PrivacyCheck --configuration Release --no-build --no-restore -- diagnostics `
-            --input (Join-Path $env:RUNNER_TEMP 'test-results') `
-            --output (Join-Path $env:RUNNER_TEMP 'safe-test-diagnostics')
-          if ($LASTEXITCODE -ne 0) { throw 'Test diagnostics privacy validation failed; upload is blocked.' }
-
-      - name: Upload test diagnostics on failure
-        if: failure() && steps.diagnostic_preparation.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: internal-release-test-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/safe-test-diagnostics
-          if-no-files-found: ignore
-          retention-days: 7
-
-  publish-prerelease:
-    if: ${{ inputs.publish_github_prerelease }}
-    needs: build-candidate
-    runs-on: windows-latest
-    timeout-minutes: 15
-    permissions:
-      actions: read
-      contents: write
-    env:
-      BUILD_RUN_ID: ${{ needs.build-candidate.outputs.build_run_id }}
-      BUILD_RUN_ATTEMPT: ${{ needs.build-candidate.outputs.build_run_attempt }}
-      CANDIDATE_ARTIFACT_ID: ${{ needs.build-candidate.outputs.artifact_id }}
-      CANDIDATE_ARTIFACT_DIGEST: ${{ needs.build-candidate.outputs.artifact_digest }}
-
-    steps:
-      - name: Check out candidate verifier
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-
-      - name: Set up pinned .NET SDK
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
-        with:
-          global-json-file: global.json
-
-      - name: Prepare pinned public update keys
-        shell: pwsh
-        env:
-          UPDATE_TRUST_JSON: ${{ vars.UPDATE_FEED_TRUST_JSON }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          if ([string]::IsNullOrWhiteSpace($env:UPDATE_TRUST_JSON)) {
-            throw 'UPDATE_FEED_TRUST_JSON must be configured with externally provisioned production public keys.'
-          }
-          $trustPath = Join-Path $env:RUNNER_TEMP 'update-public-trust.json'
-          [IO.File]::WriteAllText($trustPath, $env:UPDATE_TRUST_JSON, [Text.UTF8Encoding]::new($false))
-          dotnet run --project tools/AiUsageDashboard.FeedSigning --configuration Release -- validate-trust --trust $trustPath
-          if ($LASTEXITCODE -ne 0) { throw 'Update feed public trust validation failed.' }
-
-      - name: Validate candidate provenance
-        id: candidate_provenance
+      - name: Reverify and freeze draft candidate
+        id: candidate_release
+        if: ${{ inputs.publish_github_prerelease }}
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ needs.build-candidate.outputs.candidate_version }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-
-          foreach ($field in @('BUILD_RUN_ID', 'BUILD_RUN_ATTEMPT', 'CANDIDATE_ARTIFACT_ID')) {
-            $value = [Environment]::GetEnvironmentVariable($field)
-            [long] $identifier = 0
-            if (($value -cnotmatch '\A[1-9][0-9]*\z') -or
-                ![long]::TryParse($value, [ref] $identifier)) {
-              throw "Candidate provenance for $env:GITHUB_REPOSITORY is missing or invalid: $field."
-            }
-          }
-          if (($env:BUILD_RUN_ID -cne $env:GITHUB_RUN_ID) -or
-              ([long] $env:BUILD_RUN_ATTEMPT -gt [long] $env:GITHUB_RUN_ATTEMPT) -or
-              ($env:CANDIDATE_ARTIFACT_DIGEST -cnotmatch '\A[0-9a-f]{64}\z')) {
-            throw "Candidate build provenance does not match workflow run $env:GITHUB_RUN_ID, attempt $env:GITHUB_RUN_ATTEMPT."
-          }
-
-          $artifactJson = gh api "repos/$env:GITHUB_REPOSITORY/actions/artifacts/$env:CANDIDATE_ARTIFACT_ID"
-          if ($LASTEXITCODE -ne 0) {
-            throw "Unable to inspect candidate artifact $env:CANDIDATE_ARTIFACT_ID in $env:GITHUB_REPOSITORY."
-          }
-          $artifact = $artifactJson | ConvertFrom-Json
-          $artifactName = "AiUsageDashboard-$env:RELEASE_VERSION-win-x64-$env:BUILD_RUN_ID-$env:BUILD_RUN_ATTEMPT"
-          if (([string] $artifact.id -cne $env:CANDIDATE_ARTIFACT_ID) -or
-              ($artifact.name -cne $artifactName) -or ($artifact.expired -ne $false) -or
-              ([string] $artifact.workflow_run.id -cne $env:BUILD_RUN_ID) -or
-              ($artifact.workflow_run.head_sha -cne $env:GITHUB_SHA) -or
-              ($artifact.digest -cne "sha256:$env:CANDIDATE_ARTIFACT_DIGEST")) {
-            throw "Candidate artifact $env:CANDIDATE_ARTIFACT_ID does not match build $env:BUILD_RUN_ID, attempt $env:BUILD_RUN_ATTEMPT, source $env:GITHUB_SHA."
-          }
-
-          "artifact_id=$env:CANDIDATE_ARTIFACT_ID" >> $env:GITHUB_OUTPUT
-
-      - name: Download verified candidate
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          artifact-ids: ${{ steps.candidate_provenance.outputs.artifact_id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ needs.build-candidate.outputs.build_run_id }}
-          path: ${{ runner.temp }}/github-prerelease
-          digest-mismatch: error
-
-      - name: Reverify and publish private prerelease
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ needs.build-candidate.outputs.candidate_version }}
+          RELEASE_VERSION: ${{ steps.release_source.outputs.candidate_version }}
+          BUILD_RUN_ID: ${{ steps.release_source.outputs.build_run_id }}
+          BUILD_RUN_ATTEMPT: ${{ steps.release_source.outputs.build_run_attempt }}
           RELEASE_SEQUENCE: ${{ inputs.release_sequence }}
         run: |
           $ErrorActionPreference = 'Stop'
 
-          $releaseRoot = Join-Path $env:RUNNER_TEMP 'github-prerelease'
+          if (($env:BUILD_RUN_ID -cne $env:GITHUB_RUN_ID) -or
+              ($env:BUILD_RUN_ATTEMPT -cne $env:GITHUB_RUN_ATTEMPT)) {
+            throw 'Candidate build run identity changed before draft creation.'
+          }
+          $releaseRoot = Join-Path $env:RUNNER_TEMP 'internal-release'
           $packageName = "AiUsageDashboard-$env:RELEASE_VERSION-win-x64.zip"
           $updaterName = "AiUsageDashboard-Updater-$env:RELEASE_VERSION-win-x64.exe"
           $feedName = 'AiUsageDashboard-update-stable.json'
@@ -489,11 +393,12 @@ jobs:
             $feedName,
             "$feedName.sha256"
           )
-          $files = @(Get-ChildItem -LiteralPath $releaseRoot -File)
+          $entries = @(Get-ChildItem -LiteralPath $releaseRoot -Force)
+          $files = @($entries | Where-Object { !$_.PSIsContainer })
           $actualNames = @($files.Name | Sort-Object)
-          if (($files.Count -ne 6) -or
+          if (($entries.Count -ne 6) -or ($files.Count -ne 6) -or
               (Compare-Object ($expectedNames | Sort-Object) $actualNames)) {
-            throw 'Downloaded candidate does not contain the exact six release files.'
+            throw 'Candidate output does not contain the exact six release files.'
           }
 
           $verifiedHashes = @{}
@@ -541,18 +446,18 @@ jobs:
               ($feed.updater.sizeBytes -ne (Get-Item -LiteralPath $updaterPath).Length) -or
               ($feed.updater.sha256 -cne $verifiedHashes[$updaterName]) -or
               ($feed.updater.sourceRevision -cne $env:GITHUB_SHA)) {
-            throw 'Downloaded candidate feed no longer matches the verified release files.'
+            throw 'Candidate feed no longer matches the verified release files.'
           }
 
           $tag = "v$env:RELEASE_VERSION"
-          $notesPath = Join-Path $env:RUNNER_TEMP 'github-prerelease-notes.md'
+          $notesPath = Join-Path $env:RUNNER_TEMP 'draft-candidate-notes.md'
           $notes = @"
-          Private release candidate built from ``$env:GITHUB_SHA`` by
+          Draft release candidate built from ``$env:GITHUB_SHA`` by
           [workflow run $env:BUILD_RUN_ID, attempt $env:BUILD_RUN_ATTEMPT](https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:BUILD_RUN_ID/attempts/$env:BUILD_RUN_ATTEMPT).
           Release sequence: $env:RELEASE_SEQUENCE. These exact six assets are the candidate for a later publication decision.
 
           Download all six assets from this Release for verification and offline recovery.
-          The standalone updater cannot download private GitHub assets without separate GitHub authentication.
+          The standalone updater cannot download draft assets before public promotion.
           "@
           [IO.File]::WriteAllText(
             $notesPath,
@@ -561,8 +466,18 @@ jobs:
           $assets = @($files | Sort-Object Name | Select-Object -ExpandProperty FullName)
 
           $repository = gh api "repos/$env:GITHUB_REPOSITORY" | ConvertFrom-Json
-          if (($LASTEXITCODE -ne 0) -or !$repository.private) {
-            throw 'Candidate Release creation requires the repository to remain private.'
+          if (($LASTEXITCODE -ne 0) -or ($repository.private -ne $false)) {
+            throw 'Draft candidate creation requires a public repository.'
+          }
+          $remoteMain = @(git ls-remote origin refs/heads/main)
+          if (($LASTEXITCODE -ne 0) -or ($remoteMain.Count -ne 1) -or
+              ($remoteMain[0] -cnotmatch '^([0-9a-fA-F]{40})\s+refs/heads/main$') -or
+              ($Matches[1] -cne $env:GITHUB_SHA)) {
+            throw "Remote main moved away from candidate source $env:GITHUB_SHA before draft creation."
+          }
+          $existingRemoteTag = @(git ls-remote origin "refs/tags/$tag")
+          if (($LASTEXITCODE -ne 0) -or ($existingRemoteTag.Count -ne 0)) {
+            throw "Release tag $tag already exists or cannot be checked in $env:GITHUB_REPOSITORY."
           }
 
           gh release create $tag @assets `
@@ -596,6 +511,8 @@ jobs:
             throw "Draft prerelease $tag (Release $releaseId) in $env:GITHUB_REPOSITORY does not match source $env:GITHUB_SHA and the requested six assets."
           }
 
+          $viewAssetIds = @{}
+          $assetApiPrefix = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/assets/"
           foreach ($file in $files) {
             $remoteAsset = @($release.assets | Where-Object {
               $_.name -ceq $file.Name
@@ -603,11 +520,19 @@ jobs:
             $localDigest = 'sha256:' + (Get-FileHash `
               -LiteralPath $file.FullName `
               -Algorithm SHA256).Hash.ToLowerInvariant()
+            $assetApiUrl = if ($remoteAsset.Count -eq 1) { [string] $remoteAsset[0].apiUrl } else { '' }
+            $assetIdText = if ($assetApiUrl.StartsWith($assetApiPrefix, [StringComparison]::Ordinal)) {
+              $assetApiUrl.Substring($assetApiPrefix.Length)
+            } else { '' }
+            [long] $remoteAssetId = 0
             if (($remoteAsset.Count -ne 1) -or
+                ($assetIdText -cnotmatch '\A[1-9][0-9]*\z') -or
+                ![long]::TryParse($assetIdText, [ref] $remoteAssetId) -or
                 ($remoteAsset[0].size -ne $file.Length) -or
                 ($remoteAsset[0].digest -cne $localDigest)) {
               throw "Uploaded Release asset verification failed for $($file.Name)."
             }
+            $viewAssetIds[$file.Name] = $remoteAssetId
           }
 
           $freezeJson = gh api "repos/$env:GITHUB_REPOSITORY/releases/$releaseId"
@@ -619,15 +544,29 @@ jobs:
               !$freeze.draft -or !$freeze.prerelease -or
               ($freeze.tag_name -cne $tag) -or ($freeze.target_commitish -cne $env:GITHUB_SHA) -or
               ($freeze.assets.Count -ne 6)) {
-            throw "Draft Release $releaseId ($tag) in $env:GITHUB_REPOSITORY changed identity, private draft state, source $env:GITHUB_SHA, or its six-asset set before freezing."
+            throw "Draft Release $releaseId ($tag) in $env:GITHUB_REPOSITORY changed identity, draft state, source $env:GITHUB_SHA, or its six-asset set before freezing."
           }
           foreach ($file in $files) {
             $frozenAsset = @($freeze.assets | Where-Object { $_.name -ceq $file.Name })
             $localDigest = 'sha256:' + (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            if (($frozenAsset.Count -ne 1) -or ($frozenAsset[0].size -ne $file.Length) -or
+            if (($frozenAsset.Count -ne 1) -or
+                ([string] $frozenAsset[0].id -cne [string] $viewAssetIds[$file.Name]) -or
+                ($frozenAsset[0].size -ne $file.Length) -or
                 ($frozenAsset[0].digest -cne $localDigest)) {
               throw "Candidate asset changed before freezing its identity: $($file.Name)."
             }
+          }
+          $sidecarAsset = @($freeze.assets | Where-Object {
+            $_.name -ceq 'AiUsageDashboard-update-stable.json.sha256'
+          })
+          $draftAssetUrl = if ($sidecarAsset.Count -eq 1) {
+            [string] $sidecarAsset[0].browser_download_url
+          } else { '' }
+          $expectedAssetUrl = '\Ahttps://github\.com/' +
+            [regex]::Escape($env:GITHUB_REPOSITORY) +
+            '/releases/download/[A-Za-z0-9._-]+/AiUsageDashboard-update-stable\.json\.sha256\z'
+          if ($draftAssetUrl -cnotmatch $expectedAssetUrl) {
+            throw "Draft Release $releaseId has no valid browser URL for its feed checksum asset."
           }
           $receipt = [ordered] @{
             repository = "https://github.com/$env:GITHUB_REPOSITORY"
@@ -638,8 +577,6 @@ jobs:
             sourceSha = $env:GITHUB_SHA
             buildRunId = $env:BUILD_RUN_ID
             buildRunAttempt = $env:BUILD_RUN_ATTEMPT
-            buildArtifactId = $env:CANDIDATE_ARTIFACT_ID
-            buildArtifactDigest = "sha256:$env:CANDIDATE_ARTIFACT_DIGEST"
             releaseSequence = [long] $env:RELEASE_SEQUENCE
             assets = @($freeze.assets | ForEach-Object {
               [ordered] @{ id = $_.id; name = $_.name; size = $_.size; digest = $_.digest }
@@ -647,13 +584,63 @@ jobs:
           }
           $receiptPath = Join-Path $env:RUNNER_TEMP 'candidate-freeze.json'
           [IO.File]::WriteAllText($receiptPath, ($receipt | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
-          "Private draft candidate frozen at $($freeze.html_url); six asset identities and digests recorded. Public promotion must reuse these exact assets without rebuilding." |
+          "release_id=$releaseId" >> $env:GITHUB_OUTPUT
+          "draft_asset_url=$draftAssetUrl" >> $env:GITHUB_OUTPUT
+          "Draft candidate frozen at $($freeze.html_url); six asset identities and digests recorded. Public promotion must reuse these exact assets without rebuilding." |
             Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
 
+      - name: Verify draft is unavailable anonymously
+        if: steps.candidate_release.outcome == 'success'
+        shell: pwsh
+        env:
+          RELEASE_ID: ${{ steps.candidate_release.outputs.release_id }}
+          DRAFT_ASSET_URL: ${{ steps.candidate_release.outputs.draft_asset_url }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [long] $releaseId = 0
+          if (($env:RELEASE_ID -cnotmatch '\A[1-9][0-9]*\z') -or
+              ![long]::TryParse($env:RELEASE_ID, [ref] $releaseId)) {
+            throw 'Draft Release has no valid ID for anonymous access verification.'
+          }
+          $apiUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/$releaseId"
+          $expectedAssetUrl = '\Ahttps://github\.com/' +
+            [regex]::Escape($env:GITHUB_REPOSITORY) +
+            '/releases/download/[A-Za-z0-9._-]+/AiUsageDashboard-update-stable\.json\.sha256\z'
+          if ($env:DRAFT_ASSET_URL -cnotmatch $expectedAssetUrl) {
+            throw 'Draft Release has no valid browser URL for anonymous access verification.'
+          }
+          $assetUrl = $env:DRAFT_ASSET_URL
+          foreach ($request in @(@{ url = $apiUrl; method = 'Get' }, @{ url = $assetUrl; method = 'Head' })) {
+            $response = Invoke-WebRequest -Uri $request.url -Method $request.method -MaximumRedirection 0 -SkipHttpErrorCheck
+            if ([int] $response.StatusCode -ne 404) {
+              throw "Draft candidate is anonymously accessible or returned an unexpected response: $($request.url), HTTP $([int] $response.StatusCode)."
+            }
+          }
+
       - name: Save candidate identity receipt
+        if: always() && steps.candidate_release.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: candidate-freeze-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/candidate-freeze.json
           if-no-files-found: error
           retention-days: 14
+
+      - name: Prepare checked test diagnostics on failure
+        id: diagnostic_preparation
+        if: failure() && steps.repository_history.outcome == 'success' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
+        shell: pwsh
+        run: |
+          dotnet run --project tools/AiUsageDashboard.PrivacyCheck --configuration Release --no-build --no-restore -- diagnostics `
+            --input (Join-Path $env:RUNNER_TEMP 'test-results') `
+            --output (Join-Path $env:RUNNER_TEMP 'safe-test-diagnostics')
+          if ($LASTEXITCODE -ne 0) { throw 'Test diagnostics privacy validation failed; upload is blocked.' }
+
+      - name: Upload test diagnostics on failure
+        if: failure() && steps.diagnostic_preparation.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: internal-release-test-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/safe-test-diagnostics
+          if-no-files-found: ignore
+          retention-days: 7
