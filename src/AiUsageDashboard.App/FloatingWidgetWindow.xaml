@@ -59,9 +59,6 @@
             <Setter Property="Width" Value="44" />
             <Setter Property="Height" Value="44" />
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Background" Value="{DynamicResource AccentSurfaceBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
             <Setter Property="FontSize" Value="18" />
         </Style>
 
