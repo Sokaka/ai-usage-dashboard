@@ -1,6 +1,6 @@
 # 實作與驗證清單
 
-更新日期：2026-09-22
+更新日期：2026-09-23
 
 讀者：負責 AI Usage Dashboard 開發、測試與交付的人員。本文只列現況、驗證界線與尚待工作。
 
@@ -8,7 +8,7 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些功能與 Copilot 訂閱資訊修正始於首個正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.5 / sequence 1019`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些功能與 Copilot 訂閱資訊修正始於首個正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.5 / sequence 1019`，`1.0.6 / sequence 1020` 已凍結為待公開候選。
 
 ### App 更新偵測與提示（`1.0.4` 起）
 
@@ -78,6 +78,17 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 後續捲動條提交 `8a564747` 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34764614043) 完整測試為 3,985 passed／0 failed／0 skipped，production line coverage 75.77%；這是另一份遠端驗證，沒有改寫上述本機失敗或其未知原因。對應本機 `0.0.0-verify-scrollbar.20260913.4` 已完成 90 案定向回歸、封裝與安裝，尚非正式凍結候選；這些結果也不代替本次新增功能的驗證。
 
 上述公開入口及 Copilot 相容性修正已在 `1.0.3` 凍結，真人 CLI 登入／用量驗收仍暫緩；歷史候選的成品與驗收只適用於各自 source，不代替 `1.0.5` 的結果。
+
+## 1.0.6 候選版本
+
+`1.0.6 / sequence 1020` 已在公開 repository 以 draft／prerelease 凍結（[source `abbcb67bebdd5e97e4414e66ed5329518b0a15b3`](https://github.com/Sokaka/ai-usage-dashboard/commit/abbcb67bebdd5e97e4414e66ed5329518b0a15b3)）。同一筆候選 Release 保持六件原始成品，尚未公開或成為 latest；變更與檔案資訊見 [1.0.6 版本說明](docs/releases/1.0.6.md)。
+
+- [x] 原始[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35752107845) attempt 2 通過 Release 建置與完整測試：0 warnings／0 errors，4,307 passed／0 failed／0 skipped，production line coverage 75.09%（54,119／72,071）。同一個 attempt 完成更新清單簽署、驗簽與六件成品凍結。attempt 1 在簽署與上傳前停止，未建立 Release 或候選成品。
+- [x] 已下載 freeze receipt 與六件 draft assets，逐一核對 Release／asset identity、大小、SHA256、run／attempt、source、sequence 與三份 sidecar；以 production public trust 驗證 feed 簽章與正式網址。Release API 與 asset URL 在 draft 狀態下均對匿名請求回傳 404。
+- [x] 2026-09-23 以 exact candidate Updater 的 `apply-local --no-restart` 套用至既有標準安裝。Updater 自然關閉 App，transaction `Committed`、無 staging；新 current 的 328 個 ZIP payload 逐檔相符，previous 完整保留。App 與維護 Updater 的 ProductVersion、Windows 安裝紀錄及開始選單 target／working directory 均已核對，App 從 canonical 路徑重新啟動且正常回應。離線 installed manifest 的 source／release sequence 依設計為 null，不列為 signed online update。
+- [x] 同一 exact candidate 在單螢幕 100% DPI、四個停靠角各完成高頻展開取樣；中間 resize／移動狀態保持 hidden，第一個可見 expanded frame 均已在最終位置，錯位可見 frame 為 0。經典藍、曜石黑、柔霧灰、櫻花粉四個一般主題的收合箭頭皆無 accent 背景／外框；捲動條實際像素分別符合 `#26344B`、`#24242B`、`#D7D1C8`、`#E5D2D9`。
+
+正式 latest URL、匿名六件下載及公開 feed 簽章只能在轉正後驗證，現階段不得列為通過。本候選也尚未完成乾淨 Windows 初裝、App 內一鍵更新、舊版 Updater 自我交接、custom／portable、High Contrast、多螢幕／混合 DPI、完整 UI／無障礙，以及五個 provider 的真人登入與用量驗收。逐平台狀態見 [1.0.6 CLI 實測表](docs/CLI_COMPATIBILITY.md#106)。
 
 ## 目前正式版本
 
