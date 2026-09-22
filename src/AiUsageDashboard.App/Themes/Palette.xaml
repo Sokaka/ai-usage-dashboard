@@ -33,6 +33,8 @@
     <Color x:Key="DangerColor">#EF4444</Color>
     <Color x:Key="DangerTextColor">#F87171</Color>
     <Color x:Key="InfoColor">#38BDF8</Color>
+    <Color x:Key="UpdateBadgeColor">#C24E45</Color>
+    <Color x:Key="UpdateBadgeForegroundColor">#FFFFFF</Color>
 
     <!-- Logo -->
     <Color x:Key="LogoSurfaceColor">#19253A</Color>
@@ -129,6 +131,10 @@
                      Color="{DynamicResource DangerTextColor}" />
     <SolidColorBrush x:Key="InfoBrush"
                      Color="{DynamicResource InfoColor}" />
+    <SolidColorBrush x:Key="UpdateBadgeBrush"
+                     Color="{DynamicResource UpdateBadgeColor}" />
+    <SolidColorBrush x:Key="UpdateBadgeForegroundBrush"
+                     Color="{DynamicResource UpdateBadgeForegroundColor}" />
 
     <SolidColorBrush x:Key="LogoSurfaceBrush"
                      Color="{DynamicResource LogoSurfaceColor}" />

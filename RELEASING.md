@@ -12,6 +12,8 @@
 
 .NET SDK 由 `global.json` 固定，transitive NuGet audit 由 `Directory.Build.props` 啟用。沒有 Git 歷史的原始碼匯出目錄可建置與測試，不能產生符合正式發布契約的候選包。
 
+正式發布腳本 `Publish-Internal.ps1`、`Publish-Updater.ps1` 與 `Publish-UpdateBundle.ps1` 必須使用 PowerShell 7.4 以上的 `pwsh` 執行；Windows PowerShell 5.1 不支援成品使用的 .NET 8 assembly inspection，腳本會在任何發布工作前停止。
+
 每次發布須依[升級與相容性原則](docs/COMPATIBILITY_POLICY.md)確認舊資料、既有安裝與 CLI 的受影響範圍及驗證結果。必要的不相容變更須在 Release 說明原因、受影響版本、使用者步驟與復原限制；不以要求刪除設定、全部重新登入或強制換 CLI 取代相容性處理。
 
 .NET 8.0.31 是目前固定的 runtime；依 [Microsoft 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)，.NET 8 於 2026-11-10 結束支援。每次候選重新核對 patch 與 advisory；逾期或出現未處理風險時先修正，再建候選。
@@ -27,6 +29,8 @@ private repo 的 Actions 額度由 owner 共用。首次 push 前關閉新 repo 
 App 與 Updater 版本都須高於舊版。重新建置造成 bytes 改變時使用新版本與新序號，不替換同版本的檔案。舊 installed manifest 的 sequence 有值與 null 兩種情況都要驗收。
 
 feed 使用 [固定簽章格式](docs/UPDATE_FEED_FORMAT.md)。正式 build 從受控外部檔案嵌入可信公鑰，簽署使用對應私鑰；未知 signer 或無效簽章必須在信任 feed 欄位前失敗。公鑰不可從同一未驗證 feed 學習。私鑰不進 source、Git、成品或 logs。
+
+App 與 Updater 必須嵌入相同的 stable `FeedUrl`、`Channel` 與 production public `TrustedKeysFile`。`Publish-Internal.ps1` 要求明確提供三項；`Publish-UpdateBundle.ps1` 的 `Channel` 預設為 `stable`，省略 `FeedUrl` 時會使用該 channel 的 GitHub latest download URL，但仍須提供 `TrustedKeysFile`。URL 不是完整 HTTPS host、trust store 無法通過 runtime parser，或發布後讀回的 App feed／channel metadata 與 embedded trust bytes 不符合輸入時，必須停止。一般未帶 metadata 的 dev build 只顯示 `UnavailableInThisBuild`，不得當成候選。
 
 | 情況 | 處理 |
 | --- | --- |
@@ -74,6 +78,7 @@ draft Release 先以 `gh release view` 取得數值 `databaseId`，再依 Releas
 6. 解除安裝、maintenance 自清理、使用者資料與 Credential Manager 保留；接受提示不阻擋控制、唯讀與復原路徑。
 7. 首次下載的 Windows 提示、啟動／重新啟動、浮窗、鍵盤與 High Contrast。不得關閉全域防護來通過。
 8. source、新歷史、logs/artifacts、圖片與 binaries 的公開面掃描，文件連結、license/source provenance 與六件 bytes 核對。
+9. App 更新提示：首次說明與 30 秒 delay、自動檢查關閉、24 小時成功節流、四級失敗退避、resume、manual join、snooze／balloon dedupe，以及 canonical／custom／portable 三種 action。用實際候選確認 App checker 驗證 signed feed，但不在使用者點擊前下載任何 artifact；一鍵路徑仍由 Updater 重新驗證並安全關閉 App。
 
 安裝、支援及資料保留細節見 [Windows 分發與支援手冊](INTERNAL_DISTRIBUTION.md)。沒有測試環境就記為待驗；本機 build、單元測試或 `apply-local` 都不代替正式線上 E2E。
 

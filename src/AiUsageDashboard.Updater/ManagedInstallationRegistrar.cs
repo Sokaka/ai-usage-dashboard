@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Security.Cryptography;
 
 using AiUsageDashboard.Updater.Core;
 
@@ -38,6 +37,8 @@ internal sealed class ManagedInstallationRegistrar
 			userDataRoot);
 		string normalizedInstallRoot =
 			ManagedInstallationPaths.NormalizeDirectory(installRoot);
+		string normalizedUpdaterPath = Path.GetFullPath(
+			runningUpdaterExecutablePath);
 		string installedManifestPath =
 			ManagedInstallationPaths.GetInstalledManifest(normalizedInstallRoot);
 		string installedAppPath =
@@ -71,7 +72,7 @@ internal sealed class ManagedInstallationRegistrar
 		}
 
 		string maintenanceUpdaterPath = await EnsureMaintenanceUpdaterAsync(
-			runningUpdaterExecutablePath,
+			normalizedUpdaterPath,
 			maintenanceRoot,
 			cancellationToken);
 		string quietUninstallCommand = string.Join(
@@ -96,6 +97,11 @@ internal sealed class ManagedInstallationRegistrar
 			uninstallCommand,
 			quietUninstallCommand,
 			DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture)));
+		await TryDeleteStaleGenerationUpdatersAsync(
+			ManagedInstallationPaths.NormalizeDirectory(maintenanceRoot),
+			maintenanceUpdaterPath,
+			normalizedUpdaterPath,
+			cancellationToken);
 		DeleteStaleUninstallReceipt(normalizedInstallRoot);
 		return _startMenuShortcut.EnsurePresent(normalizedInstallRoot);
 	}
@@ -155,7 +161,7 @@ internal sealed class ManagedInstallationRegistrar
 			return destinationPath;
 		}
 
-		string sourceHash = await GetSha256Async(
+		string sourceHash = await MaintenanceUpdaterFile.GetSha256Async(
 			normalizedSourcePath,
 			cancellationToken);
 
@@ -169,7 +175,7 @@ internal sealed class ManagedInstallationRegistrar
 				temporaryPath,
 				mustExist: false);
 			File.Copy(normalizedSourcePath, temporaryPath, overwrite: false);
-			await EnsureFilesMatchAsync(
+			await MaintenanceUpdaterFile.EnsureFilesMatchAsync(
 				normalizedSourcePath,
 				temporaryPath,
 				cancellationToken);
@@ -213,15 +219,10 @@ internal sealed class ManagedInstallationRegistrar
 			}
 		}
 
-		EnsureExistingMaintenanceUpdaterIsCompatible(installedUpdaterPath);
-		await EnsureFilesMatchAsync(
+		MaintenanceUpdaterFile.EnsureCompatible(installedUpdaterPath);
+		await MaintenanceUpdaterFile.EnsureFilesMatchAsync(
 			normalizedSourcePath,
 			installedUpdaterPath,
-			cancellationToken);
-		await TryDeleteStaleGenerationUpdatersAsync(
-			normalizedMaintenanceRoot,
-			installedUpdaterPath,
-			normalizedSourcePath,
 			cancellationToken);
 		return installedUpdaterPath;
 	}
@@ -234,11 +235,11 @@ internal sealed class ManagedInstallationRegistrar
 		string maintenanceRoot,
 		CancellationToken cancellationToken)
 	{
-		EnsureExistingMaintenanceUpdaterIsCompatible(destinationPath);
+		MaintenanceUpdaterFile.EnsureCompatible(destinationPath);
 
 		try
 		{
-			await EnsureFilesMatchAsync(
+			await MaintenanceUpdaterFile.EnsureFilesMatchAsync(
 				sourcePath,
 				destinationPath,
 				cancellationToken);
@@ -259,8 +260,8 @@ internal sealed class ManagedInstallationRegistrar
 				File.Move(temporaryPath, generationPath, overwrite: false);
 			}
 
-			EnsureExistingMaintenanceUpdaterIsCompatible(generationPath);
-			await EnsureFilesMatchAsync(
+			MaintenanceUpdaterFile.EnsureCompatible(generationPath);
+			await MaintenanceUpdaterFile.EnsureFilesMatchAsync(
 				sourcePath,
 				generationPath,
 				cancellationToken);
@@ -297,8 +298,8 @@ internal sealed class ManagedInstallationRegistrar
 				UpdateTransaction.ThrowIfNotOrdinaryFile(
 					file.FullName,
 					mustExist: true);
-				EnsureExistingMaintenanceUpdaterIsCompatible(file.FullName);
-				string actualHash = await GetSha256Async(
+				MaintenanceUpdaterFile.EnsureCompatible(file.FullName);
+				string actualHash = await MaintenanceUpdaterFile.GetSha256Async(
 					file.FullName,
 					cancellationToken);
 
@@ -321,25 +322,6 @@ internal sealed class ManagedInstallationRegistrar
 		}
 	}
 
-	private static void EnsureExistingMaintenanceUpdaterIsCompatible(
-		string executablePath)
-	{
-		UpdateTransaction.ThrowIfNotOrdinaryFile(
-			executablePath,
-			mustExist: true);
-		FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(executablePath);
-
-		if (!string.Equals(
-				versionInfo.ProductName,
-				"AiUsageDashboard.Updater",
-				StringComparison.Ordinal) ||
-			string.IsNullOrWhiteSpace(versionInfo.ProductVersion))
-		{
-			throw new InvalidDataException(
-				"The installed maintenance updater identity is invalid.");
-		}
-	}
-
 	private static void EnsureMaintenanceDirectory(string maintenanceRoot)
 	{
 		UpdateTransaction.ThrowIfUnsafeExistingDirectoryAncestry(maintenanceRoot);
@@ -348,63 +330,6 @@ internal sealed class ManagedInstallationRegistrar
 		UpdateTransaction.ThrowIfNotOrdinaryDirectory(
 			maintenanceRoot,
 			mustExist: true);
-	}
-
-	private static async Task EnsureFilesMatchAsync(
-		string firstPath,
-		string secondPath,
-		CancellationToken cancellationToken)
-	{
-		FileInfo first = new(firstPath);
-		FileInfo second = new(secondPath);
-
-		if (first.Length != second.Length)
-		{
-			throw new InvalidDataException(
-				"The maintenance updater copy size is invalid.");
-		}
-
-		await using FileStream firstStream = new(
-			firstPath,
-			FileMode.Open,
-			FileAccess.Read,
-			FileShare.Read,
-			bufferSize: 81920,
-			FileOptions.Asynchronous | FileOptions.SequentialScan);
-		await using FileStream secondStream = new(
-			secondPath,
-			FileMode.Open,
-			FileAccess.Read,
-			FileShare.Read,
-			bufferSize: 81920,
-			FileOptions.Asynchronous | FileOptions.SequentialScan);
-		byte[] firstHash = await SHA256.HashDataAsync(
-			firstStream,
-			cancellationToken);
-		byte[] secondHash = await SHA256.HashDataAsync(
-			secondStream,
-			cancellationToken);
-
-		if (!CryptographicOperations.FixedTimeEquals(firstHash, secondHash))
-		{
-			throw new InvalidDataException(
-				"The maintenance updater copy SHA-256 is invalid.");
-		}
-	}
-
-	private static async Task<string> GetSha256Async(
-		string filePath,
-		CancellationToken cancellationToken)
-	{
-		await using FileStream stream = new(
-			filePath,
-			FileMode.Open,
-			FileAccess.Read,
-			FileShare.Read,
-			bufferSize: 81920,
-			FileOptions.Asynchronous | FileOptions.SequentialScan);
-		byte[] hash = await SHA256.HashDataAsync(stream, cancellationToken);
-		return Convert.ToHexString(hash).ToLowerInvariant();
 	}
 
 	private static string QuoteCommandLineArgument(string value)

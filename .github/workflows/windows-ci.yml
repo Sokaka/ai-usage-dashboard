@@ -97,8 +97,30 @@ jobs:
       - name: Verify internal package contract
         shell: pwsh
         run: |
+          $trustPath = Join-Path $env:RUNNER_TEMP 'update-ci-public-trust.json'
+          $rsa = [System.Security.Cryptography.RSA]::Create()
+          try {
+            $rsa.KeySize = 3072
+            $trust = [ordered] @{
+              schemaVersion = 1
+              keys = @([ordered] @{
+                keyId = 'ci-test'
+                publicKeyPem = $rsa.ExportSubjectPublicKeyInfoPem()
+              })
+            }
+            [System.IO.File]::WriteAllText(
+              $trustPath,
+              ($trust | ConvertTo-Json -Depth 4),
+              [System.Text.UTF8Encoding]::new($false))
+          }
+          finally {
+            $rsa.Dispose()
+          }
           ./tools/Publish-Internal.ps1 `
             -Version "0.0.0-verify-ci.${{ github.run_number }}.${{ github.run_attempt }}" `
+            -FeedUrl 'https://updates.example.test/ci/stable.json' `
+            -Channel 'ci' `
+            -TrustedKeysFile $trustPath `
             -OutputRoot "${{ runner.temp }}/ai-usage-dashboard-package"
 
       - name: Prepare checked test diagnostics on failure

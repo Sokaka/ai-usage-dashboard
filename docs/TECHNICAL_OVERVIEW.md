@@ -29,7 +29,27 @@
 
 `WindowsShellShortcut` 使用 Windows `IShellLinkW`／`IPersistFile` 的固定 COM 介面建立及讀回捷徑，並成對釋放 interface 與 COM initialization，避免 trimmed Updater 依賴動態 COM 包裝。此處只處理捷徑，不變更帳號資料或登入自動啟動設定。安裝及復原操作見[分發與支援手冊](../INTERNAL_DISTRIBUTION.md)。
 
-浮窗與系統匣共用一個 `AboutWindow`，從 App assembly 的 `AssemblyInformationalVersion` 取得完整版本，保留預覽版與 source revision 資訊；未指定版本的開發建置使用 `0.0.0-dev`。使用者可複製版本、開啟隨包使用說明，或前往固定的 GitHub Releases／Issues 網址。開啟「關於」不查詢 provider 或更新服務。
+浮窗與系統匣共用一個 `AboutWindow`，從 App assembly 的 `AssemblyInformationalVersion` 取得完整版本，保留預覽版與 source revision 資訊；未指定版本的開發建置使用 `0.0.0-dev`。使用者可複製版本、開啟隨包使用說明，或前往固定的 GitHub Releases／Issues 網址。單純開啟「關於」不查詢 provider 或更新服務；只有按下 **檢查更新**才會立即查詢。
+
+## App 更新偵測與提示
+
+正式 App build 會嵌入 stable feed URL、channel 與可信公鑰。`AppUpdateBuildDefaults` 只有在三項資料全部缺少時才將功能標成 `UnavailableInThisBuild`；任一項部分缺漏或格式無效都會使 production publish／runtime 明確失敗，不會把無法檢查的 build 顯示成最新版。`Publish-Internal.ps1` 與 `Publish-UpdateBundle.ps1` 使用同一組外部公鑰資料建立 App 與 Updater，私鑰不進 App。
+
+`SignedUpdateFeedClient` 是 `Updater.Core` 的唯讀能力：只接受 HTTPS、限制 feed 大小、核對 redirect 最終 URI，再以既有 RSA-PSS canonical JSON 規則驗證簽章、channel 與 artifacts。App 不從 GitHub tag、HTML 或 API 判斷版本，也不下載 ZIP／Updater；真正安裝時，maintenance Updater 會再次取得並驗證 feed，執行 anti-downgrade、自我更新、transaction switch 與重新啟動。
+
+執行中的固定 maintenance Updater 若因 Windows image lock 無法被 delegated 新版覆寫，新版會先留在 maintenance root 的 content-addressed generation。delegated 新版只有在自身 version／size／SHA-256 符合 signed feed、執行路徑是該 artifact 的固定 cache path，且由 Windows 取得的 direct parent exact PID／UTC start time／image path 確認為固定 maintenance Updater 時，才以當下 canonical hash 作 compare-and-swap 條件，原子保存 promotion receipt 並啟動該 generation 的 internal promoter。promoter 會持續等待 exact parent 自然離開，再取得 canonical install root 的 `UpdateInstallLock`；只有 receipt 仍精確指向自己的工作可重新驗證 generation／固定入口 hashes，並從同目錄 temporary file 原子提升。這個 ownership 由新版 child 負責，因此已發布、尚不具 promotion 邏輯的舊 Updater 也能進入更新鏈。被較新 generation 取代或 receipt 已清除的 promoter 會安全結束；pending retry 只有在 install lock 內確認完整 receipt snapshot 未被取代時才能重新綁定，避免舊 retry 蓋回新版 handoff。成功會清除相符 receipt；失敗會保存有界錯誤。固定入口已具 retry 能力時，下次 online 啟動會在讀取 feed 前重試；若初次 bootstrap 後固定入口仍是尚無此能力的舊版，則需由相容 transition feed 再次成功 delegation。Windows uninstall registration 會先修正到目前可執行的 Updater，之後才清理不再被引用的舊 generation；硬中止遺留的嚴格命名 promotion temporary file則由解除安裝的 maintenance ownership cleanup 清除，近似名稱、directory 與 reparse point 仍 fail closed 保留。
+
+`AppInstallationContextDetector` 依目前 executable 與相鄰 `update-manifest.json` fail closed 分類：
+
+- `CanonicalManaged`：exact `%LOCALAPPDATA%\Programs\AiUsageDashboard\current\app\AiUsageDashboard.App.exe`、有效 manifest 與相同 payload identity。只有這一類、固定 maintenance Updater 存在，且 `UpdateShutdownChannel.StartAsync` 已確認 pipe listener ready 時，才顯示 **更新並重新啟動**。
+- `CustomManaged`：符合 `<derivedRoot>\current\app` 與相鄰有效 manifest，但不在 canonical path。可以用 manifest 偵測新版，只開固定 Releases，不將自訂 root 猜成安裝目標。
+- `Unmanaged`：portable ZIP、單獨複製的 EXE，以及任何路徑／manifest 歧義。去除正式 artifact `ProductVersion` 的 build metadata 後比較 `ReleaseVersion`；無法解析時是 `UnknownCurrentVersion`，不會顯示 up-to-date。
+
+`UpdateCheckCoordinator` 維持單一 observed request。手動檢查立即執行並 join 既有 request；自動檢查先顯示 non-modal 說明並保留 30 秒關閉時間，成功後等待 24 小時，失敗後依 `15m → 1h → 4h → 24h` 退避。每次 timer tick 與 Windows resume 都重新以 UTC 判斷 due time；持久排程若超前目前時間超過 5 分鐘，或首次說明的 30 秒 gate 遇到時鐘回撥，會視為 clock anomaly 並重新建立節流。關閉自動檢查時停止自動網路查詢；若有 snooze，只保留不連網的本機到期 tick，手動檢查仍可用。
+
+presentation／排程 cache 寫在 `%LOCALAPPDATA%\AiUsageDashboard\update-check-state-v1.json`，採 strict schema、bounded read、same-directory temporary file、flush 與 atomic replace。它只保存目前版本、前次結果、最高已見 sequence、失敗次數、balloon attempt key 與依 `version + releaseSequence` 設定的 24 小時 snooze，不保存下載 URL、Updater path 或 install decision，也不是 trust input。讀取損壞視為 cache miss；一般寫入失敗會保留記憶體狀態並寫 diagnostic，不阻塞 App。自動檢查開關若無法保存，當次執行仍立即套用，但介面會明確警告重新啟動後可能恢復舊設定。
+
+展開浮窗使用獨立 update banner；收合狀態在一般主題使用專屬珊瑚紅通知色的圓形 badge，搭配反色圓環與向量 `↑`，不會重用代表錯誤的 `DangerBrush`；High Contrast 則改用系統 `WindowTextColor`／`WindowColor`。同一 composer 會更新 `AutomationProperties.Name`、`HelpText` 與 tooltip。Banner 的 live-region announcement 以首次說明或 `version + releaseSequence` 為 key；刷新中、視窗未啟用或收合時先保留 pending，恢復可宣告狀態後補發，同一可見週期只宣告一次，snooze 到期重新出現時再宣告。Tray 永久保留手動檢查與自動檢查開關，另依狀態顯示安裝或 Releases action。Windows balloon 只在浮窗 hidden／collapsed／inactive、未 snooze 且該 release key 未嘗試時補充提示；persistent banner、badge 與 tray 才是可靠狀態來源。
 
 ## 主題與配色
 

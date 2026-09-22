@@ -135,6 +135,94 @@ public sealed class UpdaterShutdownProtocolTests
 
 	[Fact]
 	[Trait("Category", "WindowsIntegration")]
+	public async Task StartAsync_WhenPipeIsBusy_WaitsAndBecomesReadyAfterRetry()
+	{
+		string pipeName = CreatePipeName();
+		using NamedPipeServerStream blocker = new(
+			pipeName,
+			PipeDirection.InOut,
+			maxNumberOfServerInstances: 1,
+			PipeTransmissionMode.Message,
+			PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+		using UpdateShutdownChannel channel = new(
+			pipeName,
+			CreateIdentity(),
+			() => UpdateShutdownOutcome.Accepted,
+			() => { },
+			() => { });
+		using CancellationTokenSource blockedWaitSource = new(
+			TimeSpan.FromMilliseconds(250));
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+			channel.StartAsync(blockedWaitSource.Token));
+
+		blocker.Dispose();
+		using CancellationTokenSource readyWaitSource = new(TestTimeout);
+		await channel.StartAsync(readyWaitSource.Token);
+
+		UpdateShutdownClientResult result =
+			await UpdateShutdownChannel.RequestAsync(
+				pipeName,
+				UpdateShutdownRequest.CreateQuery(Guid.NewGuid()),
+				TestTimeout);
+		Assert.Equal(UpdateShutdownClientFailure.None, result.Failure);
+	}
+
+	[Fact]
+	[Trait("Category", "WindowsIntegration")]
+	public async Task StartAsync_WhenDisposedBeforeReady_ThrowsObjectDisposed()
+	{
+		string pipeName = CreatePipeName();
+		using NamedPipeServerStream blocker = new(
+			pipeName,
+			PipeDirection.InOut,
+			maxNumberOfServerInstances: 1,
+			PipeTransmissionMode.Message,
+			PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+		UpdateShutdownChannel channel = new(
+			pipeName,
+			CreateIdentity(),
+			() => UpdateShutdownOutcome.Accepted,
+			() => { },
+			() => { });
+		Task startTask = channel.StartAsync();
+
+		channel.Dispose();
+
+		await Assert.ThrowsAsync<ObjectDisposedException>(() => startTask);
+	}
+
+	[Fact]
+	[Trait("Category", "WindowsIntegration")]
+	public async Task ListenerCompletion_WhenFaultedAfterReady_ExposesFailure()
+	{
+		string pipeName = CreatePipeName();
+		UpdateProcessIdentity targetIdentity = CreateIdentity();
+		using UpdateShutdownChannel channel = new(
+			pipeName,
+			targetIdentity,
+			() => throw new NotSupportedException("Injected listener fault."),
+			() => { },
+			() => { });
+		await channel.StartAsync().WaitAsync(TestTimeout);
+
+		UpdateShutdownClientResult requestResult =
+			await UpdateShutdownChannel.RequestAsync(
+				pipeName,
+				UpdateShutdownRequest.CreateReserve(
+					Guid.NewGuid(),
+					targetIdentity),
+				TestTimeout);
+		NotSupportedException failure =
+			await Assert.ThrowsAsync<NotSupportedException>(() =>
+				channel.ListenerCompletion.WaitAsync(TestTimeout));
+
+		Assert.NotEqual(UpdateShutdownClientFailure.None, requestResult.Failure);
+		Assert.Equal("Injected listener fault.", failure.Message);
+	}
+
+	[Fact]
+	[Trait("Category", "WindowsIntegration")]
 	public async Task QueryAsync_ReturnsObservedTargetIdentityWithoutReserving()
 	{
 		string pipeName = CreatePipeName();
@@ -151,7 +239,7 @@ public sealed class UpdaterShutdownProtocolTests
 			},
 			() => { },
 			() => Interlocked.Increment(ref dispatchCount));
-		channel.Start();
+		await channel.StartAsync();
 		Guid requestId = Guid.NewGuid();
 
 		UpdateShutdownClientResult result =

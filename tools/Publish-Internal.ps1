@@ -1,8 +1,19 @@
-﻿[CmdletBinding()]
+﻿#Requires -Version 7.4
+[CmdletBinding()]
 param(
 	[Parameter(Mandatory = $true)]
 	[ValidatePattern('^\d+\.\d+\.\d+([-.][0-9A-Za-z.-]+)?$')]
 	[string] $Version,
+
+	[Parameter(Mandatory = $true)]
+	[string] $FeedUrl,
+
+	[Parameter(Mandatory = $true)]
+	[ValidatePattern('^[a-z][a-z0-9-]{0,31}$')]
+	[string] $Channel,
+
+	[Parameter(Mandatory = $true)]
+	[string] $TrustedKeysFile,
 
 	[string] $OutputRoot,
 
@@ -17,6 +28,33 @@ $selfContainedRuntimeVersion = '8.0.31'
 $runtimeIdentifier = 'win-x64'
 $repositoryRoot = [System.IO.Path]::GetFullPath(
 	(Join-Path $PSScriptRoot '..'))
+$resolvedTrustedKeysFile =
+	(Resolve-Path -LiteralPath $TrustedKeysFile -ErrorAction Stop).Path
+
+try {
+	$parsedFeedUri = [Uri] $FeedUrl
+}
+catch {
+	throw "FeedUrl is not a valid absolute HTTPS URL: $FeedUrl"
+}
+
+if (!$parsedFeedUri.IsAbsoluteUri -or
+	!([string]::Equals(
+		$parsedFeedUri.Scheme,
+		[Uri]::UriSchemeHttps,
+		[StringComparison]::OrdinalIgnoreCase)) -or
+	[string]::IsNullOrEmpty($parsedFeedUri.Host) -or
+	!([string]::IsNullOrEmpty($parsedFeedUri.UserInfo)) -or
+	!([string]::IsNullOrEmpty($parsedFeedUri.Fragment))) {
+	throw 'FeedUrl must be an absolute HTTPS URL without credentials or a fragment.'
+}
+
+& dotnet run --project (Join-Path $PSScriptRoot 'AiUsageDashboard.FeedSigning/AiUsageDashboard.FeedSigning.csproj') `
+	--configuration Release -- validate-trust --trust $resolvedTrustedKeysFile
+if ($LASTEXITCODE -ne 0) {
+	throw 'The externally supplied update feed trust store failed validation.'
+}
+
 $defaultOutputRoot = [System.IO.Path]::GetFullPath(
 	(Join-Path $repositoryRoot 'publish'))
 $defaultOutputRootPrefix =
@@ -162,6 +200,94 @@ function Assert-PublishedProductVersion {
 	}
 }
 
+function Assert-PublishedAppUpdateConfiguration {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $AssemblyPath,
+
+		[Parameter(Mandatory = $true)]
+		[string] $ExpectedFeedUrl,
+
+		[Parameter(Mandatory = $true)]
+		[string] $ExpectedChannel,
+
+		[Parameter(Mandatory = $true)]
+		[string] $ExpectedTrustedKeysFile
+	)
+
+	if (!(Test-Path -LiteralPath $AssemblyPath -PathType Leaf)) {
+		throw "Published App assembly is missing: $AssemblyPath"
+	}
+
+	$assembly = [Reflection.Assembly]::Load(
+		[IO.File]::ReadAllBytes($AssemblyPath))
+	$metadata = @($assembly.GetCustomAttributes(
+		[Reflection.AssemblyMetadataAttribute],
+		$false))
+
+	foreach ($expectedMetadata in @(
+		@('AiUsageDashboard.UpdateFeedUrl', $ExpectedFeedUrl),
+		@('AiUsageDashboard.UpdateChannel', $ExpectedChannel))) {
+		$metadataName = [string] $expectedMetadata[0]
+		$expectedValue = [string] $expectedMetadata[1]
+		$matchingMetadata = @($metadata | Where-Object {
+			[string]::Equals(
+				$_.Key,
+				$metadataName,
+				[StringComparison]::Ordinal)
+		})
+
+		if (($matchingMetadata.Count -ne 1) -or
+			!([string]::Equals(
+				$matchingMetadata[0].Value,
+				$expectedValue,
+				[StringComparison]::Ordinal))) {
+			throw (
+				"Published App metadata '$metadataName' does not exactly " +
+				"match the requested value.")
+		}
+	}
+
+	$resourceName = 'AiUsageDashboard.UpdateTrustedKeys.json'
+	$matchingResourceNames = @($assembly.GetManifestResourceNames() |
+		Where-Object {
+			[string]::Equals(
+				$_,
+				$resourceName,
+				[StringComparison]::Ordinal)
+		})
+	if ($matchingResourceNames.Count -ne 1) {
+		throw (
+			"Published App must contain exactly one embedded resource " +
+			"named '$resourceName'.")
+	}
+
+	$resourceStream = $assembly.GetManifestResourceStream($resourceName)
+	if ($null -eq $resourceStream) {
+		throw "Published App resource '$resourceName' could not be opened."
+	}
+
+	$resourceBuffer = [IO.MemoryStream]::new()
+	try {
+		$resourceStream.CopyTo($resourceBuffer)
+		$publishedTrustedKeys = $resourceBuffer.ToArray()
+	}
+	finally {
+		$resourceBuffer.Dispose()
+		$resourceStream.Dispose()
+	}
+
+	$expectedTrustedKeys = [IO.File]::ReadAllBytes(
+		$ExpectedTrustedKeysFile)
+	if (!([Collections.StructuralComparisons]::StructuralEqualityComparer.Equals(
+			$publishedTrustedKeys,
+			$expectedTrustedKeys))) {
+		throw (
+			"Published App resource '$resourceName' does not byte-match " +
+			"the externally supplied trust store.")
+	}
+}
+
 function Invoke-PinnedPublish {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -187,6 +313,9 @@ function Invoke-PinnedPublish {
 		-p:TargetLatestRuntimePatch=false `
 		-p:Version=$Version `
 		-p:SourceRevisionId=$sourceRevisionId `
+		-p:UpdateFeedUrl=$FeedUrl `
+		-p:UpdateChannel=$Channel `
+		-p:UpdateTrustedKeysFile=$resolvedTrustedKeysFile `
 		-p:DebugType=None `
 		-p:DebugSymbols=false `
 		--output $PublishRoot
@@ -747,6 +876,11 @@ try {
 	Assert-PublishedRuntime `
 		-PublishRoot $appRoot `
 		-AssemblyName 'AiUsageDashboard.App'
+	Assert-PublishedAppUpdateConfiguration `
+		-AssemblyPath (Join-Path $appRoot 'AiUsageDashboard.App.dll') `
+		-ExpectedFeedUrl $FeedUrl `
+		-ExpectedChannel $Channel `
+		-ExpectedTrustedKeysFile $resolvedTrustedKeysFile
 	Assert-PublishedRuntime `
 		-PublishRoot $appRoot `
 		-AssemblyName 'AiUsageDashboard.Antigravity.Setup'

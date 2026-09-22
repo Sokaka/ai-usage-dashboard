@@ -32,6 +32,7 @@
     <ProjectReference Include="..\..\src\AiUsageDashboard.Updater.Core\AiUsageDashboard.Updater.Core.csproj" />
     <ProjectReference Include="..\..\tools\AiUsageDashboard.AntigravitySpike\AiUsageDashboard.AntigravitySpike.csproj" />
     <ProjectReference Include="..\AiUsageDashboard.TerminalFixture\AiUsageDashboard.TerminalFixture.csproj" />
+    <ProjectReference Include="..\AiUsageDashboard.UpdaterProcessFixture\AiUsageDashboard.UpdaterProcessFixture.csproj" />
   </ItemGroup>
 
   <ItemGroup>

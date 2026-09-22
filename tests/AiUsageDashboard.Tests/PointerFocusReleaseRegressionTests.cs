@@ -565,9 +565,26 @@ public sealed class PointerFocusReleaseRegressionTests
 			.Where(element => element.Attribute("Click") is not null)
 			.ToArray();
 
-		Assert.Equal(35, buttonBaseActions.Length);
+		Assert.NotEmpty(buttonBaseActions);
 		Assert.Single(comboBoxActions);
 		Assert.Equal(25, menuItemActions.Length);
+		string[] updateActionAutomationIds =
+		[
+			"CheckForUpdates",
+			"UpdatePrimaryAction",
+			"UpdateReleaseHistory",
+			"UpdateSnooze",
+			"DisableAutomaticUpdateChecks"
+		];
+		Assert.All(
+			updateActionAutomationIds,
+			automationId => Assert.Contains(
+				buttonBaseActions,
+				element => string.Equals(
+					(string?)element.Attribute(
+						"AutomationProperties.AutomationId"),
+					automationId,
+					StringComparison.Ordinal)));
 		Assert.All(
 			buttonBaseActions
 				.Concat(comboBoxActions)

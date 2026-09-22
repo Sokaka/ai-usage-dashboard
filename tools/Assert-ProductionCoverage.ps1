@@ -29,6 +29,7 @@ $requiredProductionPackageNames = @(
 $excludedPackageNames = @(
 	'AiUsageDashboard.Tests',
 	'AiUsageDashboard.TerminalFixture',
+	'AiUsageDashboard.UpdaterProcessFixture',
 	'AiUsageDashboard.PrivacyCheck',
 	'AiUsageDashboard.AntigravitySpike'
 )

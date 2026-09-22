@@ -15,6 +15,8 @@ public partial class AboutWindow : Window
 {
 	private const double PreferredMinimumWidth = 320;
 
+	internal event EventHandler? UpdateCheckRequested;
+
 	public AboutWindow()
 	{
 		InitializeComponent();
@@ -28,6 +30,38 @@ public partial class AboutWindow : Window
 	{
 		base.OnSourceInitialized(e);
 		UpdateWorkAreaConstraints();
+	}
+
+	internal void UpdateUpdateStatus(
+		string statusText,
+		bool canCheck,
+		bool isChecking)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(statusText);
+		bool didStatusChange = !string.Equals(
+			UpdateStatusTextBlock.Text,
+			statusText,
+			StringComparison.Ordinal);
+		UpdateStatusTextBlock.Text = statusText;
+		CheckForUpdatesButton.IsEnabled = canCheck && !isChecking;
+		CheckForUpdatesButton.Content = isChecking
+			? "檢查中…"
+			: "檢查更新";
+
+		if (didStatusChange && IsVisible)
+		{
+			_ = Dispatcher.BeginInvoke(
+				() =>
+				{
+					AutomationPeer? peer = UIElementAutomationPeer.FromElement(
+						UpdateStatusTextBlock) ??
+						UIElementAutomationPeer.CreatePeerForElement(
+							UpdateStatusTextBlock);
+					peer?.RaiseAutomationEvent(
+						AutomationEvents.LiveRegionChanged);
+				},
+				System.Windows.Threading.DispatcherPriority.Loaded);
+		}
 	}
 
 	private void UpdateWorkAreaConstraints()
@@ -87,6 +121,11 @@ public partial class AboutWindow : Window
 			"無法開啟使用說明",
 			MessageBoxButton.OK,
 			MessageBoxImage.Warning);
+	}
+
+	private void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
+	{
+		UpdateCheckRequested?.Invoke(this, EventArgs.Empty);
 	}
 
 	private void ReleasesButton_Click(object sender, RoutedEventArgs e)

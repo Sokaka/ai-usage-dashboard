@@ -42,13 +42,12 @@ internal sealed class UpdaterArtifactCache
 	{
 		ArgumentNullException.ThrowIfNull(artifact);
 		ArgumentException.ThrowIfNullOrWhiteSpace(installRoot);
-		string normalizedInstallRoot = Path.TrimEndingDirectorySeparator(
-			Path.GetFullPath(installRoot));
+		string normalizedInstallRoot = NormalizeInstallRoot(installRoot);
 		string cacheRoot = Path.Combine(
 			normalizedInstallRoot,
 			CacheDirectoryName);
 		string generationRoot = Path.Combine(cacheRoot, artifact.Sha256);
-		string finalPath = Path.Combine(generationRoot, artifact.FileName);
+		string finalPath = GetExecutablePath(artifact, normalizedInstallRoot);
 		string temporaryPath = finalPath + "." +
 			Guid.NewGuid().ToString("N") + ".download";
 
@@ -90,6 +89,42 @@ internal sealed class UpdaterArtifactCache
 		{
 			DeleteOwnedTemporaryFile(temporaryPath);
 		}
+	}
+
+	internal static string GetExecutablePath(
+		UpdateReleaseArtifact artifact,
+		string installRoot)
+	{
+		ArgumentNullException.ThrowIfNull(artifact);
+		ArgumentException.ThrowIfNullOrWhiteSpace(installRoot);
+		string normalizedInstallRoot = NormalizeInstallRoot(installRoot);
+		string normalizedHash = ManagedInstallationPaths.NormalizeSha256(
+			artifact.Sha256);
+
+		if (!string.Equals(
+				artifact.Sha256,
+				normalizedHash,
+				StringComparison.Ordinal) ||
+			!string.Equals(
+				artifact.FileName,
+				Path.GetFileName(artifact.FileName),
+				StringComparison.Ordinal) ||
+			string.IsNullOrWhiteSpace(artifact.FileName))
+		{
+			throw new InvalidDataException(
+				"The updater artifact cache identity is invalid.");
+		}
+
+		return Path.Combine(
+			normalizedInstallRoot,
+			CacheDirectoryName,
+			normalizedHash,
+			artifact.FileName);
+	}
+
+	private static string NormalizeInstallRoot(string installRoot)
+	{
+		return Path.TrimEndingDirectorySeparator(Path.GetFullPath(installRoot));
 	}
 
 	private static void EnsureSafeDirectory(string path)

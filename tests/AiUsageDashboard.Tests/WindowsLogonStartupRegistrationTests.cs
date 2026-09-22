@@ -37,6 +37,28 @@ public sealed class WindowsLogonStartupRegistrationTests
 	}
 
 	[Fact]
+	public void MaintenanceUpdaterContract_BuildsCanonicalExecutablePath()
+	{
+		const string localApplicationData =
+			@"C:\SyntheticProfiles\Test\AppData\Local";
+		string maintenanceRoot = Path.Combine(
+			localApplicationData,
+			"Programs",
+			"AiUsageDashboardUpdater");
+
+		Assert.Equal(
+			maintenanceRoot,
+			MaintenanceUpdaterPathContract.GetCanonicalRoot(
+				localApplicationData));
+		Assert.Equal(
+			Path.Combine(
+				maintenanceRoot,
+				"AiUsageDashboard.Updater.exe"),
+			MaintenanceUpdaterPathContract.GetCanonicalExecutablePath(
+				localApplicationData));
+	}
+
+	[Fact]
 	public void Contract_ExecutablePathMatchesUpdaterManagedInstallationPath()
 	{
 		const string localApplicationData =

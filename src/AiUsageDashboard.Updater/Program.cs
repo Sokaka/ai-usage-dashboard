@@ -12,6 +12,7 @@ internal static class Program
 {
 	private const int CommandLineFailureExitCode = 2;
 	private const int GeneralFailureExitCode = 1;
+	private const int MaintenanceUpdaterIncompleteExitCode = 4;
 	private const int RestartFailureExitCode = 3;
 	private const int SuccessExitCode = 0;
 
@@ -21,6 +22,21 @@ internal static class Program
 
 		try
 		{
+			if (MaintenanceUpdaterPromotionCommandLine.IsCommand(arguments))
+			{
+				UpdateExecutionSafety.EnsureNotElevated();
+				MaintenanceUpdaterPromotionOptions promotionOptions =
+					MaintenanceUpdaterPromotionCommandLine.Parse(arguments);
+				await new MaintenanceUpdaterPromotion(
+					new SystemExactProcessExitWaiter()).PromoteAndRecordAsync(
+						promotionOptions,
+						Environment.ProcessPath ??
+							throw new InvalidOperationException(
+								"The running updater executable path is unavailable."),
+						CancellationToken.None);
+				return SuccessExitCode;
+			}
+
 			if (LegalCommandLine.IsLegalCommand(arguments))
 			{
 				LegalCommandLine.TryHandle(arguments, () => LegalCatalog.Load(LegalProfile.Installer),
@@ -140,11 +156,49 @@ internal static class Program
 
 		UpdateExecutionSafety.EnsureNotElevated();
 		Console.WriteLine($"Checking the {options.Channel} update feed...");
+		CurrentUpdaterIdentity currentUpdater =
+			await CurrentUpdaterIdentity.ReadAsync(
+				Environment.ProcessPath ?? throw new InvalidOperationException(
+					"The running updater executable path is unavailable."),
+				cancellationToken);
+		DelegatedMaintenanceUpdaterPromotionCoordinator promotionCoordinator = new(
+			new SystemProcessLineageProbe(),
+			new MaintenanceUpdaterPromotionLauncher());
+		DelegatedMaintenanceUpdaterPromotionContext? delegatedPromotionContext = null;
+		string? delegatedPromotionWarning = null;
+
+		try
+		{
+			delegatedPromotionContext = await promotionCoordinator.CaptureAsync(
+				currentUpdater,
+				options,
+				cancellationToken);
+		}
+		catch (Exception exception) when (
+			exception is IOException or UnauthorizedAccessException or
+				SecurityException or InvalidDataException or
+				InvalidOperationException or ArgumentException or
+				Win32Exception)
+		{
+			delegatedPromotionWarning =
+				"無法確認 delegated maintenance updater 的 parent 身分：" +
+				exception.Message;
+			Console.Error.WriteLine($"Warning: {delegatedPromotionWarning}");
+		}
+
+		string? pendingPromotionWarning =
+			await TryRetryPendingMaintenanceUpdaterPromotionAsync(
+			currentUpdater,
+			options,
+			cancellationToken);
 
 		using HttpClient httpClient = CreateHttpClient();
+		SignedUpdateFeedClient feedClient = new(
+			httpClient,
+			UpdaterBuildDefaults.LoadTrustedKeys());
 		OnlineUpdateClient onlineClient = new(httpClient);
 		ResolvedUpdateReleaseFeed resolvedFeed =
-			await onlineClient.FetchFeedAsync(
+			await feedClient.FetchFeedAsync(
 				options.FeedUri,
 				options.Channel,
 				cancellationToken);
@@ -157,12 +211,6 @@ internal static class Program
 			OnlinePayloadUpdatePolicy.Evaluate(
 				installedManifest,
 				availableManifest);
-		CurrentUpdaterIdentity currentUpdater =
-			await CurrentUpdaterIdentity.ReadAsync(
-				Environment.ProcessPath ?? throw new InvalidOperationException(
-					"The running updater executable path is unavailable."),
-				cancellationToken);
-
 		if (options.ShouldRefreshUpdater)
 		{
 			UpdaterRefreshAction refreshAction = UpdaterRefreshPolicy.Evaluate(
@@ -183,36 +231,59 @@ internal static class Program
 				int delegatedExitCode = await RunDelegatedUpdaterAsync(
 					delegatedUpdater.ExecutablePath,
 					options);
-				return new UpdaterExecutionResult(
+				string delegatedMessage = delegatedExitCode == SuccessExitCode
+					? "最新版檢查與更新已完成。"
+					: "新版 updater 未能完成更新，請查看錯誤訊息。";
+				UpdaterExecutionResult delegatedResult = new(
 					delegatedExitCode,
+					delegatedMessage);
+				return ApplyMaintenanceUpdaterWarning(
+					delegatedResult,
 					delegatedExitCode == SuccessExitCode
-						? "最新版檢查與更新已完成。"
-						: "新版 updater 未能完成更新，請查看錯誤訊息。");
+						? null
+						: pendingPromotionWarning);
 			}
 		}
 		UpdaterRefreshPolicy.EnsureMatchesSignedInstaller(currentUpdater, feed.Updater);
 
 		if (preflightAction == OnlinePayloadUpdateAction.UseInstalled)
 		{
-			using UpdateInstallLock updateLock = UpdateInstallLock.Acquire(
-				options.InstallRoot);
-			RecoverInterruptedTransactionsWhileLocked(options.InstallRoot);
-			UpdateManifest? lockedManifest =
-				await ReadInstalledManifestAsync(
-					options.InstallRoot,
-					cancellationToken);
-			OnlinePayloadUpdateAction lockedAction =
-				OnlinePayloadUpdatePolicy.Evaluate(
-					lockedManifest,
-					availableManifest);
-
-			if (lockedAction == OnlinePayloadUpdateAction.UseInstalled)
+			UpdaterExecutionResult? currentResult = null;
+			using (UpdateInstallLock updateLock = UpdateInstallLock.Acquire(
+				options.InstallRoot))
 			{
-				Console.WriteLine(
-					$"AI Usage {lockedManifest!.Version} is already current.");
-				return await RegisterAndRestartCurrentAsync(
+				RecoverInterruptedTransactionsWhileLocked(options.InstallRoot);
+				UpdateManifest? lockedManifest =
+					await ReadInstalledManifestAsync(
+						options.InstallRoot,
+						cancellationToken);
+				OnlinePayloadUpdateAction lockedAction =
+					OnlinePayloadUpdatePolicy.Evaluate(
+						lockedManifest,
+						availableManifest);
+
+				if (lockedAction == OnlinePayloadUpdateAction.UseInstalled)
+				{
+					Console.WriteLine(
+						$"AI Usage {lockedManifest!.Version} is already current.");
+					currentResult = await RegisterAndRestartCurrentAsync(
+						options,
+						lockedManifest,
+						cancellationToken);
+				}
+			}
+
+			if (currentResult is not null)
+			{
+				return await CompleteDelegatedMaintenanceUpdaterPromotionAsync(
+					currentResult,
+					delegatedPromotionContext,
+					delegatedPromotionWarning,
+					pendingPromotionWarning,
+					promotionCoordinator,
+					currentUpdater,
+					feed.Updater,
 					options,
-					lockedManifest,
 					cancellationToken);
 			}
 		}
@@ -229,11 +300,21 @@ internal static class Program
 				feed.Package,
 				packagePath,
 				cancellationToken);
-			return await ApplyPackageAsync(
+			UpdaterExecutionResult updateResult = await ApplyPackageAsync(
 				packagePath,
 				availableManifest,
 				options,
 				enforceOnlinePolicy: true,
+				cancellationToken);
+			return await CompleteDelegatedMaintenanceUpdaterPromotionAsync(
+				updateResult,
+				delegatedPromotionContext,
+				delegatedPromotionWarning,
+				pendingPromotionWarning,
+				promotionCoordinator,
+				currentUpdater,
+				feed.Updater,
+				options,
 				cancellationToken);
 		}
 		finally
@@ -507,6 +588,227 @@ internal static class Program
 	}
 
 	private static async Task<UpdaterExecutionResult>
+		CompleteDelegatedMaintenanceUpdaterPromotionAsync(
+			UpdaterExecutionResult result,
+			DelegatedMaintenanceUpdaterPromotionContext? context,
+			string? preparationWarning,
+			string? pendingPromotionWarning,
+			DelegatedMaintenanceUpdaterPromotionCoordinator coordinator,
+			CurrentUpdaterIdentity currentUpdater,
+			UpdateReleaseArtifact availableUpdater,
+			UpdaterCommandLineOptions options,
+			CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(result);
+		ArgumentNullException.ThrowIfNull(coordinator);
+		ArgumentNullException.ThrowIfNull(currentUpdater);
+		ArgumentNullException.ThrowIfNull(availableUpdater);
+		ArgumentNullException.ThrowIfNull(options);
+		string? warning = pendingPromotionWarning;
+
+		if (result.ExitCode is not SuccessExitCode and not RestartFailureExitCode)
+		{
+			return ApplyMaintenanceUpdaterWarning(
+				result,
+				CombineWarnings(warning, preparationWarning));
+		}
+
+		if (context is null)
+		{
+			if (!options.ShouldRefreshUpdater &&
+				options.ShouldRegisterInstalledApp)
+			{
+				try
+				{
+					bool isCanonicalCurrent =
+						await coordinator.IsCanonicalUpdaterCurrentAsync(
+							currentUpdater,
+							availableUpdater,
+							options,
+							cancellationToken);
+					preparationWarning = isCanonicalCurrent
+						? null
+						: preparationWarning ??
+							"App 已更新，但 canonical maintenance updater 仍不是 " +
+							"signed feed 指定版本。";
+				}
+				catch (Exception exception) when (
+					exception is IOException or UnauthorizedAccessException or
+						SecurityException or InvalidDataException or
+						InvalidOperationException or ArgumentException or
+						Win32Exception)
+				{
+					preparationWarning = CombineWarnings(
+						preparationWarning,
+						"App 已更新，但無法驗證 canonical maintenance updater：" +
+							exception.Message);
+				}
+			}
+
+			warning = CombineWarnings(warning, preparationWarning);
+			return ApplyMaintenanceUpdaterWarning(result, warning);
+		}
+
+		try
+		{
+			DelegatedMaintenanceUpdaterPromotionState promotionState =
+				await coordinator.ScheduleAsync(
+				context,
+				currentUpdater,
+				availableUpdater,
+				options,
+				cancellationToken);
+
+			switch (promotionState)
+			{
+				case DelegatedMaintenanceUpdaterPromotionState.CanonicalCurrent:
+					Console.WriteLine(
+						"Canonical maintenance updater is already current.");
+					break;
+				case DelegatedMaintenanceUpdaterPromotionState.PendingForExactParent:
+					string generationPath = ManagedInstallationPaths
+						.GetMaintenanceUpdaterGeneration(
+							options.MaintenanceRoot,
+							availableUpdater.Sha256);
+					Console.WriteLine(
+						"Scheduled delegated maintenance updater promotion from " +
+						$"'{generationPath}' after process " +
+						$"{context.ParentIdentity.ProcessId} exits.");
+					break;
+				default:
+					throw new InvalidOperationException(
+						"Unsupported maintenance updater promotion state " +
+							$"'{promotionState}'.");
+			}
+		}
+		catch (Exception exception) when (
+			exception is IOException or UnauthorizedAccessException or
+				SecurityException or InvalidDataException or
+				InvalidOperationException or ArgumentException or
+				Win32Exception)
+		{
+			warning = CombineWarnings(
+				warning,
+				"App 已更新，但無法安排 delegated maintenance updater 提升：" +
+					exception.Message);
+			Console.Error.WriteLine(
+				$"Warning: {warning ?? "Maintenance updater promotion failed."}");
+		}
+
+		return ApplyMaintenanceUpdaterWarning(result, warning);
+	}
+
+	private static async Task<string?>
+		TryRetryPendingMaintenanceUpdaterPromotionAsync(
+		CurrentUpdaterIdentity currentUpdater,
+		UpdaterCommandLineOptions options,
+		CancellationToken cancellationToken)
+	{
+		if (!options.ShouldRegisterInstalledApp)
+		{
+			return null;
+		}
+
+		string canonicalPath = ManagedInstallationPaths.GetMaintenanceUpdater(
+			options.MaintenanceRoot);
+		if (!string.Equals(
+				currentUpdater.ExecutablePath,
+				canonicalPath,
+				StringComparison.OrdinalIgnoreCase))
+		{
+			return null;
+		}
+
+		MaintenanceUpdaterPromotionReceiptStore receiptStore = new(
+			options.MaintenanceRoot);
+
+		try
+		{
+			MaintenanceUpdaterPromotionReceipt? receipt =
+				await receiptStore.LoadAsync(cancellationToken);
+
+			if (receipt is null)
+			{
+				return null;
+			}
+
+			MaintenanceUpdaterPromotionOptions recordedOptions = new(
+				options.InstallRoot,
+				options.MaintenanceRoot,
+				receipt.SourceSha256,
+				receipt.ExpectedCanonicalSha256,
+				new ExactProcessIdentity(
+					receipt.ParentProcessId,
+					receipt.ParentProcessStartTimeUtcTicks));
+
+			if (string.Equals(
+					currentUpdater.Sha256,
+					receipt.SourceSha256,
+					StringComparison.Ordinal))
+			{
+				await receiptStore.DeleteIfMatchesAsync(
+					recordedOptions,
+					CancellationToken.None);
+				return null;
+			}
+
+			using Process currentProcess = Process.GetCurrentProcess();
+			MaintenanceUpdaterPromotionOptions retryOptions = new(
+				options.InstallRoot,
+				options.MaintenanceRoot,
+				receipt.SourceSha256,
+				receipt.ExpectedCanonicalSha256,
+				new ExactProcessIdentity(
+					currentProcess.Id,
+					currentProcess.StartTime.ToUniversalTime().Ticks));
+
+			if (!string.Equals(
+					currentUpdater.Sha256,
+					receipt.ExpectedCanonicalSha256,
+					StringComparison.Ordinal))
+			{
+				InvalidDataException changedCanonicalException = new(
+					$"Canonical maintenance updater '{canonicalPath}' no longer " +
+					"matches the generation recorded for pending promotion.");
+				await receiptStore.SaveFailureIfCurrentAsync(
+					recordedOptions,
+					changedCanonicalException,
+					CancellationToken.None);
+				string warning = changedCanonicalException.Message;
+				Console.Error.WriteLine($"Warning: {warning}");
+				return warning;
+			}
+
+			bool wasLaunched = await new MaintenanceUpdaterPromotionLauncher()
+				.LaunchRetryAsync(
+					retryOptions,
+					receipt,
+					cancellationToken);
+
+			if (wasLaunched)
+			{
+				Console.WriteLine(
+					"Retrying the pending maintenance updater promotion after " +
+					$"process {retryOptions.ParentIdentity.ProcessId} exits.");
+			}
+
+			return null;
+		}
+		catch (Exception exception) when (
+			exception is IOException or UnauthorizedAccessException or
+				SecurityException or InvalidDataException or
+				InvalidOperationException or ArgumentException or
+				Win32Exception)
+		{
+			string warning =
+				"Pending maintenance updater promotion could not be " +
+				$"retried: {exception.Message}";
+			Console.Error.WriteLine($"Warning: {warning}");
+			return warning;
+		}
+	}
+
+	private static async Task<UpdaterExecutionResult>
 		RegisterAndRestartCurrentAsync(
 			UpdaterCommandLineOptions options,
 			UpdateManifest installedManifest,
@@ -641,6 +943,36 @@ internal static class Program
 	private static string AppendWarning(string message, string? warning)
 	{
 		return warning is null ? message : $"{message} {warning}";
+	}
+
+	private static UpdaterExecutionResult ApplyMaintenanceUpdaterWarning(
+		UpdaterExecutionResult result,
+		string? warning)
+	{
+		ArgumentNullException.ThrowIfNull(result);
+
+		if (warning is null)
+		{
+			return result;
+		}
+
+		return result with
+		{
+			ExitCode = result.ExitCode == SuccessExitCode
+				? MaintenanceUpdaterIncompleteExitCode
+				: result.ExitCode,
+			UserMessage = AppendWarning(result.UserMessage, warning)
+		};
+	}
+
+	private static string? CombineWarnings(string? first, string? second)
+	{
+		if (first is null)
+		{
+			return second;
+		}
+
+		return second is null ? first : $"{first} {second}";
 	}
 
 	private static void StartApplication(string executablePath)

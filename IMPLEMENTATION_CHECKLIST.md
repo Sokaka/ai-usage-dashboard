@@ -1,6 +1,6 @@
 # 實作與驗證清單
 
-更新日期：2026-09-15
+更新日期：2026-09-22
 
 讀者：負責 AI Usage Dashboard 開發、測試與交付的人員。本文只列現況、驗證界線與尚待工作。
 
@@ -9,6 +9,23 @@
 ## 目前 source
 
 標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。上述功能與下列 Copilot 訂閱資訊修正已一併凍結於 `1.0.3 / sequence 1017`，並已核准為首個正式公開版本。
+
+### App 更新偵測與提示（`1.0.3` 後的目前 source）
+
+- [x] Production App 與 Updater 共用解析後的 stable feed URL、channel 與 public trust keys。`Publish-Internal.ps1` 要求明確提供三項；`Publish-UpdateBundle.ps1` 預設 `stable` channel 與該 channel 的 GitHub latest download feed URL，但仍要求外部 trust file。正式 publish 會在缺少必要輸入或 URL／trust 格式無效時 fail fast，並從發布後的 App DLL 讀回 feed／channel metadata 與 embedded trust bytes 逐值核對。App 的 feed client 只讀取、限制大小、核對最終 HTTPS URI 並驗簽，不下載 artifact；Updater 安裝時仍獨立重新驗證。
+- [x] Source 以 exact executable layout 與 adjacent installed manifest 分成 canonical managed、custom managed、unmanaged／portable。只有 canonical、固定 maintenance Updater 存在且 shutdown listener 已 ready 時提供 **更新並重新啟動**；其餘只開固定 Releases，portable 無法解析 `ProductVersion` 時明確顯示無法判斷。
+- [x] 新增首次 non-modal 網路說明、30 秒初次 delay、24 小時成功節流、`15m → 1h → 4h → 24h` 失敗退避、manual join、resume／clock anomaly、auto-check 開關、24 小時 version＋sequence snooze 與每 release 一次的 balloon attempt。狀態使用獨立 strict JSON cache，不保存 URL、Updater path 或 install decision。
+- [x] 展開浮窗有獨立 update banner；收合狀態有 high-contrast-aware `↑` badge 與同一 tooltip／automation composer；tray 永久保留手動檢查與 auto-check 開關，About 顯示更新狀態。背景失敗不開 modal；手動檢查在可見介面內顯示結果，從 tray 發起且浮窗隱藏／收合時，失敗會顯示結果 dialog，UpToDate 也會顯示完成提示。
+- [x] 2026-09-15 本機 CI 等價驗證：restore 與 Release 建置成功，0 warnings／0 errors；完整測試 4,243／4,243 通過，0 failed／skipped；production line coverage 75.38%（53,119／70,465，門檻 70%）。另以合成 HTTPS feed URL 與臨時 3072-bit public trust 完成 production publish contract；成品共 328 files、ZIP 77,796,534 bytes，直接讀回的 feed／channel metadata 與 embedded trust resource 相符。此驗證包未安裝、簽署、上傳或發布。
+- [x] 2026-09-15 唯讀 live probe 使用 production public trust 與產品 checker，以五次 logical feed request 經 GitHub HTTPS redirect 至 `release-assets.githubusercontent.com`，下載並驗證正式 stable feed `1.0.3 / sequence 1017`；較舊 portable 版本判為可更新、同版判為已最新，較高已見 sequence 會拒絕 replay。實際既有 canonical 安裝與暫存 custom／portable layout 的分類正確，且 capability probe 只有 canonical 可使用 maintenance Updater。此 probe 未啟動 App／Updater、未下載 artifact，也未改動既有安裝。
+- [x] 另保留較低版 `1.0.2-verify.update-notification.20260915.1` 的 production-config 驗證包供隔離 VM 使用；328 files、ZIP 77,796,874 bytes、SHA-256 `a2e7c0b16b0de881c2d8517a2ae592c0f5489eddefb4228c6a952222856a4e2a`。已從 finalized package 核對 ProductVersion、正式 feed、`stable` channel、production public trust、sidecar、allowlist、dependency/license profiles 與四組 offline license exports。2026-09-15 在 `.57` 以 non-admin interactive token 受控啟動一次；14 項前置與正常關閉 assertion 通過，但該使用者尚未接受 candidate `2026-09-06.1` catalog，App 在任何更新 UI observation 前退出。原 portable、preferences 與 update state 已核對恢復，Task 與遠端專用目錄已刪除；這不是 portable UI E2E 通過。此包未安裝、簽署、上傳或發布。
+- [x] 2026-09-16 在 `.57` 以當時 source 的 production-config 驗證包重跑更新提示觀察 `20260916-82b1fec6`；Portable 與 CanonicalManaged 共 130 項 assertion 通過、0 errors，環境安全還原，10 份受控 evidence 已收集後清除遠端專用目錄。使用者已確認最終珊瑚紅 badge 的人眼外觀；此結果只涵蓋提示 UI 與 badge，未按下真正更新，也不代表後續 source、自訂安裝、一鍵 Updater、自我更新、實際 balloon 或無障礙 E2E 通過。
+- [x] 2026-09-16 目前 source 修正 auto-check 偏好儲存失敗提示、延後的無障礙更新公告，以及 maintenance Updater 被鎖定時的 generation promotion／重試。delegated child 會驗證 signed cache、direct parent 與 exact process identity 後接手 promotion；receipt lease 與 snapshot compare/rebind 會排除過期 promoter，registration repair 成功後才清除舊 generation，解除安裝也能辨識硬中止留下的自有 promotion temporary file。Release 建置成功，0 warnings／0 errors；完整測試 4,300／4,300 通過，0 failed／skipped，耗時 34 秒。這是 source 驗證，不代替正式候選的一鍵更新、自我更新或無障礙 E2E。
+- [x] 2026-09-21 舊 source 候選 `1.0.5-verify.rc.20260921.1` 已完成 canonical managed 一鍵更新與 Updater 自我更新 E2E。候選集合 SHA-256 為 `c87d5d75a7679a76eca326c0097fd59148c335b37e475d718997b27d64a0ed56`，run `acceptance-20260921-2fab1524-canonical` 為 `passed`：17 項 assertion 通過、0 errors、scenario completed、環境還原成功；UI Automation 實際按下 `UpdatePrimaryAction`，核對精確 feed request、App／Updater 各下載一次、promoter 等待超過舊 2 分鐘界線仍存活、parent 結束後 canonical Updater 提升為 signed target，以及 already-current recovery。finalize 為 `finalized`，後續 cleanup verification 為 `verified-clean`。此結果只適用於該候選，不代表之後變更的目前 source 已驗收。
+- [x] **前一版 source 候選的完整 E2E 未通過，失敗紀錄與復原證據已保存**：候選 `1.0.6-verify.rc.20260921.1` 的 source identity SHA-256 為 `6d6292c5395d54ea099852fc34487d417662a7c657ec56f93f8ffe8c6e41e640`、artifact set SHA-256 為 `48a9c4f846a643619290e9874cfccd33c0f005b5af8744f608e9d6e22e23e581`。run `acceptance-20260921-6ab1a070-canonical` 的一鍵更新與 Updater 自我更新 scenarioStatus 為 `passed`、16 項 assertion 通過；但原 terminal 為 `failed`（exitCode 1、2 errors、environmentRestored=false），憑證清理證明失敗。後續 recovery 遇 certutil observer race；原 failed result 已保留，經獨立復原後 finalize 為 `finalized`、environmentSafe=true，收集 main 69 份、當次 recovery 13 份、前兩次失敗 recovery 各 6 份 evidence；main cleanup 為 `cleaned`，postcleanup 為 `postcleanup-probed`，所有自有 root／task／process 已清除且 Root／My 回到 baseline。這些是失敗後的安全復原，不能當作修正後 source 的 E2E 結果；原失敗紀錄保持原樣，修正後驗證見下方 2026-09-22 新候選紀錄。
+- [x] 2026-09-22 目前 source 會持續觀察更新安全關閉 listener；啟動後若意外停止，App 會清除 ready 狀態並記錄原始錯誤，畫面更新失敗則獨立記錄。新增真實 named pipe 故障回歸測試。Release 建置 0 warnings／0 errors，定點測試 17／17、完整測試 4,315／4,315 通過，0 failed／skipped；production line coverage 75.18%（54,125／71,995，門檻 70%）。這是修正後 source 的本機驗證；新候選的遠端結果另列於下一項。
+- [x] 2026-09-22 修正後 source snapshot SHA-256 `fa9d7a09d3facb4d5a0a78007533a5cfffb0b250b7cb0b79771b3331e5cd1527` 的獨立 canonical managed 一鍵更新／Updater 自我更新 E2E 已通過。以 `1.0.6-verify.rc.20260922.1` 更新至 `1.0.7-verify.rc.20260922.1`；候選 target artifacts seal `fedfa4a87e550e01bfd74eb754e4823c8cb04081e013cf0c5c236fe74563a089`，harness seal `6ed1c1e1352a1e0f4e0e75b182015fcb5823d4fe385003abf6098fb75a110e9b`。`.57` run `acceptance-20260922-be0f804c-canonical` 有 17 項 assertion、0 errors，scenarioStatus／terminal 均為 `passed`、exitCode 0、environmentRestored=true；實際透過 UI Automation 按下 `UpdatePrimaryAction`，核對 App／Updater 各下載一次、delegated promotion 等待超過舊兩分鐘界線與 already-current recovery。獨立 finalize 為 `finalized`、environmentSafe=true、taskRemoved=true；69 份 evidence 已收集，cleanup 為 `cleaned`，其後唯讀探測確認遠端專用 root、task、測試憑證與產品程序均不存在。此驗證只涵蓋該隔離候選與 canonical managed 流程，未簽署、上傳或發布正式版本。
+- [ ] custom managed／portable、實際 Windows balloon、200% text、High Contrast 與螢幕閱讀器 E2E 尚未完成；source build／單元測試不得改列為這些人工驗收通過。
 
 ### Copilot 訂閱資訊相容性修正
 

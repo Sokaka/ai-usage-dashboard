@@ -190,6 +190,12 @@ public sealed class AppThemeTests
 		Assert.Equal(
 			"WindowTextColor",
 			GetSystemColorMember(palette, "LogoSparkColor"));
+		Assert.Equal(
+			"WindowTextColor",
+			GetSystemColorMember(palette, "UpdateBadgeColor"));
+		Assert.Equal(
+			"WindowColor",
+			GetSystemColorMember(palette, "UpdateBadgeForegroundColor"));
 
 		foreach (string resourceKey in ProviderAccentColorKeys)
 		{
@@ -275,6 +281,27 @@ public sealed class AppThemeTests
 			surfaceOverlay,
 			3,
 			$"{fileName} idle menu indicator against the menu surface");
+		Color updateBadge = GetColor(palette, "UpdateBadgeColor");
+		AssertMinimumContrast(
+			GetColor(palette, "UpdateBadgeForegroundColor"),
+			updateBadge,
+			4.5,
+			$"{fileName} collapsed update badge glyph against the badge fill");
+		AssertMinimumContrast(
+			updateBadge,
+			windowBackground,
+			3,
+			$"{fileName} collapsed update badge against the window");
+		AssertMinimumContrast(
+			updateBadge,
+			cardBackground,
+			3,
+			$"{fileName} collapsed update badge against the card");
+		AssertMinimumContrast(
+			updateBadge,
+			GetColor(palette, "LogoSurfaceColor"),
+			3,
+			$"{fileName} collapsed update badge against the logo surface");
 		AssertMinimumContrast(
 			GetColor(palette, "ProgressTrackColor"),
 			cardBackground,
@@ -479,6 +506,23 @@ public sealed class AppThemeTests
 			"{x:Static viewModels:UsageLevel.Critical}",
 			"Foreground",
 			"{DynamicResource DangerTextBrush}");
+	}
+
+	[Theory]
+	[InlineData("Palette.xaml")]
+	[InlineData("MidnightPalette.xaml")]
+	[InlineData("LightPalette.xaml")]
+	[InlineData("SakuraPalette.xaml")]
+	public void GeneralPalettes_UseReviewedUpdateBadgeColors(string fileName)
+	{
+		ResourceDictionary palette = LoadPalette(fileName);
+
+		Assert.Equal(
+			(Color)ColorConverter.ConvertFromString("#C24E45"),
+			GetColor(palette, "UpdateBadgeColor"));
+		Assert.Equal(
+			Colors.White,
+			GetColor(palette, "UpdateBadgeForegroundColor"));
 	}
 
 	[Theory]

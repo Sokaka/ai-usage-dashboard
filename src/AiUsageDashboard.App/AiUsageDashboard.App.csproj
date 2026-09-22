@@ -48,6 +48,30 @@
     <ProjectReference Include="..\AiUsageDashboard.Updater.Core\AiUsageDashboard.Updater.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyMetadata Include="AiUsageDashboard.UpdateFeedUrl"
+                      Value="$(UpdateFeedUrl)"
+                      Condition="'$(UpdateFeedUrl)' != ''" />
+    <AssemblyMetadata Include="AiUsageDashboard.UpdateChannel"
+                      Value="$(UpdateChannel)"
+                      Condition="'$(UpdateChannel)' != ''" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UpdateTrustedKeysFile)' != ''">
+    <EmbeddedResource Include="$(UpdateTrustedKeysFile)"
+                      LogicalName="AiUsageDashboard.UpdateTrustedKeys.json" />
+  </ItemGroup>
+
+  <Target Name="RequireUpdateFeedMetadataForPublish"
+          BeforeTargets="PrepareForPublish">
+    <Error Condition="'$(UpdateFeedUrl)' == ''"
+           Text="Publishing the app requires UpdateFeedUrl." />
+    <Error Condition="'$(UpdateChannel)' == ''"
+           Text="Publishing the app requires UpdateChannel." />
+    <Error Condition="'$(UpdateTrustedKeysFile)' == '' Or !Exists('$(UpdateTrustedKeysFile)')"
+           Text="Publishing the app requires an externally supplied UpdateTrustedKeysFile containing production public trust keys." />
+  </Target>
+
   <Target Name="StageAntigravityCaptureHelper"
           AfterTargets="Build"
           Condition="'$(DesignTimeBuild)' != 'true'">
