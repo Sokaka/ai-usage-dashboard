@@ -41,28 +41,6 @@ public sealed class DashboardViewModelTests
 		}
 	}
 
-	[Theory]
-	[InlineData(
-		AntigravityStatusLineIntegrationStatus.ExistingCustomStatusLine,
-		false)]
-	[InlineData(
-		AntigravityStatusLineIntegrationStatus.PathUnsupported,
-		true)]
-	public void AgyReportedAccountSource_ClassifiesUnownedIntegrationStatus(
-		AntigravityStatusLineIntegrationStatus integrationStatus,
-		bool expectedUnavailable)
-	{
-		AntigravityReportedAccountObservationStatus expectedStatus =
-			expectedUnavailable
-				? AntigravityReportedAccountObservationStatus.Unavailable
-				: AntigravityReportedAccountObservationStatus.Available;
-
-		Assert.Equal(
-			expectedStatus,
-			AntigravityReportedAccountSource
-				.GetUnownedIntegrationObservationStatus(integrationStatus));
-	}
-
 	private sealed class FakeDashboardPreferencesStore :
 		IDashboardPreferencesStore,
 		IWidgetPreferencesStore
@@ -2157,8 +2135,25 @@ public sealed class DashboardViewModelTests
 		account.AbortProviderAccountChange();
 	}
 
+	[Theory]
+	[InlineData(false, false, true)]
+	[InlineData(false, true, false)]
+	[InlineData(true, false, false)]
+	[InlineData(true, true, false)]
+	public void SetupProcessWait_OnlySkipsInactiveOrCompletedInProcessAttempt(
+		bool isProcessInactive,
+		bool isCurrentApplicationProcess,
+		bool expected)
+	{
+		Assert.Equal(
+			expected,
+			DashboardViewModel.ShouldWaitForSetupProcessCompletion(
+				isProcessInactive,
+				isCurrentApplicationProcess));
+	}
+
 	[Fact]
-	public async Task PendingAntigravitySetupIntent_AfterRestartWhileHelperProcessIsAlive_WaitsWithoutQuotaRead()
+	public async Task PendingAntigravitySetupIntent_WhenInProcessActiveStateOutlivesDialog_DiscardsWithoutQuotaRead()
 	{
 		AccountProfile profile = new(
 			Guid.NewGuid(),
@@ -2192,9 +2187,61 @@ public sealed class DashboardViewModelTests
 
 		AccountUsageViewModel account = Assert.Single(viewModel.Accounts);
 		Assert.Empty(refreshCoordinator.RefreshRequests);
+		Assert.Empty(pendingStore.PendingWork);
+		Assert.True(account.CanConnectProviderAccount);
+	}
+
+	[Fact]
+	public async Task PendingAntigravitySetupIntent_WhenInProcessActiveDiscardInitiallyFails_RetryClearsWithoutRestart()
+	{
+		AccountProfile profile = new(
+			Guid.NewGuid(),
+			ProviderKind.Antigravity,
+			"Antigravity");
+		int removalAttempts = 0;
+		FakeAntigravityConnectionPendingStore pendingStore = new()
+		{
+			RemoveHandler = (_, _) =>
+			{
+				removalAttempts++;
+				return removalAttempts == 1
+					? Task.FromException(new IOException(
+						"Synthetic first journal removal failure."))
+					: Task.CompletedTask;
+			}
+		};
+		Guid setupAttemptId = Guid.NewGuid();
+		await pendingStore.BeginSetupAsync(
+			profile.Id,
+			DashboardViewModel
+				.CreateAntigravityPendingProfileIdentityFingerprint(null),
+			setupAttemptId);
+		AntigravitySetupProcessIdentity process =
+			AntigravitySetupProcessIdentity.CaptureCurrent();
+		pendingStore.AddSetupAttemptState(new AntigravitySetupAttemptState(
+			setupAttemptId,
+			AntigravitySetupAttemptPhase.Active,
+			process.ProcessId,
+			process.ProcessStartTimeUtcTicks,
+			DateTimeOffset.UtcNow.UtcDateTime.Ticks));
+		FakeUsageRefreshCoordinator refreshCoordinator = new();
+		DashboardViewModel viewModel = new(
+			new FakeAccountProfileStore(profile),
+			refreshCoordinator,
+			usageSnapshotStore: null,
+			dashboardPreferencesStore: null,
+			accountRuntimeStatePurger: null,
+			antigravityConnectionPendingStore: pendingStore);
+
+		await viewModel.InitializeAsync();
+
+		Assert.Equal(1, removalAttempts);
 		Assert.True(Assert.Single(pendingStore.PendingWork).IsSetupPending);
-		Assert.False(account.CanConnectProviderAccount);
-		Assert.False(account.CanExecuteRecoveryAction);
+		Assert.True(
+			await viewModel.RetryPendingAntigravityConnectionsNowAsync());
+		Assert.Equal(2, removalAttempts);
+		Assert.Empty(pendingStore.PendingWork);
+		Assert.Empty(refreshCoordinator.RefreshRequests);
 	}
 
 	[Fact]
@@ -2415,7 +2462,8 @@ public sealed class DashboardViewModelTests
 	[Fact]
 	public async Task PendingApprovalRequest_WhenLateReceiptArrives_AutomaticallyCompletes()
 	{
-		const string TargetIdentity = "late-receipt@example.com";
+		const string TargetIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		DateTimeOffset now = DateTimeOffset.Parse("2026-08-16T00:00:00Z");
 		FixedTimeProvider timeProvider = new(now);
 		AccountProfile profile = new(
@@ -2437,7 +2485,7 @@ public sealed class DashboardViewModelTests
 			process.ProcessId,
 			process.ProcessStartTimeUtcTicks,
 			now.UtcDateTime.Ticks,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			AntigravitySetupApprovalReceiptStore
 				.ComputeTargetIdentityFingerprint(TargetIdentity)));
 		FakeUsageRefreshCoordinator refreshCoordinator = new()
@@ -2448,7 +2496,7 @@ public sealed class DashboardViewModelTests
 				{
 					new UsageMetric("agy.test", "AGY test", 25, "used 25%")
 				},
-				SourceTrust.PrivateExperimental,
+				SourceTrust.OfficialExperimental,
 				SnapshotStatus.Ready,
 				DateTimeOffset.UtcNow,
 				ProviderAccountIdentity: TargetIdentity))
@@ -2469,7 +2517,7 @@ public sealed class DashboardViewModelTests
 
 		pendingStore.AddSetupApproval(
 			setupAttemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			TargetIdentity);
 		timeProvider.Advance(TimeSpan.FromMinutes(1));
 		Assert.True(
@@ -2498,7 +2546,7 @@ public sealed class DashboardViewModelTests
 			setupAttemptId);
 		pendingStore.AddSetupApproval(
 			setupAttemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			TargetIdentity);
 		FakeUsageRefreshCoordinator refreshCoordinator = new()
 		{
@@ -2527,7 +2575,8 @@ public sealed class DashboardViewModelTests
 	[Fact]
 	public async Task RefreshUsageInBackgroundAsync_WhenAntigravityRecoveryIsBlocked_StartsHealthyAccountRefresh()
 	{
-		const string TargetIdentity = "pending@example.com";
+		const string TargetIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		const string HealthyIdentity = "healthy@example.com";
 		AccountProfile pendingAntigravityProfile = new(
 			Guid.NewGuid(),
@@ -2550,7 +2599,7 @@ public sealed class DashboardViewModelTests
 			int.MaxValue,
 			1,
 			DateTimeOffset.UtcNow.UtcDateTime.Ticks,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			AntigravitySetupApprovalReceiptStore
 				.ComputeTargetIdentityFingerprint(TargetIdentity)));
 		TaskCompletionSource<UsageSnapshot> antigravityVerificationResult = new(
@@ -2609,7 +2658,7 @@ public sealed class DashboardViewModelTests
 						25,
 						"used 25%")
 				},
-				SourceTrust.PrivateExperimental,
+				SourceTrust.OfficialExperimental,
 				SnapshotStatus.Ready,
 				DateTimeOffset.UtcNow,
 				ProviderAccountIdentity: TargetIdentity));
@@ -2641,7 +2690,8 @@ public sealed class DashboardViewModelTests
 	[Fact]
 	public async Task PendingApprovalRequest_WhenHelperDiedBeforeReceipt_VerifiesAndCompletes()
 	{
-		const string TargetIdentity = "requested@example.com";
+		const string TargetIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = new(
 			Guid.NewGuid(),
 			ProviderKind.Antigravity,
@@ -2659,7 +2709,7 @@ public sealed class DashboardViewModelTests
 			int.MaxValue,
 			1,
 			DateTimeOffset.UtcNow.UtcDateTime.Ticks,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			AntigravitySetupApprovalReceiptStore
 				.ComputeTargetIdentityFingerprint(TargetIdentity)));
 		FakeAccountProfileStore profileStore = new(profile);
@@ -2671,7 +2721,7 @@ public sealed class DashboardViewModelTests
 				{
 					new UsageMetric("agy.test", "AGY test", 25, "used 25%")
 				},
-				SourceTrust.PrivateExperimental,
+				SourceTrust.OfficialExperimental,
 				SnapshotStatus.Ready,
 				DateTimeOffset.UtcNow,
 				ProviderAccountIdentity: TargetIdentity))
@@ -2729,12 +2779,12 @@ public sealed class DashboardViewModelTests
 			process.ProcessId,
 			process.ProcessStartTimeUtcTicks,
 			DateTimeOffset.UtcNow.UtcDateTime.Ticks,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			AntigravitySetupApprovalReceiptStore
 				.ComputeTargetIdentityFingerprint(StateIdentity)));
 		pendingStore.AddSetupApproval(
 			setupAttemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			ReceiptIdentity);
 		FakeUsageRefreshCoordinator refreshCoordinator = new();
 		DashboardViewModel viewModel = new(
@@ -2759,9 +2809,10 @@ public sealed class DashboardViewModelTests
 	}
 
 	[Fact]
-	public async Task PendingReviewedConPtySetup_WithMatchingReceipt_RestartCommitsActualIdentity()
+	public async Task PendingOfficialPrintSetup_WithMatchingReceipt_RestartCommitsLocalSessionIdentity()
 	{
-		const string TargetIdentity = "reviewed@example.com";
+		const string TargetIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = new(
 			Guid.NewGuid(),
 			ProviderKind.Antigravity,
@@ -2775,7 +2826,7 @@ public sealed class DashboardViewModelTests
 			setupAttemptId);
 		pendingStore.AddSetupApproval(
 			setupAttemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			TargetIdentity);
 		FakeUsageRefreshCoordinator refreshCoordinator = new()
 		{
@@ -2785,7 +2836,7 @@ public sealed class DashboardViewModelTests
 				{
 					new UsageMetric("agy.test", "AGY test", 25, "used 25%")
 				},
-				SourceTrust.PrivateExperimental,
+				SourceTrust.OfficialExperimental,
 				SnapshotStatus.Ready,
 				DateTimeOffset.UtcNow,
 				ProviderAccountIdentity: TargetIdentity))
@@ -2824,7 +2875,7 @@ public sealed class DashboardViewModelTests
 	}
 
 	[Fact]
-	public async Task PendingReviewedConPtySetup_WhenReceiptTargetMismatches_DoesNotCommit()
+	public async Task PendingOfficialPrintSetup_WhenReceiptTargetMismatches_DoesNotCommit()
 	{
 		AccountProfile profile = new(
 			Guid.NewGuid(),
@@ -2839,76 +2890,8 @@ public sealed class DashboardViewModelTests
 			setupAttemptId);
 		pendingStore.AddSetupApproval(
 			setupAttemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			"approved@example.com");
-		FakeAccountProfileStore profileStore = new(profile);
-		FakeUsageRefreshCoordinator refreshCoordinator = new()
-		{
-			RefreshHandler = account => Task.FromResult(new UsageSnapshot(
-				account,
-				new[]
-				{
-					new UsageMetric(
-						"agy.test",
-						"AGY test",
-						25,
-						"used 25%")
-				},
-				SourceTrust.PrivateExperimental,
-				SnapshotStatus.Ready,
-				DateTimeOffset.UtcNow,
-				ProviderAccountIdentity: "different@example.com"))
-		};
-		DashboardViewModel viewModel = new(
-			profileStore,
-			refreshCoordinator,
-			usageSnapshotStore: null,
-			dashboardPreferencesStore: null,
-			accountRuntimeStatePurger: null,
-			antigravityConnectionPendingStore: pendingStore);
-
-		await viewModel.InitializeAsync();
-
-		AccountUsageViewModel account = Assert.Single(viewModel.Accounts);
-		Assert.Empty(refreshCoordinator.RefreshRequests);
-		Assert.True(Assert.Single(pendingStore.PendingWork).IsSetupPending);
-		Assert.Null(account.Profile.ProviderAccountIdentity);
-		Assert.Equal(UsageRecoveryAction.Retry, account.RecoveryAction);
-		Assert.False(account.CanConnectProviderAccount);
-		Assert.False(account.CanExecuteRecoveryAction);
-		Assert.True(
-			await viewModel.RetryPendingAntigravityConnectionsNowAsync());
-
-		Assert.Null(account.Profile.ProviderAccountIdentity);
-		Assert.Equal(SnapshotStatus.Error, account.CurrentSnapshot?.Status);
-		Assert.Empty(account.CurrentSnapshot?.Metrics ?? Array.Empty<UsageMetric>());
-		Assert.Equal(UsageRecoveryAction.ConnectAccount, account.RecoveryAction);
-		Assert.True(account.CanInvokeRecoveryAction);
-		Assert.Empty(profileStore.SavedSnapshots);
-		Assert.Empty(pendingStore.PendingWork);
-		Assert.Equal(
-			profile.Id,
-			Assert.Single(refreshCoordinator.RefreshRequests).Id);
-	}
-
-	[Fact]
-	public async Task PendingReviewedConPtySetup_WhenReceiptSourceMismatches_DoesNotCommit()
-	{
-		AccountProfile profile = new(
-			Guid.NewGuid(),
-			ProviderKind.Antigravity,
-			"Antigravity");
-		FakeAntigravityConnectionPendingStore pendingStore = new();
-		Guid setupAttemptId = Guid.NewGuid();
-		await pendingStore.BeginSetupAsync(
-			profile.Id,
-			DashboardViewModel
-				.CreateAntigravityPendingProfileIdentityFingerprint(null),
-			setupAttemptId);
-		pendingStore.AddSetupApproval(
-			setupAttemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
-			AntigravityOfficialPrintUsageClient.LocalSessionIdentity);
 		FakeAccountProfileStore profileStore = new(profile);
 		FakeUsageRefreshCoordinator refreshCoordinator = new()
 		{

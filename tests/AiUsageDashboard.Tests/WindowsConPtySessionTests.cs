@@ -226,9 +226,9 @@ public sealed class WindowsConPtySessionTests
 	}
 
 	[Fact]
-	public async Task VersionProbe_WithFixture_RendersSingleVisibleVersionLine()
+	public async Task RedirectedVersionProbe_WithFixture_RendersSingleVisibleVersionLine()
 	{
-		ConPtyAntigravityCliVersionProbe probe = new();
+		RedirectedAntigravityCliVersionProbe probe = new();
 
 		string version = await probe.ProbeAsync(
 			GetFixtureExecutablePath(),

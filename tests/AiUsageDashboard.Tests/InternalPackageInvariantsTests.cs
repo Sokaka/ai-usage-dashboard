@@ -3,10 +3,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
-using AiUsageDashboard.Antigravity.Setup;
-using AiUsageDashboard.AntigravitySpike;
-using AiUsageDashboard.App.Providers;
-
 namespace AiUsageDashboard.Tests;
 
 public sealed class InternalPackageInvariantsTests
@@ -17,9 +13,7 @@ public sealed class InternalPackageInvariantsTests
 		using TemporaryDirectory temporaryDirectory = new();
 		foreach (string relativePath in new[]
 		{
-			"AiUsageDashboard.App.exe", "AiUsageDashboard.Antigravity.Setup.exe",
-			"AiUsageDashboard.AntigravityCapture.exe", "AiUsageDashboard.ClaudeCapture.exe",
-			"createdump.exe",
+			"AiUsageDashboard.App.exe", "AiUsageDashboard.ClaudeCapture.exe",
 			"GitHub.Copilot.SDK.dll", "coreclr.dll", "D3DCompiler_47_cor3.dll",
 			"README.md", "third-party-notices/GitHub-Copilot-SDK-LICENSE.md"
 		})
@@ -31,7 +25,7 @@ public sealed class InternalPackageInvariantsTests
 
 		(int exitCode, string output) = await RunPackageCliCheckAsync(temporaryDirectory.Path);
 		Assert.True(exitCode == 0, output);
-		Assert.Contains("10 files", output, StringComparison.Ordinal);
+		Assert.Contains("7 files", output, StringComparison.Ordinal);
 	}
 
 	[Theory]
@@ -49,6 +43,9 @@ public sealed class InternalPackageInvariantsTests
 	[InlineData("node_modules/cli/index.js")]
 	[InlineData("unexpected.exe")]
 	[InlineData("nested/AiUsageDashboard.App.exe")]
+	[InlineData("AiUsageDashboard.Antigravity.Setup.exe")]
+	[InlineData("AiUsageDashboard.AntigravityCapture.exe")]
+	[InlineData("createdump.exe")]
 	[InlineData("third-party-notices/GitHub-Copilot-CLI-LICENSE.md")]
 	public async Task PackageCliCheck_RejectsUnexpectedExecutablesAndProviderRuntimeFiles(string relativePath)
 	{
@@ -108,31 +105,69 @@ public sealed class InternalPackageInvariantsTests
 		Assert.Equal(
 			new[]
 			{
+				"AntigravityLiveR0Profile.cs",
+				"AntigravityLiveR0ProfileFile.cs",
+				"AntigravityLiveR0Runner.cs",
+				"AntigravityLiveR1PrivateCalibrationCaptureModels.cs",
+				"AntigravityLiveR1Profile.cs",
+				"AntigravityLiveR1RunnerModels.cs",
+				"AntigravityLiveR1SectionProfile.cs",
+				"AntigravityLiveR1SectionRunnerModels.cs",
+				"AntigravityMachineSetupPrivateTransaction.cs",
+				"AntigravityObservationGates.cs",
+				"AntigravityProductionUsageClient.cs",
+				"AntigravityRedactedStructuralCapture.cs",
+				"AntigravityReviewedPackageLocalBinding.cs",
+				"AntigravityReviewedPackageManifest.cs",
+				"AntigravityReviewedPackageManifestCatalog.cs",
 				"AntigravityUsageR1SectionCalibration.cs",
-				"AssemblyInfo.cs"
+				"AssemblyInfo.cs",
+				"IConPtySession.cs",
+				"WindowsConPtySession.cs"
 			},
 			productionSourceLinks);
+		string[] productionCompileExclusions = productionProject
+			.Descendants("Compile")
+			.Select(static item => item.Attribute("Remove")?.Value)
+			.Where(static remove => !string.IsNullOrWhiteSpace(remove))
+			.Select(static remove => Path.GetFileName(remove!))
+			.ToArray();
+		Assert.Contains("WindowsConPtySession.cs", productionCompileExclusions);
+		Assert.Contains("IConPtySession.cs", productionCompileExclusions);
+		Assert.Contains("AntigravityLiveR0Runner.cs", productionCompileExclusions);
 
-		XDocument captureProject = XDocument.Load(Path.Combine(
+		string captureProjectPath = Path.Combine(
 			repositoryRoot,
 			"src",
 			"AiUsageDashboard.AntigravityCapture",
-			"AiUsageDashboard.AntigravityCapture.csproj"));
-		XElement privateKeyAclSource = captureProject
-			.Descendants("Compile")
-			.Single(static item => string.Equals(
-				item.Attribute("Link")?.Value,
-				"AntigravityPrivateKeyAcl.cs",
-				StringComparison.Ordinal));
-		Assert.Equal(
-			@"..\AiUsageDashboard.Antigravity\AntigravityPrivateKeyAcl.cs",
-			privateKeyAclSource.Attribute("Include")?.Value);
+			"AiUsageDashboard.AntigravityCapture.csproj");
+		Assert.False(File.Exists(captureProjectPath));
+
+		foreach (string consumerPath in new[]
+		{
+			Path.Combine(repositoryRoot, "AiUsageDashboard.sln"),
+			Path.Combine(
+				repositoryRoot,
+				"src",
+				"AiUsageDashboard.App",
+				"AiUsageDashboard.App.csproj"),
+			Path.Combine(
+				repositoryRoot,
+				"tests",
+				"AiUsageDashboard.Tests",
+				"AiUsageDashboard.Tests.csproj")
+		})
+		{
+			Assert.DoesNotContain(
+				"AiUsageDashboard.AntigravityCapture",
+				File.ReadAllText(consumerPath),
+				StringComparison.OrdinalIgnoreCase);
+		}
 	}
 
 	[Fact]
 	public void PublishScript_EnforcesPinnedSdkAndRuntimeMetadata()
 	{
-		string repositoryRoot = RepositoryTestPaths.Root;
 		string script = ReadPublishScript();
 
 		Assert.Contains("$requiredSdkVersion = '8.0.425'", script);
@@ -185,7 +220,7 @@ public sealed class InternalPackageInvariantsTests
 			"[System.Diagnostics.FileVersionInfo]::GetVersionInfo(",
 			script);
 		Assert.Equal(
-			3,
+			2,
 			Regex.Matches(
 				script,
 				@"(?m)^\tAssert-PublishedProductVersion\s+`\r?$")
@@ -194,56 +229,27 @@ public sealed class InternalPackageInvariantsTests
 			"-ExecutablePath (Join-Path $appRoot 'AiUsageDashboard.App.exe')",
 			script);
 		Assert.Contains(
-			"-ExecutablePath (Join-Path $setupPublishRoot 'AiUsageDashboard.Antigravity.Setup.exe')",
-			script);
-		Assert.Contains(
-			"$antigravityCapturePublishRoot",
-			script);
-		Assert.Contains(
-			"-p:PublishSingleFile=true",
-			script);
-		Assert.Contains(
-			"-p:IncludeNativeLibrariesForSelfExtract=true",
-			script);
-		Assert.Contains(
-			"Invoke-PinnedTrimmedSingleFilePublish",
+			"-ExecutablePath (Join-Path $appRoot 'AiUsageDashboard.ClaudeCapture.exe')",
 			script);
 		Assert.Single(Regex.Matches(
 			script,
-			@"-p:PublishTrimmed=true").Cast<Match>());
-		Assert.Single(Regex.Matches(
+			@"(?m)^\tInvoke-PinnedPublish\s+`\r?$")
+			.Cast<Match>());
+		Assert.DoesNotContain(
+			@"src\AiUsageDashboard.Antigravity.Setup\AiUsageDashboard.Antigravity.Setup.csproj",
 			script,
-			@"-p:TrimMode=full").Cast<Match>());
-		Assert.Single(Regex.Matches(
+			StringComparison.OrdinalIgnoreCase);
+		Assert.DoesNotContain(
+			@"src\AiUsageDashboard.AntigravityCapture\AiUsageDashboard.AntigravityCapture.csproj",
 			script,
-			@"-p:SuppressTrimAnalysisWarnings=false").Cast<Match>());
-		Assert.Contains(
-			"-ExecutableName 'AiUsageDashboard.AntigravityCapture.exe'",
-			script);
-		Assert.Contains(
-			"function Invoke-PublishedCaptureSmokeTest",
-			script);
-		Assert.Contains(
-			"--ai-usage-dashboard-agy-statusline-smoke-test-v1",
-			script);
-		Assert.Single(Regex.Matches(
-			script,
-			@"(?m)^\tInvoke-PublishedCaptureSmokeTest\s+`\r?$").Cast<Match>());
-		Assert.Contains("$process.WaitForExit(10000)", script);
-		string captureProject = File.ReadAllText(Path.Combine(
-			repositoryRoot,
-			"src",
-			"AiUsageDashboard.AntigravityCapture",
-			"AiUsageDashboard.AntigravityCapture.csproj"));
-		Assert.Equal(
-			@"..\AiUsageDashboard.Licensing\AiUsageDashboard.Licensing.csproj",
-			Assert.Single(XDocument.Parse(captureProject).Descendants("ProjectReference"))
-				.Attribute("Include")?.Value);
-		Assert.Contains("AntigravityStatusLineCapture.cs", captureProject);
-		Assert.Contains("AntigravityPrivateKeyAcl.cs", captureProject);
-		Assert.Contains(
-			"$publishedFiles.Count -ne 1",
-			script);
+			StringComparison.OrdinalIgnoreCase);
+		Assert.DoesNotContain("$setupPublishRoot", script);
+		Assert.DoesNotContain("$antigravityCapturePublishRoot", script);
+		Assert.DoesNotContain("Invoke-PinnedTrimmedSingleFilePublish", script);
+		Assert.DoesNotContain("Invoke-PublishedCaptureSmokeTest", script);
+		Assert.DoesNotContain("Merge-PublishDirectory", script);
+		Assert.DoesNotContain("-p:PublishSingleFile=true", script);
+		Assert.DoesNotContain("-p:PublishTrimmed=true", script);
 		Assert.Contains(
 			"-p:RuntimeFrameworkVersion=$selfContainedRuntimeVersion",
 			script);
@@ -256,12 +262,9 @@ public sealed class InternalPackageInvariantsTests
 			"-p:UseSharedCompilation=false"
 		})
 		{
-			Assert.Collection(
-				Regex.Matches(
-					script,
-					Regex.Escape(isolatedBuildFlag)).Cast<Match>(),
-				_ => { },
-				_ => { });
+			Assert.Single(Regex.Matches(
+				script,
+				Regex.Escape(isolatedBuildFlag)).Cast<Match>());
 		}
 		Assert.Contains("Assert-PublishedRuntime", script);
 		Assert.Contains("includedFrameworks", script);
@@ -360,55 +363,128 @@ public sealed class InternalPackageInvariantsTests
 	}
 
 	[Fact]
-	public void AppProject_StagesStandaloneAntigravityCaptureHelperForLocalRuns()
+	public void AppProject_EmbedsSetupLibraryWithoutStagingCaptureExecutables()
 	{
-		string projectPath = Path.Combine(
+		string appProjectPath = Path.Combine(
 			RepositoryTestPaths.Root,
 			"src",
 			"AiUsageDashboard.App",
 			"AiUsageDashboard.App.csproj");
-		XDocument project = XDocument.Load(projectPath);
-		XElement captureReference = project
+		XDocument appProject = XDocument.Load(appProjectPath);
+		XElement setupReference = appProject
 			.Descendants("ProjectReference")
 			.Single(item => string.Equals(
 				item.Attribute("Include")?.Value,
+				@"..\AiUsageDashboard.Antigravity.Setup\AiUsageDashboard.Antigravity.Setup.csproj",
+				StringComparison.Ordinal));
+		Assert.Null(setupReference.Attribute("ReferenceOutputAssembly"));
+		Assert.Null(setupReference.Attribute("Private"));
+		Assert.DoesNotContain(
+			appProject.Descendants("ProjectReference"),
+			static item => string.Equals(
+				item.Attribute("Include")?.Value,
 				@"..\AiUsageDashboard.AntigravityCapture\AiUsageDashboard.AntigravityCapture.csproj",
 				StringComparison.Ordinal));
-		Assert.Equal(
-			"false",
-			captureReference.Attribute("ReferenceOutputAssembly")?.Value);
-		Assert.Equal(
-			"false",
-			captureReference.Attribute("Private")?.Value);
-
-		XElement stageTarget = project
-			.Descendants("Target")
-			.Single(item => string.Equals(
+		Assert.DoesNotContain(
+			appProject.Descendants("Target"),
+			static item => string.Equals(
 				item.Attribute("Name")?.Value,
 				"StageAntigravityCaptureHelper",
 				StringComparison.Ordinal));
-		Assert.Equal("Build", stageTarget.Attribute("AfterTargets")?.Value);
-		XElement stageProperties = Assert.Single(
-			stageTarget.Elements("PropertyGroup"));
-		Assert.Equal(
-			"$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'antigravity-capture-publish'))",
-			stageProperties.Element("AntigravityCapturePublishDirectory")?.Value);
 
-		XElement publish = Assert.Single(stageTarget.Elements("MSBuild"));
-		Assert.Equal("Publish", publish.Attribute("Targets")?.Value);
-		string properties = publish.Attribute("Properties")?.Value ?? string.Empty;
-		Assert.Contains("RuntimeIdentifier=win-x64", properties);
-		Assert.Contains("SelfContained=true", properties);
-		Assert.Contains("PublishSingleFile=true", properties);
-		Assert.Contains("PublishTrimmed=true", properties);
+		XDocument setupProject = XDocument.Load(Path.Combine(
+			RepositoryTestPaths.Root,
+			"src",
+			"AiUsageDashboard.Antigravity.Setup",
+			"AiUsageDashboard.Antigravity.Setup.csproj"));
+		Assert.DoesNotContain(
+			setupProject.Descendants("OutputType"),
+			static outputType => string.Equals(
+				outputType.Value,
+				"WinExe",
+				StringComparison.OrdinalIgnoreCase));
+		Assert.Contains(
+			setupProject.Descendants("UseWPF"),
+			static useWpf => string.Equals(
+				useWpf.Value,
+				"true",
+				StringComparison.OrdinalIgnoreCase));
+		string setupProjectDirectory = Path.Combine(
+			RepositoryTestPaths.Root,
+			"src",
+			"AiUsageDashboard.Antigravity.Setup");
+		foreach (string standaloneSetupFile in new[]
+		{
+			"App.xaml",
+			"App.xaml.cs",
+			"app.manifest",
+			"DashboardLauncher.cs"
+		})
+		{
+			Assert.False(File.Exists(Path.Combine(
+				setupProjectDirectory,
+				standaloneSetupFile)));
+		}
+	}
 
-		XElement copy = Assert.Single(stageTarget.Elements("Copy"));
-		Assert.Equal(
-			"$(AntigravityCapturePublishedExecutable)",
-			copy.Attribute("SourceFiles")?.Value);
-		Assert.Equal(
-			"$(AntigravityCaptureOutputExecutable)",
-			copy.Attribute("DestinationFiles")?.Value);
+	[Fact]
+	public void AppProject_RemovesCrashDumpHelperFromPublish()
+	{
+		XDocument project = XDocument.Load(Path.Combine(
+			RepositoryTestPaths.Root,
+			"src",
+			"AiUsageDashboard.App",
+			"AiUsageDashboard.App.csproj"));
+		XElement target = project
+			.Descendants("Target")
+			.Single(element => string.Equals(
+				element.Attribute("Name")?.Value,
+				"RemoveCrashDumpToolFromPublish",
+				StringComparison.Ordinal));
+
+		Assert.Equal("Publish", target.Attribute("AfterTargets")?.Value);
+		Assert.Contains(
+			target.Descendants("Delete"),
+			element => string.Equals(
+				element.Attribute("Files")?.Value,
+				"$(PublishDir)createdump.exe",
+				StringComparison.Ordinal));
+		Assert.Contains(
+			target.Descendants("Error"),
+			element => string.Equals(
+				element.Attribute("Condition")?.Value,
+				"Exists('$(PublishDir)createdump.exe')",
+				StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public void ComponentManifest_HasNoStandaloneSetupOrAntigravityCaptureProfile()
+	{
+		using JsonDocument manifest = JsonDocument.Parse(File.ReadAllBytes(
+			Path.Combine(
+				RepositoryTestPaths.Root,
+				"third-party-notices",
+				"component-manifest.json")));
+
+		foreach (JsonElement component in manifest.RootElement
+			.GetProperty("components")
+			.EnumerateArray())
+		{
+			string[] profiles = component
+				.GetProperty("profiles")
+				.EnumerateArray()
+				.Select(static value => value.GetString() ?? string.Empty)
+				.ToArray();
+			Assert.DoesNotContain("setup", profiles);
+			Assert.DoesNotContain("capture", profiles);
+
+			string[] deliveryTargets = component
+				.GetProperty("deliveryTargets")
+				.EnumerateArray()
+				.Select(static value => value.GetString() ?? string.Empty)
+				.ToArray();
+			Assert.DoesNotContain("standalone-capture-exe", deliveryTargets);
+		}
 	}
 
 	[Fact]
@@ -669,30 +745,85 @@ public sealed class InternalPackageInvariantsTests
 	}
 
 	[Fact]
-	public void PublishScript_FailsClosedWhenSharedRuntimeFilesDiffer()
+	public void PublishScript_AllowsOnlyExpectedExecutablesAndEmbeddedSetupLibrary()
 	{
 		string script = ReadPublishScript();
+		Match requiredFilesMatch = Regex.Match(
+			script,
+			@"(?ms)^\t\$requiredFiles = @\(\r?\n(?<body>.*?)^\t\)");
+		Match forbiddenNamesMatch = Regex.Match(
+			script,
+			@"(?ms)^\t\$forbiddenNames = @\(\r?\n(?<body>.*?)^\t\)");
 
-		Assert.Contains("Merge-PublishDirectory", script);
-		Assert.Contains("Get-FileHash", script);
+		Assert.True(requiredFilesMatch.Success);
+		Assert.True(forbiddenNamesMatch.Success);
+		string requiredFiles = requiredFilesMatch.Groups["body"].Value;
+		string forbiddenNames = forbiddenNamesMatch.Groups["body"].Value;
 		Assert.Contains(
-			"Shared-runtime file collision differs by SHA-256",
-			script);
-		Assert.Contains(
-			"-SourceRoot $setupPublishRoot",
-			script);
-		Assert.Contains(
-			"-DestinationRoot $appRoot",
-			script);
-		Assert.Contains(
-			"-SourceRoot $antigravityCapturePublishRoot",
-			script);
-		Assert.Contains(
-			"(Join-Path $appRoot 'AiUsageDashboard.AntigravityCapture.exe')",
-			script);
+			"(Join-Path $appRoot 'AiUsageDashboard.Antigravity.Setup.dll')",
+			requiredFiles,
+			StringComparison.Ordinal);
+		foreach (string forbiddenName in new[]
+		{
+			"'AiUsageDashboard.Antigravity.Setup.exe'",
+			"'AiUsageDashboard.Antigravity.Setup.deps.json'",
+			"'AiUsageDashboard.Antigravity.Setup.runtimeconfig.json'",
+			"'AiUsageDashboard.AntigravityCapture.exe'",
+			"'AiUsageDashboard.AntigravityCapture.dll'",
+			"'AiUsageDashboard.AntigravityCapture.deps.json'",
+			"'AiUsageDashboard.AntigravityCapture.runtimeconfig.json'"
+		})
+		{
+			Assert.Contains(
+				forbiddenName,
+				forbiddenNames,
+				StringComparison.Ordinal);
+		}
+
 		Assert.DoesNotContain(
 			"(Join-Path $stagedPackageRoot 'setup')",
 			script);
+		Assert.DoesNotContain(
+			"AiUsageDashboard.Antigravity.Setup.csproj",
+			script,
+			StringComparison.OrdinalIgnoreCase);
+		Assert.DoesNotContain(
+			"AiUsageDashboard.AntigravityCapture.csproj",
+			script,
+			StringComparison.OrdinalIgnoreCase);
+		Assert.Contains(
+			"'AiUsageDashboard.AntigravityCapture*.exe'",
+			script,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"'app\\AiUsageDashboard.App.exe'",
+			script,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"'app\\AiUsageDashboard.ClaudeCapture.exe'",
+			script,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"Unexpected executable detected:",
+			script,
+			StringComparison.Ordinal);
+
+		Match forbiddenEnumeration = Regex.Match(
+			script,
+			@"(?ms)\$forbidden = @\(Get-ChildItem `\r?\n(?<body>.*?)\|\r?\n\s*Where-Object");
+		Match executableEnumeration = Regex.Match(
+			script,
+			@"(?ms)\$unexpectedExecutables = @\(Get-ChildItem `\r?\n(?<body>.*?)\|\r?\n\s*Where-Object");
+		Assert.True(forbiddenEnumeration.Success);
+		Assert.True(executableEnumeration.Success);
+		Assert.Contains(
+			"-Force `",
+			forbiddenEnumeration.Groups["body"].Value,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"-Force `",
+			executableEnumeration.Groups["body"].Value,
+			StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -749,72 +880,7 @@ public sealed class InternalPackageInvariantsTests
 	}
 
 	[Fact]
-	public async Task DashboardSetupLauncher_WhenSharedHelperExists_UsesAppDirectory()
-	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string appDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"app");
-		Directory.CreateDirectory(appDirectory);
-		string setupExecutablePath = Path.Combine(
-			appDirectory,
-			"AiUsageDashboard.Antigravity.Setup.exe");
-		File.WriteAllBytes(setupExecutablePath, new byte[] { 0 });
-		ProcessStartInfo? observed = null;
-		AntigravityAccountSetupLauncher launcher = new(
-			appDirectory,
-			(startInfo, _) =>
-			{
-				observed = startInfo;
-				return Task.FromResult<int?>(
-					AntigravityMachineSetupLaunchArguments
-						.DashboardManagedSuccessExitCode);
-			});
-
-		AntigravityAccountSetupOutcome outcome =
-			await launcher.RunAsync(CancellationToken.None);
-
-		Assert.Equal(
-			AntigravityAccountSetupOutcome.Completed,
-			outcome);
-		Assert.NotNull(observed);
-		Assert.Equal(setupExecutablePath, observed.FileName);
-		Assert.Equal(appDirectory, observed.WorkingDirectory);
-	}
-
-	[Fact]
-	public void SetupDashboardLauncher_WhenSharedAppExists_UsesAppDirectory()
-	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string appDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"app");
-		Directory.CreateDirectory(appDirectory);
-		string appExecutablePath = Path.Combine(
-			appDirectory,
-			"AiUsageDashboard.App.exe");
-		File.WriteAllBytes(appExecutablePath, new byte[] { 0 });
-		ProcessStartInfo? observed = null;
-
-		bool opened = DashboardLauncher.TryOpen(
-			appDirectory,
-			startInfo =>
-			{
-				observed = startInfo;
-				return Process.GetCurrentProcess();
-			});
-
-		Assert.True(opened);
-		Assert.NotNull(observed);
-		Assert.Equal(appExecutablePath, observed.FileName);
-		Assert.Equal(appDirectory, observed.WorkingDirectory);
-		Assert.Contains(
-			AntigravityMachineSetupLaunchArguments.EnsureDashboardAccount,
-			observed.ArgumentList);
-	}
-
-	[Fact]
-	public void DistributionDocs_UseSharedRuntimeHelperPath()
+	public void DistributionDocs_DoNotDescribeStandaloneSetupExecutable()
 	{
 		string repositoryRoot = RepositoryTestPaths.Root;
 		string technicalOverview = File.ReadAllText(Path.Combine(
@@ -824,18 +890,26 @@ public sealed class InternalPackageInvariantsTests
 		string distributionGuide = File.ReadAllText(
 			Path.Combine(repositoryRoot, "INTERNAL_DISTRIBUTION.md"));
 
+		foreach (string document in new[]
+		{
+			technicalOverview,
+			distributionGuide
+		})
+		{
+			Assert.DoesNotContain(
+				@"app\AiUsageDashboard.Antigravity.Setup.exe",
+				document,
+				StringComparison.OrdinalIgnoreCase);
+			Assert.DoesNotContain(
+				@"setup\AiUsageDashboard.Antigravity.Setup.exe",
+				document,
+				StringComparison.OrdinalIgnoreCase);
+		}
+
 		Assert.Contains(
-			"app\\AiUsageDashboard.Antigravity.Setup.exe",
-			technicalOverview);
-		Assert.Contains(
-			"app\\AiUsageDashboard.Antigravity.Setup.exe",
-			distributionGuide);
-		Assert.DoesNotContain(
-			"setup\\AiUsageDashboard.Antigravity.Setup.exe",
-			technicalOverview);
-		Assert.DoesNotContain(
-			"setup\\AiUsageDashboard.Antigravity.Setup.exe",
-			distributionGuide);
+			"套件不再包含 `AiUsageDashboard.Antigravity.Setup.exe`",
+			distributionGuide,
+			StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -972,67 +1046,64 @@ public sealed class InternalPackageInvariantsTests
 	}
 
 	[Fact]
-	public void SetupWindow_DashboardManagedShutdownPaths_UseSharedProtocolAwareExitMapping()
+	public void AntigravitySetup_RunsAsInProcessWindowWithoutExecutableLaunchProtocol()
 	{
-		string source = File.ReadAllText(Path.Combine(
+		string setupWindowSource = File.ReadAllText(Path.Combine(
 			RepositoryTestPaths.Root,
 			"src",
 			"AiUsageDashboard.Antigravity.Setup",
 			"SetupWindow.xaml.cs"));
-		string cancelAndCloseBody = ReadMethodBody(
-			source,
-			"private async Task CancelAndCloseAsync()");
-		string closeAfterDisposalBody = ReadMethodBody(
-			source,
-			"private async Task CloseAfterWorkflowDisposalAsync(");
-		string shutdownBody = ReadMethodBody(
-			source,
-			"private void ShutdownDashboardManaged()");
+		string launcherSource = File.ReadAllText(Path.Combine(
+			RepositoryTestPaths.Root,
+			"src",
+			"AiUsageDashboard.App",
+			"Providers",
+			"AntigravityAccountSetupLauncher.cs"));
 
-		Assert.True(
-			Regex.IsMatch(
-				cancelAndCloseBody,
-				@"if \(_isDashboardManaged\)\s*\{\s*ShutdownDashboardManaged\(\);\s*return;",
-				RegexOptions.Singleline),
-			"Cancelling a dashboard-managed helper must use the shared shutdown path.");
-		Assert.True(
-			Regex.IsMatch(
-				closeAfterDisposalBody,
-				@"if \(completeDashboardManagedLaunch\)\s*\{\s*ShutdownDashboardManaged\(\);\s*return;",
-				RegexOptions.Singleline),
-			"Normal dashboard-managed completion must use the shared shutdown path.");
+		Assert.Contains(
+			"TaskCompletionSource<AntigravitySetupDialogResult>",
+			setupWindowSource,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"internal Task<AntigravitySetupDialogResult> Completion",
+			setupWindowSource,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"protected override void OnClosed(EventArgs e)",
+			setupWindowSource,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"_completionSource.TrySetResult(",
+			setupWindowSource,
+			StringComparison.Ordinal);
 		Assert.DoesNotContain(
 			"Application.Current.Shutdown",
-			cancelAndCloseBody,
+			setupWindowSource,
 			StringComparison.Ordinal);
 		Assert.DoesNotContain(
-			"Application.Current.Shutdown",
-			closeAfterDisposalBody,
+			"Environment.ExitCode",
+			setupWindowSource,
 			StringComparison.Ordinal);
-		Assert.Single(Regex.Matches(
-			source,
-			@"System\.Windows\.Application\.Current\.Shutdown\(")
-			.Cast<Match>());
-		Assert.Contains(
-			"ResolveDashboardManagedCompletionExitCode(",
-			shutdownBody,
-			StringComparison.Ordinal);
-		Assert.Contains(
-			"_workflow.DashboardManagedExitCode",
-			shutdownBody,
-			StringComparison.Ordinal);
-		Assert.Contains(
+		Assert.DoesNotContain(
 			"DashboardManagedResultProtocolEnvironmentVariable",
-			shutdownBody,
+			setupWindowSource,
 			StringComparison.Ordinal);
 
-		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedSuccessExitCode,
-			SetupWindow.ResolveDashboardManagedCompletionExitCode(
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedOfficialPrintSuccessExitCode,
-				resultProtocol: null));
+		Assert.Contains(
+			"window.Show();",
+			launcherSource,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"return await window.Completion;",
+			launcherSource,
+			StringComparison.Ordinal);
+		Assert.DoesNotContain("window.ShowDialog", launcherSource);
+		Assert.DoesNotContain("ProcessStartInfo", launcherSource);
+		Assert.DoesNotContain("Process.Start", launcherSource);
+		Assert.DoesNotContain(
+			"AiUsageDashboard.Antigravity.Setup.exe",
+			launcherSource,
+			StringComparison.OrdinalIgnoreCase);
 	}
 
 	private static string ReadPublishScript()
@@ -1041,49 +1112,6 @@ public sealed class InternalPackageInvariantsTests
 			RepositoryTestPaths.Root,
 			"tools",
 			"Publish-Internal.ps1"));
-	}
-
-	private static string ReadMethodBody(
-		string source,
-		string signature)
-	{
-		int signatureIndex = source.IndexOf(
-			signature,
-			StringComparison.Ordinal);
-		if (signatureIndex < 0)
-		{
-			throw new InvalidOperationException(
-				$"Method signature was not found: {signature}");
-		}
-
-		int openingBraceIndex = source.IndexOf('{', signatureIndex);
-		if (openingBraceIndex < 0)
-		{
-			throw new InvalidOperationException(
-				$"Method body was not found: {signature}");
-		}
-
-		int braceDepth = 0;
-		for (int index = openingBraceIndex; index < source.Length; index++)
-		{
-			switch (source[index])
-			{
-				case '{':
-					braceDepth++;
-					break;
-				case '}':
-					braceDepth--;
-					if (braceDepth == 0)
-					{
-						return source[openingBraceIndex..(index + 1)];
-					}
-
-					break;
-			}
-		}
-
-		throw new InvalidOperationException(
-			$"Method body was not terminated: {signature}");
 	}
 
 	private static async Task<(int ExitCode, string Output)> RunPackageCliCheckAsync(string appRoot)

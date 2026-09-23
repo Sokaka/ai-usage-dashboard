@@ -15,7 +15,7 @@
 | Codex | 相容性基準 `0.144.1`；可確認為官方 `codex-cli x.y.z` 的三段式正式版本都會先實測；執行 `OpenAI OpCo, LLC` 簽署、目前 Windows 使用者專用的受保護副本；實驗性 `app-server` 串接 |
 | Grok | 相容性基準 `1.0.3`；可信任的官方版本即使版號不同或無法解析，仍先測試 ACP 通訊；只接受預設安裝位置、`X.AI LLC` 簽章與目前 Windows 使用者專用的受保護副本；實驗性多帳號串接 |
 | GitHub Copilot | 使用本機官方 CLI 三段式正式版 `>=1.0.79` 且 `<2.0.0`；基準 `1.0.79`，App 固定 `GitHub.Copilot.SDK` `1.0.11`；核對 `GitHub, Inc.` 簽章與 ProductName，執行目前使用者的受保護副本；只支援不同的 `github.com` 帳號，每張卡片分開保存登入資料 |
-| AGY | 相容性基準 `1.1.11`；Windows 10 1809 以上；官方用量輸出功能（official print）只執行 `1.1.11 <= version < 2.0.0` 的正式版本，並核對 Google 簽章；既有 1.1.7／1.1.9 只保留已審查 SHA-256 的相容流程 |
+| AGY | 相容性基準 `1.1.11`；Windows 10 1809 以上；production 只執行官方用量輸出功能（official print），限 `1.1.11 <= version < 2.0.0` 的正式版本，並核對 Google 簽章 |
 
 相容性基準只供比較和診斷，不是允許版本清單。其他官方版本只要通過必要功能與安全檢查，就應先實測；不得只因版號不同而拒絕，也不得把版本差異寫成已確認的失敗原因。每個候選版本仍須記錄實際 CLI 版本與測試結果。
 
@@ -33,7 +33,7 @@ Claude、Codex 與 Grok 只會執行 AI Usage 建立的受保護副本。程式�
 
 程序結束前，副本必須保持鎖定。若程式無法確認整個子程序樹都已結束，Claude、Codex 或 Grok 的相關操作必須停止到 AI Usage 重新啟動，不得在狀態不明時繼續啟動新的程序。
 
-Grok 只接受 `%USERPROFILE%\.grok\bin\grok.exe`，發行者必須為 `X.AI LLC`。AGY 每次執行前都要重新確認官方路徑、版本、Google 簽章與檔案狀態；官方來源驗證失敗時不得改走舊版相容流程。不要從其他電腦複製服務執行檔、帳號目錄、受保護副本或登入資料，也不要用 `PATH` 或替代檔案繞過檢查。
+Grok 只接受 `%USERPROFILE%\.grok\bin\grok.exe`，發行者必須為 `X.AI LLC`。AGY 每次執行前都要重新確認已核准的官方路徑、版本、Google 簽章與檔案狀態；驗證失敗時停止，不得改走其他執行方式。不要從其他電腦複製服務執行檔、帳號目錄、受保護副本或登入資料，也不要用 `PATH` 或替代檔案繞過檢查。
 
 執行環境期限依照官方 [.NET 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy)。請在期限前完成移轉，並確認新的 .NET 執行環境仍在支援期。套件自帶的執行環境一旦超出支援期限，就不會繼續取得修正。
 
@@ -100,6 +100,7 @@ ZIP 固定使用簡短的根目錄 `AiUsageDashboard`，避免 Windows 解壓縮
 
 - `使用說明.md`：放在解壓縮套件根目錄，供一般使用者閱讀的繁中說明。
 - `app\AiUsageDashboard.App.exe`：一般使用者唯一需要啟動的執行檔。
+- `app\AiUsageDashboard.Antigravity.Setup.dll`：由 App process 載入的 AGY 設定介面；不是獨立入口。套件不得包含同名 Setup EXE 或 `AiUsageDashboard.AntigravityCapture.exe`。
 - `app\README.md`：內容與一般使用者說明相同；應用程式會以這個檔名開啟本機復原指引。
 - `app\third-party-notices\`：包含元件交付清單與實際版本的第三方授權、附加條款及 notices；自有 LICENSE 也放在 app 內。封裝時會調整根目錄使用說明的相對連結，讓兩份指南都能離線開啟授權文件；套件根目錄維持只有 `app\` 與 `使用說明.md`。
 
@@ -118,7 +119,7 @@ ZIP 固定使用簡短的根目錄 `AiUsageDashboard`，避免 Windows 解壓縮
 5. 啟動 `app\AiUsageDashboard.App.exe`。這是免安裝 ZIP 的一般啟動入口。
 6. 首次使用時，從浮窗新增需要的帳號。換機或重建設定時，可從浮窗的 **⋯** 選單匯入先前匯出的設定檔，再逐張重新連接 Claude、Codex、GitHub Copilot、Grok 與 AGY。這些服務的本機登入資料或電腦綁定不會隨匯入移轉。AGY 為選用服務；使用者選擇 Antigravity 後才會開始連接，受支援的新版本不必先關閉既有 AGY 視窗。
 
-不要複製其他使用者的 `%LOCALAPPDATA%\AiUsageDashboard` 目錄。裡面可能包含帳號專屬的 CLI 狀態、Grok 登入目錄、用量快取、診斷資訊，以及 AGY 私密校準資料。
+不要複製其他使用者的 `%LOCALAPPDATA%\AiUsageDashboard` 目錄。裡面可能包含帳號專屬的 CLI 狀態、Grok 登入目錄、用量快取、診斷資訊，以及 AGY approved source 與安全復原狀態。
 
 ### Claude 使用者同意
 
@@ -153,49 +154,38 @@ Claude 背景查詢只有在 model turns、tokens 與 cost 全部恰好為零時
 
 1. 登入官方 AGY 應用程式。使用 `1.1.11 <= version < 2.0.0` 的正式版本與官方用量輸出功能時，不需要關閉既有 AGY 視窗。
 2. 在浮窗選擇 **新增帳號**，選取 Antigravity，再選擇 **儲存並連接**。
-3. 應用程式會暫停該卡片的輪詢，並開啟套件內的輔助程式。
+3. 應用程式會暫停該卡片的輪詢，並在同一個 App process 內開啟 Antigravity 設定視窗。
 4. 核對「目前登入的 Antigravity 帳號」與四個用量週期，再選擇 **完成連接**。
 
 整個流程中浮窗都會保持開啟。成功後，應用程式會立即更新卡片。最終確認前取消或關閉設定視窗，卡片會維持原狀；按下 **完成連接** 後若程式中斷，重新開啟 AI Usage 會重新驗證來源、程序與帳號，再自動接續，不應要求使用者再次確認。選擇 **儲存** 只會建立帳號；之後可從 **帳號設定** 選擇 **連接 Antigravity 帳號**。
 
 AGY 的用量結果不含 email。卡片保存的是這台電腦核准的 AGY 登入來源，不是可跨電腦使用的帳號識別。
 
-若使用者沒有自訂狀態列（status line），AI Usage 會加入自己的單檔輔助程式，從官方資料讀取 `email`、回報時間與選填的 `plan_tier`。
+舊版 `1.1.7`／`1.1.9` 缺少目前要求的 official print 能力；先更新至 `1.1.11 <= version < 2.0.0` 的正式版本再重新連接。Production 不會為既有卡片退回 ConPTY。
 
-原始顯示資料保存於 `%LOCALAPPDATA%\AiUsageDashboard\private\antigravity-statusline\account-display-v1.json`。同一次更新確認可安全配對後，方案名稱也可能寫入該卡片的本機用量快取。這些資料不會匯出，也不能用來重新綁定卡片或當成切換帳號的安全證明。既有的自訂狀態列絕不可覆寫。
+AI Usage 不會安裝或讀取 status line，不會附帶 AGY capture EXE，也不需要先執行 `/statusline off`。從舊版升級時，App 只會移除帶有精確 AI Usage ownership marker、且路徑、檔名、內容與 ACL 都能驗證的舊設定與自有檔案；使用者自訂的 status line 保持不變。無法確認擁有權時一律保留並停止清理。
 
-若 AGY 更新後仍在支援範圍內，AI Usage 會在每次讀取時重新驗證來源與版本。若卡片仍顯示待處理操作，請使用 **重新連接 Antigravity 帳號** 或 **連接 Antigravity 帳號**。版本、簽章或路徑無法確認時必須停止，不得改用舊版相容設定。
+若 AGY 更新後仍在支援範圍內，AI Usage 會在每次讀取時重新驗證來源與版本。若卡片仍顯示待處理操作，請使用 **重新連接 Antigravity 帳號** 或 **連接 Antigravity 帳號**。版本、簽章或路徑無法確認時必須停止，不得改用其他執行方式。
 
-不要要求一般使用者自行尋找或啟動 `app\AiUsageDashboard.Antigravity.Setup.exe`。這是與 AI Usage 共用自帶執行環境目錄的內部輔助程式。只有支援復原時可以直接啟動：先完全結束 AI Usage，再啟動輔助程式，並完成最終的帳號與用量確認。
+套件不再包含 `AiUsageDashboard.Antigravity.Setup.exe` 或 `AiUsageDashboard.AntigravityCapture.exe`，因此沒有可供單獨啟動的 AGY helper。支援人員也應從 App 的卡片操作開啟設定流程，不要建立或轉傳替代 helper。
 
 ### AGY 維護安全注意事項
 
-官方用量輸出流程會把核准的執行檔完整路徑寫入目前使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE`。設定與每次讀取都必須重新確認：
+官方用量輸出流程會把核准來源與執行檔完整路徑寫入 `%LOCALAPPDATA%\AiUsageDashboard\antigravity\approved-source-v1.json`。舊版目前使用者範圍的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE` 只供缺少新檔時一次性遷移；遷移後以新檔為準。設定與每次讀取都必須重新確認：
 
 - 它是一般本機 `.exe`，路徑沒有 reparse point。
 - Windows 信任簽章通過，Google LLC 簽章名稱與憑證指紋（thumbprint）相符。
 - 版本在 `1.1.11 <= version < 2.0.0`，而且檢查前後檔案沒有改變。
 
-來源驗證通過後，只能直接執行 `agy -p /usage --output-format stream-json`，不得透過 shell。輸出大小有固定上限；解析器只接受 `usage` 指令的兩組資料、每組兩個週期，並要求成功、conversation／turn 為零、所有 token 精確為零。原始 JSON 只在記憶體中使用，用完即清除，不得寫入診斷、快取或套件。
+來源驗證通過後，只能直接執行 `agy -p /usage --output-format stream-json`，不得透過 shell。啟動環境先清空，再只保留固定允許的 Windows 使用者／資料／暫存路徑，以及 `NO_COLOR=1`、`AGY_CLI_DISABLE_AUTO_UPDATE=true`；不得繼承 `PATH`、`COMSPEC` 或 API keys。
 
-AGY 1.1.7／1.1.9 只保留已審查 SHA-256 的 ConPTY R1 相容流程，使用 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE` 與私密設定檔（profile）／金鑰（key）。
+版本探查與 `/usage` 都必須放入 kill-on-close Windows Job Object，active-process limit 固定為 `1`。官方程序嘗試建立 child process、輸出超過固定上限、stderr 非空、逾時、清理不明，或解析器看到非預期資料時，都必須拒絕結果。
 
-輔助程式不接受任意設定檔路徑，也不顯示或封裝原始終端內容、本機路徑、指紋、金鑰、登入資料、原始帳號或用量資料。舊版畫面或設定有變動，或正式版本的版本、簽章、資料格式、零 token 檢查任一失敗，都不得寫入設定。
+解析器只接受 `usage` 指令的兩組資料、每組兩個週期，並要求成功、conversation／turn 為零、所有 token 精確為零。原始 JSON 只在記憶體中使用，用完即清除，不得寫入診斷、快取或套件。
 
-### 舊版 AGY 建置的維護審查
+### 已退役的 AGY 研究路徑
 
-以下流程只適用於已審查 SHA-256 的 ConPTY 相容流程。未知的舊版建置會在讀取前停止；不得用這套流程繞過官方用量輸出的簽章、版本或資料格式檢查。新增舊版支援不是一般使用者操作。維護者必須使用開發用 Spike，明確授權本機讀取、收集多份私密觀察資料、審查辨識規則、建立及驗證私密設定檔，最後只匯出可攜且已審查的規則：
-
-```powershell
-dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
-  export-reviewed-package-manifest `
-  --profile <absolute-reviewed-private-profile> `
-  --output <new-temporary-json> `
-  --contract-id <stable-reviewed-contract-id> `
-  --i-understand-public-manifest-export
-```
-
-匯出命令會建立新檔；若內容含電腦或私密欄位，就會停止。更換內建規則清單（manifest）前，必須審查匯出的 JSON 與隱私測試。絕對不要把來源設定檔、金鑰、原始資料、草稿、設定檔內容雜湊值或其他辨識指紋複製到專案原始碼庫或套件。
+舊 ConPTY、R0／R1 profile、private key、reviewed manifest 與 status-line capture 都不是 production 相容路徑，也不會放入正式套件。其程式與操作說明只保留在 [`tools/AiUsageDashboard.AntigravitySpike`](tools/AiUsageDashboard.AntigravitySpike/README.md) 供開發研究與回歸比較；不得用來連接一般使用者、繞過 official print 驗證，或把研究結果宣稱為正式支援。
 
 ## 更新、回復舊版與更換電腦
 
@@ -242,9 +232,9 @@ App 依 running executable 與 adjacent installed manifest 分流：canonical ma
 
 ### 條款與命令列入口
 
-首次啟動 portable App、Setup 或 Updater 時可先閱讀適用條款，再接受或退出。紀錄僅存在同一 Windows 使用者的電腦，依條款內容版本與涵蓋範圍共用，不綁定 provider 帳號、不上傳。有效接受已涵蓋時，背景查詢與 helper 回呼不重複提示；條款變更後必須重新確認。
+首次啟動 portable App 或 Updater 時可先閱讀適用條款，再接受或退出。紀錄僅存在同一 Windows 使用者的電腦，依條款內容版本與涵蓋範圍共用，不綁定 provider 帳號、不上傳。有效接受已涵蓋時，背景查詢與 helper 回呼不重複提示；條款變更後必須重新確認。
 
-App、Setup、Updater 與 capture helper 提供 `--licenses` 閱讀、`--export-licenses <新目錄>` 離線匯出，以及 `--accept-licenses <本版顯示的 digest>` 明確預先接受。非互動入口缺少有效接受會停止；請先閱讀同一版本的文字。授權提示不會混入 helper 的回呼輸出。解除安裝、關閉 App 供更新與人工離線復原不受一般啟動提示阻擋。
+App、Updater 與隨包的 Claude capture helper 提供 `--licenses` 閱讀、`--export-licenses <新目錄>` 離線匯出，以及 `--accept-licenses <本版顯示的 digest>` 明確預先接受。AGY 設定介面在 App process 內，沿用 App 的接受狀態，沒有獨立命令列入口。非互動入口缺少有效接受會停止；請先閱讀同一版本的文字。授權提示不會混入 helper 的回呼輸出。解除安裝、關閉 App 供更新與人工離線復原不受一般啟動提示阻擋。
 
 ### 舊 internal 安裝銜接
 
@@ -319,7 +309,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 
 若使用離線 ZIP，請先結束 AI Usage，再刪除自行解壓的版本目錄。兩種方式都會保留使用者資料、Copilot 的 Windows Credential Manager 登入資料，以及 Claude、Codex、Copilot、Grok 的受保護執行副本，供日後重新安裝使用。
 
-永久刪除本機資料是另一項不可復原的操作。執行前，資料擁有者必須確認會失去 AI Usage 設定、快取、診斷資料、各服務的本機登入、受保護執行副本及 AGY 私密資料。
+永久刪除本機資料是另一項不可復原的操作。執行前，資料擁有者必須確認會失去 AI Usage 設定、快取、診斷資料、各服務的本機登入、受保護執行副本及 AGY 核准來源。
 
 請依下列順序清理：
 
@@ -331,7 +321,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 6. 由受信任工具從目前 `WindowsIdentity` 取得完整 SID，並從 Windows system directory 取得 system-volume root。不得接受手動輸入的 SID、替代磁碟或環境變數覆寫。
 7. 只用上一步取得的值建立 Claude、Codex、Copilot 與 Grok 四個完整路徑：`%SystemDrive%\AiUsageDashboard.<Provider>Cli.<current-user-SID>`，其中 `<Provider>` 只能替換成這四個服務名稱之一。
 8. 對每個存在的目錄重新檢查：它必須位於固定磁碟，所有路徑都沒有 reparse point，擁有者是目前使用者 SID，而且 DACL 已停用繼承，只授予目前使用者、Local System (`S-1-5-18`) 與 Builtin Administrators (`S-1-5-32-544`) Full Control。任一條件不符就停止，不得遞迴刪除。
-9. 只刪除目前使用者的 `%LOCALAPPDATA%\AiUsageDashboard`，以及通過上一步全部檢查的四個完整服務目錄。不得使用父目錄、萬用字元、前綴比對或跟隨 junction 擴大範圍。刪除整個 `%LOCALAPPDATA%\AiUsageDashboard` 也會刪除其中的 AGY 本機連接資料與私密校準資料；若要保留既有 AGY 連接，不得執行完整資料清除。
+9. 只刪除目前使用者的 `%LOCALAPPDATA%\AiUsageDashboard`，以及通過上一步全部檢查的四個完整服務目錄。不得使用父目錄、萬用字元、前綴比對或跟隨 junction 擴大範圍。刪除整個 `%LOCALAPPDATA%\AiUsageDashboard` 也會刪除其中的 AGY 本機連接資料與核准來源；若要保留既有 AGY 連接，不得執行完整資料清除。
 10. 若曾使用 AGY，再清除目前使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE` 與 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE` 環境變數。不得碰觸其他使用者的設定、受保護目錄或共用磁碟內容。
 
 ### 資料範圍與帳號移除
@@ -341,7 +331,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - Claude、Codex：不會刪除官方 CLI 的完整登入狀態。
 - GitHub Copilot：會刪除該卡片在 Windows Credential Manager 中使用中與待完成的登入資料，以及該卡片的本機目錄；不影響其他 Copilot 卡片。
 - Grok：會刪除該卡片的連接狀態、本機登入與 `%LOCALAPPDATA%\AiUsageDashboard\grok\<account-id>`。
-- AGY：會保留這台電腦共用的 AGY 設定與私密校準資料。
+- AGY：會保留這台電腦共用的 approved source 與安全復原狀態。
 
 清理失敗時，介面會顯示警告並在背景重試。移除卡片都不代表已從服務端登出。
 
@@ -369,18 +359,14 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - `%LOCALAPPDATA%\AiUsageDashboard\antigravity\official-print-safety-v1.json` 與 `official-print-safety-v1.json.journal`：AGY 官方用量輸出的安全狀態與中斷復原紀錄。
 - `%LOCALAPPDATA%\AiUsageDashboard\antigravity\setup-attempt-states-v1` 與 `setup-approval-receipts-v1`：AGY 設定嘗試狀態與核准完成紀錄。
 - `%LOCALAPPDATA%\AiUsageDashboard\antigravity\<account-id>\account-display-binding-v1.json`：AGY 帳號卡的本機顯示身分綁定。
-- `%LOCALAPPDATA%\AiUsageDashboard\private\antigravity-statusline\account-display-v1.json`：AGY 狀態列最近回報的 `email`、時間與選填 `planTier`，只供本機顯示。
-- `%LOCALAPPDATA%\AiUsageDashboard\antigravity\private`：與電腦綁定的 AGY 設定檔與金鑰。
-- 目前使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE`：官方用量輸出流程核准的 AGY 執行檔絕對路徑。
-- 目前使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE`：指向唯一核准、只適用於這台電腦的 AGY 設定檔。
+- `%LOCALAPPDATA%\AiUsageDashboard\antigravity\approved-source-v1.json`：核准的 official print 來源種類與 AGY 執行檔絕對路徑。
+- `%LOCALAPPDATA%\AiUsageDashboard\private\antigravity-statusline`：舊版可能留下的自有 status-line helper／擷取資料；新版只在精確驗證 ownership 與私人 ACL 後清理，不作為資料來源。
+- 目前使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE`：舊版持久化設定；只有新 approved-source 檔缺少時才一次性遷移。
+- 目前使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE`：已退役的舊版 ConPTY 設定，production 不讀取。
 
 只有在資料擁有者確認正確帳號，並接受官方 CLI 登入將會遺失後，才能手動刪除登入或設定目錄。一般移除卡片時，絕對不要遞迴刪除整個 `AiUsageDashboard` 目錄；Copilot 與 Grok 應交由內建的單卡片清理處理。
 
-移除 AGY 卡片會保留目前使用者核准的官方執行檔、舊版設定檔與私密校準檔。若要停用 AGY，請先結束 AI Usage，再清除目前使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE` 與 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE`。
-
-若不是執行上方的完整資料清除，只想移除部分舊版 AGY 資料，必須由資料擁有者
-核對確切的設定檔／金鑰，只刪除那些檔案。不得遞迴刪除共用的
-`antigravity\private` 目錄。
+移除 AGY 卡片會保留目前使用者的 approved source，方便日後重新連接。若要完全停用並清除 AI Usage 的 AGY 資料，請依上方完整資料清除流程處理；舊環境變數也要逐一以目前使用者範圍清除。不要手動遞迴刪除名稱近似的 status-line 或 private 目錄。
 
 ## 候選版本驗收清單
 
@@ -393,6 +379,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - [ ] 記錄候選版本、完整 commit SHA、Actions 執行網址、測試者與日期、Windows 版本、各服務已安裝的 CLI 完整版本，以及各版本是否等於本版相容性基準；不相同時先標記為未驗證，完成基本啟動與功能檢查後再記錄結果，不得直接標成不支援。
 - [ ] 驗證 App ZIP、獨立更新程式與更新清單的三份相鄰 SHA-256，並確認清單內的版本、發布序號、大小、SHA-256、`sourceRevision` 與實際六個檔案一致。
 - [ ] 確認根目錄說明可以開啟，且執行檔的 Product version 與候選版本紀錄一致。
+- [ ] 列舉 `app` 中的 EXE：只允許 `AiUsageDashboard.App.exe` 與 `AiUsageDashboard.ClaudeCapture.exe`；必須有 `AiUsageDashboard.Antigravity.Setup.dll`，且不得有 `AiUsageDashboard.Antigravity.Setup.exe`、`AiUsageDashboard.AntigravityCapture.exe` 或 `createdump.exe`。
 - [ ] 在沒有開發用 SDK 或專案原始碼的電腦上，確認應用程式已完全結束後再啟動，並確認浮窗、系統匣與帳號編輯器皆正常；另確認不再有獨立的 Dashboard 視窗或開啟 Dashboard 的選單項目。
 - [ ] 啟用 Windows 登入啟動，分別保存浮窗顯示與 Tray 隱藏狀態後實際登出／登入，確認依偏好啟動且不搶焦點。已有程式執行時，另執行 `--startup`，確認安靜結束且不喚回浮窗。
 - [ ] 從 Windows **啟動應用程式**停用再啟用，確認實際啟動狀態跟著改變。分別在已登錄、未登錄及被 Windows 停用時更新，確認更新程式不會自行建立或修復 `HKCU Run` 值。解除安裝只清除完全相符的值；衝突值須保留並顯示警告。
@@ -410,11 +397,12 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - [ ] Grok 中斷復原：分別在登入完成狀態寫入前後中止程式。寫入後重開應重新驗證帳號並接續；寫入前重開則應要求重新連接，不得誤綁或洩漏帳號原始資料。
 - [ ] GitHub Copilot：使用兩個不同的 `github.com` 帳號連接兩張卡片，確認重新啟動及逐卡更新後仍各自顯示正確帳號和用量。再用第一個帳號連接第三張卡片，確認重複綁定被拒絕且既有兩張卡不變。
 - [ ] GitHub Copilot：使其中一張卡片收到 `401`，確認只要求該卡重新連接。移除其中一張後，該卡在 Credential Manager 中使用中與待完成的項目及本機目錄必須清除，另一張仍可更新。
-- [ ] AGY 官方用量輸出：記錄 `1.1.11 <= version < 2.0.0` 的實際版本；保持既有 AGY 視窗開啟仍能完成連接。確認來源、Google 簽章、固定參數、四個用量週期，以及 `conversation`、`turn`、所有 `token` 都是零。
-- [ ] AGY 安全拒絕：把官方執行檔設定改成無效路徑或不受信任測試檔，確認不會改用舊版設定檔。格式錯誤、多出資料組、非零 `turn`／`token` 或截斷輸出都必須拒絕，且不得保存原始 JSON。
-- [ ] AGY 顯示資料：切換官方 AGY 登入後更新用量，確認畫面以狀態列的 `email` 與選填 `plan_tier` 更新顯示。
-- [ ] 這些資料可保存於 `%LOCALAPPDATA%\AiUsageDashboard\private\antigravity-statusline\account-display-v1.json`，但不得匯出或改變卡片綁定。既有自訂狀態列不得覆寫。
-- [ ] AGY 中斷續做：官方與舊版相容流程各測一次。按下 **完成連接** 後，在輔助程式關閉前結束或重開 AI Usage，並測試輔助程式回報結果不明。
+- [ ] AGY 官方用量輸出：記錄 `1.1.11 <= version < 2.0.0` 的實際版本；保持既有 AGY 視窗開啟仍能完成連接。確認設定視窗屬於 App process、approved source 已保存、來源與 Google 簽章通過、固定參數正確、四個用量週期存在，以及 `conversation`、`turn`、所有 `token` 都是零。
+- [ ] AGY process 邊界：確認 version probe 與 `/usage` 都直接執行 approved executable、不經 shell，環境沒有 `PATH`／`COMSPEC`，Job active-process limit 為 `1`；整段操作不得出現 `cmd.exe`、Setup EXE、AGY capture EXE 或其他 child process。
+- [ ] AGY 安全拒絕：把 approved source 改成無效路徑或不受信任測試檔，確認不會改用環境變數、ConPTY 或舊版 profile。格式錯誤、多出資料組、非零 `turn`／`token`、截斷輸出或 child process 嘗試都必須拒絕，且不得保存原始 JSON。
+- [ ] AGY status line：以非 AI Usage owned 的 `statusLine.enabled=true` 設定及一份自訂 status line 各測一次；連接與更新必須正常，不要求 `/statusline off`，設定檔及自訂 command bytes 必須保持不變。
+- [ ] AGY 舊版清理：準備舊版精確 AI Usage ownership marker 與對應 hash-named helper，確認只移除該 `statusLine` 欄位與自有檔案；自訂、格式不明、路徑或 ACL 不符、以及同時遭其他程序更新的設定都必須保留並 fail closed。
+- [ ] AGY 中斷續做：按下 **完成連接** 後，在 in-process 設定提交期間結束並重開 AI Usage，確認重新驗證 approved source 與用量後自動接續；不得要求使用者再按一次，也不得依舊用量猜測完成。
 - [ ] 重新開啟後，程式必須重新驗證來源、信任與帳號，再自動完成設定與快取；不得用舊用量猜測完成。來源或帳號不符時不得誤綁。
 - [ ] 驗證排程更新依照設定間隔執行、更新頻率符合預期，且失敗時會顯示上次正常資料；並確認背景更新絕不會開始互動式登入。
 - [ ] 驗證已使用／剩餘顯示、手動排序、依重置時間自動排序、各服務顏色，以及用量／重置時間的警告顏色。
@@ -451,9 +439,9 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - Grok 連接中斷：先重新啟動 AI Usage。若待處理紀錄已保存 `LoginCompleted`，程式會用新取得的帳號資料驗證後接續；否則卡片會要求重新連接。不要手動複製、編輯或刪除連接／待處理檔案。
 - Grok 帳號衝突：同一個實際帳號不能綁定兩張卡片。確認登入終端使用預定帳號，再移除錯誤或重複卡片並重新連接；不得改寫公開連接 ID 或私密指紋。
 - Grok 清理警告：保持 AI Usage 開啟以完成背景重試，確認警告消失且只有目標 `%LOCALAPPDATA%\AiUsageDashboard\grok\<account-id>` 被清除。不要遞迴刪除整個 `grok` 目錄，以免破壞其他帳號。
-- AGY 帳號顯示不同：先讓 AI Usage 自動修復。若卡片仍要求操作，使用 **重新連接 Antigravity 帳號** 或 **連接 Antigravity 帳號**；不必關閉既有 AGY 視窗。若只在 AGY 內切換登入，先更新一次用量以取得新的 status-line email。這只更新顯示，不會改變這台電腦的卡片綁定；不要沿用其他電腦的設定。
-- AGY 來源拒絕：確認核准設定指向官方安裝的一般 `.exe`，版本在 `1.1.11 <= version < 2.0.0`。不得改走舊版相容流程。執行 `agy --version`，並回報畫面上的完整安全診斷區塊。
-- AGY 用量暫時失敗：程序逾時、取消、一般錯誤、非零結束碼或輸出格式錯誤時，程式會在背景以 1、2、4、8、最多 15 分鐘間隔重試。期間保留已驗證的 email 與上次正常用量，重開程式後仍會接續。
+- AGY 登入來源不同：使用 **重新連接 Antigravity 帳號** 或 **連接 Antigravity 帳號**，並核對新的四個用量週期；不必關閉既有 AGY 視窗，也不需執行 `/statusline off`。不要沿用其他電腦的 approved source 或設定。
+- AGY 來源拒絕：確認 approved source 指向官方安裝的一般 `.exe`，版本在 `1.1.11 <= version < 2.0.0`。不得改走環境變數、舊版 profile 或 ConPTY。執行 `agy --version`，並回報畫面上的完整安全診斷區塊。
+- AGY 用量暫時失敗：程序逾時、取消、一般錯誤、非零結束碼或輸出格式錯誤時，程式會在背景以 1、2、4、8、最多 15 分鐘間隔重試。期間保留上次正常用量，重開程式後仍會接續。
 - AGY 用量安全問題：只有舊格式狀態、無法確認子程序已結束、偵測到用量活動，或安全狀態損壞／無法保存時才會停止，並顯示 **重新檢查 Antigravity 用量**。成功後才清除標記；不得手動刪除標記來繞過安全檢查。
 - 診斷紀錄不得包含登入資料、原始 Grok OAuth／ACP／帳號／連接內容或 AGY 終端內容。支援時只分享必要且已遮蔽敏感資訊的最少行數。
 - 支援回報必須包含套件 ZIP 檔名、Windows 檔案內容中執行檔的 **Product version**、Windows 版本、受影響服務的 CLI 版本與畫面上可見的錯誤。絕對不要要求對方提供整個本機應用程式資料目錄。

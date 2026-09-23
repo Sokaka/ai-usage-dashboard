@@ -10,6 +10,15 @@
 
 標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些功能與 Copilot 訂閱資訊修正始於首個正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.6 / sequence 1020`。
 
+### AGY official-only 與封裝縮減
+
+- [x] Production AGY 連接與背景更新只使用 user-installed、unmodified 官方 CLI 的 `agy -p /usage --output-format stream-json`；ConPTY、R0／R1 profile、private key、reviewed manifest 與 status-line capture 只保留在開發用 Spike，不會編入 production 路徑。
+- [x] AGY 設定畫面改由 `AiUsageDashboard.Antigravity.Setup.dll` 在 App process 內顯示。正式套件不再包含 `AiUsageDashboard.Antigravity.Setup.exe` 或 `AiUsageDashboard.AntigravityCapture.exe`；App 仍保存可中斷續做的 setup attempt 與 approval receipt。
+- [x] 核准來源保存於 `%LOCALAPPDATA%\AiUsageDashboard\antigravity\approved-source-v1.json`。舊 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE` 只在新檔缺少時一次性遷移；production 不讀取 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE`。
+- [x] Version probe 與 `/usage` 都直接執行完整核准路徑、不經 shell；環境採固定 allowlist，不含 `PATH`／`COMSPEC`，Windows Job Object 的 active-process limit 為 `1`。
+- [x] 新版不安裝或讀取 AGY status line，也不要求 `/statusline off`。升級清理只接受精確 AI Usage ownership marker、預期私人路徑與 hash-named helper，並在 ACL、內容與並行變更檢查通過後移除；自訂或無法驗證的 status line 保持不變。
+- [ ] 目前 source 的 Release 建置、完整測試、coverage、封裝 invariant、exact candidate、WithSecure 與真實 AGY runtime 驗收尚須以本次實際結果補記；先前版本的 PASS 不得套用。
+
 ### App 更新偵測與提示（`1.0.4` 起）
 
 - [x] Production App 與 Updater 共用解析後的 stable feed URL、channel 與 public trust keys。`Publish-Internal.ps1` 要求明確提供三項；`Publish-UpdateBundle.ps1` 預設 `stable` channel 與該 channel 的 GitHub latest download feed URL，但仍要求外部 trust file。正式 publish 會在缺少必要輸入或 URL／trust 格式無效時 fail fast，並從發布後的 App DLL 讀回 feed／channel metadata 與 embedded trust bytes 逐值核對。App 的 feed client 只讀取、限制大小、核對最終 HTTPS URI 並驗簽，不下載 artifact；Updater 安裝時仍獨立重新驗證。
@@ -186,7 +195,7 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 | Codex | 以官方 `app-server` 查詢帳號及多個 rate-limit 區間；每卡隔離登入與 state，仍須持續驗證上游格式相容。 |
 | Grok | 以官方 Grok Build CLI 的 auth／billing 支援多帳號、重複帳號拒絕與連接復原；仍屬實驗性。 |
 | GitHub Copilot | `1.0.3` 使用固定版本的官方 SDK 與本機官方 CLI，並相容新舊訂閱回應；只支援不同的 `github.com` 帳號，登入資料按卡片存於 Windows Credential Manager，不把 organization／subscription 拆成不同帳號。 |
-| Antigravity／AGY | 使用 user-installed、unmodified 官方 CLI `/usage`；每位 Windows 使用者只允許一張卡片，保留受限的舊版相容路徑，回傳後檢查 turn／token 為零。 |
+| Antigravity／AGY | 只使用 user-installed、unmodified 官方 CLI `/usage`；每位 Windows 使用者只允許一張卡片，回傳後檢查 turn／token 為零。設定 UI 在 App process 內，不安裝 status line 或附帶 AGY Setup／Capture EXE。 |
 
 ## 候選與歷史驗證的界線
 
@@ -214,7 +223,7 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 - [ ] 補齊人工 UI 與無障礙驗證：系統匣顯示／隱藏／雙擊、舊偏好、帳號編輯與連接、對話框前景、匯入／還原、排隊更新、螢幕閱讀器及 High Contrast；`1.0.0` 的基本鍵盤觀測不代表整組已驗。
 - [ ] 完整核對標準安裝版的實際登出／登入啟動、浮窗／Tray 偏好與不搶焦點；Windows 停用／重新啟用後行為，以及已有程序時 `--startup` 安靜結束。
 - [ ] 核對更新保留已登錄、未登錄與 Windows 停用狀態；卸載只移除完全相符的 `HKCU Run`，衝突值保留並提示。
-- [ ] 保留未涵蓋的條款版本變更、Setup／helper 互動、委派入口、缺件拒絕與非 canonical 安裝驗證；不得由六組 export PASS 推論全部入口已驗。
+- [ ] 保留未涵蓋的條款版本變更、App 內 AGY setup 互動、Claude helper、委派入口、缺件拒絕與非 canonical 安裝驗證；不得由既有 export PASS 推論全部入口已驗。
 - [ ] 在無 SDK、原始碼與舊資料的非開發 Windows 環境補齊所有服務首次連接、重啟、更新及回復驗證；既有候選 VM 的安裝測試沒有登入 provider。
 - [ ] 依發布範圍補驗成品竄改、金鑰更替／遺失／洩漏演練及首次 Windows 提示；feed 簽章拒絕測試不涵蓋全部情境。
 

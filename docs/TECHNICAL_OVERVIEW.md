@@ -88,7 +88,7 @@ presentation／排程 cache 寫在 `%LOCALAPPDATA%\AiUsageDashboard\update-check
 | Codex | `codex app-server` 的 `account/read`、`account/rateLimits/read` | 只接受 ChatGPT account，登入及查詢都在帳號專用目錄內執行 | 官方、實驗性本機介面 |
 | Grok | Grok Build CLI ACP stdio 的 `x.ai/billing`、`x.ai/auth/info`；舊 `_x.ai/*` namespace 相容 | 每張卡片使用獨立設定；只有通過來源檢查的官方 CLI 才能執行 | 通過簽章與路徑驗證的官方本機 CLI；實驗性 ACP |
 | GitHub Copilot | 官方 `GitHub.Copilot.SDK` 1.0.11 的 Experimental `account.getQuota`；使用本機官方 Copilot CLI | 只支援不同的 `github.com` 帳號；每張卡片使用自己的 token | 官方 SDK／CLI 的 Experimental 介面 |
-| Antigravity | 官方 AGY CLI print mode `/usage`；既有精確 SHA-256 的 ConPTY 相容路徑 | 使用目前 Windows 使用者的單一登入來源；連接時執行一次性本機設定 | 官方命令的實驗性背景查詢；舊版私有路徑仍屬實驗性 |
+| Antigravity | 官方 AGY CLI print mode `/usage` | 使用目前 Windows 使用者的單一登入來源；連接時在 App process 內執行一次性本機設定 | 官方命令的實驗性背景查詢；production 不使用 ConPTY 或 status line |
 
 功能完成、實機驗證與尚待測試的項目，請看[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md)。
 
@@ -104,7 +104,7 @@ Copilot 只在使用者明確連接時，透過受控的官方 CLI 網頁登入�
 | Codex | `0.144.1` | 可辨識為 `codex-cli x.y.z` 的非零三段版本 | 無法確認產品、版號、執行檔來源或程序能安全隔離時停止 |
 | GitHub Copilot | SDK `1.0.11`；CLI 基準 `1.0.79` | 本機官方 CLI 的三段式正式版 `>=1.0.79` 且 `<2.0.0` | 核對 `GitHub, Inc.` Authenticode 與 ProductName，再執行受保護副本；只接受 `github.com` 與每張卡片明確提供的 token；帳號主體或額度驗證失敗時停止採用，訂閱資訊失敗另行提示 |
 | Grok | `1.0.3` | 通過來源驗證的官方執行檔；版號不同或無法解析都可進行 ACP 初始交握（handshake） | 只接受固定預設路徑、固定磁碟、所有上層路徑都不是 reparse point、安全 ACL、通過 WinVerifyTrust，且簽署者必須精確符合程式固定的 `X.AI LLC` |
-| AGY | `1.1.11` | 標準三段穩定版 `1.1.11 <= version < 2.0.0` | `<1.1.11` 缺少官方 print mode 功能；`>=2.0.0`、預發行格式（prerelease）與非標準版本格式一律在執行前拒絕，因為執行後無法撤回可能影響；舊版方式仍限已審查的精確 SHA-256 |
+| AGY | `1.1.11` | 標準三段穩定版 `1.1.11 <= version < 2.0.0` | `<1.1.11` 缺少官方 print mode 功能；`>=2.0.0`、預發行格式（prerelease）與非標準版本格式一律在執行前拒絕，因為執行後無法撤回可能影響 |
 
 表中的「排查問題時的比較版本」只供本版排查故障時比對，不是允許版本清單，也不表示候選版本已用該精確版本完成試用測試。
 
@@ -174,7 +174,7 @@ Windows 上的 Claude、Codex、Copilot 與 Grok 不直接執行原始安裝檔�
   - 新版 Claude 卡片與指定工作區的 Codex 卡片，會在此欄保存隨機產生、不可反推出帳號的 ID。實際帳號、Claude 組織或 Codex 工作區的加鹽 SHA-256 指紋另存於卡片的私有綁定檔，不保存原始值。
   - 未指定工作區的 Codex 卡片仍直接保存正規化後的帳號識別，目前是 email。舊版卡片也可能在重新連接前保留可讀的舊識別。
 - Copilot 使用正規化的 `github.com` 主機名稱與 GitHub `node_id` 建立 SHA-256 識別；即使登入名稱（login）改名，綁定也不會改變。Grok 在此檔只保存隨機公開 ID，實際帳號的加鹽 SHA-256 指紋另存於私有綁定檔。
-- AGY 的 print mode 用量資料不含 email，因此使用固定的本機工作階段識別。另一個狀態列輔助程式（status-line helper）只取得畫面要顯示的 email 與選填 `plan_tier`，不會把這兩項寫入 `accounts.json`。
+- AGY 的 print mode 用量資料不含 email，因此使用固定的本機工作階段識別；production 不從 status line 補讀 email 或方案，也不把這些欄位寫入 `accounts.json`。
 - `hasAcceptedClaudeQuotaRisk` 只記錄該張 Claude 卡片是否已接受 `/usage` 的殘餘額度風險。新增 Claude 卡片時，只有使用者在風險說明下按 **儲存並連接** 才會寫入 `true`；只儲存、舊格式版本、非 Claude 帳號與匯入卡片都視為 `false`。
 - `showSubscriptionContext` 決定卡片是否顯示已驗證的方案、組織或工作區資訊。格式版本 7 以前的帳號預設不顯示。
 - 上述欄位都不是 token、PAT、OAuth 憑證、cookie 或其他機密資料。
@@ -188,7 +188,7 @@ Claude 卡片缺少公開綁定 ID，或仍保存舊的帳號識別時，會回�
 
 之後進行背景查詢或在重啟後載入快取時，帳號識別必須與已保存的綁定一致。若識別明確不一致，或服務明確回報未登入，程式會忽略該筆用量並要求重新連接。若只有單次回應暫時缺少識別，程式會忽略該筆資料、保留既有綁定並自動重試。
 
-AGY 的識別只證明卡片綁定這台電腦目前核准的 AGY 登入來源，不證明 email 或方案。Status line 回報的 email 與方案只供本機顯示；登入切換不會因此自動搬移快取、重綁卡片或略過帳號識別衝突。
+AGY 的識別只證明卡片綁定這台電腦目前核准的 AGY 登入來源，不證明 email 或方案。登入切換不會自動搬移快取、重綁卡片或略過帳號識別衝突；需要切換時必須重新連接並核對用量。
 
 重複綁定依服務實際提供的額度範圍判斷：
 
@@ -567,9 +567,9 @@ Copilot 的功能完成、建置、封裝、實機驗證與尚待測試項目，
 
 ## Antigravity 串接
 
-AGY 是選用功能。只有使用者新增或重新連接 AGY 時，AI Usage 才會啟動套件內的 `app\AiUsageDashboard.Antigravity.Setup.exe`。這個輔助程式（helper）與主程式共用 self-contained .NET 執行環境，不是一般安裝入口。
+AGY 是選用功能。Production 只使用官方 AGY CLI 的 print mode `/usage`，不再使用 ConPTY、私有 profile 或 status line。使用者新增或重新連接 AGY 時，設定視窗由 `AiUsageDashboard.Antigravity.Setup.dll` 在 `AiUsageDashboard.App.exe` process 內顯示；套件不包含 `AiUsageDashboard.Antigravity.Setup.exe` 或 `AiUsageDashboard.AntigravityCapture.exe`。
 
-主程式會在啟動 Setup 輔助程式前，把含 `setupAttemptId` 的待辦寫入：
+主程式會在開啟設定視窗前，把含 `setupAttemptId` 的待辦寫入：
 
 ```text
 %LOCALAPPDATA%\AiUsageDashboard\antigravity-connection-pending-v1.json
@@ -577,20 +577,17 @@ AGY 是選用功能。只有使用者新增或重新連接 AGY 時，AI Usage �
 
 各階段另存於 `%LOCALAPPDATA%\AiUsageDashboard\antigravity\setup-attempt-states-v1`，依序為 `Launching`、`Active` 與 `ApprovalRequested`。無法先寫入時，不會開始變更設定。
 
-Setup 輔助程式要求外部設定提交前，會先把來源類型與目標帳號識別（identity）指紋標記為 `ApprovalRequested`。設定提交完成且候選來源已釋放後，再把同一份核准證明寫入 `setup-approval-receipts-v1`。
+設定視窗要求外部設定提交前，會先把來源類型與目標帳號識別（identity）指紋標記為 `ApprovalRequested`。設定提交完成且候選來源已釋放後，再把同一份核准證明寫入 `setup-approval-receipts-v1`。
 
 階段更新使用跨程序檔案鎖，較晚到達的舊階段不能覆寫已提交階段。核准證明則只能建立一次，建立後不可覆寫。
 
-Setup 輔助程式回傳 `CompletionUnknown`、主程式關閉，或程序在提交期間中止時，設定待辦都會保留。
+設定結果為 `CompletionUnknown`、主程式關閉，或提交期間中止時，設定待辦都會保留。
 
-下次背景查詢或 App 啟動時，程式優先讀取核准證明。若證明尚未寫入，但標記為 `ApprovalRequested` 的 Setup 輔助程式已結束，該階段可作為已提交的證據。
+下次背景查詢或 App 啟動時，程式優先讀取核准證明。若證明尚未寫入，但已保存 `ApprovalRequested`，該階段可作為已提交的證據。
 
-主程式接著強制重新驗證：
+主程式接著強制重新執行 official print 驗證；結果必須得到 `OfficialExperimental` 與固定的本機工作階段識別。
 
-- OfficialPrint 必須得到 `OfficialExperimental` 與固定的本機工作階段識別。
-- ReviewedConPty 必須得到 `PrivateExperimental` 與相同的實際帳號指紋。
-
-驗證成功後才清除舊快取並提交卡片設定。Setup 輔助程式仍在執行或無法確認是否結束時只會等待；舊額度、來源或帳號不符，以及互相矛盾的狀態與證明，都不會被推定為完成。
+驗證成功後才清除舊快取並提交卡片設定。設定仍在進行時只會等待；舊額度、來源或帳號不符，以及互相矛盾的狀態與證明，都不會被推定為完成。
 
 可恢復錯誤會由背景依間隔重試。只有確實需要操作時才顯示對應動作，不會要求使用者再次按 **完成連接**。
 
@@ -611,26 +608,22 @@ AGY 沒有可驗證的逐帳號設定檔（profile）或官方多帳號介面，
 
 官方 print mode 用量資料不含 email，所以卡片使用固定的 `agy.local-session.v1` 識別，代表「目前這台電腦核准的 AGY 登入來源」。
 
-套件另含 `AiUsageDashboard.AntigravityCapture.exe`。只有使用者尚未自訂 `statusLine` 時，Setup 才會註冊這個輔助程式。它從官方 status-line JSON 取得 email、選填 `plan_tier` 與本機回報時間，保存到有私人 ACL 的資料檔；其他欄位與原始 JSON 不會寫入磁碟。
-
-Email 與方案只供顯示，不改變工作階段綁定。方案只有在同一次更新能安全對應帳號時，才寫入本機用量快取；兩者都不會匯出。
-
-設定或擷取暫時失敗時，程式會保留先前已驗證的 email 並標成舊資料，避免卡片在 email 與本機標籤之間跳動。之後取得新資料時，可以恢復同一 email 或安全切換成新 email。
+先前版本可能在 AGY 的 `settings.json` 寫入 AI Usage 專用的 status-line command，並在 `%LOCALAPPDATA%\AiUsageDashboard\private\antigravity-statusline` 留下 helper 或擷取資料。新版第一次讀取 AGY 狀態時只會在設定值含精確的 AI Usage ownership marker、路徑位於預期私人目錄、檔名／內容與 ACL 都通過檢查時，原子移除該欄位並清理自己的檔案。任何格式、並行變更、路徑或擁有權無法確認時都會保留原狀；使用者自訂的 status line 不會修改。一般使用與升級都不需要先執行 `/statusline off`。
 
 ### 官方 print mode 路徑
 
-新連接優先使用 AGY 1.1.11 起提供的 print mode。程式中的版本分類如下：
+所有新連接與既有連接都只使用 AGY 1.1.11 起提供的 print mode。程式中的版本分類如下：
 
 - `1.1.11`：相容性比對基準，也是官方 print mode 的最低版本，分類為 `Reference`。
 - 高於 `1.1.11` 且低於 `2.0.0` 的標準穩定版：分類為 `UnverifiedAllowed`，仍可執行。
-- 低於 `1.1.11`：不能使用官方 print mode，分類為 `MissingRequiredCapability`。既有 1.1.7／1.1.9 連接只有在精確符合已審查 SHA-256 時，才能使用後文的舊版方式。
+- 低於 `1.1.11`：不能使用官方 print mode，分類為 `MissingRequiredCapability`，必須更新 AGY 後重新連接。
 - `2.0.0` 以上、帶前後綴、前導零或預發行格式（prerelease）：分類為 `SafetyBoundaryRejected`，因為只能在執行後才發現命令語意改變，無法撤回已產生的活動。
 
 `SafetyBoundaryRejected` 不表示已知一定不相容，只表示目前不能安全執行後再確認。
 
-Setup 核准後，會把執行檔絕對路徑保存在目前 Windows 使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE`。此設定有值時必須走官方路徑；路徑無效、來源驗證或擷取失敗時都會停止，不會改走舊版設定檔。
+設定核准後，會把來源種類與執行檔絕對路徑保存在 `%LOCALAPPDATA%\AiUsageDashboard\antigravity\approved-source-v1.json`。升級時若尚未建立此檔案，可把目前 Windows 使用者的舊 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE` 值一次性遷移進來；production 不再以環境變數作為持久化設定。路徑無效、來源驗證或擷取失敗時都會停止，不會改走其他執行方式。
 
-Setup 與每次背景查詢都會重新驗證：
+設定視窗與每次背景查詢都會重新驗證：
 
 - 路徑是本機允許目錄內、完全限定的普通 `.exe`，且檔案與父路徑沒有重新導向點（reparse point）。
 - WinVerifyTrust 成功，簽署者憑證的 subject 與 thumbprint 精確符合程式內固定的 Google LLC signer。
@@ -652,9 +645,11 @@ AI Usage 仍會在回傳後硬性驗證程序成功、沒有標準錯誤輸出�
 
 Stdout／stderr 有固定上限；原始 JSON bytes 只在記憶體中使用，完成後會清除，不會寫入快取、診斷紀錄、原始碼庫或套件。主程式只收到固定的本機工作階段識別（local-session identity）與四個正規化額度週期。
 
-官方 print process 是獨立、短時間執行的命令，不會附加到既有 AGY session，因此新連接不需要關閉已開啟的 AGY 視窗。擷取工作一次只執行一個，並由共用背景查詢流程限制為每分鐘最多一次。執行環境不繼承使用者的完整 `PATH`；只加入可信的 Windows System32，讓 AGY 的官方 status-line 輔助程式可以解析系統 `cmd.exe`。
+官方 print process 是獨立、短時間執行的命令，不會附加到既有 AGY session，因此新連接不需要關閉已開啟的 AGY 視窗。擷取工作一次只執行一個，並由共用背景查詢流程限制為每分鐘最多一次。
 
-每次啟動官方 print mode 前，App 與 Setup 都會先取得同一個跨程序執行鎖，再把不含帳號、路徑或原始輸出的安全標記寫到：
+啟動時會先清空環境，只保留固定允許的 Windows 使用者／資料／暫存路徑，並加入 `NO_COLOR=1` 與 `AGY_CLI_DISABLE_AUTO_UPDATE=true`；不繼承 `PATH`、`COMSPEC`、API keys 或其他呼叫端環境。程序透過完整核准路徑直接啟動，不經 shell。
+
+每次啟動官方 print mode 前，App 內的設定與背景讀取都會先取得同一個跨程序執行鎖，再把不含帳號、路徑或原始輸出的安全標記寫到：
 
 ```text
 %LOCALAPPDATA%\AiUsageDashboard\antigravity\official-print-safety-v1.json
@@ -664,12 +659,12 @@ Stdout／stderr 有固定上限；原始 JSON bytes 只在記憶體中使用，�
 
 每次保存或清除狀態前，都會先用原子取代寫入同路徑的 `.journal`。復原紀錄一旦成功寫入，就代表狀態已提交；即使主檔暫時被鎖或無法取代，後續存取與 App 重啟仍會優先依紀錄繼續完成。
 
-開始標記必須在暫停的程序開始執行前寫入磁碟。執行後已確認可恢復的結果也必須先寫入，避免重啟後誤回到舊的執行中狀態。
+開始標記必須在 `CreateProcessW` 前寫入磁碟。執行後已確認可恢復的結果也必須先寫入，避免重啟後誤回到舊的執行中狀態。
 
-功能探查與 `/usage` 都會先建立暫停的程序。兩者的程序隔離方式相同：
+功能探查與 `/usage` 使用相同的程序隔離方式：
 
-- `CreateProcessW` 建立子程序時，透過 `PROC_THREAD_ATTRIBUTE_JOB_LIST` 在同一個 Windows kernel 操作中，把子程序加入啟用 kill-on-close 的 Job Object。
-- 確認子程序已加入 Job Object 後才開始執行，因此沒有「程序已建立但還沒加入 Job」的中斷空窗。
+- `CreateProcessW` 建立程序時，透過 `PROC_THREAD_ATTRIBUTE_JOB_LIST` 在同一個 Windows kernel 操作中，把程序加入啟用 kill-on-close 的 Job Object。
+- Job Object 的 active-process limit 固定為 `1`，不允許官方命令再建立子程序；超出限制會失敗並拒絕結果。
 - 無論成功、逾時、取消或發生錯誤，都會在同一段清理時間內嘗試確認整個 Job Object 程序樹已清空。
 - 若 Job Object 或程序查詢持續失敗或逾時，程式會關閉輸出資源，以及啟用 kill-on-close 的 Job／process handles，完成範圍有限的最後隔離與清理，再釋放執行檔鎖與跨程序執行鎖；不會無限查詢或持續占用 handles。
 
@@ -698,17 +693,7 @@ Stdout／stderr 有固定上限；原始 JSON bytes 只在記憶體中使用，�
 
 格式版本 v3／v4 的 `TimedOut` 與「已取得完整輸出」（completed-output）標記，若有有效 attempt ID，可遷移舊版已耗盡旗標。舊格式版本 v1、缺少有效 attempt ID、無法確認程序已停止、已發生用量活動或安全狀態損壞時，仍必須由使用者手動重新檢查。
 
-### 舊版 exact-hash 相容路徑
-
-AGY 1.1.7 與 1.1.9 的既有連接，仍可使用已審查 manifest 中精確符合 SHA-256 的 ConPTY R1 設定檔。這個方式會驗證執行檔、可接收命令的提示畫面、用量畫面配置、設定檔內容雜湊值與本機來源，並使用目前使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE` 指向私有設定檔與 key。
-
-這項相容方式只保留給既有連接，不是新連接的預設；官方執行檔路徑已有值但驗證失敗時，也不會自動啟用舊版方式。
-
-舊版擷取最多寫入一次固定 `/usage`，只把同一個完整畫面中的正規化帳號識別與四個固定額度週期交給主程式。原始終端內容、本機路徑、設定檔、指紋、key、憑證與其他動態資料，不會進入日常畫面、診斷紀錄、原始碼庫或套件。詳細校準與審查流程仍記錄於 Spike 文件。
-
-以上兩條路徑都是 AI Usage 的實驗性整合；使用官方 CLI 命令不代表 Google 核准或支援本工具。
-
-研究工具、核准流程與完整安全限制請見 [AGY Spike 說明](../tools/AiUsageDashboard.AntigravitySpike/README.md)。
+Production 不會載入 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE`、ConPTY profile、私有 key 或 reviewed manifest。舊 ConPTY 程式碼只保留在開發用 Spike，供研究與比較，不會編入或放入正式套件。使用官方 CLI 命令不代表 Google 核准或支援本工具；研究工具與限制請見 [AGY Spike 說明](../tools/AiUsageDashboard.AntigravitySpike/README.md)。
 
 ## 建置與分發
 
@@ -716,6 +701,8 @@ AGY 1.1.7 與 1.1.9 的既有連接，仍可使用已審查 manifest 中精確�
 - 內部安裝、更新、回復、移除與支援：[Windows 分發與支援手冊](../INTERNAL_DISTRIBUTION.md)
 - 正式候選版條件與工作流程：[發佈流程](../RELEASING.md)
 - 當前功能與待辦：[實作檢查清單](../IMPLEMENTATION_CHECKLIST.md)
+
+正式 `app` 目錄只允許 `AiUsageDashboard.App.exe` 與 `AiUsageDashboard.ClaudeCapture.exe` 兩個 EXE。AGY 設定 UI 以 `AiUsageDashboard.Antigravity.Setup.dll` 併入 App process；`AiUsageDashboard.Antigravity.Setup.exe`、`AiUsageDashboard.AntigravityCapture.exe`、開發用 Spike 與 `createdump.exe` 都不得出現在成品。
 
 ## 發布用授權與更新信任
 

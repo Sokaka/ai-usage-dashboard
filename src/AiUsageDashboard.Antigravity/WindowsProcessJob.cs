@@ -151,6 +151,7 @@ internal sealed class WindowsProcessJob : IDisposable
 
 	private const int ErrorAlreadyExists = 183;
 	private const int ErrorFileNotFound = 2;
+	private const uint JobObjectLimitActiveProcess = 0x00000008;
 	private const uint JobObjectLimitKillOnJobClose = 0x00002000;
 	private const uint JobObjectQuery = 0x0004;
 	private const uint JobObjectTerminate = 0x0008;
@@ -169,6 +170,25 @@ internal sealed class WindowsProcessJob : IDisposable
 	}
 
 	internal static WindowsProcessJob CreateKillOnClose(string? name)
+	{
+		return CreateKillOnClose(name, activeProcessLimit: null);
+	}
+
+	internal static WindowsProcessJob CreateKillOnClose(
+		string? name,
+		uint activeProcessLimit)
+	{
+		if (activeProcessLimit == 0)
+		{
+			throw new ArgumentOutOfRangeException(nameof(activeProcessLimit));
+		}
+
+		return CreateKillOnClose(name, (uint?)activeProcessLimit);
+	}
+
+	private static WindowsProcessJob CreateKillOnClose(
+		string? name,
+		uint? activeProcessLimit)
 	{
 		if (name is not null)
 		{
@@ -198,6 +218,14 @@ internal sealed class WindowsProcessJob : IDisposable
 			JobObjectExtendedLimitInformation information = default;
 			information.BasicLimitInformation.LimitFlags =
 				JobObjectLimitKillOnJobClose;
+
+			if (activeProcessLimit.HasValue)
+			{
+				information.BasicLimitInformation.LimitFlags |=
+					JobObjectLimitActiveProcess;
+				information.BasicLimitInformation.ActiveProcessLimit =
+					activeProcessLimit.Value;
+			}
 
 			if (!NativeMethods.SetInformationJobObject(
 				handle,

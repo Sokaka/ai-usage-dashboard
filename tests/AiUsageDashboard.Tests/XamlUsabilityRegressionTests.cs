@@ -1975,7 +1975,11 @@ public sealed class XamlUsabilityRegressionTests
 		Assert.Contains("Antigravity CLI", antigravityStoredData, StringComparison.Ordinal);
 		Assert.Contains("電子郵件或方案", antigravityStoredData, StringComparison.Ordinal);
 		Assert.Contains(
-			"顯示資料和讀取時間",
+			"四項用量和讀取時間",
+			antigravityStoredData,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"不會為此安裝 status-line helper",
 			antigravityStoredData,
 			StringComparison.Ordinal);
 		Assert.Contains(
@@ -2570,17 +2574,15 @@ public sealed class XamlUsabilityRegressionTests
 			accountEditorDisclosure,
 			StringComparison.Ordinal);
 		Assert.Contains(
-			"確認這台電腦上的 Antigravity CLI 與既有連接",
+			"確認這台電腦上的官方 Antigravity CLI",
 			setupDisclosure,
 			StringComparison.Ordinal);
 		Assert.Contains(
-			"新連接只接受支援官方唯讀 /usage 的版本",
+			"只接受支援官方唯讀 /usage 的版本",
 			setupDisclosure,
 			StringComparison.Ordinal);
-		Assert.Contains(
-			"舊版相容讀取只會沿用",
-			setupDisclosure,
-			StringComparison.Ordinal);
+		Assert.DoesNotContain("舊版相容", setupDisclosure, StringComparison.Ordinal);
+		Assert.DoesNotContain("ConPTY", setupDisclosure, StringComparison.Ordinal);
 
 		string[] disclosures =
 		{

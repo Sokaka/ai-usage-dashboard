@@ -21,7 +21,6 @@ $productionPackagePrefix = 'AiUsageDashboard.'
 $requiredProductionPackageNames = @(
 	'AiUsageDashboard.Antigravity',
 	'AiUsageDashboard.Antigravity.Setup',
-	'AiUsageDashboard.AntigravityCapture',
 	'AiUsageDashboard.App',
 	'AiUsageDashboard.ClaudeCapture',
 	'AiUsageDashboard.Core'

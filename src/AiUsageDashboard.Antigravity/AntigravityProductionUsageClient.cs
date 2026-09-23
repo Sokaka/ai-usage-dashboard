@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 
 namespace AiUsageDashboard.AntigravitySpike;
 
+#if ANTIGRAVITY_PRODUCTION
 public interface IAntigravityProductionUsageClient
 {
 	Task<AntigravityProductionUsageResult> CaptureAsync(
@@ -209,25 +210,25 @@ public sealed class AntigravityProductionUsageResult
 
 	private static bool IsNormalizedAccountIdentity(string? accountIdentity)
 	{
-		if (accountIdentity is null)
+		if (string.IsNullOrWhiteSpace(accountIdentity))
 		{
 			return false;
 		}
 
-		try
-		{
-			return string.Equals(
+		string normalized = accountIdentity.Trim()
+			.Normalize(System.Text.NormalizationForm.FormKC)
+			.ToLowerInvariant();
+		return (normalized.Length <= 320) &&
+			!normalized.Any(char.IsControl) &&
+			string.Equals(
 				accountIdentity,
-				AntigravityIdentityBindingGate.NormalizeIdentity(accountIdentity),
+				normalized,
 				StringComparison.Ordinal);
-		}
-		catch
-		{
-			return false;
-		}
 	}
 }
+#endif
 
+#if !ANTIGRAVITY_PRODUCTION
 internal sealed record AntigravityProductionUsageCoreResult(
 	AntigravityProductionUsageFailureKind FailureKind,
 	AntigravityLiveR1SectionRunResult? RunResult);
@@ -798,3 +799,4 @@ public sealed class AntigravityProductionUsageClient :
 		}
 	}
 }
+#endif

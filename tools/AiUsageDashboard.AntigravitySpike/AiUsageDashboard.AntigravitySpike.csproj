@@ -12,17 +12,42 @@
     <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AssemblyInfo.cs"
              Link="AssemblyInfo.cs" />
     <Compile Include="AntigravityExecutableFingerprintPromotion.cs" />
+    <Compile Include="AntigravityResearchMachineSetup.cs" />
+    <Compile Include="ConPtyAntigravityCliVersionProbe.cs" />
     <Compile Include="AntigravityLiveR1SectionProfileComposer.cs" />
     <Compile Include="AntigravityPrivateR0ViewportProfileWriter.cs" />
     <Compile Include="AntigravityPromptPinWriter.cs" />
     <Compile Include="AntigravityUsageR1Calibration.cs" />
     <Compile Include="AntigravityUsageR1PrivateBundleWriter.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityLiveR0Profile.cs" Link="Research\AntigravityLiveR0Profile.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityLiveR0ProfileFile.cs" Link="Research\AntigravityLiveR0ProfileFile.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityLiveR0Runner.cs" Link="Research\AntigravityLiveR0Runner.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityLiveR1PrivateCalibrationCaptureModels.cs" Link="Research\AntigravityLiveR1PrivateCalibrationCaptureModels.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityLiveR1Profile.cs" Link="Research\AntigravityLiveR1Profile.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityLiveR1RunnerModels.cs" Link="Research\AntigravityLiveR1RunnerModels.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityLiveR1SectionProfile.cs" Link="Research\AntigravityLiveR1SectionProfile.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityLiveR1SectionRunnerModels.cs" Link="Research\AntigravityLiveR1SectionRunnerModels.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityMachineSetupPrivateTransaction.cs" Link="Research\AntigravityMachineSetupPrivateTransaction.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityObservationGates.cs" Link="Research\AntigravityObservationGates.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityProductionUsageClient.cs" Link="Research\AntigravityProductionUsageClient.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityRedactedStructuralCapture.cs" Link="Research\AntigravityRedactedStructuralCapture.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityReviewedPackageLocalBinding.cs" Link="Research\AntigravityReviewedPackageLocalBinding.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityReviewedPackageManifest.cs" Link="Research\AntigravityReviewedPackageManifest.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityReviewedPackageManifestCatalog.cs" Link="Research\AntigravityReviewedPackageManifestCatalog.cs" />
     <Compile Include="..\..\src\AiUsageDashboard.Antigravity\AntigravityUsageR1SectionCalibration.cs"
              Link="AntigravityUsageR1SectionCalibration.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\IConPtySession.cs" Link="Research\IConPtySession.cs" />
+    <Compile Include="..\..\src\AiUsageDashboard.Antigravity\WindowsConPtySession.cs" Link="Research\WindowsConPtySession.cs" />
     <Compile Include="AntigravityUsageR1SectionPrivateDraft.cs" />
     <Compile Include="AntigravityUsageR1SectionPromotion.cs" />
     <Compile Include="Program.cs" />
     <ProjectReference Include="..\..\src\AiUsageDashboard.Antigravity\AiUsageDashboard.Antigravity.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\src\AiUsageDashboard.Antigravity\Resources\AntigravityReviewedPackageManifest.json"
+                      Link="Resources\AntigravityReviewedPackageManifest.json"
+                      LogicalName="AiUsageDashboard.Antigravity.Resources.AntigravityReviewedPackageManifest.json" />
   </ItemGroup>
 
 </Project>

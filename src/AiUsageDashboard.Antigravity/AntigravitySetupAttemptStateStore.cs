@@ -161,7 +161,7 @@ public sealed class AntigravitySetupAttemptStateStore
 		CancellationToken cancellationToken = default)
 	{
 		ValidateAttemptId(attemptId);
-		if (!Enum.IsDefined(sourceKind))
+		if (sourceKind != AntigravityMachineSetupSourceKind.OfficialPrint)
 		{
 			throw new ArgumentOutOfRangeException(nameof(sourceKind));
 		}
@@ -616,7 +616,8 @@ public sealed class AntigravitySetupAttemptStateStore
 			isApprovalRequested !=
 				IsValidFingerprint(state.TargetIdentityFingerprint) ||
 			(state.SourceKind.HasValue &&
-				!Enum.IsDefined(state.SourceKind.Value)))
+				(state.SourceKind.Value !=
+					AntigravityMachineSetupSourceKind.OfficialPrint)))
 		{
 			throw new InvalidDataException(
 				"Antigravity setup attempt state 階段內容無效。");

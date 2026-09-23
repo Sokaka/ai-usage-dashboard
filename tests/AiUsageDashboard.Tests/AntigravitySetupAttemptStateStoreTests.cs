@@ -5,6 +5,49 @@ namespace AiUsageDashboard.Tests;
 public sealed class AntigravitySetupAttemptStateStoreTests
 {
 	[Fact]
+	public async Task ReadAsync_WithPersistedOfficialWireValue_LoadsOfficialPrint()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string stateDirectory = Path.Combine(
+			temporaryDirectory.Path,
+			"states");
+		Directory.CreateDirectory(stateDirectory);
+		Guid attemptId = Guid.NewGuid();
+		string document =
+			$"{{\"schemaVersion\":1,\"attemptId\":\"{attemptId}\",\"phase\":3,\"processId\":1,\"processStartTimeUtcTicks\":1,\"createdAtUtcTicks\":1,\"sourceKind\":1,\"targetIdentityFingerprint\":\"{new string('A', 64)}\"}}";
+		await File.WriteAllTextAsync(
+			Path.Combine(stateDirectory, $"{attemptId:N}.json"),
+			document);
+		AntigravitySetupAttemptStateStore store = new(stateDirectory);
+
+		AntigravitySetupAttemptState state = Assert.IsType<
+			AntigravitySetupAttemptState>(await store.ReadAsync(attemptId));
+		Assert.Equal(
+			AntigravityMachineSetupSourceKind.OfficialPrint,
+			state.SourceKind);
+	}
+
+	[Fact]
+	public async Task ReadAsync_WithPersistedLegacyWireValue_FailsClosed()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string stateDirectory = Path.Combine(
+			temporaryDirectory.Path,
+			"states");
+		Directory.CreateDirectory(stateDirectory);
+		Guid attemptId = Guid.NewGuid();
+		string document =
+			$"{{\"schemaVersion\":1,\"attemptId\":\"{attemptId}\",\"phase\":3,\"processId\":1,\"processStartTimeUtcTicks\":1,\"createdAtUtcTicks\":1,\"sourceKind\":0,\"targetIdentityFingerprint\":\"{new string('A', 64)}\"}}";
+		await File.WriteAllTextAsync(
+			Path.Combine(stateDirectory, $"{attemptId:N}.json"),
+			document);
+		AntigravitySetupAttemptStateStore store = new(stateDirectory);
+
+		await Assert.ThrowsAsync<InvalidDataException>(
+			() => store.ReadAsync(attemptId));
+	}
+
+	[Fact]
 	public async Task StateTransitions_AreDurableAndMonotonic()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
@@ -29,7 +72,7 @@ public sealed class AntigravitySetupAttemptStateStoreTests
 
 		await store.MarkApprovalRequestedAsync(
 			attemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			"agy-user@example.com");
 		AntigravitySetupAttemptState requested = Assert.IsType<
 			AntigravitySetupAttemptState>(await store.ReadAsync(attemptId));
@@ -37,7 +80,7 @@ public sealed class AntigravitySetupAttemptStateStoreTests
 			AntigravitySetupAttemptPhase.ApprovalRequested,
 			requested.Phase);
 		Assert.Equal(
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			requested.SourceKind);
 		Assert.Equal(
 			AntigravitySetupApprovalReceiptStore
@@ -74,7 +117,7 @@ public sealed class AntigravitySetupAttemptStateStoreTests
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			store.MarkApprovalRequestedAsync(
 				attemptId,
-				AntigravityMachineSetupSourceKind.ReviewedConPty,
+				AntigravityMachineSetupSourceKind.OfficialPrint,
 				"other@example.com"));
 	}
 
@@ -143,7 +186,7 @@ public sealed class AntigravitySetupAttemptStateStoreTests
 		await Assert.ThrowsAsync<InvalidDataException>(() =>
 			store.MarkApprovalRequestedAsync(
 				attemptId,
-				AntigravityMachineSetupSourceKind.ReviewedConPty,
+				AntigravityMachineSetupSourceKind.OfficialPrint,
 				"agy-user@example.com"));
 		Assert.Null(await store.ReadAsync(attemptId));
 	}

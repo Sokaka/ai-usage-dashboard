@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -339,12 +340,44 @@ public sealed class AntigravityCliCapabilityValidatorTests
 	}
 
 	[Fact]
-	public void ConPtyVersionProbeEnvironment_DisablesAutoUpdate()
+	public void CliProcessEnvironment_DisablesAutoUpdate()
 	{
 		IReadOnlyDictionary<string, string> environment =
-			ConPtyAntigravityCliVersionProbe.BuildEnvironmentAllowlist();
+			AntigravityCliProcessEnvironment.BuildAllowlist();
 
 		Assert.Equal("true", environment["AGY_CLI_DISABLE_AUTO_UPDATE"]);
+	}
+
+	[Fact]
+	public void RedirectedVersionProbeStartInfo_UsesOnlyVersionArgumentWithoutShell()
+	{
+		string executablePath = Path.GetFullPath(Path.Combine(
+			Path.GetTempPath(),
+			"agy-version-probe-start-info",
+			"agy.exe"));
+
+		ProcessStartInfo startInfo =
+			RedirectedAntigravityCliVersionProbe.CreateStartInfo(
+				executablePath);
+
+		Assert.Equal(executablePath, startInfo.FileName);
+		Assert.Equal(new[] { "--version" }, startInfo.ArgumentList);
+		Assert.Empty(startInfo.Arguments);
+		Assert.False(startInfo.UseShellExecute);
+		Assert.True(startInfo.CreateNoWindow);
+		Assert.True(startInfo.RedirectStandardInput);
+		Assert.True(startInfo.RedirectStandardOutput);
+		Assert.True(startInfo.RedirectStandardError);
+		Assert.Equal("1", startInfo.Environment["NO_COLOR"]);
+		Assert.Equal(
+			"true",
+			startInfo.Environment["AGY_CLI_DISABLE_AUTO_UPDATE"]);
+		Assert.DoesNotContain(
+			startInfo.Environment.Keys,
+			name => string.Equals(
+				name,
+				"PATH",
+				StringComparison.OrdinalIgnoreCase));
 	}
 
 	[Fact]

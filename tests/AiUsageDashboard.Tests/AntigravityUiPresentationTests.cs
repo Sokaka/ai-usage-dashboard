@@ -20,12 +20,11 @@ public sealed class AntigravityUiPresentationTests
 			"AiUsageDashboard.Antigravity.Setup",
 			"SetupWindow.xaml"));
 
-		Assert.Contains("Antigravity CLI 與既有連接", xaml, StringComparison.Ordinal);
+		Assert.Contains("官方 Antigravity CLI", xaml, StringComparison.Ordinal);
 		Assert.Contains(
-			"新連接只接受支援官方唯讀 /usage 的版本",
+			"只接受支援官方唯讀 /usage 的版本",
 			xaml,
 			StringComparison.Ordinal);
-		Assert.Contains("舊版相容讀取只會沿用", xaml, StringComparison.Ordinal);
 		Assert.Contains("不會讀取登入憑證", xaml, StringComparison.Ordinal);
 		Assert.Contains(
 			"跟隨這台電腦目前的 Antigravity 登入",
@@ -35,14 +34,14 @@ public sealed class AntigravityUiPresentationTests
 		Assert.DoesNotContain("不會開啟對話", xaml, StringComparison.Ordinal);
 		Assert.DoesNotContain("送出模型請求", xaml, StringComparison.Ordinal);
 		Assert.Contains(
-			"狀態列回報的電子郵件、方案和取得時間",
+			"官方用量讀取流程回傳的四項用量、取得時間",
 			xaml,
 			StringComparison.Ordinal);
 		Assert.Contains(
-			"方案只有在能和同次用量安全關聯時才會顯示",
+			"不會安裝 status-line helper",
 			xaml,
 			StringComparison.Ordinal);
-		Assert.Contains("這台電腦的連接設定", xaml, StringComparison.Ordinal);
+		Assert.Contains("這台電腦核准的 Antigravity CLI 來源", xaml, StringComparison.Ordinal);
 		Assert.Contains(
 			"目前登入的 Antigravity 帳號",
 			xaml,
@@ -54,7 +53,8 @@ public sealed class AntigravityUiPresentationTests
 			StringComparison.Ordinal);
 		Assert.DoesNotContain("讀取帳號識別", xaml, StringComparison.Ordinal);
 		Assert.DoesNotContain("模型 turn", xaml, StringComparison.Ordinal);
-		Assert.DoesNotContain("status line", xaml, StringComparison.Ordinal);
+		Assert.DoesNotContain("舊版相容", xaml, StringComparison.Ordinal);
+		Assert.DoesNotContain("ConPTY", xaml, StringComparison.Ordinal);
 		Assert.DoesNotContain("本機 Antigravity 登入", xaml, StringComparison.Ordinal);
 		Assert.DoesNotContain("確認登入與用量", xaml, StringComparison.Ordinal);
 		Assert.DoesNotContain("AGY", xaml, StringComparison.Ordinal);
@@ -70,9 +70,9 @@ public sealed class AntigravityUiPresentationTests
 		string setupWindowSource = File.ReadAllText(Path.Combine(
 			setupDirectory,
 			"SetupWindow.xaml.cs"));
-		string appSource = File.ReadAllText(Path.Combine(
+		string setupAppPath = Path.Combine(
 			setupDirectory,
-			"App.xaml.cs"));
+			"App.xaml.cs");
 
 		Assert.Contains("agy --version", setupWindowSource, StringComparison.Ordinal);
 		Assert.Contains("已登入且能顯示用量", setupWindowSource, StringComparison.Ordinal);
@@ -99,10 +99,7 @@ public sealed class AntigravityUiPresentationTests
 			"安全診斷資訊已複製",
 			setupWindowSource,
 			StringComparison.Ordinal);
-		Assert.DoesNotContain(
-			"無法安全保存這次 AGY 連接的續做狀態",
-			appSource,
-			StringComparison.Ordinal);
+		Assert.False(File.Exists(setupAppPath));
 		Assert.DoesNotContain(
 			"舊版相容模式",
 			setupWindowSource,
@@ -146,8 +143,9 @@ public sealed class AntigravityUiPresentationTests
 			notice,
 			StringComparison.Ordinal);
 		Assert.Contains("Antigravity CLI", storedData, StringComparison.Ordinal);
-		Assert.Contains("電子郵件或方案", storedData, StringComparison.Ordinal);
-		Assert.Contains("顯示資料和讀取時間", storedData, StringComparison.Ordinal);
+		Assert.Contains("四項用量和讀取時間", storedData, StringComparison.Ordinal);
+		Assert.Contains("官方 /usage 不提供電子郵件或方案", storedData, StringComparison.Ordinal);
+		Assert.Contains("不會為此安裝 status-line helper", storedData, StringComparison.Ordinal);
 		Assert.Contains(
 			"不會讀取密碼或其他登入憑證",
 			storedData,
@@ -319,10 +317,10 @@ public sealed class AntigravityUiPresentationTests
 		Assert.Contains("請先登入 Antigravity", message, StringComparison.Ordinal);
 		Assert.Contains("Antigravity CLI 與既有連接", message, StringComparison.Ordinal);
 		Assert.Contains(
-			"新連接只接受支援官方唯讀 /usage 的版本",
+			"只接受 1.1.11 以上、2.0.0 未滿且支援官方唯讀 /usage 的版本",
 			message,
 			StringComparison.Ordinal);
-		Assert.Contains("舊版相容讀取只會沿用", message, StringComparison.Ordinal);
+		Assert.DoesNotContain("舊版相容", message, StringComparison.Ordinal);
 		Assert.Contains("讀取目前帳號的四項用量", message, StringComparison.Ordinal);
 		Assert.Contains("不會讀取登入憑證", message, StringComparison.Ordinal);
 		Assert.Contains(

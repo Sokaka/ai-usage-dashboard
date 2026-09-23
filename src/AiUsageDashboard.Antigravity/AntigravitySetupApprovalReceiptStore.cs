@@ -77,7 +77,7 @@ public sealed class AntigravitySetupApprovalReceiptStore
 		CancellationToken cancellationToken = default)
 	{
 		ValidateAttemptId(attemptId);
-		if (!Enum.IsDefined(sourceKind))
+		if (sourceKind != AntigravityMachineSetupSourceKind.OfficialPrint)
 		{
 			throw new ArgumentOutOfRangeException(nameof(sourceKind));
 		}
@@ -319,7 +319,8 @@ public sealed class AntigravitySetupApprovalReceiptStore
 			if ((document is null) ||
 				(document.SchemaVersion != CurrentSchemaVersion) ||
 				(document.AttemptId != expectedAttemptId) ||
-				!Enum.IsDefined(document.SourceKind) ||
+				(document.SourceKind !=
+					AntigravityMachineSetupSourceKind.OfficialPrint) ||
 				!IsValidFingerprint(document.TargetIdentityFingerprint))
 			{
 				throw new InvalidDataException(

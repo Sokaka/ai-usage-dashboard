@@ -191,7 +191,7 @@ internal sealed class AntigravityOfficialPrintCapabilityValidator
 	internal AntigravityOfficialPrintCapabilityValidator()
 		: this(
 			new WindowsAntigravityExecutableInspector(),
-			new ConPtyAntigravityCliVersionProbe())
+			new RedirectedAntigravityCliVersionProbe())
 	{
 	}
 

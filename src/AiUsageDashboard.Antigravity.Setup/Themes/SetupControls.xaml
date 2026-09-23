@@ -1,6 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:interaction="clr-namespace:AiUsageDashboard.Presentation">
+                    xmlns:interaction="clr-namespace:AiUsageDashboard.Antigravity.Setup">
     <Style TargetType="{x:Type TextBlock}">
         <Setter Property="Foreground"
                 Value="{DynamicResource PrimaryTextBrush}" />

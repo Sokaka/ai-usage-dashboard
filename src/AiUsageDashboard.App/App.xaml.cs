@@ -514,13 +514,10 @@ public partial class App : System.Windows.Application
 			AntigravityOfficialPrintUsageClient antigravityOfficialClient = new(
 				antigravitySafetyStateStore);
 			AntigravityUsageProvider antigravityUsageProvider = new(
-				new AntigravityProductionUsageClient(),
-				new AntigravityProfilePathResolver(),
+				antigravityOfficialClient,
+				new AntigravityOfficialExecutablePathResolver(),
 				setupService: new AntigravityMachineSetupService(
-					antigravityOfficialClient),
-				officialClient: antigravityOfficialClient,
-				officialExecutablePathResolver:
-					new AntigravityOfficialExecutablePathResolver());
+					antigravityOfficialClient));
 			WindowsGrokAcpProcessFactory grokProcessFactory = new();
 			GrokCliExecutableValidator grokExecutableValidator = new(
 				new GrokCliVersionProbe(grokProcessFactory));
@@ -580,11 +577,7 @@ public partial class App : System.Windows.Application
 				usageSnapshotStore,
 				dashboardPreferencesStore,
 				accountRuntimeStatePurger,
-				new AntigravityReportedAccountSource(
-					System.IO.Path.Combine(
-						AppContext.BaseDirectory,
-						AntigravityStatusLineIntegration
-							.PackagedHelperFileName)),
+				new AntigravityReportedAccountSource(),
 				timeProvider: null,
 				portableSettingsImportTransaction:
 					portableSettingsImportTransaction,

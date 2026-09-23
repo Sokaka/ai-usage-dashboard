@@ -250,10 +250,10 @@ internal interface IAntigravityOfficialPrintProcessRunner
 	async Task<AntigravityOfficialPrintProcessResult> RunAsync(
 		string executablePath,
 		string attemptId,
-		Func<CancellationToken, Task> beforeResumeAsync,
+		Func<CancellationToken, Task> beforeStartAsync,
 		CancellationToken cancellationToken)
 	{
-		await beforeResumeAsync(cancellationToken);
+		await beforeStartAsync(cancellationToken);
 		return await RunAsync(executablePath, cancellationToken);
 	}
 
@@ -696,10 +696,13 @@ public sealed class AntigravityOfficialPrintUsageClient :
 					processResult = await _processRunner.RunAsync(
 						normalizedExecutablePath,
 						activeAttemptId!,
-						token => MarkSafetyTrackedAttemptAsStartedAsync(
-							normalizedExecutablePath,
-							activeAttemptId!,
-							executionLease),
+						async token =>
+						{
+							await MarkSafetyTrackedAttemptAsStartedAsync(
+								normalizedExecutablePath,
+								activeAttemptId!,
+								executionLease);
+						},
 						cancellationToken);
 				}
 				catch (AntigravityOfficialPrintProcessRunException exception) when (
@@ -910,7 +913,7 @@ public sealed class AntigravityOfficialPrintUsageClient :
 				{
 					// The production runner wraps every failure after CreateProcess
 					// returns a handle. A raw exception therefore occurred before the
-					// usage command could be resumed.
+					// usage command was created.
 					if (isAutomaticRevalidation && existingLatch is not null)
 					{
 						return await RescheduleAutomaticRevalidationAsync(
@@ -1271,7 +1274,7 @@ public sealed class AntigravityOfficialPrintUsageClient :
 				StringComparison.Ordinal))
 		{
 			throw new InvalidOperationException(
-				"The prepared AGY safety marker is unavailable before process resume.");
+				"The prepared AGY safety marker is unavailable before process creation.");
 		}
 
 		AntigravityOfficialPrintSafetyState startedState = preparedState with
@@ -2439,13 +2442,6 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 
 		[DllImport(
 			"kernel32.dll",
-			EntryPoint = "ResumeThread",
-			ExactSpelling = true,
-			SetLastError = true)]
-		internal static extern uint ResumeThread(SafeKernelHandle thread);
-
-		[DllImport(
-			"kernel32.dll",
 			EntryPoint = "SetHandleInformation",
 			ExactSpelling = true,
 			SetLastError = true)]
@@ -2498,12 +2494,11 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 	private const int MaximumStderrBytes = 64 * 1024;
 	private const int MaximumStdoutBytes = 1024 * 1024;
 	private const uint CreateNoWindow = 0x08000000;
-	private const uint CreateSuspended = 0x00000004;
 	private const uint CreateUnicodeEnvironment = 0x00000400;
 	private const uint ExtendedStartupInfoPresent = 0x00080000;
 	private const uint ForcedExitCode = 0xC0DE0002;
+	internal const uint ProductionActiveProcessLimit = 1;
 	private const uint HandleFlagInherit = 0x00000001;
-	private const uint ResumeThreadFailed = 0xFFFFFFFF;
 	private const uint StartfUseStdHandles = 0x00000100;
 	private const uint WaitFailed = 0xFFFFFFFF;
 	private const uint WaitObject0 = 0x00000000;
@@ -2515,22 +2510,25 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 	private static readonly TimeSpan ProcessPollInterval =
 		TimeSpan.FromMilliseconds(20);
 	private readonly Action<uint>? _afterProcessCreated;
-	private readonly Func<CancellationToken, Task>? _beforeResumeAsync;
+	private readonly uint? _activeProcessLimit;
+	private readonly Func<CancellationToken, Task>? _beforeStartAsync;
 	private readonly TimeSpan _cleanupTimeout;
 	private readonly TimeSpan _commandTimeout;
 
 	internal WindowsAntigravityOfficialPrintProcessRunner()
 		: this(
 			AntigravityOfficialPrintTiming.UsageCommandTimeout,
-			AntigravityOfficialPrintTiming.UsageCleanupTimeout)
+			AntigravityOfficialPrintTiming.UsageCleanupTimeout,
+			activeProcessLimit: ProductionActiveProcessLimit)
 	{
 	}
 
 	internal WindowsAntigravityOfficialPrintProcessRunner(
 		TimeSpan commandTimeout,
 		TimeSpan cleanupTimeout,
-		Func<CancellationToken, Task>? beforeResumeAsync = null,
-		Action<uint>? afterProcessCreated = null)
+		Func<CancellationToken, Task>? beforeStartAsync = null,
+		Action<uint>? afterProcessCreated = null,
+		uint? activeProcessLimit = null)
 	{
 		if (commandTimeout <= TimeSpan.Zero)
 		{
@@ -2542,10 +2540,16 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 			throw new ArgumentOutOfRangeException(nameof(cleanupTimeout));
 		}
 
+		if (activeProcessLimit == 0)
+		{
+			throw new ArgumentOutOfRangeException(nameof(activeProcessLimit));
+		}
+
 		_commandTimeout = commandTimeout;
 		_cleanupTimeout = cleanupTimeout;
-		_beforeResumeAsync = beforeResumeAsync;
+		_beforeStartAsync = beforeStartAsync;
 		_afterProcessCreated = afterProcessCreated;
+		_activeProcessLimit = activeProcessLimit;
 	}
 
 	public Task<AntigravityOfficialPrintProcessResult> RunAsync(
@@ -2555,34 +2559,34 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 		return RunCoreAsync(
 			executablePath,
 			CreateAttemptJobName(Guid.NewGuid().ToString("N")),
-			beforeResumeAsync: null,
+			beforeStartAsync: null,
 			cancellationToken);
 	}
 
 	public Task<AntigravityOfficialPrintProcessResult> RunAsync(
 		string executablePath,
 		string attemptId,
-		Func<CancellationToken, Task> beforeResumeAsync,
+		Func<CancellationToken, Task> beforeStartAsync,
 		CancellationToken cancellationToken)
 	{
-		ArgumentNullException.ThrowIfNull(beforeResumeAsync);
+		ArgumentNullException.ThrowIfNull(beforeStartAsync);
 		return RunCoreAsync(
 			executablePath,
 			CreateAttemptJobName(attemptId),
-			beforeResumeAsync,
+			beforeStartAsync,
 			cancellationToken);
 	}
 
 	internal Task<AntigravityOfficialPrintProcessResult> RunAsync(
 		ProcessStartInfo startInfo,
 		string jobName,
-		Func<CancellationToken, Task>? beforeResumeAsync,
+		Func<CancellationToken, Task>? beforeStartAsync,
 		CancellationToken cancellationToken)
 	{
 		return RunCoreAsync(
 			startInfo,
 			jobName,
-			beforeResumeAsync,
+			beforeStartAsync,
 			cancellationToken);
 	}
 
@@ -2627,7 +2631,7 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 	private async Task<AntigravityOfficialPrintProcessResult> RunCoreAsync(
 		string executablePath,
 		string jobName,
-		Func<CancellationToken, Task>? beforeResumeAsync,
+		Func<CancellationToken, Task>? beforeStartAsync,
 		CancellationToken cancellationToken)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
@@ -2635,14 +2639,14 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 		return await RunCoreAsync(
 			startInfo,
 			jobName,
-			beforeResumeAsync,
+			beforeStartAsync,
 			cancellationToken);
 	}
 
 	private async Task<AntigravityOfficialPrintProcessResult> RunCoreAsync(
 		ProcessStartInfo startInfo,
 		string jobName,
-		Func<CancellationToken, Task>? beforeResumeAsync,
+		Func<CancellationToken, Task>? beforeStartAsync,
 		CancellationToken cancellationToken)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
@@ -2650,7 +2654,7 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 		RedirectedJobProcess process = await StartRedirectedJobProcessAsync(
 			startInfo,
 			jobName,
-			beforeResumeAsync,
+			beforeStartAsync,
 			cancellationToken);
 		using CancellationTokenSource timeoutSource = new(_commandTimeout);
 		using CancellationTokenSource linkedSource =
@@ -2783,7 +2787,7 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 	private async Task<RedirectedJobProcess> StartRedirectedJobProcessAsync(
 		ProcessStartInfo startInfo,
 		string jobName,
-		Func<CancellationToken, Task>? beforeResumeAsync,
+		Func<CancellationToken, Task>? beforeStartAsync,
 		CancellationToken cancellationToken)
 	{
 		WindowsProcessJob? job = null;
@@ -2800,13 +2804,17 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 		FileStream? errorStream = null;
 		IntPtr environment = IntPtr.Zero;
 		bool isJobMembershipVerified = false;
-		bool isResumed = false;
+		bool hasProcessStarted = false;
 		bool ownershipTransferred = false;
 
 		try
 		{
 			cancellationToken.ThrowIfCancellationRequested();
-			job = WindowsProcessJob.CreateKillOnClose(jobName);
+			job = _activeProcessLimit.HasValue
+				? WindowsProcessJob.CreateKillOnClose(
+					jobName,
+					_activeProcessLimit.Value)
+				: WindowsProcessJob.CreateKillOnClose(jobName);
 			CreateRedirectedPipe(
 				out inputReadHandle,
 				out inputWriteHandle,
@@ -2842,16 +2850,25 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 			startupInfo.AttributeList = processAttributes.Pointer;
 			StringBuilder commandLine = BuildCommandLine(startInfo);
 
+			if (beforeStartAsync is not null)
+			{
+				await beforeStartAsync(cancellationToken);
+			}
+
+			if (_beforeStartAsync is not null)
+			{
+				await _beforeStartAsync(cancellationToken);
+			}
+
+			cancellationToken.ThrowIfCancellationRequested();
+
 			if (!NativeMethods.CreateProcess(
 				startInfo.FileName,
 				commandLine,
 				IntPtr.Zero,
 				IntPtr.Zero,
 				inheritHandles: true,
-				CreateNoWindow |
-					CreateSuspended |
-					CreateUnicodeEnvironment |
-					ExtendedStartupInfoPresent,
+				BuildCreationFlags(),
 				environment,
 				startInfo.WorkingDirectory,
 				ref startupInfo,
@@ -2859,7 +2876,7 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 			{
 				throw new Win32Exception(
 					Marshal.GetLastWin32Error(),
-					"Unable to create the suspended official AGY print process.");
+					"Unable to create the official AGY process.");
 			}
 
 			GC.KeepAlive(inputReadHandle);
@@ -2868,9 +2885,10 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 			GC.KeepAlive(job);
 			processHandle = new SafeKernelHandle(processInformation.Process);
 			threadHandle = new SafeKernelHandle(processInformation.Thread);
-			_afterProcessCreated?.Invoke(processInformation.ProcessId);
+			hasProcessStarted = true;
 			job.VerifyMembership(processHandle);
 			isJobMembershipVerified = true;
+			_afterProcessCreated?.Invoke(processInformation.ProcessId);
 
 			inputReadHandle.Dispose();
 			inputReadHandle = null;
@@ -2893,33 +2911,8 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 				isAsync: false);
 			errorReadHandle = null;
 
-			if (beforeResumeAsync is not null)
-			{
-				await beforeResumeAsync(cancellationToken);
-			}
-
-			if (_beforeResumeAsync is not null)
-			{
-				await _beforeResumeAsync(cancellationToken);
-			}
-
 			cancellationToken.ThrowIfCancellationRequested();
-			uint previousSuspendCount = NativeMethods.ResumeThread(threadHandle);
 
-			if (previousSuspendCount == ResumeThreadFailed)
-			{
-				throw new Win32Exception(
-					Marshal.GetLastWin32Error(),
-					"Unable to resume the contained official AGY print process.");
-			}
-
-			if (previousSuspendCount != 1)
-			{
-				throw new InvalidOperationException(
-					$"The official AGY print process had an unexpected suspend count of {previousSuspendCount}.");
-			}
-
-			isResumed = true;
 			RedirectedJobProcess result = new(
 				job,
 				processHandle,
@@ -2957,7 +2950,7 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 			ownershipTransferred = true;
 			bool isTerminationConfirmed = await quiescenceTask;
 			throw new AntigravityOfficialPrintProcessRunException(
-				isResumed,
+				hasProcessStarted,
 				exception,
 				isTerminationConfirmed,
 				quiescenceTask,
@@ -2990,6 +2983,13 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 		}
 	}
 
+	internal static uint BuildCreationFlags()
+	{
+		return CreateNoWindow |
+			CreateUnicodeEnvironment |
+			ExtendedStartupInfoPresent;
+	}
+
 	internal static ProcessStartInfo CreateStartInfo(string executablePath)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
@@ -3020,42 +3020,12 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 		startInfo.Environment.Clear();
 
 		foreach ((string name, string value) in
-			ConPtyAntigravityCliVersionProbe.BuildEnvironmentAllowlist())
+			AntigravityCliProcessEnvironment.BuildAllowlist())
 		{
 			startInfo.Environment[name] = value;
 		}
 
-		// AGY's status-line helper starts cmd.exe by name. Give only the trusted
-		// Windows system directory instead of inheriting the user's full PATH.
-		startInfo.Environment["PATH"] = GetTrustedSystemDirectory();
-
 		return startInfo;
-	}
-
-	private static string GetTrustedSystemDirectory()
-	{
-		string systemDirectory = Environment.SystemDirectory;
-
-		if (string.IsNullOrWhiteSpace(systemDirectory) ||
-			!Path.IsPathFullyQualified(systemDirectory) ||
-			systemDirectory.Contains(Path.PathSeparator))
-		{
-			throw new InvalidOperationException(
-				"The trusted Windows system directory is unavailable.");
-		}
-
-		string normalizedSystemDirectory = Path.GetFullPath(systemDirectory);
-		string commandProcessorPath = Path.Combine(
-			normalizedSystemDirectory,
-			"cmd.exe");
-
-		if (!File.Exists(commandProcessorPath))
-		{
-			throw new InvalidOperationException(
-				"The trusted Windows command processor is unavailable.");
-		}
-
-		return normalizedSystemDirectory;
 	}
 
 	internal static async Task<BoundedReadResult> ReadBoundedAsync(
@@ -3175,7 +3145,7 @@ internal sealed class WindowsAntigravityOfficialPrintProcessRunner :
 		Task unavailableEvidence = Task.FromException(
 			new InvalidOperationException(
 				"The process tree was contained without positive empty-tree evidence."));
-		// Some pre-resume failures do not schedule automatic revalidation. Mark
+		// Some pre-start failures do not schedule automatic revalidation. Mark
 		// the deliberately negative evidence observed in that path too.
 		_ = unavailableEvidence.Exception;
 		return unavailableEvidence;

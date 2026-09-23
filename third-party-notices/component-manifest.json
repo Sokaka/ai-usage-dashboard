@@ -108,9 +108,7 @@
       "version": "MIT-2026",
       "profiles": [
         "app",
-        "setup",
         "updater",
-        "capture",
         "claude-capture",
         "installer"
       ],
@@ -122,8 +120,7 @@
       ],
       "deliveryTargets": [
         "app-zip",
-        "updater-exe",
-        "standalone-capture-exe"
+        "updater-exe"
       ],
       "notes": ""
     },
@@ -133,9 +130,7 @@
       "version": "2026-09-06.1",
       "profiles": [
         "app",
-        "setup",
         "updater",
-        "capture",
         "claude-capture",
         "installer"
       ],
@@ -145,8 +140,7 @@
       "files": [],
       "deliveryTargets": [
         "app-zip",
-        "updater-exe",
-        "standalone-capture-exe"
+        "updater-exe"
       ],
       "notes": ""
     },
@@ -156,9 +150,7 @@
       "version": "8.0.31",
       "profiles": [
         "app",
-        "setup",
         "updater",
-        "capture",
         "claude-capture",
         "installer"
       ],
@@ -174,8 +166,7 @@
       ],
       "deliveryTargets": [
         "app-zip",
-        "updater-exe",
-        "standalone-capture-exe"
+        "updater-exe"
       ],
       "notes": "The .NET Library license applies to coreclr.dll, DiaSymReader natives and the runtime in single-file binaries; other .NET runtime files use MIT, subject to their notices."
     },
@@ -185,7 +176,6 @@
       "version": "8.0.31",
       "profiles": [
         "app",
-        "setup",
         "installer"
       ],
       "documents": [
@@ -253,7 +243,6 @@
       "version": "10.0.2",
       "profiles": [
         "app",
-        "setup",
         "installer"
       ],
       "documents": [
@@ -274,7 +263,6 @@
       "version": "10.0.12",
       "profiles": [
         "app",
-        "setup",
         "claude-capture",
         "installer"
       ],
@@ -296,7 +284,6 @@
       "version": "10.0.12",
       "profiles": [
         "app",
-        "setup",
         "claude-capture",
         "installer"
       ],
@@ -318,7 +305,6 @@
       "version": "10.0.12",
       "profiles": [
         "app",
-        "setup",
         "claude-capture",
         "installer"
       ],

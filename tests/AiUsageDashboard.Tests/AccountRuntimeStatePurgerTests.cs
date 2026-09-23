@@ -643,11 +643,8 @@ public sealed class AccountRuntimeStatePurgerTests
 		TrackingAntigravityOfficialClient officialClient)
 	{
 		return new AntigravityUsageProvider(
-			new NoOpAntigravityProductionUsageClient(),
-			new FixedAntigravityProfilePathResolver(),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FixedAntigravityOfficialExecutablePathResolver());
+			officialClient,
+			new FixedAntigravityOfficialExecutablePathResolver());
 	}
 
 	private static AccountProfile CreateAntigravityAccount(Guid accountId)
@@ -849,27 +846,6 @@ public sealed class AccountRuntimeStatePurgerTests
 				AntigravityProductionUsageFailureKind.CaptureRejected,
 				accountIdentity: null,
 				Array.Empty<AntigravityProductionUsageWindow>());
-		}
-	}
-
-	private sealed class NoOpAntigravityProductionUsageClient :
-		IAntigravityProductionUsageClient
-	{
-		public Task<AntigravityProductionUsageResult> CaptureAsync(
-			string profilePath,
-			CancellationToken cancellationToken)
-		{
-			throw new InvalidOperationException(
-				"Legacy AGY capture must not run.");
-		}
-	}
-
-	private sealed class FixedAntigravityProfilePathResolver :
-		IAntigravityProfilePathResolver
-	{
-		public string? ResolveProfilePath()
-		{
-			return @"C:\synthetic\agy-profile.json";
 		}
 	}
 

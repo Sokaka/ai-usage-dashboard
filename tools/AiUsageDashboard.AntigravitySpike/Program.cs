@@ -390,7 +390,7 @@ internal static class Program
 				{
 					WorkingDirectory = userProfile,
 					Environment =
-						AntigravityMachineSetupService
+						AntigravityResearchMachineSetup
 							.BuildCaptureEnvironment(userProfile),
 					ExpectedPromptStructuralFingerprint = string.Empty,
 					ExpectedExactPromptFingerprint = string.Empty
@@ -402,7 +402,7 @@ internal static class Program
 					new AntigravityLiveR0Consent(true),
 					CancellationToken.None);
 
-			if (!AntigravityMachineSetupService.IsSafePromptCalibration(
+			if (!AntigravityResearchMachineSetup.IsSafePromptCalibration(
 					report))
 			{
 				throw new InvalidDataException();

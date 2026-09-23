@@ -3738,10 +3738,10 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 		if (!requireFreshAssociation)
 		{
-			// Initialization and account-setting changes still let the source
-			// install/maintain its owned status-line integration. They did not run
-			// a new quota query, so the absence of a fresh account observation is
-			// not evidence that a previously verified email became invalid.
+			// Initialization and account-setting changes may perform source
+			// maintenance, including one-time legacy cleanup. They did not run a
+			// new quota query, so missing fresh metadata cannot invalidate a
+			// previously verified display by itself.
 			if (allowCachedAssociation)
 			{
 				await RestoreAntigravityReportedAccountDisplayAsync(
@@ -3773,11 +3773,10 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			return;
 		}
 
-		// A same-account capture can be intentionally left unchanged for up to
-		// 30 seconds. The per-account status-line signal proves that the helper
-		// observed this email after the refresh baseline without adding another
-		// capture-file write. Use the refresh start as a conservative lower-bound
-		// timestamp so it can still be associated with the quota snapshot.
+		// A same-account observation may be intentionally left unchanged for up
+		// to 30 seconds. A source-specific freshness signal proves it was seen
+		// after the refresh baseline. Use the refresh start as a conservative
+		// lower-bound timestamp for association with the quota snapshot.
 		DateTimeOffset accountObservedAtUtc = hasFreshStatusLineInvocation
 			? association.RefreshStartedAtUtc
 			: reportedAccount.CapturedAtUtc;
@@ -3884,7 +3883,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	{
 		DateTimeOffset now = _timeProvider.GetUtcNow();
 		if (reportedAccount is null ||
-			!AntigravityStatusLineCapture.IsValidAsciiEmail(
+			!AntigravityAccountMetadataValidator.IsValidAsciiEmail(
 				reportedAccount.Email) ||
 			(reportedAccount.CapturedAtUtc >
 				now + AntigravityReportedAccountFutureTolerance))
@@ -7436,11 +7435,16 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		{
 			AntigravitySetupProcessActivity activity =
 				GetAntigravitySetupProcessActivity(attemptState);
-			if (activity != AntigravitySetupProcessActivity.Inactive)
+			if (ShouldWaitForSetupProcessCompletion(
+				activity == AntigravitySetupProcessActivity.Inactive,
+				IsCurrentApplicationProcess(attemptState)))
 			{
 				return new(AntigravitySetupIntentResolution.Pending);
 			}
 
+			// In-process setup uses the dashboard process identity. The account-change
+			// gate above proves its dialog has already returned, even though the App
+			// itself is still running.
 			approval = CreateApprovalFromAttemptState(attemptState);
 		}
 
@@ -7491,10 +7495,16 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				}
 
 			}
-			else if (GetAntigravitySetupProcessActivity(attemptState) !=
-				AntigravitySetupProcessActivity.Inactive)
+			else
 			{
-				return new(AntigravitySetupIntentResolution.Pending);
+				AntigravitySetupProcessActivity activity =
+					GetAntigravitySetupProcessActivity(attemptState);
+				if (ShouldWaitForSetupProcessCompletion(
+					activity == AntigravitySetupProcessActivity.Inactive,
+					IsCurrentApplicationProcess(attemptState)))
+				{
+					return new(AntigravitySetupIntentResolution.Pending);
+				}
 			}
 		}
 
@@ -7883,6 +7893,37 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		}
 	}
 
+	private static bool IsCurrentApplicationProcess(
+		AntigravitySetupAttemptState state)
+	{
+		try
+		{
+			using Process process = Process.GetCurrentProcess();
+			return (process.Id == state.ProcessId) &&
+				(process.StartTime.ToUniversalTime().Ticks ==
+					state.ProcessStartTimeUtcTicks);
+		}
+		catch (InvalidOperationException)
+		{
+			return false;
+		}
+		catch (Win32Exception)
+		{
+			return false;
+		}
+		catch (NotSupportedException)
+		{
+			return false;
+		}
+	}
+
+	internal static bool ShouldWaitForSetupProcessCompletion(
+		bool isProcessInactive,
+		bool isCurrentApplicationProcess)
+	{
+		return !isProcessInactive && !isCurrentApplicationProcess;
+	}
+
 	private static bool TryGetApprovedAntigravityTargetIdentity(
 		AntigravitySetupApprovalReceipt approval,
 		UsageSnapshot snapshot,
@@ -7914,8 +7955,6 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		{
 			AntigravityMachineSetupSourceKind.OfficialPrint =>
 				SourceTrust.OfficialExperimental,
-			AntigravityMachineSetupSourceKind.ReviewedConPty =>
-				SourceTrust.PrivateExperimental,
 			_ => SourceTrust.Unavailable
 		};
 
@@ -8319,7 +8358,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(account);
-		if (!Enum.IsDefined(sourceKind))
+		if (sourceKind != AntigravityMachineSetupSourceKind.OfficialPrint)
 		{
 			throw new ArgumentOutOfRangeException(nameof(sourceKind));
 		}

@@ -1235,7 +1235,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 				new DelegateGrokUsagePoller(_ => Task.FromResult(
 					CreateGrokPollResult("new-principal"))),
@@ -1412,11 +1412,8 @@ public sealed class AccountConnectionCoordinatorTests
 		Assert.Equal("person@example.com", account.AccountDisplayText);
 	}
 
-	[Theory]
-	[InlineData("Cancelled")]
-	[InlineData("SecurityBlocked")]
-	public async Task RunAntigravitySetupAsync_WritesIntentBeforeLauncherAndRemovesItWhenNotStarted(
-		string outcomeName)
+	[Fact]
+	public async Task RunAntigravitySetupAsync_WritesIntentBeforeLauncherAndRemovesItWhenCancelled()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		AccountProfile profile = CreateAntigravityProfile("Antigravity");
@@ -1446,7 +1443,7 @@ public sealed class AccountConnectionCoordinatorTests
 			AntigravityConnectionPendingWork intent =
 				Assert.Single(await pendingStore.LoadAsync());
 			wasIntentDurableBeforeLauncher = intent.IsSetupPending;
-			return Enum.Parse<AntigravityAccountSetupOutcome>(outcomeName);
+			return AntigravityAccountSetupOutcome.Cancelled;
 		});
 		using AccountConnectionCoordinator coordinator =
 			CreateCoordinator(launcher);
@@ -1461,10 +1458,9 @@ public sealed class AccountConnectionCoordinatorTests
 	}
 
 	[Fact]
-	public async Task RunAntigravitySetupAsync_WhenCompletionIsUnknown_RetainsAcrossRestartAndCompletesFromLateReceipt()
+	public async Task RunAntigravitySetupAsync_WhenCompletionIsUnknownBeforeApproval_DiscardsOnRecovery()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
-		const string TargetIdentity = "late-receipt@example.com";
 		AccountProfile profile = CreateAntigravityProfile("Antigravity");
 		FakeAccountProfileStore profileStore = new(profile);
 		AntigravitySetupApprovalReceiptStore receiptStore = new(Path.Combine(
@@ -1540,20 +1536,34 @@ public sealed class AccountConnectionCoordinatorTests
 		await restartedViewModel.InitializeAsync();
 
 		Assert.Empty(restartedRefreshCoordinator.RefreshRequests);
-		Assert.True(Assert.Single(await pendingStore.LoadAsync()).IsSetupPending);
+		Assert.Empty(await pendingStore.LoadAsync());
 		Assert.Null(
 			Assert.Single(restartedViewModel.Accounts)
 				.Profile.ProviderAccountIdentity);
+		Assert.Null(await receiptStore.ReadAsync(launcher.LastSetupAttemptId));
+		Assert.Null(
+			await attemptStateStore.ReadAsync(launcher.LastSetupAttemptId));
+	}
 
-		await attemptStateStore.MarkApprovalRequestedAsync(
-			launcher.LastSetupAttemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
-			TargetIdentity);
-		await receiptStore.WriteAsync(
-			launcher.LastSetupAttemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
-			TargetIdentity);
-		FakeUsageRefreshCoordinator completedRefreshCoordinator = new()
+	[Fact]
+	public async Task RunAntigravitySetupAsync_WhenInProcessApprovalReceiptIsMissing_CompletesWithoutRestart()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		const string TargetIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
+		AccountProfile profile = CreateAntigravityProfile("Antigravity");
+		FakeAccountProfileStore profileStore = new(profile);
+		AntigravitySetupApprovalReceiptStore receiptStore = new(Path.Combine(
+			temporaryDirectory.Path,
+			"receipts"));
+		AntigravitySetupAttemptStateStore attemptStateStore = new(Path.Combine(
+			temporaryDirectory.Path,
+			"states"));
+		JsonAntigravityConnectionPendingStore pendingStore = new(
+			Path.Combine(temporaryDirectory.Path, "agy-pending.json"),
+			receiptStore,
+			attemptStateStore);
+		FakeUsageRefreshCoordinator refreshCoordinator = new()
 		{
 			RefreshHandler = (request, _) => Task.FromResult(new UsageSnapshot(
 				request,
@@ -1561,32 +1571,52 @@ public sealed class AccountConnectionCoordinatorTests
 				{
 					new UsageMetric("agy.test", "AGY test", 25, "used 25%")
 				},
-				SourceTrust.PrivateExperimental,
+				SourceTrust.OfficialExperimental,
 				SnapshotStatus.Ready,
 				DateTimeOffset.UtcNow,
 				ProviderAccountIdentity: TargetIdentity))
 		};
-		DashboardViewModel completedViewModel = new(
+		DashboardViewModel viewModel = new(
 			profileStore,
-			completedRefreshCoordinator,
+			refreshCoordinator,
 			usageSnapshotStore: new FakeUsageSnapshotStore(),
 			dashboardPreferencesStore: null,
 			accountRuntimeStatePurger: null,
 			antigravityConnectionPendingStore: pendingStore);
+		await viewModel.InitializeAsync();
+		AccountUsageViewModel account = Assert.Single(viewModel.Accounts);
+		FakeAntigravityAccountSetupLauncher launcher = new(
+			async (attemptId, cancellationToken) =>
+			{
+				AntigravitySetupProcessIdentity process =
+					AntigravitySetupProcessIdentity.CaptureCurrent();
+				await attemptStateStore.BeginLaunchAsync(
+					attemptId,
+					process,
+					DateTimeOffset.UtcNow,
+					cancellationToken);
+				await attemptStateStore.MarkActiveAsync(
+					attemptId,
+					process,
+					cancellationToken);
+				await attemptStateStore.MarkApprovalRequestedAsync(
+					attemptId,
+					AntigravityMachineSetupSourceKind.OfficialPrint,
+					TargetIdentity,
+					cancellationToken);
+				return AntigravityAccountSetupOutcome.CompletionUnknown;
+			});
+		using AccountConnectionCoordinator coordinator =
+			CreateCoordinator(launcher);
 
-		await completedViewModel.InitializeAsync();
-		Assert.Empty(completedRefreshCoordinator.RefreshRequests);
-		Assert.True(
-			await completedViewModel
-				.RetryPendingAntigravityConnectionsNowAsync());
+		await coordinator.RunAntigravitySetupAsync(account, viewModel);
 
-		Assert.Equal(
-			TargetIdentity,
-			Assert.Single(completedViewModel.Accounts)
-				.Profile.ProviderAccountIdentity);
-		Assert.Single(completedRefreshCoordinator.RefreshRequests);
-		Assert.Empty(await pendingStore.LoadAsync());
+		Assert.True(Assert.Single(await pendingStore.LoadAsync()).IsSetupPending);
 		Assert.Null(await receiptStore.ReadAsync(launcher.LastSetupAttemptId));
+		Assert.True(await viewModel.RetryPendingAntigravityConnectionsNowAsync());
+		Assert.Equal(TargetIdentity, account.Profile.ProviderAccountIdentity);
+		Assert.Single(refreshCoordinator.RefreshRequests);
+		Assert.Empty(await pendingStore.LoadAsync());
 		Assert.Null(
 			await attemptStateStore.ReadAsync(launcher.LastSetupAttemptId));
 	}
@@ -1672,7 +1702,8 @@ public sealed class AccountConnectionCoordinatorTests
 	[Fact]
 	public async Task RunAntigravitySetupAsync_WhenCompleted_QuiescesRefreshesAndCompletes()
 	{
-		const string AccountIdentity = "agy-account@example.com";
+		const string AccountIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		const string OriginalIdentity = "old-agy@example.com";
 		AccountProfile profile = CreateAntigravityProfile("AGY") with
 		{
@@ -1685,7 +1716,7 @@ public sealed class AccountConnectionCoordinatorTests
 					account,
 					AccountIdentity) with
 					{
-						SourceTrust = SourceTrust.PrivateExperimental
+						SourceTrust = SourceTrust.OfficialExperimental
 					})
 		};
 		FakeAccountProfileStore profileStore = new(profile);
@@ -1696,7 +1727,7 @@ public sealed class AccountConnectionCoordinatorTests
 		await viewModel.InitializeAsync();
 		AccountUsageViewModel account = Assert.Single(viewModel.Accounts);
 		FakeAntigravityAccountSetupLauncher launcher = new(
-			AntigravityAccountSetupOutcome.Completed);
+			AntigravityAccountSetupOutcome.CompletedOfficialPrint);
 		using AccountConnectionCoordinator coordinator =
 			CreateCoordinator(launcher);
 		List<string> statuses = new();
@@ -1708,12 +1739,12 @@ public sealed class AccountConnectionCoordinatorTests
 
 		Assert.Equal(1, launcher.RunCount);
 		Assert.Equal(
-			new[] { profile.Id, profile.Id, profile.Id, profile.Id },
+			new[] { profile.Id, profile.Id, profile.Id },
 			refreshCoordinator.InvalidatedAccountIds);
 		Assert.All(
 			refreshCoordinator.RefreshRequests,
 			refreshRequest => Assert.Equal(profile.Id, refreshRequest.Id));
-		Assert.Equal(2, refreshCoordinator.RefreshRequests.Count);
+		Assert.Single(refreshCoordinator.RefreshRequests);
 		Assert.False(account.IsProviderAccountChangeInProgress);
 		Assert.Equal(AccountIdentity, account.ProviderAccountIdentity);
 		Assert.Equal(AccountIdentity, account.Profile.ProviderAccountIdentity);
@@ -1730,26 +1761,18 @@ public sealed class AccountConnectionCoordinatorTests
 				StringComparison.Ordinal));
 	}
 
-	[Theory]
-	[InlineData(
-		AntigravityMachineSetupSourceKind.OfficialPrint,
-		SourceTrust.OfficialExperimental)]
-	[InlineData(
-		AntigravityMachineSetupSourceKind.ReviewedConPty,
-		SourceTrust.PrivateExperimental)]
+	[Fact]
 	public async Task RunAntigravitySetupAsync_WithDurableProof_CompletesAndCleansAttemptArtifacts(
-		AntigravityMachineSetupSourceKind sourceKind,
-		SourceTrust sourceTrust)
+		)
 	{
+		AntigravityMachineSetupSourceKind sourceKind =
+			AntigravityMachineSetupSourceKind.OfficialPrint;
+		SourceTrust sourceTrust = SourceTrust.OfficialExperimental;
 		using TemporaryDirectory temporaryDirectory = new();
-		string targetIdentity = sourceKind ==
-			AntigravityMachineSetupSourceKind.OfficialPrint
-				? AntigravityOfficialPrintUsageClient.LocalSessionIdentity
-				: "reviewed@example.com";
-		AntigravityAccountSetupOutcome outcome = sourceKind ==
-			AntigravityMachineSetupSourceKind.OfficialPrint
-				? AntigravityAccountSetupOutcome.CompletedOfficialPrint
-				: AntigravityAccountSetupOutcome.Completed;
+		string targetIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
+		AntigravityAccountSetupOutcome outcome =
+			AntigravityAccountSetupOutcome.CompletedOfficialPrint;
 		AccountProfile profile = CreateAntigravityProfile("Antigravity");
 		FakeAccountProfileStore profileStore = new(profile);
 		AntigravitySetupApprovalReceiptStore receiptStore = new(Path.Combine(
@@ -1824,14 +1847,14 @@ public sealed class AccountConnectionCoordinatorTests
 	}
 
 	[Fact]
-	public async Task RunAntigravitySetupAsync_WhenLegacyRefreshIsStale_DoesNotReportFreshUsage()
+	public async Task RunAntigravitySetupAsync_WhenPostSetupRefreshIsStale_DoesNotReportFreshUsage()
 	{
-		const string AccountIdentity = "agy-account@example.com";
+		const string AccountIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = CreateAntigravityProfile("AGY") with
 		{
 			ProviderAccountIdentity = AccountIdentity
 		};
-		int refreshCount = 0;
 		FakeUsageRefreshCoordinator refreshCoordinator = new()
 		{
 			RefreshHandler = (account, _) =>
@@ -1840,17 +1863,14 @@ public sealed class AccountConnectionCoordinatorTests
 					account,
 					AccountIdentity) with
 					{
-						SourceTrust = SourceTrust.PrivateExperimental
+						SourceTrust = SourceTrust.OfficialExperimental
 					};
-				refreshCount++;
-				return Task.FromResult(refreshCount == 1
-					? ready
-					: ready with
-					{
-						Status = SnapshotStatus.Stale,
-						Error = "Synthetic stale fallback.",
-						RecoveryAction = UsageRecoveryAction.RevalidateUsage
-					});
+				return Task.FromResult(ready with
+				{
+					Status = SnapshotStatus.Stale,
+					Error = "Synthetic stale fallback.",
+					RecoveryAction = UsageRecoveryAction.RevalidateUsage
+				});
 			}
 		};
 		DashboardViewModel viewModel = new(
@@ -1861,7 +1881,7 @@ public sealed class AccountConnectionCoordinatorTests
 		AccountUsageViewModel account = Assert.Single(viewModel.Accounts);
 		using AccountConnectionCoordinator coordinator = CreateCoordinator(
 			new FakeAntigravityAccountSetupLauncher(
-				AntigravityAccountSetupOutcome.Completed));
+				AntigravityAccountSetupOutcome.CompletedOfficialPrint));
 		List<string> statuses = new();
 
 		await coordinator.RunAntigravitySetupAsync(
@@ -1884,9 +1904,10 @@ public sealed class AccountConnectionCoordinatorTests
 	}
 
 	[Fact]
-	public async Task RunAntigravitySetupAsync_WhenLegacyRefreshWasNotApplied_DoesNotReportFreshUsage()
+	public async Task RunAntigravitySetupAsync_WhenPostSetupRefreshWasNotApplied_DoesNotReportFreshUsage()
 	{
-		const string AccountIdentity = "agy-account@example.com";
+		const string AccountIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = CreateAntigravityProfile("Antigravity") with
 		{
 			ProviderAccountIdentity = AccountIdentity
@@ -1911,7 +1932,7 @@ public sealed class AccountConnectionCoordinatorTests
 		viewModel.StopRefreshing();
 		using AccountConnectionCoordinator coordinator = CreateCoordinator(
 			new FakeAntigravityAccountSetupLauncher(
-				AntigravityAccountSetupOutcome.Completed));
+				AntigravityAccountSetupOutcome.CompletedOfficialPrint));
 		List<string> statuses = new();
 
 		await coordinator.RunAntigravitySetupAsync(
@@ -1923,13 +1944,13 @@ public sealed class AccountConnectionCoordinatorTests
 		Assert.Equal(SnapshotStatus.Error, account.CurrentSnapshot?.Status);
 		Assert.Equal(UsageRecoveryAction.Retry, account.RecoveryAction);
 		Assert.False(account.CanExecuteRecoveryAction);
-		Assert.False(account.CanConnectProviderAccount);
+		Assert.True(account.CanConnectProviderAccount);
 		Assert.Equal(AccountIdentity, account.Profile.ProviderAccountIdentity);
 		Assert.False(account.IsProviderAccountChangeInProgress);
 		Assert.Contains(
 			statuses,
 			status => status.Contains(
-				"連接尚未套用",
+				"暫時無法讀取用量",
 				StringComparison.Ordinal));
 		Assert.DoesNotContain(
 			statuses,
@@ -2019,7 +2040,8 @@ public sealed class AccountConnectionCoordinatorTests
 	public async Task RunAntigravitySetupAsync_WhenBindingSaveFails_AbortsToPersistedIdentity()
 	{
 		const string OriginalIdentity = "old-agy@example.com";
-		const string NewIdentity = "new-agy@example.com";
+		const string NewIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = CreateAntigravityProfile("AGY") with
 		{
 			ProviderAccountIdentity = OriginalIdentity
@@ -2035,7 +2057,7 @@ public sealed class AccountConnectionCoordinatorTests
 					account,
 					NewIdentity) with
 					{
-						SourceTrust = SourceTrust.PrivateExperimental
+						SourceTrust = SourceTrust.OfficialExperimental
 					})
 		};
 		DashboardViewModel viewModel = new(
@@ -2045,7 +2067,7 @@ public sealed class AccountConnectionCoordinatorTests
 		AccountUsageViewModel account = Assert.Single(viewModel.Accounts);
 		using AccountConnectionCoordinator coordinator = CreateCoordinator(
 			new FakeAntigravityAccountSetupLauncher(
-				AntigravityAccountSetupOutcome.Completed));
+				AntigravityAccountSetupOutcome.CompletedOfficialPrint));
 		List<string> statuses = new();
 
 		await coordinator.RunAntigravitySetupAsync(
@@ -2178,7 +2200,7 @@ public sealed class AccountConnectionCoordinatorTests
 			diagnostics,
 			entry => entry == (
 				"antigravity-account-connection",
-				"stage=helper-exit;outcome=CompletedOfficialPrint"));
+				"stage=setup-complete;outcome=CompletedOfficialPrint"));
 		Assert.Contains(
 			diagnostics,
 			entry => entry == (
@@ -2531,9 +2553,6 @@ public sealed class AccountConnectionCoordinatorTests
 	[Theory]
 	[InlineData("Cancelled", 0)]
 	[InlineData("Failed", 0)]
-	[InlineData("LaunchFailed", 1)]
-	[InlineData("SecurityBlocked", 1)]
-	[InlineData("Unavailable", 1)]
 	public async Task RunAntigravitySetupAsync_WhenNotCompleted_AbortsWithoutRefresh(
 		string outcomeName,
 		int expectedNoticeCount)
@@ -2581,36 +2600,6 @@ public sealed class AccountConnectionCoordinatorTests
 						"已保留原本顯示的用量",
 						StringComparison.Ordinal));
 			Assert.Empty(notices);
-		}
-
-		if (outcome == AntigravityAccountSetupOutcome.SecurityBlocked)
-		{
-			string notice = Assert.Single(notices);
-			Assert.Contains("防毒軟體封鎖或移除", notice, StringComparison.Ordinal);
-			Assert.Contains("偵測名稱與檔案路徑", notice, StringComparison.Ordinal);
-			Assert.Contains("已保留原本顯示的用量", notice, StringComparison.Ordinal);
-			Assert.DoesNotContain("重新下載", notice, StringComparison.Ordinal);
-		}
-
-		if (outcome == AntigravityAccountSetupOutcome.LaunchFailed)
-		{
-			Assert.Contains(
-				notices,
-				notice =>
-					notice.Contains(
-						"無法正常開啟或完成",
-						StringComparison.Ordinal) &&
-					notice.Contains(
-						"完整解壓",
-						StringComparison.Ordinal) &&
-					notice.Contains(
-						"已保留原本顯示的用量",
-						StringComparison.Ordinal));
-			Assert.DoesNotContain(
-				statuses,
-				status => status.Contains(
-					"具體原因",
-					StringComparison.Ordinal));
 		}
 
 		Assert.False(coordinator.IsAntigravitySetupInProgress);
@@ -2675,7 +2664,7 @@ public sealed class AccountConnectionCoordinatorTests
 		Task activeRefresh = viewModel.RefreshUsageAsync();
 		await refreshStarted.Task;
 		FakeAntigravityAccountSetupLauncher launcher = new(
-			AntigravityAccountSetupOutcome.Completed);
+			AntigravityAccountSetupOutcome.CompletedOfficialPrint);
 		using AccountConnectionCoordinator coordinator =
 			CreateCoordinator(launcher, TimeSpan.Zero);
 		List<string> notices = new();
@@ -2701,7 +2690,8 @@ public sealed class AccountConnectionCoordinatorTests
 	[Fact]
 	public async Task RunAntigravitySetupAsync_WhenCompletedAndUnrelatedRefreshRemainsActive_RefreshesTargetAndCompletes()
 	{
-		const string ConnectedIdentity = "reviewed@example.com";
+		const string ConnectedIdentity =
+			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile targetProfile = CreateAntigravityProfile("AGY") with
 		{
 			ProviderAccountIdentity =
@@ -2738,7 +2728,7 @@ public sealed class AccountConnectionCoordinatorTests
 						targetRefreshStarted.TrySetResult();
 						await allowTargetRefreshToFinish.Task;
 					}
-					else if (refreshCount == 3)
+					else if (refreshCount == 2)
 					{
 						targetPostCommitRefreshStarted.TrySetResult();
 					}
@@ -2748,7 +2738,7 @@ public sealed class AccountConnectionCoordinatorTests
 						: ConnectedIdentity;
 					return CreateReadySnapshot(account, identity) with
 					{
-						SourceTrust = SourceTrust.PrivateExperimental
+						SourceTrust = SourceTrust.OfficialExperimental
 					};
 				}
 
@@ -2772,7 +2762,7 @@ public sealed class AccountConnectionCoordinatorTests
 			targetRefreshStarted.Task,
 			unrelatedRefreshStarted.Task).WaitAsync(AsyncWatchdogTimeout);
 		FakeAntigravityAccountSetupLauncher launcher = new(
-			AntigravityAccountSetupOutcome.Completed);
+			AntigravityAccountSetupOutcome.CompletedOfficialPrint);
 		using AccountConnectionCoordinator coordinator = CreateCoordinator(launcher);
 		Task setup = coordinator.RunAntigravitySetupAsync(
 			targetAccount,
@@ -2788,7 +2778,7 @@ public sealed class AccountConnectionCoordinatorTests
 			Assert.Equal(1, launcher.RunCount);
 			Assert.False(activeRefresh.IsCompleted);
 			Assert.True(viewModel.IsRefreshing);
-			Assert.Equal(3, Volatile.Read(ref targetRefreshCount));
+			Assert.Equal(2, Volatile.Read(ref targetRefreshCount));
 			Assert.Equal(1, Volatile.Read(ref unrelatedRefreshCount));
 			Assert.False(targetAccount.IsProviderAccountChangeInProgress);
 			Assert.Equal(ConnectedIdentity, targetAccount.ProviderAccountIdentity);
@@ -3045,7 +3035,7 @@ public sealed class AccountConnectionCoordinatorTests
 			profile);
 		AccountUsageViewModel account = Assert.Single(viewModel.Accounts);
 		FakeAntigravityAccountSetupLauncher launcher = new(
-			AntigravityAccountSetupOutcome.Completed);
+			AntigravityAccountSetupOutcome.CompletedOfficialPrint);
 		using AccountConnectionCoordinator coordinator =
 			CreateCoordinator(launcher);
 
@@ -3148,7 +3138,7 @@ public sealed class AccountConnectionCoordinatorTests
 			try
 			{
 				await Task.Delay(Timeout.InfiniteTimeSpan, token);
-				return AntigravityAccountSetupOutcome.Completed;
+				return AntigravityAccountSetupOutcome.CompletedOfficialPrint;
 			}
 			catch (OperationCanceledException) when (token.IsCancellationRequested)
 			{
@@ -6693,7 +6683,7 @@ public sealed class AccountConnectionCoordinatorTests
 		AccountUsageViewModel secondAccount = viewModel.Accounts.Single(
 			account => account.Id == secondProfile.Id);
 		FakeAntigravityAccountSetupLauncher launcher = new(
-			AntigravityAccountSetupOutcome.Completed);
+			AntigravityAccountSetupOutcome.CompletedOfficialPrint);
 		using AccountConnectionCoordinator coordinator =
 			CreateCoordinator(launcher);
 
@@ -6799,7 +6789,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				login,
 				poller,
 				bindingStore,
@@ -6857,7 +6847,7 @@ public sealed class AccountConnectionCoordinatorTests
 			new UnusedClaudeAccountLogin(),
 			new UnusedCodexAccountLogin(),
 			new FakeAntigravityAccountSetupLauncher(
-				AntigravityAccountSetupOutcome.Completed),
+				AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 			new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 			new DelegateGrokUsagePoller(_ => Task.FromResult(
 				CreateGrokPollResult("lock-order-principal"))),
@@ -6954,7 +6944,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 				new DelegateGrokUsagePoller(_ => Task.FromResult(
 					CreateGrokPollResult(
@@ -7016,7 +7006,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.FromException(
 					new GrokCliNotFoundException("synthetic preflight failure"))),
 				new DelegateGrokUsagePoller(_ =>
@@ -7060,7 +7050,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.FromException(
 					new GrokProcessContainmentException(
 						"synthetic containment failure"))),
@@ -7111,7 +7101,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(async cancellationToken =>
 				{
 					loginEntered.TrySetResult();
@@ -7163,7 +7153,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ =>
 				{
 					loginCallCount++;
@@ -7235,7 +7225,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 				poller,
 				new FakeGrokAccountBindingStore(),
@@ -7279,7 +7269,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 				new DelegateGrokUsagePoller(_ =>
 					Task.FromResult(CreateGrokPollResult("principal"))),
@@ -7349,7 +7339,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 				new DelegateGrokUsagePoller(_ =>
 					Task.FromResult(CreateGrokPollResult(PrincipalId))),
@@ -7400,7 +7390,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 				new DelegateGrokUsagePoller(_ =>
 					Task.FromResult(CreateGrokPollResult(PrincipalId))),
@@ -7453,7 +7443,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 				new DelegateGrokUsagePoller(_ =>
 					Task.FromResult(CreateGrokPollResult(PrincipalId))),
@@ -7533,7 +7523,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 				new DelegateGrokUsagePoller(_ => Task.FromResult(
 					CreateGrokPollResult(DuplicatePrincipalId))),
@@ -7708,7 +7698,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 				poller,
 				bindingStore,
@@ -7804,7 +7794,7 @@ public sealed class AccountConnectionCoordinatorTests
 				new UnusedClaudeAccountLogin(),
 				new UnusedCodexAccountLogin(),
 				new FakeAntigravityAccountSetupLauncher(
-					AntigravityAccountSetupOutcome.Completed),
+					AntigravityAccountSetupOutcome.CompletedOfficialPrint),
 				new DelegateGrokAccountLogin(_ => Task.CompletedTask),
 				poller,
 				bindingStore,

@@ -33,16 +33,14 @@
   <ItemGroup>
     <PackageReference Include="GitHub.Copilot.SDK" Version="1.0.11" />
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.10.0" />
-    <!-- App 與 Setup 會合併至同一個 self-contained runtime 目錄，這些套件版本必須一致。 -->
+    <!-- App 與內嵌的 Setup UI 共用同一個 self-contained runtime，這些套件版本必須一致。 -->
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.2" />
     <PackageReference Include="System.Text.Json" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AiUsageDashboard.Antigravity\AiUsageDashboard.Antigravity.csproj" />
-    <ProjectReference Include="..\AiUsageDashboard.AntigravityCapture\AiUsageDashboard.AntigravityCapture.csproj"
-                      ReferenceOutputAssembly="false"
-                      Private="false" />
+    <ProjectReference Include="..\AiUsageDashboard.Antigravity.Setup\AiUsageDashboard.Antigravity.Setup.csproj" />
     <ProjectReference Include="..\AiUsageDashboard.ClaudeCapture\AiUsageDashboard.ClaudeCapture.csproj" />
     <ProjectReference Include="..\AiUsageDashboard.Core\AiUsageDashboard.Core.csproj" />
     <ProjectReference Include="..\AiUsageDashboard.Updater.Core\AiUsageDashboard.Updater.Core.csproj" />
@@ -72,26 +70,6 @@
            Text="Publishing the app requires an externally supplied UpdateTrustedKeysFile containing production public trust keys." />
   </Target>
 
-  <Target Name="StageAntigravityCaptureHelper"
-          AfterTargets="Build"
-          Condition="'$(DesignTimeBuild)' != 'true'">
-    <PropertyGroup>
-      <AntigravityCaptureProjectPath>$(MSBuildProjectDirectory)\..\AiUsageDashboard.AntigravityCapture\AiUsageDashboard.AntigravityCapture.csproj</AntigravityCaptureProjectPath>
-      <AntigravityCapturePublishDirectory>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'antigravity-capture-publish'))</AntigravityCapturePublishDirectory>
-      <AntigravityCapturePublishedExecutable>$(AntigravityCapturePublishDirectory)AiUsageDashboard.AntigravityCapture.exe</AntigravityCapturePublishedExecutable>
-      <AntigravityCaptureOutputExecutable>$(TargetDir)AiUsageDashboard.AntigravityCapture.exe</AntigravityCaptureOutputExecutable>
-    </PropertyGroup>
-    <MSBuild Projects="$(AntigravityCaptureProjectPath)"
-             Targets="Publish"
-             BuildInParallel="false"
-             Properties="Configuration=$(Configuration);RuntimeIdentifier=win-x64;SelfContained=true;RuntimeFrameworkVersion=8.0.31;TargetLatestRuntimePatch=false;PublishSingleFile=true;IncludeNativeLibrariesForSelfExtract=true;EnableCompressionInSingleFile=true;PublishTrimmed=true;TrimMode=full;SuppressTrimAnalysisWarnings=false;DebugType=None;DebugSymbols=false;BuildProjectReferences=false;PublishDir=$(AntigravityCapturePublishDirectory)" />
-    <Error Condition="!Exists('$(AntigravityCapturePublishedExecutable)')"
-           Text="The standalone AGY capture helper was not produced." />
-    <Copy SourceFiles="$(AntigravityCapturePublishedExecutable)"
-          DestinationFiles="$(AntigravityCaptureOutputExecutable)"
-          SkipUnchangedFiles="true" />
-  </Target>
-
   <Target Name="ValidateUnbundledCopilotRuntime"
           BeforeTargets="BeforeBuild;_DownloadCopilotCli;_CopyCopilotCliToOutput;_RegisterCopilotCliForCopy">
     <Error Condition="'$(CopilotSkipCliDownload)' != 'true' Or '$(CopilotCliBinaryPath)' != ''"
@@ -119,6 +97,14 @@
     <Delete Files="@(_BundledCopilotPublishFiles)" />
     <Error Condition="Exists('%(_BundledCopilotPublishFiles.Identity)')"
            Text="Obsolete bundled Copilot content could not be removed: %(_BundledCopilotPublishFiles.Identity)" />
+  </Target>
+
+  <Target Name="RemoveCrashDumpToolFromPublish"
+          AfterTargets="Publish"
+          Condition="'$(PublishDir)' != ''">
+    <Delete Files="$(PublishDir)createdump.exe" />
+    <Error Condition="Exists('$(PublishDir)createdump.exe')"
+           Text="The .NET crash-dump helper must not be present in the published application." />
   </Target>
 
   <ItemGroup>
