@@ -7,7 +7,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.6-0078D4" alt="目前正式版本 1.0.6"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.7-0078D4" alt="目前正式版本 1.0.7"></a>
 </p>
 
 <p align="center">
@@ -29,9 +29,9 @@
 
 ## 目前版本
 
-目前正式版本為 **`1.0.6`**，修正由收合懸浮圖示展開時的首幀錯位，並讓收合箭頭沿用一般 icon button 與各主題既有配色。從 [v1.0.6 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.6) 下載；檔案資訊見 [1.0.6 版本說明](docs/releases/1.0.6.md)。前一版的懸浮圖示外框調整見 [1.0.5 版本說明](docs/releases/1.0.5.md)。
+目前正式版本為 **`1.0.7`**，將 AGY 正式路徑收斂為直接呼叫使用者安裝的官方 `agy /usage`，把獨立 Setup EXE 改為 App 內載入的 DLL，並移除 standalone AGY Capture。一般使用不需要執行 `/statusline off`。從 [v1.0.7 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.7) 下載；檔案資訊見 [1.0.7 版本說明](docs/releases/1.0.7.md)。前一版的浮窗首幀與主題修正見 [1.0.6 版本說明](docs/releases/1.0.6.md)。
 
-`1.0.6` 的候選 workflow attempt 2 通過 4,307 項自動測試，production line coverage 為 75.09%。同一組 frozen candidate 已完成既有標準安裝的 `apply-local`、四個停靠角的展開首幀取樣，以及四個一般主題的收合按鈕與既有捲動條配色檢查；這些結果不等於 signed online update。正式公開後已匿名下載六件原凍結成品，核對 tag target、asset identity、大小、SHA256、sidecar 與 stable feed 簽章。乾淨 Windows 初裝、App 內一鍵更新、舊版 Updater 自我交接、High Contrast、多螢幕／混合 DPI、完整 UI／無障礙及真人 provider 驗收仍未完成。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#106)。
+`1.0.7` 的候選 workflow attempt 1 通過 4,208 項自動測試，production line coverage 為 74.39%。同一組 frozen candidate 已完成封裝 invariant、WithSecure 掃描、portable／canonical 啟動、既有標準安裝的 `apply-local` 與實際官方 AGY `/usage`；正式公開後另以匿名 client 下載六件成品，核對 tag target、asset identity、大小、SHA256、sidecar 與 stable feed 簽章。這些結果仍不等於乾淨 Windows 初裝、signed online update、舊版 Updater 自我交接、完整 UI／無障礙或所有 provider 真人驗收。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#107)。
 
 ## 支援平台
 
