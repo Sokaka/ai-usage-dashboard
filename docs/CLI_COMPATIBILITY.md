@@ -1,6 +1,6 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.6` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.6` 的五個平台尚未完成真人登入與完整用量驗收；舊版 Claude／Copilot 的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.7` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.7` 已在既有登入下以正式成品完成 AGY `/usage` runtime smoke，但五個平台仍未完成真人登入與完整帳號流程驗收；舊版 Claude／Copilot 的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
 ## 版本要求
 
@@ -23,7 +23,21 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同候選官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
-### 1.0.6
+### 1.0.7
+
+本表對應 `1.0.7 / sequence 1021`（[source `c4ad25f41e973b508583252945aafa05572a4299`](https://github.com/Sokaka/ai-usage-dashboard/commit/c4ad25f41e973b508583252945aafa05572a4299)）。五個平台的串接與上列 CLI 版本要求仍在；只有 AGY 在既有登入下完成同一組 exact frozen candidate 的實際 `/usage` runtime smoke，登入流程與其他平台仍未驗證。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| Codex | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| GitHub Copilot | 未以本版實測；App 固定 SDK `1.0.11` | 暫緩，未驗證 | 暫緩，未驗證 |
+| Grok | 未以本版實測 | 暫緩，未驗證 | 暫緩，未驗證 |
+| Antigravity | 已核准且具有效簽章的官方 `agy.exe`；版號未另記錄 | 沿用既有登入，未驗證登入流程 | Portable 與 canonical 啟動均取得新的 4-metric snapshot |
+
+[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35857959043) attempt 1 的 Release 建置為 0 warnings／0 errors、完整自動測試 4,208 項通過，production line coverage 74.39%；同一個 attempt 簽署、驗證並凍結六件成品。同一 exact candidate 已完成 WithSecure 掃描、portable／canonical 啟動與既有標準安裝的 `apply-local`；AGY runtime 只觀察到官方 `agy.exe` 直接 child，沒有 shell、standalone Setup／Capture helper 或舊 status line。正式公開後另以匿名 client 下載六件原凍結成品，核對 tag target、asset identity、大小、SHA256、sidecar 與 stable feed 簽章。這些結果不代替 AGY 登入流程、其他 provider 真人驗收、signed online update、乾淨 Windows 安裝或完整 UI／無障礙驗收。成品與發布驗證範圍見 [1.0.7 版本說明](releases/1.0.7.md)。
+
+### 1.0.6 歷史正式版
 
 本表對應 `1.0.6 / sequence 1020`（[source `abbcb67bebdd5e97e4414e66ed5329518b0a15b3`](https://github.com/Sokaka/ai-usage-dashboard/commit/abbcb67bebdd5e97e4414e66ed5329518b0a15b3)）。五個平台的串接與上列 CLI 版本要求仍在，但沒有這六件正式成品的真人登入或用量查詢實測紀錄。
 

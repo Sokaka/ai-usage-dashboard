@@ -8,7 +8,7 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些功能與 Copilot 訂閱資訊修正始於首個正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.6 / sequence 1020`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些功能與 Copilot 訂閱資訊修正始於首個正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.7 / sequence 1021`。
 
 ### AGY official-only 與封裝縮減
 
@@ -17,7 +17,7 @@
 - [x] 核准來源保存於 `%LOCALAPPDATA%\AiUsageDashboard\antigravity\approved-source-v1.json`。舊 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE` 只在新檔缺少時一次性遷移；production 不讀取 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE`。
 - [x] Version probe 與 `/usage` 都直接執行完整核准路徑、不經 shell；環境採固定 allowlist，不含 `PATH`／`COMSPEC`，Windows Job Object 的 active-process limit 為 `1`。
 - [x] 新版不安裝或讀取 AGY status line，也不要求 `/statusline off`。升級清理只接受精確 AI Usage ownership marker、預期私人路徑與 hash-named helper，並在 ACL、內容與並行變更檢查通過後移除；自訂或無法驗證的 status line 保持不變。
-- [ ] 目前 source 的 Release 建置、完整測試、coverage、封裝 invariant、exact candidate、WithSecure 與真實 AGY runtime 驗收尚須以本次實際結果補記；先前版本的 PASS 不得套用。
+- [x] `1.0.7` exact frozen candidate 已完成 Release 建置、4,208 項完整測試、74.39% production line coverage、封裝 invariant、WithSecure 掃描，以及 portable／canonical 的實際官方 AGY `/usage` runtime 驗收。這是一台受管機器的 exact-bytes 結果，不代表其他端點政策或 AGY 登入流程已驗證。
 
 ### App 更新偵測與提示（`1.0.4` 起）
 
@@ -86,11 +86,25 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 後續捲動條提交 `8a564747` 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34764614043) 完整測試為 3,985 passed／0 failed／0 skipped，production line coverage 75.77%；這是另一份遠端驗證，沒有改寫上述本機失敗或其未知原因。對應本機 `0.0.0-verify-scrollbar.20260913.4` 已完成 90 案定向回歸、封裝與安裝，尚非正式凍結候選；這些結果也不代替本次新增功能的驗證。
 
-上述公開入口及 Copilot 相容性修正已在 `1.0.3` 凍結，真人 CLI 登入／用量驗收仍暫緩；歷史候選的成品與驗收只適用於各自 source，不代替 `1.0.6` 的結果。
+上述公開入口及 Copilot 相容性修正已在 `1.0.3` 凍結，真人 CLI 登入／用量驗收仍暫緩；歷史候選的成品與驗收只適用於各自 source，不代替 `1.0.7` 的結果。
 
 ## 目前正式版本
 
-`1.0.6 / sequence 1020` 已沿用原凍結候選正式公開（[source `abbcb67bebdd5e97e4414e66ed5329518b0a15b3`](https://github.com/Sokaka/ai-usage-dashboard/commit/abbcb67bebdd5e97e4414e66ed5329518b0a15b3)）。同一筆 [v1.0.6 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.6) 現為 immutable stable／latest；Release ID `393937190`、tag target 與六件成品的 asset ID、大小及 SHA256 均維持凍結值。變更與下載檔案資訊見 [1.0.6 版本說明](docs/releases/1.0.6.md)。
+`1.0.7 / sequence 1021` 已沿用原凍結候選正式公開（[source `c4ad25f41e973b508583252945aafa05572a4299`](https://github.com/Sokaka/ai-usage-dashboard/commit/c4ad25f41e973b508583252945aafa05572a4299)）。同一筆 [v1.0.7 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.7) 現為 immutable stable／latest；Release ID `394622165`、tag target 與六件成品的 asset ID、大小及 SHA256 均維持凍結值。變更與下載檔案資訊見 [1.0.7 版本說明](docs/releases/1.0.7.md)。
+
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35857959043) attempt 1 通過 Release 建置與完整測試：0 warnings／0 errors，4,208 passed／0 failed／0 skipped，production line coverage 74.39%（47,907／64,400）。同一個 attempt 完成更新清單簽署、驗簽與六件成品凍結。
+- [x] 發布前已核對 freeze receipt、Release ID、run／attempt、source、sequence、六件 asset identity／大小／SHA256 與三份 sidecar；production public trust 對 stable feed 的 RSA-PSS-SHA256 驗簽通過。
+- [x] 正式 ZIP 展開為 323 個檔案，App 目錄只有 App 與 ClaudeCapture 兩個 EXE；Setup DLL 存在，standalone Setup／AGY Capture、Spike、provider CLI、`createdump` 與 Setup runtime/deps 檔均不存在。
+- [x] WithSecure Client Security `26.2.158` 對正式 ZIP 掃描 306 項、對展開內容掃描 305 項，harmful 0、skipped 0。Exact candidate 啟動與兩次 AGY refresh 期間沒有新的 DeepGuard／infection event；此結果只涵蓋本次一台受管機器與 exact bytes。
+- [x] 同一 exact candidate 以 portable 路徑啟動，並以 `apply-local --no-restart` 套用至既有標準安裝。交易為 `Committed`、沒有 staging；323 個 ZIP payload 逐檔相符，previous 舊版完整保留。App、維護 Updater、Windows 安裝紀錄與開始選單均已核對，canonical App 重新啟動且正常回應。
+- [x] Portable 與 canonical 啟動都取得新的 AGY 用量 snapshot；直接 child 只有已核准且具有效簽章的官方 `agy.exe`，沒有 `cmd.exe`、PowerShell、standalone Setup 或 AGY Capture helper，也沒有重新建立舊 status line/helper。
+- [x] 2026-09-23 正式公開後，以不帶 GitHub token 或 cookie 的 client 經 latest Release API 核對並下載六件 Release assets；tag target、Release／asset identity、大小、SHA256、三份 sidecar，以及 latest stable feed 的 version、sequence、source、正式網址與 RSA-PSS-SHA256 簽章均與原凍結候選一致。六件共 106,781,209 bytes。
+
+`1.0.7` 的 exact frozen 成品已完成上述本機封裝、安全掃描、AGY runtime、離線安裝與公開端點 smoke，但仍未完成乾淨 Windows 初裝、App 內一鍵 signed online update、舊版 Updater 自我交接、custom install root、High Contrast、多螢幕／混合 DPI、完整 UI／無障礙，以及 Claude、Codex、GitHub Copilot、Grok 的真人登入與五個 provider 的完整帳號流程驗收。離線 `apply-local` 不等於 signed online update；既有 AGY 登入下的 `/usage` 成功也不等於登入流程已驗證。逐平台狀態見 [1.0.7 CLI 實測表](docs/CLI_COMPATIBILITY.md#107)。
+
+### 1.0.6 歷史正式版
+
+`1.0.6 / sequence 1020` 已沿用原凍結候選正式公開（[source `abbcb67bebdd5e97e4414e66ed5329518b0a15b3`](https://github.com/Sokaka/ai-usage-dashboard/commit/abbcb67bebdd5e97e4414e66ed5329518b0a15b3)）。[v1.0.6 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.6) 是歷史 immutable stable 版本；Release ID `393937190`、tag target 與六件成品的 asset ID、大小及 SHA256 均維持凍結值。變更與下載檔案資訊見 [1.0.6 版本說明](docs/releases/1.0.6.md)。
 
 - [x] 原始[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35752107845) attempt 2 通過 Release 建置與完整測試：0 warnings／0 errors，4,307 passed／0 failed／0 skipped，production line coverage 75.09%（54,119／72,071）。同一個 attempt 完成更新清單簽署、驗簽與六件成品凍結。attempt 1 在簽署與上傳前停止，未建立 Release 或候選成品。
 - [x] 發布前已下載 freeze receipt 與六件 draft assets，逐一核對 Release／asset identity、大小、SHA256、run／attempt、source、sequence 與三份 sidecar；以 production public trust 驗證 feed 簽章與正式網址。Release API 與 asset URL 在 draft 狀態下均對匿名請求回傳 404。
@@ -199,7 +213,7 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 候選與歷史驗證的界線
 
-五 provider 登入／帳號隔離、較完整的人工 UI、固定 Windows 18 案與 50 案中斷復原已有歷史驗證；`1.0.1` 至 `1.0.6` 都沒有整套重跑。歷次 SDK／runtime 與成品 bytes 的變更仍須按適用性評估，歷史 PASS 不能改標為本版結果。
+五 provider 登入／帳號隔離、較完整的人工 UI、固定 Windows 18 案與 50 案中斷復原已有歷史驗證；`1.0.1` 至 `1.0.7` 都沒有整套重跑。歷次 SDK／runtime 與成品 bytes 的變更仍須按適用性評估，歷史 PASS 不能改標為本版結果。
 
 後續版本更新、Updater 自更新、HTTPS→HTTP 降級拒絕、磁碟不足／reapply、持久化與 rename 邊界中斷、再次復原失敗等範圍，仍按既有 source 機制證據與適用性評估處理。`1.0.0` 的 27 案不代表已重驗這些範圍，也不代表已涵蓋全部非 canonical 安裝、未知檔案或 Windows 政策環境。
 
