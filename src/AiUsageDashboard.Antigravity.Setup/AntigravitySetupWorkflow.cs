@@ -40,7 +40,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 		_pendingSafetyRevalidation;
 	private CancellationTokenSource? _operationCancellation;
 	private long _revision;
-	private AntigravityMachineSetupSourceKind? _completedSourceKind;
 	private bool _hasApprovalStarted;
 	private bool _hasCommittedSetting;
 	private bool _isDisposed;
@@ -71,7 +70,7 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 		}
 	}
 
-	internal int DashboardManagedExitCode
+	internal AntigravitySetupDialogOutcome DialogOutcome
 	{
 		get
 		{
@@ -79,23 +78,14 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 			{
 				return State switch
 				{
-					AntigravitySetupWorkflowState.Completed when
-						_completedSourceKind ==
-							AntigravityMachineSetupSourceKind.OfficialPrint =>
-						AntigravityMachineSetupLaunchArguments
-							.DashboardManagedOfficialPrintSuccessExitCode,
 					AntigravitySetupWorkflowState.Completed =>
-						AntigravityMachineSetupLaunchArguments
-							.DashboardManagedSuccessExitCode,
+						AntigravitySetupDialogOutcome.CompletedOfficialPrint,
 					_ when _hasApprovalStarted || _hasCommittedSetting =>
-						AntigravityMachineSetupLaunchArguments
-							.DashboardManagedCompletionUnknownExitCode,
+						AntigravitySetupDialogOutcome.CompletionUnknown,
 					AntigravitySetupWorkflowState.Failed =>
-						AntigravityMachineSetupLaunchArguments
-							.DashboardManagedFailedExitCode,
+						AntigravitySetupDialogOutcome.Failed,
 					_ =>
-						AntigravityMachineSetupLaunchArguments
-							.DashboardManagedCancelledExitCode
+						AntigravitySetupDialogOutcome.Cancelled
 				};
 			}
 		}
@@ -171,7 +161,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 			staleCandidate = _candidate;
 			_candidate = null;
 			_pendingSafetyRevalidation = null;
-			_completedSourceKind = null;
 			_operationCancellation?.Dispose();
 			_operationCancellation =
 				CancellationTokenSource.CreateLinkedTokenSource(
@@ -219,7 +208,7 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 		{
 			result = await PrepareWithTransientRetryAsync(
 				new AntigravityMachineSetupConsent(
-					isLiveCaptureApproved,
+					isLiveCaptureApproved &&
 					hasConfirmedCommandReadyPrompt),
 				progress,
 				operationCancellation.Token);
@@ -509,7 +498,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 						(State == AntigravitySetupWorkflowState.Approving))
 					{
 						_candidate = null;
-						_completedSourceKind = null;
 						FailureKind =
 							AntigravityMachineSetupFailureKind
 								.PrivateStorageRejected;
@@ -534,7 +522,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 					(State == AntigravitySetupWorkflowState.Approving))
 				{
 					_candidate = null;
-					_completedSourceKind = candidate.SourceKind;
 					State = AntigravitySetupWorkflowState.Completed;
 				}
 			}
@@ -549,7 +536,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 				if (!_isDisposed && (revision == _revision))
 				{
 					_candidate = null;
-					_completedSourceKind = null;
 					State = AntigravitySetupWorkflowState.Cancelled;
 				}
 			}
@@ -568,7 +554,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 				if (!_isDisposed && (revision == _revision))
 				{
 					_candidate = null;
-					_completedSourceKind = null;
 					FailureKind =
 						AntigravityMachineSetupFailureKind.ApprovalRejected;
 					State = AntigravitySetupWorkflowState.Failed;
@@ -625,11 +610,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 			_candidate = null;
 			_pendingSafetyRevalidation = null;
 
-			if (State != AntigravitySetupWorkflowState.Completed)
-			{
-				_completedSourceKind = null;
-			}
-
 			if ((State != AntigravitySetupWorkflowState.Completed) &&
 				(State != AntigravitySetupWorkflowState.Failed))
 			{
@@ -670,7 +650,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 
 			FailureKind = AntigravityMachineSetupFailureKind.None;
 			_pendingSafetyRevalidation = null;
-			_completedSourceKind = null;
 			State = AntigravitySetupWorkflowState.Ready;
 		}
 	}
@@ -723,7 +702,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 			if (!_isDisposed &&
 				(State != AntigravitySetupWorkflowState.Completed))
 			{
-				_completedSourceKind = null;
 				_pendingSafetyRevalidation = null;
 				FailureKind =
 					AntigravityMachineSetupFailureKind.PrivateStorageRejected;
@@ -738,7 +716,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 		{
 			if (!_isDisposed && (revision == _revision))
 			{
-				_completedSourceKind = null;
 				_pendingSafetyRevalidation = null;
 				State = AntigravitySetupWorkflowState.Cancelled;
 			}
@@ -753,7 +730,6 @@ internal sealed class AntigravitySetupWorkflow : IAsyncDisposable
 		{
 			if (!_isDisposed && (revision == _revision))
 			{
-				_completedSourceKind = null;
 				_pendingSafetyRevalidation = null;
 				FailureKind = NormalizeFailure(failureKind);
 				State = AntigravitySetupWorkflowState.Failed;

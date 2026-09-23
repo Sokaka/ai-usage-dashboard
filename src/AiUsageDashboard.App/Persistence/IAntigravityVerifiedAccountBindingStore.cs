@@ -17,7 +17,7 @@ internal sealed record AntigravityVerifiedAccountBinding(
 
 	internal static string ComputeNormalizedEmailSha256(string email)
 	{
-		if (!AntigravityStatusLineCapture.IsValidAsciiEmail(email))
+		if (!AntigravityAccountMetadataValidator.IsValidAsciiEmail(email))
 		{
 			throw new ArgumentException(
 				"Antigravity 帳號電子郵件格式無效。",

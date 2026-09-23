@@ -48,7 +48,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 
 	internal const string AntigravityPreflightMessage =
 		"請先登入 Antigravity。AI Usage 會確認這台電腦上的 Antigravity CLI 與既有連接，再讀取目前帳號的四項用量。" +
-		"新連接只接受支援官方唯讀 /usage 的版本；舊版相容讀取只會沿用這台電腦上已存在且可驗證的連接。" +
+		"AI Usage 只接受 1.1.11 以上、2.0.0 未滿且支援官方唯讀 /usage 的版本。" +
 		"這張卡會跟隨這台電腦目前的 Antigravity 登入；AI Usage 無法確認或固定企業專案範圍。這項操作不會讀取登入憑證。";
 	private static readonly TimeSpan DefaultAntigravityRefreshQuiesceTimeout =
 		TimeSpan.FromSeconds(30);
@@ -551,7 +551,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					lifetimeToken);
 			ReportDiagnostic(
 				"antigravity-account-connection",
-				$"stage=helper-exit;outcome={outcome}");
+				$"stage=setup-complete;outcome={outcome}");
 
 			if (!IsAttachedAndEnabled(viewModel, account))
 			{
@@ -574,31 +574,10 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 							lifetimeToken);
 					}
 					break;
-				case AntigravityAccountSetupOutcome.Completed:
-					if (TryBeginAntigravitySetupCommit(
-							account,
-							reportStatus))
-					{
-						await CompleteDurableAntigravitySetupAsync(
-							account,
-							viewModel,
-							setupAttemptId,
-							AntigravityMachineSetupSourceKind.ReviewedConPty,
-							reportStatus,
-							lifetimeToken);
-					}
-					break;
 				case AntigravityAccountSetupOutcome.Cancelled:
 					shouldRetainSetupIntent = false;
 					reportStatus?.Invoke(
 						$"已取消「{account.AccountName}」的 Antigravity 帳號連接。");
-					break;
-				case AntigravityAccountSetupOutcome.Unavailable:
-					shouldRetainSetupIntent = false;
-					reportNotice?.Invoke(
-						"這份 AI Usage 安裝缺少 Antigravity 連接元件。Claude 與 Codex 不受影響；請重新下載 AI Usage 安裝包並完整解壓後再試。",
-						"無法開啟 Antigravity 連接",
-						MessageBoxImage.Warning);
 					break;
 				case AntigravityAccountSetupOutcome.Failed:
 					shouldRetainSetupIntent = false;
@@ -609,21 +588,11 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					reportStatus?.Invoke(
 						"Antigravity 連接視窗尚未回報完成。AI Usage 已記錄連接進度，稍後會自動確認，重新啟動後也會繼續。");
 					break;
-				case AntigravityAccountSetupOutcome.SecurityBlocked:
-					shouldRetainSetupIntent = false;
-					reportNotice?.Invoke(
-						"Windows 回報 Antigravity 連接元件遭防毒軟體封鎖或移除。請保留防毒通知中的偵測名稱與檔案路徑，交由開發者或 IT 確認後再試。AI Usage 已保留原本顯示的用量。",
-						"Antigravity 連接元件遭封鎖",
-						MessageBoxImage.Warning);
-					break;
-				case AntigravityAccountSetupOutcome.LaunchFailed:
 				default:
-					shouldRetainSetupIntent = false;
-					reportNotice?.Invoke(
-						"Antigravity 連接視窗無法正常開啟或完成。請重新下載 AI Usage 安裝包並完整解壓，確認 Windows 或防毒軟體未封鎖檔案，再試一次。AI Usage 已保留原本顯示的用量。",
-						"Antigravity 連接視窗未完成",
-						MessageBoxImage.Warning);
-					break;
+					throw new ArgumentOutOfRangeException(
+						nameof(outcome),
+						outcome,
+						"未知的 Antigravity 連接結果。");
 			}
 		}
 		catch (TimeoutException)
@@ -2832,6 +2801,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		lock (_activeConnectionCompletionsLock)
 		{
 			return !_isConnectionShutdownStarted &&
+				(_activeAntigravitySetups.Count == 0) &&
 				_activeAntigravitySetups.Add(accountId);
 		}
 	}

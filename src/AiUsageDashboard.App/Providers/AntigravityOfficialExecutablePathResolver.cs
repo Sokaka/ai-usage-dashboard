@@ -10,44 +10,33 @@ internal interface IAntigravityOfficialExecutablePathResolver
 internal sealed class AntigravityOfficialExecutablePathResolver :
 	IAntigravityOfficialExecutablePathResolver
 {
-	private readonly Func<string, string?> _getProcessEnvironmentVariable;
-	private readonly Func<string, EnvironmentVariableTarget, string?>
-		_getEnvironmentVariable;
+	private readonly AntigravityApprovedSourceResolver _approvedSourceResolver;
 
 	internal AntigravityOfficialExecutablePathResolver()
 		: this(
+			JsonAntigravityApprovedSourceStore.CreateDefault(),
 			name => Environment.GetEnvironmentVariable(name),
 			(name, target) => Environment.GetEnvironmentVariable(name, target))
 	{
 	}
 
 	internal AntigravityOfficialExecutablePathResolver(
+		IAntigravityApprovedSourceStore approvedSourceStore,
 		Func<string, string?> getProcessEnvironmentVariable,
 		Func<string, EnvironmentVariableTarget, string?> getEnvironmentVariable)
 	{
-		_getProcessEnvironmentVariable = getProcessEnvironmentVariable ??
-			throw new ArgumentNullException(
-				nameof(getProcessEnvironmentVariable));
-		_getEnvironmentVariable = getEnvironmentVariable ??
-			throw new ArgumentNullException(nameof(getEnvironmentVariable));
+		_approvedSourceResolver = new AntigravityApprovedSourceResolver(
+			approvedSourceStore,
+			getProcessEnvironmentVariable,
+			getEnvironmentVariable);
 	}
 
 	public string? ResolveExecutablePath()
 	{
-		string variableName =
-			AntigravityMachineSetupEnvironmentVariables.OfficialExecutable;
-		string? configuredPath = _getEnvironmentVariable(
-			variableName,
-			EnvironmentVariableTarget.User);
-
-		if (!string.IsNullOrWhiteSpace(configuredPath))
-		{
-			return configuredPath;
-		}
-
-		configuredPath = _getProcessEnvironmentVariable(variableName);
-		return string.IsNullOrWhiteSpace(configuredPath)
-			? null
-			: configuredPath;
+		AntigravityApprovedSource? source = _approvedSourceResolver.Resolve();
+		return source?.SourceKind ==
+			AntigravityMachineSetupSourceKind.OfficialPrint
+				? source.Path
+				: null;
 	}
 }

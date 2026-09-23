@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
@@ -161,6 +162,12 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 
 		internal bool ThrowOnSave { get; init; }
 
+		internal Func<int, bool>? ShouldThrowOnSave { get; init; }
+
+		internal Action<
+			int,
+			AntigravityOfficialPrintSafetyState>? AfterSave { get; init; }
+
 		internal AntigravityOfficialPrintSafetyState? State { get; set; }
 
 		public Task<AntigravityOfficialPrintSafetyState?> LoadAsync(
@@ -178,13 +185,14 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 			cancellationToken.ThrowIfCancellationRequested();
 			SaveCallCount++;
 
-			if (ThrowOnSave)
+			if (ThrowOnSave || (ShouldThrowOnSave?.Invoke(SaveCallCount) == true))
 			{
 				throw new IOException("Synthetic safety-state save failure.");
 			}
 
 			SavedStates.Add(state);
 			State = state;
+			AfterSave?.Invoke(SaveCallCount, state);
 			return Task.CompletedTask;
 		}
 
@@ -394,6 +402,53 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 	}
 
 	[Fact]
+	public void BuildCreationFlags_DoesNotRequestSuspendedStart()
+	{
+		const uint createSuspended = 0x00000004;
+		uint creationFlags =
+			WindowsAntigravityOfficialPrintProcessRunner.BuildCreationFlags();
+
+		Assert.Equal(0u, creationFlags & createSuspended);
+	}
+
+	[Fact]
+	[Trait("Category", "WindowsIntegration")]
+	public async Task ProcessRunner_WithSingleProcessLimit_DeniesDescendantLaunch()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CopyTerminalFixture(
+			temporaryDirectory.Path,
+			"AiUsageDashboard.TerminalFixture.exe");
+		File.WriteAllText(
+			Path.Combine(temporaryDirectory.Path, "spawn-child-and-hang.mode"),
+			string.Empty);
+		string processIdPath = Path.Combine(
+			temporaryDirectory.Path,
+			"runner-pids.txt");
+		WindowsAntigravityOfficialPrintProcessRunner runner = new();
+
+		using AntigravityOfficialPrintProcessResult result =
+			await runner.RunAsync(executablePath, CancellationToken.None);
+
+		Assert.NotEqual(0, result.ExitCode);
+		Assert.True(result.HasStderr);
+		Assert.False(File.Exists(processIdPath));
+
+		await DeleteFixtureImageAfterReleaseAsync(
+			Path.Combine(
+				temporaryDirectory.Path,
+				"AiUsageDashboard.TerminalFixture.dll"),
+			WindowsFixtureTimeout);
+		await DeleteFixtureImageAfterReleaseAsync(
+			executablePath,
+			WindowsFixtureTimeout);
+		await DeleteTemporaryFixtureDirectoryAsync(
+			temporaryDirectory.Path,
+			WindowsFixtureTimeout);
+		temporaryDirectory.MarkAsRemovedExternally();
+	}
+
+	[Fact]
 	[Trait("Category", "WindowsIntegration")]
 	public async Task TryRecoverInterruptedAttemptAsync_WhenNamedJobDoesNotExist_ReturnsTrue()
 	{
@@ -417,11 +472,8 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 			temporaryDirectory.Path,
 			"AiUsageDashboard.TerminalFixture.exe");
 		File.WriteAllText(
-			Path.Combine(temporaryDirectory.Path, "record-start.mode"),
+			Path.Combine(temporaryDirectory.Path, "spawn-child-and-hang.mode"),
 			string.Empty);
-		string startMarkerPath = Path.Combine(
-			temporaryDirectory.Path,
-			"fixture-started.txt");
 		string attemptId = Guid.NewGuid().ToString("N");
 		string jobName =
 			WindowsAntigravityOfficialPrintProcessRunner.CreateAttemptJobName(
@@ -430,12 +482,14 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 			"Injected failure immediately after CreateProcess returned.";
 		bool openedNamedJob = false;
 		uint activeProcessCount = 0;
+		bool preStartCompleted = false;
 		Process? createdProcess = null;
 		WindowsAntigravityOfficialPrintProcessRunner runner = new(
 			commandTimeout: TimeSpan.FromSeconds(5),
 			cleanupTimeout: TimeSpan.FromSeconds(5),
 			afterProcessCreated: processId =>
 			{
+				Assert.True(preStartCompleted);
 				createdProcess = Process.GetProcessById(checked((int)processId));
 				_ = createdProcess.Handle;
 				openedNamedJob = WindowsProcessJob.TryOpenExisting(
@@ -459,27 +513,30 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 						runner.RunAsync(
 							executablePath,
 							attemptId,
-							_ => Task.CompletedTask,
+							_ =>
+							{
+								preStartCompleted = true;
+								return Task.CompletedTask;
+							},
 							CancellationToken.None));
 			await exception.QuiescenceTask.WaitAsync(WindowsFixtureTimeout);
 			bool recovered = await runner.TryRecoverInterruptedAttemptAsync(
 				attemptId,
 				CancellationToken.None);
 
-			Assert.False(exception.WasProcessStarted);
+			Assert.True(exception.WasProcessStarted);
 			Assert.True(exception.WasTerminationConfirmed);
 			InvalidOperationException inner =
 				Assert.IsType<InvalidOperationException>(
 					exception.InnerException);
 			Assert.Equal(injectedFailure, inner.Message);
 			Assert.True(openedNamedJob);
-			Assert.Equal(1u, activeProcessCount);
+			Assert.True(activeProcessCount >= 1);
 			Assert.True(recovered);
 			Assert.NotNull(createdProcess);
 			await createdProcess.WaitForExitAsync().WaitAsync(
 				WindowsFixtureTimeout);
 			Assert.True(createdProcess.HasExited);
-			Assert.False(File.Exists(startMarkerPath));
 		}
 		finally
 		{
@@ -517,7 +574,7 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 
 	[Fact]
 	[Trait("Category", "WindowsIntegration")]
-	public async Task ProcessRunner_WithCallerStartInfo_IsInRequestedJobBeforeResume()
+	public async Task ProcessRunner_WhenInjectedPreStartCallbackFails_DoesNotCreateProcess()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = CopyTerminalFixture(
@@ -536,78 +593,38 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 			$"Local\\AiUsageDashboard.Tests.{Guid.NewGuid():N}";
 		const string injectedFailure =
 			"Injected failure for the caller-supplied process start info.";
-		bool openedNamedJob = false;
-		uint activeProcessCount = 0;
-		Process? createdProcess = null;
+		bool perAttemptCallbackCompleted = false;
+		bool processCreated = false;
 		WindowsAntigravityOfficialPrintProcessRunner runner = new(
 			commandTimeout: TimeSpan.FromSeconds(5),
 			cleanupTimeout: TimeSpan.FromSeconds(5),
-			afterProcessCreated: processId =>
+			beforeStartAsync: _ =>
 			{
-				createdProcess = Process.GetProcessById(checked((int)processId));
-				_ = createdProcess.Handle;
-				openedNamedJob = WindowsProcessJob.TryOpenExisting(
-					jobName,
-					out WindowsProcessJob? observedJob);
-
-				if (openedNamedJob)
-				{
-					using WindowsProcessJob job = observedJob!;
-					activeProcessCount = job.GetActiveProcessCount();
-				}
-
+				Assert.True(perAttemptCallbackCompleted);
 				throw new InvalidOperationException(injectedFailure);
-			});
+			},
+			afterProcessCreated: _ => processCreated = true);
 
-		try
-		{
-			AntigravityOfficialPrintProcessRunException exception =
-				await Assert.ThrowsAsync<
-					AntigravityOfficialPrintProcessRunException>(() =>
-						runner.RunAsync(
-							startInfo,
-							jobName,
-							beforeResumeAsync: null,
-							CancellationToken.None));
-			await exception.QuiescenceTask.WaitAsync(WindowsFixtureTimeout);
-
-			Assert.False(exception.WasProcessStarted);
-			Assert.True(exception.WasTerminationConfirmed);
-			InvalidOperationException inner =
-				Assert.IsType<InvalidOperationException>(
-					exception.InnerException);
-			Assert.Equal(injectedFailure, inner.Message);
-			Assert.True(openedNamedJob);
-			Assert.Equal(1u, activeProcessCount);
-			Assert.NotNull(createdProcess);
-			await createdProcess.WaitForExitAsync().WaitAsync(
-				WindowsFixtureTimeout);
-			Assert.True(createdProcess.HasExited);
-			Assert.False(File.Exists(startMarkerPath));
-			Assert.False(WindowsProcessJob.TryOpenExisting(
-				jobName,
-				out WindowsProcessJob? remainingJob));
-			Assert.Null(remainingJob);
-		}
-		finally
-		{
-			if (createdProcess is not null)
-			{
-				try
-				{
-					if (!createdProcess.HasExited)
+		InvalidOperationException exception =
+			await Assert.ThrowsAsync<InvalidOperationException>(() =>
+				runner.RunAsync(
+					startInfo,
+					jobName,
+					_ =>
 					{
-						createdProcess.Kill(entireProcessTree: true);
-						await createdProcess.WaitForExitAsync().WaitAsync(
-							WindowsFixtureTimeout);
-					}
-				}
-				finally
-				{
-					createdProcess.Dispose();
-				}
-			}
-		}
+						perAttemptCallbackCompleted = true;
+						return Task.CompletedTask;
+					},
+					CancellationToken.None));
+
+		Assert.Equal(injectedFailure, exception.Message);
+		Assert.True(perAttemptCallbackCompleted);
+		Assert.False(processCreated);
+		Assert.False(File.Exists(startMarkerPath));
+		Assert.False(WindowsProcessJob.TryOpenExisting(
+			jobName,
+			out WindowsProcessJob? remainingJob));
+		Assert.Null(remainingJob);
 
 		await DeleteFixtureImageAfterReleaseAsync(
 			Path.Combine(
@@ -625,6 +642,46 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 
 	[Fact]
 	[Trait("Category", "WindowsIntegration")]
+	public async Task ProcessRunner_WhenCreateFailsAfterPreStartCallback_RecoveryConfirmsNoProcessTree()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = Path.Combine(
+			temporaryDirectory.Path,
+			"missing-agy.exe");
+		string attemptId = Guid.NewGuid().ToString("N");
+		string jobName =
+			WindowsAntigravityOfficialPrintProcessRunner.CreateAttemptJobName(
+				attemptId);
+		bool preStartCompleted = false;
+		WindowsAntigravityOfficialPrintProcessRunner runner = new(
+			commandTimeout: TimeSpan.FromSeconds(5),
+			cleanupTimeout: TimeSpan.FromSeconds(5));
+
+		Win32Exception exception = await Assert.ThrowsAsync<Win32Exception>(() =>
+			runner.RunAsync(
+				executablePath,
+				attemptId,
+				_ =>
+				{
+					preStartCompleted = true;
+					return Task.CompletedTask;
+				},
+				CancellationToken.None));
+		bool recovered = await runner.TryRecoverInterruptedAttemptAsync(
+			attemptId,
+			CancellationToken.None);
+
+		Assert.True(preStartCompleted);
+		Assert.NotEqual(0, exception.NativeErrorCode);
+		Assert.True(recovered);
+		Assert.False(WindowsProcessJob.TryOpenExisting(
+			jobName,
+			out WindowsProcessJob? remainingJob));
+		Assert.Null(remainingJob);
+	}
+
+	[Fact]
+	[Trait("Category", "WindowsIntegration")]
 	public async Task ProcessRunner_WhenCanceledAtPerAttemptBoundary_DoesNotExecuteFixture()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
@@ -637,9 +694,9 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 		string startMarkerPath = Path.Combine(
 			temporaryDirectory.Path,
 			"fixture-started.txt");
-		TaskCompletionSource reachedBeforeResume = new(
+		TaskCompletionSource reachedBeforeStart = new(
 			TaskCreationOptions.RunContinuationsAsynchronously);
-		TaskCompletionSource releaseBeforeResume = new(
+		TaskCompletionSource releaseBeforeStart = new(
 			TaskCreationOptions.RunContinuationsAsynchronously);
 		WindowsAntigravityOfficialPrintProcessRunner runner = new(
 			commandTimeout: TimeSpan.FromSeconds(5),
@@ -650,22 +707,18 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 			Guid.NewGuid().ToString("N"),
 			async _ =>
 			{
-				reachedBeforeResume.TrySetResult();
-				await releaseBeforeResume.Task;
+				reachedBeforeStart.TrySetResult();
+				await releaseBeforeStart.Task;
 			},
 			cancellationSource.Token);
-		await reachedBeforeResume.Task.WaitAsync(WindowsFixtureTimeout);
+		await reachedBeforeStart.Task.WaitAsync(WindowsFixtureTimeout);
 
 		cancellationSource.Cancel();
-		releaseBeforeResume.TrySetResult();
-		AntigravityOfficialPrintProcessRunException exception =
-			await Assert.ThrowsAsync<
-				AntigravityOfficialPrintProcessRunException>(() => run);
-		await exception.QuiescenceTask.WaitAsync(WindowsFixtureTimeout);
+		releaseBeforeStart.TrySetResult();
+		OperationCanceledException exception =
+			await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
 
-		Assert.False(exception.WasProcessStarted);
-		Assert.IsAssignableFrom<OperationCanceledException>(
-			exception.InnerException);
+		Assert.Equal(cancellationSource.Token, exception.CancellationToken);
 		Assert.False(File.Exists(startMarkerPath));
 		await DeleteFixtureImageAfterReleaseAsync(
 			Path.Combine(
@@ -970,7 +1023,7 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 	}
 
 	[Fact]
-	public void CreateStartInfo_UsesOnlyFixedPrintUsageArgumentsWithoutShell()
+	public void CreateStartInfo_UsesFixedArgumentsWithoutShellOrCommandLookupPath()
 	{
 		string executablePath = Path.GetFullPath(Path.Combine(
 			Path.GetTempPath(),
@@ -998,9 +1051,12 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 		Assert.Equal(
 			"true",
 			startInfo.Environment["AGY_CLI_DISABLE_AUTO_UPDATE"]);
-		Assert.Equal(
-			Environment.SystemDirectory,
-			startInfo.Environment["PATH"]);
+		Assert.DoesNotContain(
+			startInfo.Environment.Keys,
+			name => string.Equals(
+				name,
+				"PATH",
+				StringComparison.OrdinalIgnoreCase));
 		Assert.DoesNotContain(
 			startInfo.Environment.Keys,
 			name => string.Equals(
@@ -1009,7 +1065,7 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 				StringComparison.OrdinalIgnoreCase));
 
 		IReadOnlyDictionary<string, string> sharedAllowlist =
-			ConPtyAntigravityCliVersionProbe.BuildEnvironmentAllowlist();
+			AntigravityCliProcessEnvironment.BuildAllowlist();
 		Assert.DoesNotContain(
 			sharedAllowlist.Keys,
 			name => string.Equals(
@@ -1663,7 +1719,7 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 	}
 
 	[Fact]
-	public async Task CaptureAsync_WhenCallerCancelsBeforeResume_PropagatesCancellationWithoutLatchAndRetainsLeases()
+	public async Task CaptureAsync_WhenCallerCancelsBeforeProcessCreation_PropagatesCancellationWithoutLatchAndRetainsLeases()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = CreateExecutable(temporaryDirectory);

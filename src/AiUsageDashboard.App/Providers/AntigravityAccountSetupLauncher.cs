@@ -1,21 +1,17 @@
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
+using System.Windows;
+using System.Windows.Threading;
 
+using AiUsageDashboard.Antigravity.Setup;
 using AiUsageDashboard.AntigravitySpike;
 
 namespace AiUsageDashboard.App.Providers;
 
 internal enum AntigravityAccountSetupOutcome
 {
-	Completed,
 	CompletedOfficialPrint,
 	CompletionUnknown,
 	Cancelled,
-	Unavailable,
-	Failed,
-	LaunchFailed,
-	SecurityBlocked
+	Failed
 }
 
 internal interface IAntigravityAccountSetupLauncher
@@ -28,40 +24,40 @@ internal interface IAntigravityAccountSetupLauncher
 internal sealed class AntigravityAccountSetupLauncher :
 	IAntigravityAccountSetupLauncher
 {
-	private const string AppDirectoryName = "app";
-	private const string SetupDirectoryName = "setup";
-	private const string SetupExecutableName =
-		"AiUsageDashboard.Antigravity.Setup.exe";
-	private const int CompletionUnknownProcessResult = int.MinValue;
-	private const int CancelledBeforeLaunchProcessResult = int.MinValue + 1;
-	private const int ErrorVirusInfected = 225;
-	private const int ErrorVirusDeleted = 226;
-	private static readonly TimeSpan ProcessCloseGracePeriod =
-		TimeSpan.FromSeconds(3);
-	private readonly string _appBaseDirectory;
-	private readonly Func<ProcessStartInfo, CancellationToken, Task<int?>>
-		_runProcessAsync;
 	private readonly AntigravitySetupAttemptStateStore? _attemptStateStore;
+	private readonly Action<string, Exception> _reportFailure;
+	private readonly Func<
+		Guid,
+		CancellationToken,
+		Task<AntigravitySetupDialogResult>> _runDialogAsync;
 
 	internal AntigravityAccountSetupLauncher()
+		: this(
+			RunDialogAsync,
+			AntigravitySetupAttemptStateStore.CreateDefault(),
+			(operation, exception) => AppDiagnostics.TryWrite(
+				operation,
+				AppDiagnostics.GetUserFacingFailureReason(exception),
+				exception))
 	{
-		_appBaseDirectory = AppContext.BaseDirectory;
-		_attemptStateStore = AntigravitySetupAttemptStateStore.CreateDefault();
-		_runProcessAsync = (startInfo, cancellationToken) => RunProcessAsync(
-			startInfo,
-			_attemptStateStore,
-			cancellationToken);
 	}
 
 	internal AntigravityAccountSetupLauncher(
-		string appBaseDirectory,
-		Func<ProcessStartInfo, CancellationToken, Task<int?>> runProcessAsync)
+		Func<
+			Guid,
+			CancellationToken,
+			Task<AntigravitySetupDialogResult>> runDialogAsync,
+		AntigravitySetupAttemptStateStore? attemptStateStore = null,
+		Action<string, Exception>? reportFailure = null)
 	{
-		ArgumentException.ThrowIfNullOrWhiteSpace(appBaseDirectory);
-		_appBaseDirectory = appBaseDirectory;
-		_runProcessAsync = runProcessAsync ??
-			throw new ArgumentNullException(nameof(runProcessAsync));
-		_attemptStateStore = null;
+		_runDialogAsync = runDialogAsync ??
+			throw new ArgumentNullException(nameof(runDialogAsync));
+		_attemptStateStore = attemptStateStore;
+		_reportFailure = reportFailure ??
+			((operation, exception) => AppDiagnostics.TryWrite(
+				operation,
+				AppDiagnostics.GetUserFacingFailureReason(exception),
+				exception));
 	}
 
 	public async Task<AntigravityAccountSetupOutcome> RunAsync(
@@ -80,27 +76,20 @@ internal sealed class AntigravityAccountSetupLauncher :
 			return AntigravityAccountSetupOutcome.Cancelled;
 		}
 
-		ProcessStartInfo? startInfo;
-
 		try
 		{
-			if (!TryCreateStartInfo(_appBaseDirectory, out startInfo) ||
-				(startInfo is null))
-			{
-				return AntigravityAccountSetupOutcome.Unavailable;
-			}
-
-			startInfo.Environment[
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedSetupAttemptIdEnvironmentVariable] =
-				setupAttemptId.ToString("N");
-
 			if (_attemptStateStore is not null)
 			{
+				AntigravitySetupProcessIdentity processIdentity =
+					AntigravitySetupProcessIdentity.CaptureCurrent();
 				await _attemptStateStore.BeginLaunchAsync(
 					setupAttemptId,
-					AntigravitySetupProcessIdentity.CaptureCurrent(),
+					processIdentity,
 					DateTimeOffset.UtcNow,
+					CancellationToken.None);
+				await _attemptStateStore.MarkActiveAsync(
+					setupAttemptId,
+					processIdentity,
 					CancellationToken.None);
 			}
 
@@ -109,52 +98,41 @@ internal sealed class AntigravityAccountSetupLauncher :
 				return AntigravityAccountSetupOutcome.Cancelled;
 			}
 
-			int? exitCode = await _runProcessAsync(
-				startInfo,
-				cancellationToken);
-			return exitCode switch
+			AntigravitySetupDialogResult result =
+				await _runDialogAsync(setupAttemptId, cancellationToken);
+
+			if (result.Failure is not null)
 			{
-				CancelledBeforeLaunchProcessResult =>
-					AntigravityAccountSetupOutcome.Cancelled,
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedOfficialPrintSuccessExitCode =>
+				_reportFailure(
+					"antigravity-setup-window",
+					result.Failure);
+			}
+
+			return result.Outcome switch
+			{
+				AntigravitySetupDialogOutcome.CompletedOfficialPrint =>
 					AntigravityAccountSetupOutcome.CompletedOfficialPrint,
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedSuccessExitCode =>
-					AntigravityAccountSetupOutcome.Completed,
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedCancelledExitCode =>
-					AntigravityAccountSetupOutcome.Cancelled,
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedFailedExitCode =>
-					AntigravityAccountSetupOutcome.Failed,
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedCompletionUnknownExitCode =>
+				AntigravitySetupDialogOutcome.CompletionUnknown =>
 					AntigravityAccountSetupOutcome.CompletionUnknown,
-				null => AntigravityAccountSetupOutcome.LaunchFailed,
-				_ => AntigravityAccountSetupOutcome.CompletionUnknown
+				AntigravitySetupDialogOutcome.Cancelled =>
+					AntigravityAccountSetupOutcome.Cancelled,
+				AntigravitySetupDialogOutcome.Failed =>
+					AntigravityAccountSetupOutcome.Failed,
+				_ => throw new ArgumentOutOfRangeException(
+					nameof(result),
+					result.Outcome,
+					"未知的 Antigravity 連接視窗結果。")
 			};
 		}
 		catch (OperationCanceledException) when (
 			cancellationToken.IsCancellationRequested)
 		{
-			return AntigravityAccountSetupOutcome.CompletionUnknown;
+			return AntigravityAccountSetupOutcome.Cancelled;
 		}
-		catch (Win32Exception exception) when (
-			(exception.NativeErrorCode == ErrorVirusInfected) ||
-			(exception.NativeErrorCode == ErrorVirusDeleted))
+		catch (Exception exception)
 		{
-			return AntigravityAccountSetupOutcome.SecurityBlocked;
-		}
-		catch (Exception exception) when (
-			exception is ArgumentException or
-				IOException or
-				UnauthorizedAccessException or
-				NotSupportedException or
-				Win32Exception or
-				InvalidOperationException)
-		{
-			return AntigravityAccountSetupOutcome.LaunchFailed;
+			_reportFailure("antigravity-setup-session", exception);
+			return AntigravityAccountSetupOutcome.Failed;
 		}
 	}
 
@@ -164,229 +142,79 @@ internal sealed class AntigravityAccountSetupLauncher :
 		return RunAsync(Guid.NewGuid(), cancellationToken);
 	}
 
-	internal static bool TryCreateStartInfo(
-		string appBaseDirectory,
-		out ProcessStartInfo? startInfo)
-	{
-		startInfo = null;
-		ArgumentException.ThrowIfNullOrWhiteSpace(appBaseDirectory);
-
-		DirectoryInfo appDirectory = new(
-			Path.GetFullPath(appBaseDirectory));
-		if (!string.Equals(
-				appDirectory.Name,
-				AppDirectoryName,
-				StringComparison.OrdinalIgnoreCase) ||
-			(appDirectory.Parent is not DirectoryInfo packageDirectory) ||
-			!appDirectory.Exists ||
-			((appDirectory.Attributes & FileAttributes.ReparsePoint) != 0))
-		{
-			return false;
-		}
-
-		string sharedExecutablePath = Path.GetFullPath(
-			Path.Combine(appDirectory.FullName, SetupExecutableName));
-		FileInfo sharedExecutable = new(sharedExecutablePath);
-		sharedExecutable.Refresh();
-
-		if (sharedExecutable.Exists)
-		{
-			if ((sharedExecutable.Attributes &
-				(FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0)
-			{
-				return false;
-			}
-
-			startInfo = CreateStartInfo(
-				sharedExecutable.FullName,
-				appDirectory.FullName);
-			return true;
-		}
-
-		if (Directory.Exists(sharedExecutablePath))
-		{
-			return false;
-		}
-
-		string setupDirectoryPath = Path.GetFullPath(
-			Path.Combine(packageDirectory.FullName, SetupDirectoryName));
-		DirectoryInfo setupDirectory = new(setupDirectoryPath);
-		string executablePath = Path.GetFullPath(
-			Path.Combine(setupDirectory.FullName, SetupExecutableName));
-
-		if (!Directory.Exists(setupDirectory.FullName) ||
-			!File.Exists(executablePath))
-		{
-			return false;
-		}
-
-		FileAttributes setupDirectoryAttributes =
-			File.GetAttributes(setupDirectory.FullName);
-		FileAttributes executableAttributes = File.GetAttributes(executablePath);
-		if (((setupDirectoryAttributes & FileAttributes.ReparsePoint) != 0) ||
-			((executableAttributes &
-				(FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0))
-		{
-			return false;
-		}
-
-		startInfo = CreateStartInfo(
-			executablePath,
-			setupDirectory.FullName);
-		return true;
-	}
-
-	private static ProcessStartInfo CreateStartInfo(
-		string executablePath,
-		string workingDirectory)
-	{
-		ProcessStartInfo startInfo = new(executablePath)
-		{
-			UseShellExecute = false,
-			WorkingDirectory = workingDirectory
-		};
-		startInfo.ArgumentList.Add(
-			AntigravityMachineSetupLaunchArguments.DashboardManaged);
-		startInfo.Environment[
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedResultProtocolEnvironmentVariable] =
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedSourceKindExitProtocol;
-		return startInfo;
-	}
-
-	private static async Task<int?> RunProcessAsync(
-		ProcessStartInfo startInfo,
-		AntigravitySetupAttemptStateStore attemptStateStore,
+	private static Task<AntigravitySetupDialogResult> RunDialogAsync(
+		Guid setupAttemptId,
 		CancellationToken cancellationToken)
 	{
-		if (cancellationToken.IsCancellationRequested)
+		System.Windows.Application application =
+			System.Windows.Application.Current ??
+			throw new InvalidOperationException(
+				"AI Usage WPF application is unavailable.");
+		Dispatcher dispatcher = application.Dispatcher;
+
+		if (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
 		{
-			return CancelledBeforeLaunchProcessResult;
+			throw new InvalidOperationException(
+				"AI Usage is shutting down and cannot open account setup.");
 		}
 
-		using Process? process = Process.Start(startInfo);
-		if (process is null)
+		if (dispatcher.CheckAccess())
 		{
-			return null;
-		}
-
-		string? rawAttemptId = startInfo.Environment[
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedSetupAttemptIdEnvironmentVariable];
-		if (!Guid.TryParseExact(rawAttemptId, "N", out Guid setupAttemptId) ||
-			(setupAttemptId == Guid.Empty))
-		{
-			return CompletionUnknownProcessResult;
-		}
-
-		bool wasRegistered = await TryRegisterActiveProcessAsync(
-			() => attemptStateStore.MarkActiveAsync(
+			return RunDialogOnDispatcherAsync(
+				application,
 				setupAttemptId,
-				new AntigravitySetupProcessIdentity(
-					process.Id,
-					process.StartTime.ToUniversalTime().Ticks),
-				CancellationToken.None));
-		if (!wasRegistered)
-		{
-			// The helper is already running. Its own startup path also registers
-			// the attempt, so preserve the durable intent and let restart recovery
-			// observe either that state or the later approval receipt.
-			return CompletionUnknownProcessResult;
-		}
-
-		try
-		{
-			bool hasConfirmedExit = await WaitForExitOrTerminateAsync(
-				process.WaitForExitAsync,
-				() => process.HasExited,
-				() => process.CloseMainWindow(),
-				ProcessCloseGracePeriod,
 				cancellationToken);
-			return hasConfirmedExit
-				? process.ExitCode
-				: CompletionUnknownProcessResult;
 		}
-		catch (Exception exception) when (
-			IsExpectedProcessCleanupException(exception))
-		{
-			return CompletionUnknownProcessResult;
-		}
+
+		return dispatcher.InvokeAsync(
+			() => RunDialogOnDispatcherAsync(
+				application,
+				setupAttemptId,
+				cancellationToken),
+			DispatcherPriority.Normal,
+			cancellationToken).Task.Unwrap();
 	}
 
-	internal static async Task<bool> TryRegisterActiveProcessAsync(
-		Func<Task> registerAsync)
+	private static async Task<AntigravitySetupDialogResult>
+		RunDialogOnDispatcherAsync(
+			System.Windows.Application application,
+			Guid setupAttemptId,
+			CancellationToken cancellationToken)
 	{
-		ArgumentNullException.ThrowIfNull(registerAsync);
+		cancellationToken.ThrowIfCancellationRequested();
+		SetupWindow window = new(
+			MachineSetupServiceFactory.Create(),
+			setupAttemptId);
+		Window? owner = application.MainWindow;
 
+		if ((owner is not null) && owner.IsLoaded && owner.IsVisible)
+		{
+			window.Owner = owner;
+		}
+
+		window.Show();
+		using CancellationTokenRegistration cancellationRegistration =
+			cancellationToken.Register(
+				static state => RequestWindowClose((SetupWindow)state!),
+				window);
+		return await window.Completion;
+	}
+
+	private static void RequestWindowClose(SetupWindow window)
+	{
 		try
 		{
-			await registerAsync();
-			return true;
+			_ = window.Dispatcher.BeginInvoke(
+				window.Close,
+				DispatcherPriority.Send);
 		}
-		catch (Exception exception) when (
-			exception is ArgumentException or
-				IOException or
-				UnauthorizedAccessException or
-				NotSupportedException or
-				Win32Exception or
-				InvalidOperationException)
+		catch (InvalidOperationException)
 		{
-			return false;
+			// Dispatcher 關閉時會一併關閉 in-process 視窗。
 		}
-	}
-
-	internal static async Task<bool> WaitForExitOrTerminateAsync(
-		Func<CancellationToken, Task> waitForExitAsync,
-		Func<bool> hasExited,
-		Action requestCooperativeClose,
-		TimeSpan terminationTimeout,
-		CancellationToken cancellationToken)
-	{
-		ArgumentNullException.ThrowIfNull(waitForExitAsync);
-		ArgumentNullException.ThrowIfNull(hasExited);
-		ArgumentNullException.ThrowIfNull(requestCooperativeClose);
-
-		if (terminationTimeout <= TimeSpan.Zero)
+		catch (OperationCanceledException)
 		{
-			throw new ArgumentOutOfRangeException(nameof(terminationTimeout));
+			// Dispatcher 關閉時會一併關閉 in-process 視窗。
 		}
-
-		try
-		{
-			await waitForExitAsync(cancellationToken);
-			return true;
-		}
-		catch (OperationCanceledException) when (
-			cancellationToken.IsCancellationRequested)
-		{
-			try
-			{
-				if (hasExited())
-				{
-					return true;
-				}
-
-				requestCooperativeClose();
-				await waitForExitAsync(CancellationToken.None)
-					.WaitAsync(terminationTimeout);
-				return true;
-			}
-			catch (Exception exception) when (
-				IsExpectedProcessCleanupException(exception))
-			{
-				// Leave an unresponsive helper alive so it can finish an external
-				// commit and fsync its receipt. The durable intent remains pending.
-				return false;
-			}
-		}
-	}
-
-	private static bool IsExpectedProcessCleanupException(Exception exception)
-	{
-		return exception is TimeoutException or
-			InvalidOperationException or
-			NotSupportedException or
-			Win32Exception;
 	}
 }

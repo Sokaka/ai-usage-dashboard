@@ -1355,7 +1355,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		bool allowStaleSnapshot = false,
 		string? planTier = null)
 	{
-		_ = AntigravityStatusLineCapture.TryNormalizePlanTier(
+		_ = AntigravityAccountMetadataValidator.TryNormalizePlanTier(
 			planTier,
 			out string? normalizedPlanTier);
 		if (string.IsNullOrWhiteSpace(email) ||
@@ -1394,7 +1394,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		string email,
 		string? planTier = null)
 	{
-		_ = AntigravityStatusLineCapture.TryNormalizePlanTier(
+		_ = AntigravityAccountMetadataValidator.TryNormalizePlanTier(
 			planTier,
 			out string? normalizedPlanTier);
 		if (!IsAntigravity ||
@@ -2760,7 +2760,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				snapshot.ProviderAccountIdentity,
 				AntigravityOfficialPrintUsageClient.LocalSessionIdentity,
 				StringComparison.OrdinalIgnoreCase) &&
-			AntigravityStatusLineCapture.TryNormalizePlanTier(
+			AntigravityAccountMetadataValidator.TryNormalizePlanTier(
 				snapshot.PlanTier,
 				out string? normalizedPlanTier) &&
 			(normalizedPlanTier is not null);

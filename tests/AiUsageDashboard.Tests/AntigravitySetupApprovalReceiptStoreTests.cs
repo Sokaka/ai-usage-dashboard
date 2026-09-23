@@ -5,6 +5,51 @@ namespace AiUsageDashboard.Tests;
 public sealed class AntigravitySetupApprovalReceiptStoreTests
 {
 	[Fact]
+	public async Task ReadAsync_WithPersistedOfficialWireValue_LoadsOfficialPrint()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string receiptDirectory = Path.Combine(
+			temporaryDirectory.Path,
+			"receipts");
+		Directory.CreateDirectory(receiptDirectory);
+		Guid attemptId = Guid.NewGuid();
+		string fingerprint = new('A', 64);
+		string document =
+			$"{{\"schemaVersion\":1,\"attemptId\":\"{attemptId}\",\"sourceKind\":1,\"targetIdentityFingerprint\":\"{fingerprint}\"}}";
+		await File.WriteAllTextAsync(
+			Path.Combine(receiptDirectory, $"{attemptId:N}.json"),
+			document);
+		AntigravitySetupApprovalReceiptStore store = new(receiptDirectory);
+
+		AntigravitySetupApprovalReceipt receipt = Assert.IsType<
+			AntigravitySetupApprovalReceipt>(await store.ReadAsync(attemptId));
+		Assert.Equal(
+			AntigravityMachineSetupSourceKind.OfficialPrint,
+			receipt.SourceKind);
+		Assert.Equal(1, (int)receipt.SourceKind);
+	}
+
+	[Fact]
+	public async Task ReadAsync_WithPersistedLegacyWireValue_FailsClosed()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string receiptDirectory = Path.Combine(
+			temporaryDirectory.Path,
+			"receipts");
+		Directory.CreateDirectory(receiptDirectory);
+		Guid attemptId = Guid.NewGuid();
+		string document =
+			$"{{\"schemaVersion\":1,\"attemptId\":\"{attemptId}\",\"sourceKind\":0,\"targetIdentityFingerprint\":\"{new string('A', 64)}\"}}";
+		await File.WriteAllTextAsync(
+			Path.Combine(receiptDirectory, $"{attemptId:N}.json"),
+			document);
+		AntigravitySetupApprovalReceiptStore store = new(receiptDirectory);
+
+		await Assert.ThrowsAsync<InvalidDataException>(
+			() => store.ReadAsync(attemptId));
+	}
+
+	[Fact]
 	public async Task RoundTrip_IsIdempotentAndNormalizesIdentityCase()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
@@ -14,18 +59,18 @@ public sealed class AntigravitySetupApprovalReceiptStoreTests
 
 		await store.WriteAsync(
 			attemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			"Person@Example.COM");
 		await store.WriteAsync(
 			attemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			"person@example.com");
 
 		AntigravitySetupApprovalReceipt receipt = Assert.IsType<
 			AntigravitySetupApprovalReceipt>(await store.ReadAsync(attemptId));
 		Assert.Equal(attemptId, receipt.AttemptId);
 		Assert.Equal(
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			receipt.SourceKind);
 		Assert.Equal(
 			AntigravitySetupApprovalReceiptStore
@@ -47,7 +92,7 @@ public sealed class AntigravitySetupApprovalReceiptStoreTests
 
 		await Assert.ThrowsAsync<InvalidDataException>(() => store.WriteAsync(
 			attemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			"other@example.com"));
 
 		AntigravitySetupApprovalReceipt receipt = Assert.IsType<
@@ -120,7 +165,7 @@ public sealed class AntigravitySetupApprovalReceiptStoreTests
 			"agy.local-session.v1");
 		await store.WriteAsync(
 			orphanedAttemptId,
-			AntigravityMachineSetupSourceKind.ReviewedConPty,
+			AntigravityMachineSetupSourceKind.OfficialPrint,
 			"orphan@example.com");
 		string unknownFilePath = Path.Combine(
 			receiptDirectory,

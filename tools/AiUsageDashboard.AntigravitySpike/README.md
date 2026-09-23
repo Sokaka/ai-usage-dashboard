@@ -1,10 +1,10 @@
 # AGY 串接維護工具
 
-> 本文件供 AGY 串接的維護與研究使用，不是一般使用者指南。一般操作請參閱[使用說明](../../使用說明.md)。
+> 本文件供 AGY 串接的維護與研究使用，不是一般使用者指南。這個 command-line tool、ConPTY 程式碼及其私有資料不會放入 production 套件。一般操作請參閱[使用說明](../../使用說明.md)。
 
 ## 簡介
 
-這個命令列工具用來維護 AGY 串接。一般連接由 AI Usage 內附的 Setup 處理；本工具主要供維護者驗證 AGY 官方 `/usage` JSON 輸出，也能重新校準舊版 ConPTY 終端畫面讀取方式。
+這個命令列工具用來研究與驗證 AGY 串接。一般連接由 AI Usage App process 內的設定畫面處理；production 只使用官方 `/usage` JSON 輸出。本工具也保留已退役 ConPTY 終端畫面讀取方式的校準命令，僅供研究與回歸比較。
 
 ## 環境需求
 
@@ -17,14 +17,14 @@
 
 一般使用者不需要執行本文件的命令。若要驗證目前正式使用的方式，請看[官方 `/usage` JSON 輸出流程](#官方-usage-json-輸出流程print-mode)。
 
-更新舊版相容資料時，下列 R1 v3 草稿與核准流程只接受 120 欄 × 50 列，請照此尺寸執行：
+研究已退役的 ConPTY 路徑時，下列 R1 v3 草稿與核准流程只接受 120 欄 × 50 列，請照此尺寸執行：
 
 1. [建立私有校準資料](#擷取私有-r1-校準資料)：使用已完成 prompt 校準的 120x50 私有 R0 profile，擷取至少兩筆額度或重置狀態不同的資料。
 2. [人工審查與核准](#離線-r1-人工審查與核准)：產生待審草稿（draft），逐欄核對畫面，核准內容雜湊值（fingerprint），再產生畫面欄位規則（layout）與 R1 私有設定檔（profile）。
 3. [執行 R1 v3 實機驗證](#r1-v3-實機驗證)：另行取得同意後，確認已核准的私有設定檔能安全讀取完整頁面。
 4. [匯出套件允許資料](#匯出已審查的套件允許資料manifest)：擷取驗證通過後，匯出候選檔，再檢查內容並執行隱私測試。
 
-若 AGY 執行檔已更換，但路徑、檔案版本（file version）、產品版本（product version）與簽章仍與原私有設定檔相同，請先[更新已核准的執行檔雜湊值](#更新已核准的執行檔雜湊值)，再從第 1 步開始。只要執行檔、畫面配置或設定檔內容雜湊值不同，就必須重新校準，不可沿用另一台電腦或另一版的結果。
+若研究用 AGY 執行檔已更換，但路徑、檔案版本（file version）、產品版本（product version）與簽章仍與原私有設定檔相同，可先[更新已核准的執行檔雜湊值](#更新已核准的執行檔雜湊值)，再從第 1 步開始。只要執行檔、畫面配置或設定檔內容雜湊值不同，就必須重新校準，不可沿用另一台電腦或另一版的結果；這不會讓該路徑成為 production 支援方式。
 
 ## 注意事項
 
@@ -33,20 +33,16 @@
 - 任一來源、簽章、版本、輸出格式或清理結果無法確認時，工具會停止並拒絕採用結果。
 - 下文保留命令、欄位與程式碼中的英文識別名稱。`fingerprint` 是用來確認內容是否相同的雜湊值；程式欄位中的 `gate` 表示該項檢查結果。
 
-R0／R1 是舊版 ConPTY 終端讀取方式使用的畫面驗證格式，不是 AI Usage 的產品版本。R0 比對整個畫面；R1 依人工審查過的欄位結構驗證畫面內容。
-
-新連接使用目前 Windows 使用者的 `AI_USAGE_DASHBOARD_ANTIGRAVITY_EXECUTABLE` 設定，指向已核准的 AGY 執行檔。只有既有 1.1.7／1.1.9 連接，才使用 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE` 指向已核准的 R1 私有設定檔。
-
-兩項設定都優先讀取目前使用者的值；只有該值不存在時，才讀取目前程序的環境變數。
+R0／R1 是已退役 ConPTY 終端讀取方式使用的畫面驗證格式，不是 AI Usage 的產品版本。R0 比對整個畫面；R1 依人工審查過的欄位結構驗證畫面內容。Production 不讀取 `AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE`。
 
 ## 目前支援範圍
 
-- AI Usage 預設使用 AGY 官方 `/usage` JSON 輸出。程式內仍把這個讀取元件標成 `official-experimental`。只有完全沒有設定官方執行檔路徑時，程式才可能使用既有的舊版 ConPTY 私有設定檔。只要官方路徑已有值，即使路徑無效、執行檔來源檢查失敗或用量擷取失敗，程式都會停止，不會自動改走舊版方式。
-- 封裝內的 `AiUsageDashboard.Antigravity.Setup` 會先找出符合官方 `/usage` 執行檔檢查規則的版本。核准後只保存執行檔路徑。只有 SHA-256 完全符合內建紀錄的 1.1.7／1.1.9 執行檔，才會使用已審查的套件允許資料（manifest）、私有 key／profile 與 ConPTY 校準流程。
-- 官方 `/usage` 輸出不含 email。正式用量讀取元件只回傳固定識別 `agy.local-session.v1` 與四個統一格式的額度區間，用來代表這台電腦目前的 AGY 登入來源。另一個正式帳號顯示工具只從官方 status-line JSON 取得 email 與選填欄位 `plan_tier`，供介面顯示。兩種資料都不會改變帳號綁定。
+- AI Usage production 只使用 AGY 官方 `/usage` JSON 輸出，程式內標成 `official-experimental`。路徑無效、執行檔來源檢查失敗或用量擷取失敗時會停止，不會改走 ConPTY、私有 profile 或 status line。
+- App process 內的 `AiUsageDashboard.Antigravity.Setup` UI 會先找出符合官方 `/usage` 執行檔檢查規則的版本。核准後把 official source 與執行檔路徑保存於 `%LOCALAPPDATA%\AiUsageDashboard\antigravity\approved-source-v1.json`。正式套件沒有獨立 Setup EXE 或 AGY Capture EXE。
+- 官方 `/usage` 輸出不含 email。正式用量讀取元件只回傳固定識別 `agy.local-session.v1` 與四個統一格式的額度區間，用來代表這台電腦目前的 AGY 登入來源。Production 不安裝或讀取 status line，也不要求 `/statusline off`；自訂 status line 不會被覆寫。
 - 官方命令的標準輸出位元組只在記憶體中由嚴格解析器處理，完成後立即清除。原始 stream-json、標準錯誤輸出、執行檔本機路徑、例外內容及每次執行產生的值，都不會寫入介面、快取、診斷紀錄、Git 專案或套件。
-- 下文的 R0／R1 畫面擷取、套件允許資料（manifest）、命令提示畫面（prompt）、設定檔內容雜湊值及私有 HMAC 流程，全都只供舊版 ConPTY 維護。R0 要求整個畫面的雜湊值完全相同，仍不得用於正式可用判定（`NO-GO`）。R1 依獨立的欄位規格判讀畫面，只為既有完全相符的雜湊值保留相容性。
-- 正式版使用的舊版讀取元件只內嵌已審查執行檔的不含路徑資訊、prompt 結構雜湊、用量欄位格式規則（grammar／schema）及整頁雜湊值（page fingerprint）。每個 profile、同目錄 `.key` 與 screen bundle 都必須放在 Git 已忽略的 `work/` 或其他未追蹤位置；HMAC key 的原始位元組絕不可進入 profile JSON、報告、commit 或共用檔案。
+- 下文的 R0／R1 畫面擷取、套件允許資料（manifest）、命令提示畫面（prompt）、設定檔內容雜湊值及私有 HMAC 流程，全都只供已退役 ConPTY 研究。R0 要求整個畫面的雜湊值完全相同，仍不得用於正式可用判定（`NO-GO`）；R1 也不會被 production 載入。
+- 每個研究用 profile、同目錄 `.key` 與 screen bundle 都必須放在 Git 已忽略的 `work/` 或其他未追蹤位置；HMAC key 的原始位元組絕不可進入 profile JSON、報告、commit、共用檔案或正式套件。
 - 自動測試只使用程式產生的 stream-json／終端資料、假元件（fake）及專案內的 console 測試程式（fixture）。測試通過只能證明程式符合已固定的輸入輸出規則，不能取代在非開發用 Windows 上實際啟動 AGY 的基本測試。
 
 [AGY 1.1.11 的官方發行說明](https://antigravity.google/changelog)表示，官方 `/usage` 輸出命令不會建立 conversation／agent turn，也不會消耗 quota。這只是 AGY 對該命令的行為說明，不代表 Google 對 AI Usage 背書。正式讀取元件仍會檢查 turn 與 token 必須全為零；任一值不符就拒絕結果。
@@ -55,7 +51,7 @@ R0／R1 是舊版 ConPTY 終端讀取方式使用的畫面驗證格式，不是 
 
 ## 官方 `/usage` JSON 輸出流程（print mode）
 
-接受的版本號必須是三段整數且寫法固定，範圍為 `1.1.11 <= version < 2.0.0`。不接受 `v` 前綴、版本附加資訊、預發行標記、前導零、缺少段數或 2.x。Setup 與每次擷取都會重新執行相同的來源與檔案身分檢查：
+接受的版本號必須是三段整數且寫法固定，範圍為 `1.1.11 <= version < 2.0.0`。不接受 `v` 前綴、版本附加資訊、預發行標記、前導零、缺少段數或 2.x。App 內設定與每次擷取都會重新執行相同的來源與檔案身分檢查：
 
 - 執行檔必須使用完整絕對路徑，位於本機允許的目錄，而且是一般 `.exe`；執行檔與所有父路徑都不能是 reparse point；
 - WinVerifyTrust 驗證必須成功，簽署者名稱（signer subject）與憑證指紋（thumbprint）必須完全符合程式內固定的 Google LLC 簽署者；
@@ -68,7 +64,7 @@ R0／R1 是舊版 ConPTY 終端讀取方式使用的畫面驗證格式，不是 
 agy -p /usage --output-format stream-json
 ```
 
-程序啟動後立即關閉標準輸入（stdin）。環境變數只保留明確允許的少數項目（allowlist），並停用 CLI 自動更新。標準輸出（stdout）上限為 1 MiB、標準錯誤輸出（stderr）上限為 64 KiB，最長執行 60 秒。結束碼不是零、stderr 有任何內容、輸出超過上限而被截斷、逾時或程序清理失敗時，一律停止並拒絕結果。
+程序啟動後立即關閉標準輸入（stdin）。環境變數先清空，再只保留明確允許的 Windows 使用者／資料／暫存路徑，以及 `NO_COLOR=1`、`AGY_CLI_DISABLE_AUTO_UPDATE=true`；不繼承 `PATH`、`COMSPEC` 或 API keys。Version probe 與 `/usage` 都放入 kill-on-close Windows Job Object，active-process limit 固定為 `1`，不允許再建立 child process。標準輸出（stdout）上限為 1 MiB、標準錯誤輸出（stderr）上限為 64 KiB，最長執行 60 秒。結束碼不是零、stderr 有任何內容、輸出超過上限而被截斷、逾時或程序清理失敗時，一律停止並拒絕結果。
 
 輸出解析器只接受預期的 command event 與 final result event。command event 必須是有明確型別的 `usage` 資料，而且兩個 event 的用量內容必須完全一致。
 
@@ -79,6 +75,10 @@ command event 必須剛好包含兩個已知群組：Gemini Models、Claude and 
 出現未知、額外或重複的群組／額度區間、未知欄位、`fraction` 不在 0–1、`reset time` 無效，或 command 與 result 內容不同時，都會拒絕結果。解析器只產生四個 `AntigravityProductionUsageWindow`；結果物件釋放時會清除原始位元組，不會保存。
 
 官方 `/usage` 命令每次都使用獨立、執行時間很短的程序，不會附加或控制既有 AGY 工作階段（session）。因此建立新連接與定時更新用量（polling）時，不需要關閉已開啟的 AGY 視窗。
+
+## 已退役 ConPTY 研究區
+
+以下所有章節只描述開發用研究工具。它們不會被 production App 呼叫、不會放入正式 ZIP，也不能作為舊版 AGY 的相容承諾。執行任何 live capture 前仍須取得測試帳號持有人的明確同意；研究結果不得取代 official print 的來源、版本、零 turn／token 與程序隔離檢查。
 
 ## 為不同終端尺寸建立私有設定檔
 
@@ -170,7 +170,7 @@ dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
 
 draft、bundle、輸出與 key 必須留在同一個私有目錄，而且目錄不能是 reparse point。工具會以不覆寫既有檔案的方式建立新檔；內容完全相同時，才把既有檔視為成功。命令完成時會在 stdout 輸出 JSON 檔案資訊；人工審查時必須記下其中的 `DraftFingerprint`。
 
-Git 專案不包含原始私有用量畫面 bundle，也不包含機器產生的審查草稿。正式版本只包含已匯出、不含本機路徑且經人工審查的相容條件與畫面欄位規則（layout）。不得自行編造標題文字、區段或額度區間 ID、帳號標記或欄位格式規則。
+Git 專案不包含原始私有用量畫面 bundle，也不包含機器產生的審查草稿。歷史研究流程可產生不含本機路徑、且經人工審查的相容條件與畫面欄位規則（layout），但目前 production 不載入或封裝這些資料。不得自行編造標題文字、區段或額度區間 ID、帳號標記或欄位格式規則。
 
 審查新的 AGY build 時，只能從先前擷取的私有終端畫面 bundle 與人工審查過的 v3 區段規格（section spec）開始。私有 bundle 與任何狀態為 `NeedsReview` 的機器草稿，都必須放在 Git 已忽略的私有 `work/` 儲存區；其中可能含有帳號或 session 資料，絕不可 commit 或作為審查附件分享。
 
@@ -259,9 +259,9 @@ dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
 
 R1 v1 只接受經審查的單一頁面。出現頁面頂端、中段或底端標記（top／middle／bottom marker）時會停止，執行器也不會傳送換頁鍵或第二次輸入；`IdentityGate`、`ModelInvocationGate` 與 `IsR1Go` 的限制和 v3 section 相同。
 
-## 匯出已審查的套件允許資料（manifest）
+## 歷史研究：匯出已審查的允許資料（manifest）
 
-將已完成審查的新 AGY build 加入封裝內的 Setup 精靈，是維護者專用操作。開始前，必須備妥完整的 R1 私有設定檔，並確認前述人工審查與擷取驗證都已通過：
+這是已退役封裝流程留下的維護命令，只供重現與研究舊規則，產出不得加入 production Setup 或正式套件。開始前，必須備妥完整的 R1 私有設定檔，並確認前述人工審查與擷取驗證都已通過：
 
 ```powershell
 dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
@@ -282,11 +282,11 @@ dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
 
 輸出只包含不帶路徑的執行檔版本與簽章等資訊（executable metadata），以及 prompt／layout 雜湊值與欄位格式規則。此操作不會修改來源 profile，也不會寫入終端輸入。
 
-先人工檢查匯出的 JSON，再執行套件允許資料與 Git 專案隱私測試。全部通過後，才能取代 `src/AiUsageDashboard.Antigravity/Resources` 內嵌的 manifest。
+先人工檢查匯出的 JSON，再執行允許資料與 Git 專案隱私測試。即使全部通過，也只能作為研究結果；不得取代 production 資源或改變 official-only 路徑。
 
 私有 profile、key、screen bundle、機器草稿、設定檔內容雜湊值、原始終端內容、帳號身分、實際額度、本機路徑或擷取條件雜湊值，絕不可加入 Git 專案或套件。尚未完成整套審查的 build 一律拒絕使用。
 
-若封裝內的 Setup 改用不同的工作目錄規則，即使執行檔與用量 layout 未變，AGY 等待命令時的 prompt 結構仍可能不同。人工獨立確認官方 AGY prompt 後，維護者可在完全相同的 Setup 環境與 `%USERPROFILE%` 工作目錄規則下，執行不寫入任何終端輸入的校準：
+若研究工具改用不同的工作目錄規則，即使執行檔與用量 layout 未變，AGY 等待命令時的 prompt 結構仍可能不同。人工獨立確認官方 AGY prompt 後，維護者可在完全相同的研究環境與 `%USERPROFILE%` 工作目錄規則下，執行不寫入任何終端輸入的校準：
 
 ```powershell
 dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
@@ -307,7 +307,7 @@ dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
   --i-understand-reviewed-prompt-reanchor
 ```
 
-`reanchor` 命令需要既有且格式完全正確的可攜式 manifest。它只會變更已選定的 prompt 結構雜湊值，以及由此計算出的整份相容條件雜湊值，並建立新檔案。只執行 reanchor 不足以證明安全；還必須重新執行封裝內的 Setup、確認正式 `/usage` 預覽通過、人工核對帳號身分與額度，再重跑所有測試與套件隱私檢查。
+`reanchor` 命令需要既有且格式完全正確的可攜式 manifest。它只會變更已選定的 prompt 結構雜湊值，以及由此計算出的整份相容條件雜湊值，並建立新檔案。只執行 reanchor 不足以證明安全，也不會讓 ConPTY 成為正式支援；研究者仍須重跑對應的人工核對、測試與隱私檢查。
 
 ## 舊版 R0 實際診斷：需同意且只供人工檢查
 
@@ -402,7 +402,7 @@ dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
 - 執行前後都會用檔案大小、時間等資訊及 SHA-256，記錄目前使用者 Antigravity CLI 必要設定檔的快照。無法完成檢查、路徑被替換、出現 reparse point 或檔案內容有任何變動時，設定檔檢查就會失敗。credential 與 token 檔絕不能列入這種前後比對。
 - 實機程序由 Windows Job Object 控制。清理時會明確終止工作階段、等待程序結束並釋放資源；任何清理失敗都會使安全檢查失敗。
 - `calibrate-prompt` 與 `observe-prompt` 不會寫入輸入。每個 R0／R1 擷取命令，包括私有 R1 校準擷取，都只能寫入一次 `/usage\r`。寫入前一刻還必須確認沒有另一個符合條件的程序，並再次比對 prompt 的畫面結構與完整畫面雜湊值。這些命令都不會傳送模型提示。
-- `IdentityGate` 與 `ModelInvocationGate` 刻意維持 `NotVerified`；`IsR0Go` 與 `IsR1Go` 一律為 `false`。舊版正式讀取元件不會因帳號身分或模型呼叫證據仍未驗證，就略過自己的安全檢查。
+- `IdentityGate` 與 `ModelInvocationGate` 刻意維持 `NotVerified`；`IsR0Go` 與 `IsR1Go` 一律為 `false`。研究 runner 不會因帳號身分或模型呼叫證據仍未驗證，就略過自己的安全檢查。
 
   它仍要求擷取結果未超過界線、所有已實作的安全檢查通過、執行檔來源可信、只寫入一次、完整頁面可見、四個額度區間的內容與順序正確，而且同一個已驗證頁面中只能有一個格式統一的帳號身分欄位。這個欄位只供顯示帳號，不代表任何未驗證項目已通過。
 
@@ -417,4 +417,4 @@ dotnet run --project .\tools\AiUsageDashboard.AntigravitySpike -- `
 - 比較確定會觸發模型的測試案例（positive control）與 `/usage` 不應觸發模型的案例（negative case），作為模型是否被呼叫的證據。
 - 依經審查的 R1 spec 產生欄位規則、解析完整畫面、計算欄位規格與整頁雜湊值，再以不留下半成品的方式輸出已遮蔽實際值的 layout。
 
-舊版正式讀取元件只能使用這台電腦上明確核准的 R1 私有設定檔。Profile、執行檔、prompt、已審查的 layout、設定檔內容雜湊值、執行檔來源、完整頁面規則或額度欄位結構，只要有一項不符就會停止。完成重新校準與人工審查前，不得恢復舊版讀取。官方 `/usage` 讀取元件完全不會讀取這份私有 profile；只要官方執行檔路徑已有值，即使官方方式失敗，也不會改走舊版 ConPTY 路徑。
+這些離線元件只接受這台電腦上明確核准的 R1 私有設定檔。Profile、執行檔、prompt、已審查的 layout、設定檔內容雜湊值、執行檔來源、完整頁面規則或額度欄位結構，只要有一項不符就會停止。它們不會編入 production；官方 `/usage` 失敗時，App 也不會改走這條研究路徑。

@@ -72,11 +72,9 @@ internal sealed class AntigravityUsageProvider :
 		_automaticRepairStates = new();
 	private readonly object _automaticRepairSync = new();
 	private readonly SemaphoreSlim _captureGate = new(1, 1);
-	private readonly IAntigravityProductionUsageClient _client;
-	private readonly IAntigravityOfficialPrintUsageClient? _officialClient;
-	private readonly IAntigravityOfficialExecutablePathResolver?
+	private readonly IAntigravityOfficialPrintUsageClient _officialClient;
+	private readonly IAntigravityOfficialExecutablePathResolver
 		_officialExecutablePathResolver;
-	private readonly IAntigravityProfilePathResolver _profilePathResolver;
 	private readonly object _revalidationSync = new();
 	private readonly IAntigravityMachineSetupService? _setupService;
 	private readonly TimeProvider _timeProvider;
@@ -87,26 +85,17 @@ internal sealed class AntigravityUsageProvider :
 	public TimeSpan MinimumRefreshInterval => RefreshInterval;
 
 	internal AntigravityUsageProvider(
-		IAntigravityProductionUsageClient client,
-		IAntigravityProfilePathResolver profilePathResolver,
+		IAntigravityOfficialPrintUsageClient officialClient,
+		IAntigravityOfficialExecutablePathResolver
+			officialExecutablePathResolver,
 		TimeProvider? timeProvider = null,
-		IAntigravityMachineSetupService? setupService = null,
-		IAntigravityOfficialPrintUsageClient? officialClient = null,
-		IAntigravityOfficialExecutablePathResolver?
-			officialExecutablePathResolver = null)
+		IAntigravityMachineSetupService? setupService = null)
 	{
-		if ((officialClient is null) !=
-			(officialExecutablePathResolver is null))
-		{
-			throw new ArgumentException(
-				"The official Antigravity client and executable resolver must be provided together.");
-		}
-
-		_client = client ?? throw new ArgumentNullException(nameof(client));
-		_profilePathResolver = profilePathResolver ??
-			throw new ArgumentNullException(nameof(profilePathResolver));
-		_officialClient = officialClient;
-		_officialExecutablePathResolver = officialExecutablePathResolver;
+		_officialClient = officialClient ??
+			throw new ArgumentNullException(nameof(officialClient));
+		_officialExecutablePathResolver = officialExecutablePathResolver ??
+			throw new ArgumentNullException(
+				nameof(officialExecutablePathResolver));
 		_timeProvider = timeProvider ?? TimeProvider.System;
 		_setupService = setupService;
 	}
@@ -180,7 +169,7 @@ internal sealed class AntigravityUsageProvider :
 			try
 			{
 				officialExecutablePath =
-					_officialExecutablePathResolver?.ResolveExecutablePath();
+					_officialExecutablePathResolver.ResolveExecutablePath();
 			}
 			catch
 			{
@@ -192,31 +181,7 @@ internal sealed class AntigravityUsageProvider :
 					UsageRecoveryAction.ReconfigureUsageSource);
 			}
 
-			string? profilePath;
-			bool useOfficialPrint = officialExecutablePath is not null;
-
-			if (!useOfficialPrint)
-			{
-				try
-				{
-					profilePath = _profilePathResolver.ResolveProfilePath();
-				}
-				catch
-				{
-					return CreateFailureSnapshot(
-						account,
-						SnapshotStatus.Error,
-						_timeProvider.GetUtcNow(),
-						ProfileRejectedMessage,
-						UsageRecoveryAction.ReconfigureUsageSource);
-				}
-			}
-			else
-			{
-				profilePath = null;
-			}
-
-			if (!useOfficialPrint && (profilePath is null))
+			if (officialExecutablePath is null)
 			{
 				return CreateFailureSnapshot(
 					account,
@@ -232,27 +197,18 @@ internal sealed class AntigravityUsageProvider :
 
 			try
 			{
-				if (useOfficialPrint)
-				{
-					revalidateOfficialSafetyState =
-						TryConsumeOfficialSafetyRevalidation(account.Id);
-					result = revalidateOfficialSafetyState
-						? await _officialClient!.RevalidateAsync(
-							officialExecutablePath!,
-							() => Interlocked.Exchange(
-								ref didStartSafetyTrackedAttempt,
-								1),
-							cancellationToken)
-						: await _officialClient!.CaptureAsync(
-							officialExecutablePath!,
-							cancellationToken);
-				}
-				else
-				{
-					result = await _client.CaptureAsync(
-						profilePath!,
+				revalidateOfficialSafetyState =
+					TryConsumeOfficialSafetyRevalidation(account.Id);
+				result = revalidateOfficialSafetyState
+					? await _officialClient.RevalidateAsync(
+						officialExecutablePath,
+						() => Interlocked.Exchange(
+							ref didStartSafetyTrackedAttempt,
+							1),
+						cancellationToken)
+					: await _officialClient.CaptureAsync(
+						officialExecutablePath,
 						cancellationToken);
-				}
 			}
 			catch (OperationCanceledException) when (
 				cancellationToken.IsCancellationRequested)
@@ -315,11 +271,11 @@ internal sealed class AntigravityUsageProvider :
 						result.FailureKind,
 						result.SafetyFailureReason,
 						result.AutomaticRevalidationPending,
-						useOfficialPrint);
+						useOfficialPrint: true);
 				error = AppendOfficialPrintVersionDiagnostic(
 					error,
 					result,
-					useOfficialPrint);
+					useOfficialPrint: true);
 				return CreateFailureSnapshot(
 					account,
 					SnapshotStatus.Error,
@@ -349,9 +305,7 @@ internal sealed class AntigravityUsageProvider :
 			return new UsageSnapshot(
 				account,
 				metrics,
-				useOfficialPrint
-					? SourceTrust.OfficialExperimental
-					: SourceTrust.PrivateExperimental,
+				SourceTrust.OfficialExperimental,
 				SnapshotStatus.Ready,
 				observedNow,
 				observedNow,
@@ -446,8 +400,7 @@ internal sealed class AntigravityUsageProvider :
 			AntigravityMachineSetupPreparationResult? preparation =
 				await _setupService.PrepareAsync(
 					new AntigravityMachineSetupConsent(
-						IsLiveCaptureApproved: true,
-						HasConfirmedCommandReadyPrompt: true),
+						IsOfficialUsageReadApproved: true),
 					progress: null,
 					cancellationToken);
 
@@ -733,8 +686,6 @@ internal sealed class AntigravityUsageProvider :
 		{
 			AntigravityMachineSetupSourceKind.OfficialPrint =>
 				SourceTrust.OfficialExperimental,
-			AntigravityMachineSetupSourceKind.ReviewedConPty =>
-				SourceTrust.PrivateExperimental,
 			_ => throw new ArgumentOutOfRangeException(nameof(sourceKind))
 		};
 	}

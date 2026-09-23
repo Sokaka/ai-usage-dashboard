@@ -14,10 +14,7 @@ if (!$rootInfo.PSIsContainer -or
 }
 $allowedExecutables = @(
 	'AiUsageDashboard.App.exe',
-	'AiUsageDashboard.Antigravity.Setup.exe',
-	'AiUsageDashboard.AntigravityCapture.exe',
-	'AiUsageDashboard.ClaudeCapture.exe',
-	'createdump.exe'
+	'AiUsageDashboard.ClaudeCapture.exe'
 )
 $executableExtensions = @('.exe', '.com', '.cmd', '.bat', '.ps1', '.sh', '.js', '.mjs', '.cjs', '.node')
 $providerRuntimeNames = @(

@@ -9,6 +9,14 @@
         Background="{DynamicResource WindowBackgroundBrush}"
         Closing="Window_Closing"
         WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/SetupControls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
     <Grid Margin="28">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -39,7 +47,7 @@
                                    Text="準備連接" />
                         <TextBlock Margin="0,10,0,0"
                                    Foreground="{DynamicResource SecondaryTextBrush}"
-                                   Text="請先登入 Antigravity。AI Usage 會確認這台電腦上的 Antigravity CLI 與既有連接，再讀取目前帳號的四項用量供你確認。新連接只接受支援官方唯讀 /usage 的版本；舊版相容讀取只會沿用這台電腦上已存在且可驗證的連接。這張卡會跟隨這台電腦目前的 Antigravity 登入；AI Usage 無法確認或固定企業專案範圍。這項操作不會讀取登入憑證。"
+                                   Text="請先登入 Antigravity。AI Usage 只接受支援官方唯讀 /usage 的版本，會確認這台電腦上的官方 Antigravity CLI，再讀取目前帳號的四項用量供你確認。這張卡會跟隨這台電腦目前的 Antigravity 登入；AI Usage 無法確認或固定企業專案範圍。這項操作不會讀取登入憑證。"
                                    TextWrapping="Wrap" />
 
                         <Border Margin="0,22,0,0"
@@ -50,7 +58,7 @@
                                 CornerRadius="7">
                             <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
                                        FontSize="12"
-                                       Text="AI Usage 會儲存用量讀取流程回傳的四項用量、狀態列回報的電子郵件、方案和取得時間，以及這台電腦的連接設定。不會儲存完整 CLI 輸出、其他狀態列內容或登入憑證。從未取得或明確未回報電子郵件時，帳號會顯示為「目前登入的 Antigravity 帳號」；暫時讀不到狀態列時，會標示上次確認的電子郵件。方案只有在能和同次用量安全關聯時才會顯示。這張卡會跟隨這台電腦目前的 Antigravity 登入，AI Usage 無法確認或固定企業專案範圍。讀不到支援的版本或四項用量時，連接不會完成。"
+                                       Text="AI Usage 只會儲存官方用量讀取流程回傳的四項用量、取得時間，以及這台電腦核准的 Antigravity CLI 來源。不會儲存完整 CLI 輸出、status line 內容或登入憑證，也不會安裝 status-line helper。官方 /usage 不提供電子郵件或方案，因此卡片會顯示為「目前登入的 Antigravity 帳號」。這張卡會跟隨這台電腦目前的 Antigravity 登入，AI Usage 無法確認或固定企業專案範圍。讀不到支援的版本或四項用量時，連接不會完成。"
                                        TextWrapping="Wrap" />
                         </Border>
 
@@ -90,7 +98,7 @@
                         <TextBlock Margin="0,18,0,0"
                                    Foreground="{DynamicResource MutedTextBrush}"
                                    FontSize="12"
-                                   Text="AI Usage 只會執行用量讀取流程，且不會讀取登入憑證；實際讀取方式依版本與既有連接而定。"
+                                   Text="AI Usage 只會直接執行官方唯讀 /usage，且不會讀取登入憑證，也不會使用終端畫面擷取或 status-line helper。"
                                    TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>

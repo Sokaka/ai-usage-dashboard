@@ -26,8 +26,6 @@
     <ProjectReference Include="..\..\src\AiUsageDashboard.Core\AiUsageDashboard.Core.csproj" />
     <ProjectReference Include="..\..\src\AiUsageDashboard.Antigravity\AiUsageDashboard.Antigravity.csproj" />
     <ProjectReference Include="..\..\src\AiUsageDashboard.Antigravity.Setup\AiUsageDashboard.Antigravity.Setup.csproj" />
-    <ProjectReference Include="..\..\src\AiUsageDashboard.AntigravityCapture\AiUsageDashboard.AntigravityCapture.csproj"
-                      ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\src\AiUsageDashboard.Updater\AiUsageDashboard.Updater.csproj" />
     <ProjectReference Include="..\..\src\AiUsageDashboard.Updater.Core\AiUsageDashboard.Updater.Core.csproj" />
     <ProjectReference Include="..\..\tools\AiUsageDashboard.AntigravitySpike\AiUsageDashboard.AntigravitySpike.csproj" />

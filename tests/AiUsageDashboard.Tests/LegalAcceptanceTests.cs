@@ -15,31 +15,27 @@ public sealed class LegalAcceptanceTests : IDisposable
 		"AiUsageDashboard.LegalTests." + Guid.NewGuid().ToString("N"));
 
 	[Fact]
-	public void AppAcceptanceCoversSetupUpdaterAndCaptureForTheSameWindowsUser()
+	public void AppAcceptanceCoversUpdaterInstallerAndClaudeCaptureForTheSameWindowsUser()
 	{
 		LegalAcceptanceStore store = CreateStore("S-1-5-21-test-user-a");
 		LegalCatalog app = LegalCatalog.Load(LegalProfile.App);
 		Assert.False(store.IsAccepted(app));
 		store.Accept(app, app.Digest);
 		Assert.True(store.IsAccepted(app));
-		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Setup)));
 		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Updater)));
-		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Capture)));
 		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Installer)));
 		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.ClaudeCapture)));
 	}
 
-	[Theory]
-	[InlineData(LegalProfile.Capture)]
-	[InlineData(LegalProfile.Updater)]
-	public void CoreRuntimeAcceptanceDoesNotAuthorizeClaudeSharedJsonDependencies(LegalProfile acceptedProfile)
+	[Fact]
+	public void UpdaterAcceptanceDoesNotAuthorizeClaudeSharedJsonDependencies()
 	{
 		LegalAcceptanceStore store = CreateStore("S-1-5-21-test-user-a");
-		LegalCatalog accepted = LegalCatalog.Load(acceptedProfile);
-		store.Accept(accepted, accepted.Digest);
+		LegalCatalog updater = LegalCatalog.Load(LegalProfile.Updater);
+		store.Accept(updater, updater.Digest);
 		LegalCatalog claude = LegalCatalog.Load(LegalProfile.ClaudeCapture);
 
-		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Capture)));
+		Assert.True(store.IsAccepted(updater));
 		Assert.False(store.IsAccepted(claude));
 		Assert.Equal(LegalCommandLine.AcceptanceRequiredExitCode,
 			LegalCallbackGate.CheckAcceptance(() => claude, () => store));
@@ -58,14 +54,13 @@ public sealed class LegalAcceptanceTests : IDisposable
 	}
 
 	[Fact]
-	public void UpdaterAcceptanceDoesNotAuthorizeWindowsDesktopOrCopilotComponents()
+	public void UpdaterAcceptanceDoesNotAuthorizeAppWindowsDesktopOrCopilotComponents()
 	{
 		LegalAcceptanceStore store = CreateStore("S-1-5-21-test-user-a");
 		LegalCatalog updater = LegalCatalog.Load(LegalProfile.Updater);
 		store.Accept(updater, updater.Digest);
 		Assert.False(store.IsAccepted(LegalCatalog.Load(LegalProfile.App)));
-		Assert.False(store.IsAccepted(LegalCatalog.Load(LegalProfile.Setup)));
-		Assert.True(store.IsAccepted(LegalCatalog.Load(LegalProfile.Capture)));
+		Assert.True(store.IsAccepted(updater));
 	}
 
 	[Fact]
@@ -278,7 +273,7 @@ public sealed class LegalAcceptanceTests : IDisposable
 		string receiptPath = Path.Combine(_testDirectory, "acceptance.json");
 		const string CorruptReceipt = "{incomplete-receipt";
 		File.WriteAllText(receiptPath, CorruptReceipt);
-		LegalCatalog catalog = LegalCatalog.Load(LegalProfile.Capture);
+		LegalCatalog catalog = LegalCatalog.Load(LegalProfile.ClaudeCapture);
 		using StringWriter output = new();
 		using StringWriter error = new();
 

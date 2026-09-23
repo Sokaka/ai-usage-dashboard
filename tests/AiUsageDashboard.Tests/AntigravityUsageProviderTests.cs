@@ -10,8 +10,40 @@ namespace AiUsageDashboard.Tests;
 
 public sealed class AntigravityUsageProviderTests
 {
+	private sealed class FakeApprovedSourceStore :
+		IAntigravityApprovedSourceStore
+	{
+		private AntigravityApprovedSource? _source;
+
+		public AntigravityApprovedSource? Load()
+		{
+			return _source;
+		}
+
+		public void Save(AntigravityApprovedSource source)
+		{
+			_source = source;
+		}
+
+		public bool TrySaveIfMissing(AntigravityApprovedSource source)
+		{
+			if (_source is not null)
+			{
+				return false;
+			}
+
+			_source = source;
+			return true;
+		}
+
+		public void Clear()
+		{
+			_source = null;
+		}
+	}
+
 	private sealed class FakeAntigravityProductionUsageClient :
-		IAntigravityProductionUsageClient
+		IAntigravityOfficialPrintUsageClient
 	{
 		private readonly Func<
 			string,
@@ -30,11 +62,20 @@ public sealed class AntigravityUsageProviderTests
 		}
 
 		public Task<AntigravityProductionUsageResult> CaptureAsync(
-			string profilePath,
+			string executablePath,
 			CancellationToken cancellationToken)
 		{
 			CallCount++;
-			return _captureAsync(profilePath, cancellationToken);
+			return _captureAsync(executablePath, cancellationToken);
+		}
+
+		public Task<AntigravityProductionUsageResult> RevalidateAsync(
+			string executablePath,
+			Action onSafetyTrackedAttemptStarted,
+			CancellationToken cancellationToken)
+		{
+			onSafetyTrackedAttemptStarted();
+			return CaptureAsync(executablePath, cancellationToken);
 		}
 	}
 
@@ -105,7 +146,7 @@ public sealed class AntigravityUsageProviderTests
 	}
 
 	private sealed class FakeProfilePathResolver :
-		IAntigravityProfilePathResolver
+		IAntigravityOfficialExecutablePathResolver
 	{
 		private readonly Func<string?> _resolve;
 
@@ -114,7 +155,7 @@ public sealed class AntigravityUsageProviderTests
 			_resolve = resolve;
 		}
 
-		public string? ResolveProfilePath()
+		public string? ResolveExecutablePath()
 		{
 			return _resolve();
 		}
@@ -190,79 +231,12 @@ public sealed class AntigravityUsageProviderTests
 		@"C:\synthetic\user-agy-profile.json";
 
 	[Fact]
-	public void ProfilePathResolver_WithUserValue_PrefersUserValue()
-	{
-		string? requestedName = null;
-		EnvironmentVariableTarget? requestedTarget = null;
-		AntigravityProfilePathResolver resolver = new(
-			_ => throw new InvalidOperationException(
-				"Process-level fallback must not run when user value exists."),
-			(name, target) =>
-			{
-				requestedName = name;
-				requestedTarget = target;
-				return SyntheticUserProfilePath;
-			});
-
-		string? resolved = resolver.ResolveProfilePath();
-
-		Assert.Equal(SyntheticUserProfilePath, resolved);
-		Assert.Equal(
-			AntigravityProfilePathResolver.EnvironmentVariableName,
-			requestedName);
-		Assert.Equal(EnvironmentVariableTarget.User, requestedTarget);
-		Assert.Equal(
-			"AI_USAGE_DASHBOARD_ANTIGRAVITY_PROFILE",
-			AntigravityProfilePathResolver.EnvironmentVariableName);
-	}
-
-	[Fact]
-	public void ProfilePathResolver_WithoutUserValue_UsesProcessFallback()
-	{
-		List<string> requestedNames = new();
-		AntigravityProfilePathResolver resolver = new(
-			name =>
-			{
-				requestedNames.Add(name);
-				return SyntheticProfilePath;
-			},
-			(_, target) =>
-			{
-				Assert.Equal(EnvironmentVariableTarget.User, target);
-				return "   ";
-			});
-
-		Assert.Equal(SyntheticProfilePath, resolver.ResolveProfilePath());
-		Assert.Equal(
-			new[] { AntigravityProfilePathResolver.EnvironmentVariableName },
-			requestedNames);
-	}
-
-	[Theory]
-	[InlineData(null, null)]
-	[InlineData("", "")]
-	[InlineData("   ", "\t")]
-	public void ProfilePathResolver_WithBothValuesMissing_ReturnsNull(
-		string? processValue,
-		string? userValue)
-	{
-		AntigravityProfilePathResolver resolver = new(
-			_ => processValue,
-			(_, target) =>
-			{
-				Assert.Equal(EnvironmentVariableTarget.User, target);
-				return userValue;
-			});
-
-		Assert.Null(resolver.ResolveProfilePath());
-	}
-
-	[Fact]
 	public void OfficialExecutablePathResolver_WithUserValue_PrefersUserValue()
 	{
 		string? requestedName = null;
 		EnvironmentVariableTarget? requestedTarget = null;
 		AntigravityOfficialExecutablePathResolver resolver = new(
+			new FakeApprovedSourceStore(),
 			_ => throw new InvalidOperationException(
 				"Process-level fallback must not run when user value exists."),
 			(name, target) =>
@@ -282,29 +256,23 @@ public sealed class AntigravityUsageProviderTests
 	}
 
 	[Fact]
-	public void Constructor_RequiresOfficialClientAndResolverAsPair()
+	public void Constructor_RequiresOfficialClientAndResolver()
 	{
-		FakeAntigravityProductionUsageClient legacyClient = new((_, _) =>
-			Task.FromResult(Success(CreateValidWindows())));
-		FakeProfilePathResolver legacyResolver = new(() =>
-			SyntheticProfilePath);
 		FakeAntigravityOfficialPrintUsageClient officialClient = new((_, _) =>
 			Task.FromResult(Success(CreateValidWindows())));
 		FakeOfficialExecutablePathResolver officialResolver = new(() =>
 			SyntheticExecutablePath);
 
-		Assert.Throws<ArgumentException>(() => new AntigravityUsageProvider(
-			legacyClient,
-			legacyResolver,
-			officialClient: officialClient));
-		Assert.Throws<ArgumentException>(() => new AntigravityUsageProvider(
-			legacyClient,
-			legacyResolver,
-			officialExecutablePathResolver: officialResolver));
+		Assert.Throws<ArgumentNullException>(() => new AntigravityUsageProvider(
+			null!,
+			officialResolver));
+		Assert.Throws<ArgumentNullException>(() => new AntigravityUsageProvider(
+			officialClient,
+			null!));
 	}
 
 	[Fact]
-	public async Task GetUsageAsync_WithApprovedWindows_ReturnsOrderedPrivateExperimentalMetrics()
+	public async Task GetUsageAsync_WithApprovedWindows_ReturnsOrderedOfficialExperimentalMetrics()
 	{
 		DateTimeOffset now = new(2026, 7, 18, 8, 30, 0, TimeSpan.Zero);
 		FakeAntigravityProductionUsageClient client = new((profilePath, _) =>
@@ -325,7 +293,7 @@ public sealed class AntigravityUsageProviderTests
 		Assert.Equal(ProviderKind.Antigravity, provider.Provider);
 		Assert.Equal(TimeSpan.FromMinutes(1), provider.MinimumRefreshInterval);
 		Assert.Equal(SnapshotStatus.Ready, snapshot.Status);
-		Assert.Equal(SourceTrust.PrivateExperimental, snapshot.SourceTrust);
+		Assert.Equal(SourceTrust.OfficialExperimental, snapshot.SourceTrust);
 		Assert.Equal(now, snapshot.FetchedAt);
 		Assert.Equal(now, snapshot.ObservedAt);
 		Assert.Equal(now + TimeSpan.FromMinutes(2), snapshot.StaleAfter);
@@ -385,15 +353,9 @@ public sealed class AntigravityUsageProviderTests
 				return Task.FromResult(Success(CreateValidWindows()));
 			});
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() =>
-				throw new InvalidOperationException(
-					"Legacy resolution must not run when the official marker exists.")),
-			new FakeTimeProvider(now),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
-					SyntheticExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => SyntheticExecutablePath),
+			new FakeTimeProvider(now));
 
 		UsageSnapshot snapshot = await provider.GetUsageAsync(
 			CreateAccount(),
@@ -433,13 +395,9 @@ public sealed class AntigravityUsageProviderTests
 				reason,
 				automaticRevalidationPending: true)));
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() => SyntheticProfilePath),
-			new FakeTimeProvider(DateTimeOffset.UtcNow),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
-					SyntheticExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => SyntheticExecutablePath),
+			new FakeTimeProvider(DateTimeOffset.UtcNow));
 
 		UsageSnapshot snapshot = await provider.GetUsageAsync(
 			CreateAccount(),
@@ -467,13 +425,9 @@ public sealed class AntigravityUsageProviderTests
 				automaticRevalidationPending: true,
 				officialPrintVersionAssessment: versionAssessment)));
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() => SyntheticProfilePath),
-			new FakeTimeProvider(DateTimeOffset.UtcNow),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
-					SyntheticExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => SyntheticExecutablePath),
+			new FakeTimeProvider(DateTimeOffset.UtcNow));
 
 		UsageSnapshot snapshot = await provider.GetUsageAsync(
 			CreateAccount(),
@@ -515,13 +469,9 @@ public sealed class AntigravityUsageProviderTests
 		FakeAntigravityProductionUsageClient legacyClient = new((_, _) =>
 			throw new InvalidOperationException("Legacy capture must not run."));
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() => SyntheticProfilePath),
-			timeProvider,
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
-					SyntheticExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => SyntheticExecutablePath),
+			timeProvider);
 		AccountProfile account = CreateAccount(SyntheticAccountIdentity);
 		UsageProviderRegistry registry = new(new IUsageProvider[] { provider });
 		UsageRefreshCoordinator coordinator = new(registry, timeProvider);
@@ -610,13 +560,9 @@ public sealed class AntigravityUsageProviderTests
 				AntigravityProductionUsageFailureKind.SafetyLatched,
 				AntigravityUsageSafetyFailureReason.TimedOut)));
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() => SyntheticProfilePath),
-			new FakeTimeProvider(DateTimeOffset.UtcNow),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
-					SyntheticExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => SyntheticExecutablePath),
+			new FakeTimeProvider(DateTimeOffset.UtcNow));
 
 		UsageSnapshot snapshot = await provider.GetUsageAsync(
 			CreateAccount(),
@@ -638,13 +584,9 @@ public sealed class AntigravityUsageProviderTests
 				AntigravityProductionUsageFailureKind.SafetyLatched,
 				AntigravityUsageSafetyFailureReason.NonZeroExit)));
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() => SyntheticProfilePath),
-			new FakeTimeProvider(DateTimeOffset.UtcNow),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
-					SyntheticExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => SyntheticExecutablePath),
+			new FakeTimeProvider(DateTimeOffset.UtcNow));
 
 		UsageSnapshot snapshot = await provider.GetUsageAsync(
 			CreateAccount(),
@@ -665,13 +607,9 @@ public sealed class AntigravityUsageProviderTests
 		FakeAntigravityOfficialPrintUsageClient officialClient = new((_, _) =>
 			Task.FromResult(Success(CreateValidWindows())));
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() => SyntheticProfilePath),
-			new FakeTimeProvider(DateTimeOffset.UtcNow),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-			new FakeOfficialExecutablePathResolver(() =>
-					SyntheticExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => SyntheticExecutablePath),
+			new FakeTimeProvider(DateTimeOffset.UtcNow));
 		AccountProfile account = CreateAccount();
 
 		provider.ArmOfficialSafetyRevalidation(account.Id);
@@ -692,13 +630,9 @@ public sealed class AntigravityUsageProviderTests
 		FakeAntigravityOfficialPrintUsageClient officialClient = new((_, _) =>
 			Task.FromResult(Success(CreateValidWindows())));
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() => SyntheticProfilePath),
-			new FakeTimeProvider(DateTimeOffset.UtcNow),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
-					SyntheticExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => SyntheticExecutablePath),
+			new FakeTimeProvider(DateTimeOffset.UtcNow));
 		AccountProfile account = CreateAccount();
 
 		provider.ArmOfficialSafetyRevalidation(account.Id);
@@ -722,12 +656,8 @@ public sealed class AntigravityUsageProviderTests
 		FakeAntigravityOfficialPrintUsageClient officialClient = new((_, _) =>
 			Task.FromResult(Success(CreateValidWindows())));
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() => SyntheticProfilePath),
-			new FakeTimeProvider(DateTimeOffset.UtcNow),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() =>
 				{
 					resolutionCount++;
 
@@ -743,7 +673,8 @@ public sealed class AntigravityUsageProviderTests
 					}
 
 					return null;
-				}));
+				}),
+			new FakeTimeProvider(DateTimeOffset.UtcNow));
 		AccountProfile account = CreateAccount();
 
 		provider.ArmOfficialSafetyRevalidation(account.Id);
@@ -753,7 +684,7 @@ public sealed class AntigravityUsageProviderTests
 
 		Assert.Equal(1, officialClient.RevalidateCallCount);
 		Assert.Equal(1, officialClient.CallCount);
-		Assert.Equal(throwDuringFirstResolution ? 0 : 1, legacyClient.CallCount);
+		Assert.Equal(0, legacyClient.CallCount);
 	}
 
 	[Fact]
@@ -774,13 +705,9 @@ public sealed class AntigravityUsageProviderTests
 				revalidateCallCount != 1
 		};
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() => SyntheticProfilePath),
-			new FakeTimeProvider(DateTimeOffset.UtcNow),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
-					SyntheticExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => SyntheticExecutablePath),
+			new FakeTimeProvider(DateTimeOffset.UtcNow));
 		AccountProfile account = CreateAccount(SyntheticAccountIdentity);
 
 		provider.ArmOfficialSafetyRevalidation(account.Id);
@@ -808,13 +735,9 @@ public sealed class AntigravityUsageProviderTests
 		FakeAntigravityOfficialPrintUsageClient officialClient = new((_, _) =>
 			Task.FromResult(Success(CreateValidWindows())));
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() => SyntheticProfilePath),
-			new FakeTimeProvider(DateTimeOffset.UtcNow),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
-					SyntheticExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => SyntheticExecutablePath),
+			new FakeTimeProvider(DateTimeOffset.UtcNow));
 		AccountProfile armedAccount = CreateAccount();
 		AccountProfile differentAccount = CreateAccount();
 
@@ -841,15 +764,9 @@ public sealed class AntigravityUsageProviderTests
 					AntigravityProductionUsageFailureKind.ProvenanceRejected));
 			});
 		AntigravityUsageProvider provider = new(
-			legacyClient,
-			new FakeProfilePathResolver(() =>
-				throw new InvalidOperationException(
-					"Invalid official configuration must not resolve legacy state.")),
-			new FakeTimeProvider(DateTimeOffset.UtcNow),
-			officialClient: officialClient,
-			officialExecutablePathResolver:
-				new FakeOfficialExecutablePathResolver(() =>
-					InvalidExecutablePath));
+			officialClient,
+			new FakeOfficialExecutablePathResolver(() => InvalidExecutablePath),
+			new FakeTimeProvider(DateTimeOffset.UtcNow));
 
 		UsageSnapshot snapshot = await provider.GetUsageAsync(
 			CreateAccount(SyntheticAccountIdentity),
@@ -939,8 +856,8 @@ public sealed class AntigravityUsageProviderTests
 		UsageRecoveryAction.UpdateApplication)]
 	[InlineData(
 		AntigravityProductionUsageFailureKind.SafetyLatched,
-		"Antigravity 用量檢查已暫停：無法確認上次檢查是否完成。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。",
-		UsageRecoveryAction.ReconfigureUsageSource)]
+		"Antigravity 用量檢查已暫停：無法確認上次檢查是否完成。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。",
+		UsageRecoveryAction.RevalidateUsage)]
 	[InlineData(
 		AntigravityProductionUsageFailureKind.UnexpectedFailure,
 		"暫時無法讀取 Antigravity 用量，稍後會自動再試。",
@@ -1029,14 +946,12 @@ public sealed class AntigravityUsageProviderTests
 			CancellationToken.None);
 
 		Assert.Equal(SnapshotStatus.Ready, snapshot.Status);
-		Assert.Equal(SourceTrust.PrivateExperimental, snapshot.SourceTrust);
+		Assert.Equal(SourceTrust.OfficialExperimental, snapshot.SourceTrust);
 		Assert.Equal(SyntheticAccountIdentity, snapshot.ProviderAccountIdentity);
 		Assert.Equal(4, snapshot.Metrics.Count);
 		Assert.Equal(1, client.CallCount);
 		Assert.Equal(1, setupService.CallCount);
-		Assert.True(setupService.LastConsent?.IsLiveCaptureApproved);
-		Assert.True(
-			setupService.LastConsent?.HasConfirmedCommandReadyPrompt);
+		Assert.True(setupService.LastConsent?.IsOfficialUsageReadApproved);
 		Assert.Equal(1, approveCount);
 		Assert.Equal(1, releaseCount);
 		Assert.True(candidate.IsApproved);
@@ -1601,62 +1516,6 @@ public sealed class AntigravityUsageProviderTests
 		AntigravityMachineSetupFailureKind.UsageRejected,
 		"AI Usage 目前無法讀取 Antigravity 回傳的用量格式。請更新 AI Usage；既有登入不受影響。",
 		UsageRecoveryAction.UpdateApplication)]
-	[InlineData(
-		AntigravityMachineSetupSourceKind.ReviewedConPty,
-		AntigravityProductionUsageFailureKind.ProfileRejected,
-		AntigravityUsageSafetyFailureReason.None,
-		false,
-		AntigravityMachineSetupFailureKind.SettingsRejected,
-		"AI Usage 無法確認 Antigravity 的用量讀取。請重新連接 Antigravity 帳號；既有登入不受影響。",
-		UsageRecoveryAction.ReconfigureUsageSource)]
-	[InlineData(
-		AntigravityMachineSetupSourceKind.ReviewedConPty,
-		AntigravityProductionUsageFailureKind.ExecutionBusy,
-		AntigravityUsageSafetyFailureReason.None,
-		false,
-		AntigravityMachineSetupFailureKind.ExecutionBusy,
-		"Antigravity 用量檢查未完成，稍後會自動再試。",
-		UsageRecoveryAction.Retry)]
-	[InlineData(
-		AntigravityMachineSetupSourceKind.ReviewedConPty,
-		AntigravityProductionUsageFailureKind.ProvenanceRejected,
-		AntigravityUsageSafetyFailureReason.None,
-		false,
-		AntigravityMachineSetupFailureKind.UnexpectedFailure,
-		"AI Usage 無法確認這次 Antigravity 用量讀取是否仍符合安全條件，稍後會自動重新檢查；既有登入不受影響。",
-		UsageRecoveryAction.Retry)]
-	[InlineData(
-		AntigravityMachineSetupSourceKind.ReviewedConPty,
-		AntigravityProductionUsageFailureKind.CaptureRejected,
-		AntigravityUsageSafetyFailureReason.None,
-		false,
-		AntigravityMachineSetupFailureKind.UnexpectedFailure,
-		"Antigravity 用量檢查未完成，稍後會自動再試。",
-		UsageRecoveryAction.Retry)]
-	[InlineData(
-		AntigravityMachineSetupSourceKind.ReviewedConPty,
-		AntigravityProductionUsageFailureKind.UsageShapeRejected,
-		AntigravityUsageSafetyFailureReason.None,
-		false,
-		AntigravityMachineSetupFailureKind.UsageRejected,
-		"AI Usage 目前無法讀取 Antigravity 回傳的用量格式。請更新 AI Usage；既有登入不受影響。",
-		UsageRecoveryAction.UpdateApplication)]
-	[InlineData(
-		AntigravityMachineSetupSourceKind.ReviewedConPty,
-		AntigravityProductionUsageFailureKind.SafetyLatched,
-		AntigravityUsageSafetyFailureReason.Unknown,
-		false,
-		AntigravityMachineSetupFailureKind.UnexpectedFailure,
-		"Antigravity 用量檢查已暫停：無法確認上次檢查是否完成。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。",
-		UsageRecoveryAction.ReconfigureUsageSource)]
-	[InlineData(
-		AntigravityMachineSetupSourceKind.ReviewedConPty,
-		AntigravityProductionUsageFailureKind.UnexpectedFailure,
-		AntigravityUsageSafetyFailureReason.None,
-		false,
-		AntigravityMachineSetupFailureKind.UnexpectedFailure,
-		"暫時無法讀取 Antigravity 用量，稍後會自動再試。",
-		UsageRecoveryAction.Retry)]
 	public async Task GetUsageAsync_WhenRepairPreviewFails_PreservesExactPresentation(
 		AntigravityMachineSetupSourceKind sourceKind,
 		AntigravityProductionUsageFailureKind previewFailureKind,
@@ -2038,7 +1897,7 @@ public sealed class AntigravityUsageProviderTests
 	}
 
 	private static AntigravityUsageProvider CreateProvider(
-		IAntigravityProductionUsageClient client,
+		IAntigravityOfficialPrintUsageClient client,
 		DateTimeOffset now)
 	{
 		return new AntigravityUsageProvider(

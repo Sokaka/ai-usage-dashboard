@@ -8,7 +8,11 @@ using WpfButtonBase = System.Windows.Controls.Primitives.ButtonBase;
 using WpfComboBox = System.Windows.Controls.ComboBox;
 using WpfComboBoxItem = System.Windows.Controls.ComboBoxItem;
 
+#if ANTIGRAVITY_SETUP_PRESENTATION
+namespace AiUsageDashboard.Antigravity.Setup;
+#else
 namespace AiUsageDashboard.Presentation;
+#endif
 
 public static class PointerFocusRelease
 {

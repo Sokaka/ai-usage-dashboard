@@ -4,30 +4,8 @@ namespace AiUsageDashboard.AntigravitySpike;
 
 public static class AntigravityMachineSetupLaunchArguments
 {
-	public const string DashboardManagedResultProtocolEnvironmentVariable =
-		"AI_USAGE_DASHBOARD_AGY_SETUP_RESULT_PROTOCOL";
-
-	public const string DashboardManagedSetupAttemptIdEnvironmentVariable =
-		"AI_USAGE_DASHBOARD_AGY_SETUP_ATTEMPT_ID";
-
-	public const string DashboardManagedSourceKindExitProtocol =
-		"source-kind-exit-v1";
-
-	public const string DashboardManaged =
-		"--dashboard-managed";
-
 	public const string EnsureDashboardAccount =
 		"--ensure-antigravity-account";
-
-	public const int DashboardManagedCancelledExitCode = 10;
-
-	public const int DashboardManagedFailedExitCode = 11;
-
-	public const int DashboardManagedOfficialPrintSuccessExitCode = 12;
-
-	public const int DashboardManagedCompletionUnknownExitCode = 13;
-
-	public const int DashboardManagedSuccessExitCode = 0;
 }
 
 public static class AntigravityMachineSetupEnvironmentVariables
@@ -38,8 +16,9 @@ public static class AntigravityMachineSetupEnvironmentVariables
 
 public enum AntigravityMachineSetupSourceKind
 {
-	ReviewedConPty,
-	OfficialPrint
+	// 0 是舊版來源的 wire value；保留占位，避免舊資料被誤認為官方來源。
+	UnsupportedLegacy = 0,
+	OfficialPrint = 1
 }
 
 public enum AntigravityMachineSetupStage
@@ -78,8 +57,15 @@ internal sealed record AntigravityMachineSetupPreviewFailure(
 	bool AutomaticRevalidationPending);
 
 public sealed record AntigravityMachineSetupConsent(
-	bool IsLiveCaptureApproved,
-	bool HasConfirmedCommandReadyPrompt);
+	bool IsOfficialUsageReadApproved)
+{
+	public AntigravityMachineSetupConsent(
+		bool isLiveCaptureApproved,
+		bool hasConfirmedCommandReadyPrompt)
+		: this(isLiveCaptureApproved && hasConfirmedCommandReadyPrompt)
+	{
+	}
+}
 
 public sealed record AntigravityMachineSetupProgress(
 	AntigravityMachineSetupStage Stage);
@@ -142,7 +128,8 @@ public sealed class AntigravityMachineSetupPreparationResult
 	{
 		ArgumentNullException.ThrowIfNull(previewFailure);
 
-		if (!Enum.IsDefined(previewSourceKind) ||
+		if ((previewSourceKind !=
+				AntigravityMachineSetupSourceKind.OfficialPrint) ||
 			previewFailure.IsSuccessful ||
 			(previewFailure.FailureKind ==
 				AntigravityProductionUsageFailureKind.None))
@@ -220,7 +207,7 @@ public sealed class AntigravityMachineSetupCandidate : IAsyncDisposable
 		Func<CancellationToken, Task> approveAsync,
 		Func<ValueTask> releaseAsync,
 		AntigravityMachineSetupSourceKind sourceKind =
-			AntigravityMachineSetupSourceKind.ReviewedConPty)
+			AntigravityMachineSetupSourceKind.OfficialPrint)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(cliVersion);
 		ArgumentException.ThrowIfNullOrWhiteSpace(accountIdentity);
@@ -228,7 +215,7 @@ public sealed class AntigravityMachineSetupCandidate : IAsyncDisposable
 		ArgumentNullException.ThrowIfNull(approveAsync);
 		ArgumentNullException.ThrowIfNull(releaseAsync);
 
-		if (!Enum.IsDefined(sourceKind))
+		if (sourceKind != AntigravityMachineSetupSourceKind.OfficialPrint)
 		{
 			throw new ArgumentOutOfRangeException(nameof(sourceKind));
 		}

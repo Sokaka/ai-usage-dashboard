@@ -548,7 +548,7 @@ public partial class AccountEditorWindow : Window
 				"workspace ID 只會寫進這張卡片的 Codex 設定；重新連接時要再輸入。"),
 			ProviderKind.Antigravity => JoinParagraphs(
 				"Antigravity CLI 負責登入。AI Usage 不會讀取密碼或其他登入憑證。",
-				"這台電腦會保留卡片連接設定；如果 CLI 提供電子郵件或方案，也會保留這些顯示資料和讀取時間。"),
+				"這台電腦會保留核准的 CLI 來源、四項用量和讀取時間。官方 /usage 不提供電子郵件或方案，AI Usage 不會為此安裝 status-line helper。"),
 			ProviderKind.Grok => JoinParagraphs(
 				"Grok Build CLI 會把每張卡片的登入資料分開儲存。",
 				"移除卡片或匯入設定時，相關登入資料也會刪除。"),

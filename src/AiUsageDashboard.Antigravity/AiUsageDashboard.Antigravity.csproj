@@ -9,8 +9,22 @@
 
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\AntigravityReviewedPackageManifest.json"
-                      LogicalName="AiUsageDashboard.Antigravity.Resources.AntigravityReviewedPackageManifest.json" />
+    <Compile Remove="AntigravityLiveR0Profile.cs" />
+    <Compile Remove="AntigravityLiveR0ProfileFile.cs" />
+    <Compile Remove="AntigravityLiveR0Runner.cs" />
+    <Compile Remove="AntigravityLiveR1PrivateCalibrationCaptureModels.cs" />
+    <Compile Remove="AntigravityLiveR1Profile.cs" />
+    <Compile Remove="AntigravityLiveR1RunnerModels.cs" />
+    <Compile Remove="AntigravityLiveR1SectionProfile.cs" />
+    <Compile Remove="AntigravityLiveR1SectionRunnerModels.cs" />
+    <Compile Remove="AntigravityMachineSetupPrivateTransaction.cs" />
+    <Compile Remove="AntigravityObservationGates.cs" />
+    <Compile Remove="AntigravityRedactedStructuralCapture.cs" />
+    <Compile Remove="AntigravityReviewedPackageLocalBinding.cs" />
+    <Compile Remove="AntigravityReviewedPackageManifest.cs" />
+    <Compile Remove="AntigravityReviewedPackageManifestCatalog.cs" />
+    <Compile Remove="IConPtySession.cs" />
+    <Compile Remove="WindowsConPtySession.cs" />
   </ItemGroup>
 
 </Project>

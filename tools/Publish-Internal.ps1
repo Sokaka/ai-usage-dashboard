@@ -81,10 +81,6 @@ $workingRoot = Join-Path `
 	-ChildPath ".aud-build-$([Guid]::NewGuid().ToString('N'))"
 $stagedPackageRoot = Join-Path $workingRoot $archiveRootName
 $appRoot = Join-Path $stagedPackageRoot 'app'
-$setupPublishRoot = Join-Path $workingRoot 'setup-publish'
-$antigravityCapturePublishRoot = Join-Path `
-	$workingRoot `
-	'antigravity-capture-publish'
 $temporaryZipPath = Join-Path $workingRoot "$packageName.zip"
 $temporaryChecksumPath = "$temporaryZipPath.sha256"
 $packageRootFinalized = $false
@@ -331,207 +327,6 @@ function Invoke-PinnedPublish {
 	}
 }
 
-function Invoke-PinnedTrimmedSingleFilePublish {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $ProjectPath,
-
-		[Parameter(Mandatory = $true)]
-		[string] $PublishRoot,
-
-		[Parameter(Mandatory = $true)]
-		[string] $DisplayName,
-
-		[Parameter(Mandatory = $true)]
-		[string] $ExecutableName
-	)
-
-	& dotnet publish `
-		$ProjectPath `
-		--configuration Release `
-		--runtime $runtimeIdentifier `
-		--self-contained true `
-		--disable-build-servers `
-		-m:1 `
-		-nodeReuse:false `
-		-p:UseSharedCompilation=false `
-		-p:RuntimeFrameworkVersion=$selfContainedRuntimeVersion `
-		-p:TargetLatestRuntimePatch=false `
-		-p:Version=$Version `
-		-p:SourceRevisionId=$sourceRevisionId `
-		-p:PublishSingleFile=true `
-		-p:IncludeNativeLibrariesForSelfExtract=true `
-		-p:EnableCompressionInSingleFile=true `
-		-p:PublishTrimmed=true `
-		-p:TrimMode=full `
-		-p:SuppressTrimAnalysisWarnings=false `
-		-p:DebugType=None `
-		-p:DebugSymbols=false `
-		--output $PublishRoot
-	$publishSucceeded = $?
-	$publishExitCode = $global:LASTEXITCODE
-
-	if (!$publishSucceeded -or ($publishExitCode -ne 0)) {
-		throw (
-			"$DisplayName publish failed with exit code $publishExitCode. " +
-			"Install SDK $requiredSdkVersion and ensure the " +
-			"$selfContainedRuntimeVersion $runtimeIdentifier runtime packs " +
-			"can be restored.")
-	}
-
-	$publishedFiles = @(Get-ChildItem `
-		-LiteralPath $PublishRoot `
-		-Recurse `
-		-File `
-		-Force)
-	$expectedExecutablePath = Join-Path $PublishRoot $ExecutableName
-
-	if (($publishedFiles.Count -ne 1) -or
-		!([string]::Equals(
-			$publishedFiles[0].FullName,
-			$expectedExecutablePath,
-			[StringComparison]::OrdinalIgnoreCase))) {
-		$publishedNames = @($publishedFiles | ForEach-Object {
-			[System.IO.Path]::GetRelativePath(
-				$PublishRoot,
-				$_.FullName)
-		})
-		throw (
-			"$DisplayName must publish as exactly one executable named " +
-			"$ExecutableName. Published: $($publishedNames -join ', ')")
-	}
-}
-
-function Invoke-PublishedCaptureSmokeTest {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $ExecutablePath
-	)
-
-	$startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-	$startInfo.FileName = $ExecutablePath
-	$startInfo.UseShellExecute = $false
-	$startInfo.CreateNoWindow = $true
-	$startInfo.RedirectStandardOutput = $true
-	$startInfo.RedirectStandardError = $true
-	[void] $startInfo.ArgumentList.Add(
-		'--ai-usage-dashboard-agy-statusline-smoke-test-v1')
-	$process = [System.Diagnostics.Process]::new()
-	$process.StartInfo = $startInfo
-	$started = $false
-
-	try {
-		$started = $process.Start()
-
-		if (!$started) {
-			throw 'Published Antigravity capture smoke test did not start.'
-		}
-
-		$stdoutTask = $process.StandardOutput.ReadToEndAsync()
-		$stderrTask = $process.StandardError.ReadToEndAsync()
-
-		if (!$process.WaitForExit(10000)) {
-			$process.Kill($true)
-			$process.WaitForExit()
-			throw 'Published Antigravity capture smoke test timed out.'
-		}
-
-		$process.WaitForExit()
-		$stdout = $stdoutTask.GetAwaiter().GetResult()
-		$stderr = $stderrTask.GetAwaiter().GetResult()
-
-		if (($process.ExitCode -ne 0) -or
-			!([string]::IsNullOrEmpty($stdout)) -or
-			!([string]::IsNullOrEmpty($stderr))) {
-			throw (
-				'Published Antigravity capture smoke test failed with exit ' +
-				"code $($process.ExitCode).")
-		}
-	}
-	finally {
-		if ($started -and !$process.HasExited) {
-			$process.Kill($true)
-			$process.WaitForExit()
-		}
-
-		$process.Dispose()
-	}
-}
-
-function Merge-PublishDirectory {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $SourceRoot,
-
-		[Parameter(Mandatory = $true)]
-		[string] $DestinationRoot
-	)
-
-	foreach ($sourceDirectory in @(
-		Get-ChildItem -LiteralPath $SourceRoot -Recurse -Directory -Force)) {
-		$relativePath = [System.IO.Path]::GetRelativePath(
-			$SourceRoot,
-			$sourceDirectory.FullName)
-		$destinationPath = Join-Path $DestinationRoot $relativePath
-
-		if (Test-Path -LiteralPath $destinationPath) {
-			if (!(Test-Path -LiteralPath $destinationPath -PathType Container)) {
-				throw (
-					"Shared-runtime path collision is not a directory: " +
-					"$relativePath")
-			}
-
-			continue
-		}
-
-		New-Item -ItemType Directory -Path $destinationPath | Out-Null
-	}
-
-	foreach ($sourceFile in @(
-		Get-ChildItem -LiteralPath $SourceRoot -Recurse -File -Force)) {
-		$relativePath = [System.IO.Path]::GetRelativePath(
-			$SourceRoot,
-			$sourceFile.FullName)
-		$destinationPath = Join-Path $DestinationRoot $relativePath
-		$destinationDirectory = Split-Path -Parent $destinationPath
-
-		if (!(Test-Path -LiteralPath $destinationDirectory -PathType Container)) {
-			New-Item -ItemType Directory -Path $destinationDirectory |
-				Out-Null
-		}
-
-		if (Test-Path -LiteralPath $destinationPath) {
-			if (!(Test-Path -LiteralPath $destinationPath -PathType Leaf)) {
-				throw (
-					"Shared-runtime path collision is not a file: " +
-					"$relativePath")
-			}
-
-			$sourceHash = (Get-FileHash `
-				-LiteralPath $sourceFile.FullName `
-				-Algorithm SHA256).Hash
-			$destinationHash = (Get-FileHash `
-				-LiteralPath $destinationPath `
-				-Algorithm SHA256).Hash
-
-			if (!([string]::Equals(
-				$sourceHash,
-				$destinationHash,
-				[StringComparison]::OrdinalIgnoreCase))) {
-				throw (
-					"Shared-runtime file collision differs by SHA-256: " +
-					"$relativePath")
-			}
-
-			continue
-		}
-
-		Copy-Item `
-			-LiteralPath $sourceFile.FullName `
-			-Destination $destinationPath
-	}
-}
-
 function Remove-OwnedPath {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -692,49 +487,11 @@ try {
 		-DisplayName 'Dashboard'
 	Assert-PublishedProductVersion `
 		-ExecutablePath (Join-Path $appRoot 'AiUsageDashboard.App.exe')
+	Assert-PublishedProductVersion `
+		-ExecutablePath (Join-Path $appRoot 'AiUsageDashboard.ClaudeCapture.exe')
 	Assert-PublishedRuntime `
 		-PublishRoot $appRoot `
 		-AssemblyName 'AiUsageDashboard.App'
-
-	Invoke-PinnedPublish `
-		-ProjectPath (Join-Path `
-			$repositoryRoot `
-			'src\AiUsageDashboard.Antigravity.Setup\AiUsageDashboard.Antigravity.Setup.csproj') `
-		-PublishRoot $setupPublishRoot `
-		-DisplayName 'Antigravity setup'
-	Assert-PublishedProductVersion `
-		-ExecutablePath (Join-Path $setupPublishRoot 'AiUsageDashboard.Antigravity.Setup.exe')
-	Assert-PublishedRuntime `
-		-PublishRoot $setupPublishRoot `
-		-AssemblyName 'AiUsageDashboard.Antigravity.Setup'
-
-	Merge-PublishDirectory `
-		-SourceRoot $setupPublishRoot `
-		-DestinationRoot $appRoot
-	Remove-Item -LiteralPath $setupPublishRoot -Recurse -Force
-
-	Invoke-PinnedTrimmedSingleFilePublish `
-		-ProjectPath (Join-Path `
-			$repositoryRoot `
-			'src\AiUsageDashboard.AntigravityCapture\AiUsageDashboard.AntigravityCapture.csproj') `
-		-PublishRoot $antigravityCapturePublishRoot `
-		-DisplayName 'Antigravity status-line capture' `
-		-ExecutableName 'AiUsageDashboard.AntigravityCapture.exe'
-	Assert-PublishedProductVersion `
-		-ExecutablePath (Join-Path `
-			$antigravityCapturePublishRoot `
-			'AiUsageDashboard.AntigravityCapture.exe')
-	Invoke-PublishedCaptureSmokeTest `
-		-ExecutablePath (Join-Path `
-			$antigravityCapturePublishRoot `
-			'AiUsageDashboard.AntigravityCapture.exe')
-	Merge-PublishDirectory `
-		-SourceRoot $antigravityCapturePublishRoot `
-		-DestinationRoot $appRoot
-	Remove-Item `
-		-LiteralPath $antigravityCapturePublishRoot `
-		-Recurse `
-		-Force
 
 	$rootGuide = [IO.File]::ReadAllText(
 		(Join-Path $repositoryRoot '使用說明.md')).Replace(
@@ -746,6 +503,13 @@ try {
 		[Text.UTF8Encoding]::new($false))
 
 	$forbiddenNames = @(
+		'AiUsageDashboard.Antigravity.Setup.exe',
+		'AiUsageDashboard.Antigravity.Setup.deps.json',
+		'AiUsageDashboard.Antigravity.Setup.runtimeconfig.json',
+		'AiUsageDashboard.AntigravityCapture.exe',
+		'AiUsageDashboard.AntigravityCapture.dll',
+		'AiUsageDashboard.AntigravityCapture.deps.json',
+		'AiUsageDashboard.AntigravityCapture.runtimeconfig.json',
 		'AiUsageDashboard.AntigravitySpike.exe',
 		'AiUsageDashboard.AntigravitySpike.dll',
 		'AiUsageDashboard.AntigravitySpike.deps.json',
@@ -776,6 +540,7 @@ try {
 		'agy-profile*.json',
 		'agy-*.profile.json',
 		'antigravity-profile*.json',
+		'AiUsageDashboard.AntigravityCapture*.exe',
 		'*.private-profile.json',
 		'*.profile.private.json',
 		'diagnostics.log',
@@ -784,6 +549,7 @@ try {
 	$forbidden = @(Get-ChildItem `
 		-LiteralPath $stagedPackageRoot `
 		-Recurse `
+		-Force `
 		-File |
 		Where-Object {
 			$fileName = $_.Name
@@ -803,16 +569,41 @@ try {
 		throw "Forbidden package content detected: $($relative -join ', ')"
 	}
 
+	$allowedExecutablePaths =
+		[System.Collections.Generic.HashSet[string]]::new(
+			[System.StringComparer]::OrdinalIgnoreCase)
+	$null = $allowedExecutablePaths.Add(
+		'app\AiUsageDashboard.App.exe')
+	$null = $allowedExecutablePaths.Add(
+		'app\AiUsageDashboard.ClaudeCapture.exe')
+	$unexpectedExecutables = @(Get-ChildItem `
+		-LiteralPath $stagedPackageRoot `
+		-Recurse `
+		-Force `
+		-File `
+		-Filter '*.exe' |
+		Where-Object {
+			$relativePath = [System.IO.Path]::GetRelativePath(
+				$stagedPackageRoot,
+				$_.FullName)
+			!$allowedExecutablePaths.Contains($relativePath)
+		})
+
+	if ($unexpectedExecutables.Count -gt 0) {
+		$relative = $unexpectedExecutables |
+			ForEach-Object {
+				[System.IO.Path]::GetRelativePath(
+					$stagedPackageRoot,
+					$_.FullName)
+			}
+		throw "Unexpected executable detected: $($relative -join ', ')"
+	}
+
 	$legalManifestPath = Join-Path $repositoryRoot 'third-party-notices/component-manifest.json'
 	$legalManifest = Get-Content -LiteralPath $legalManifestPath -Raw | ConvertFrom-Json
 	& (Join-Path $PSScriptRoot 'Assert-LicenseDependencies.ps1') `
 		-DepsPath (Join-Path $appRoot 'AiUsageDashboard.App.deps.json') `
 		-Profile app `
-		-ExpectedManifestPath $legalManifestPath `
-		-SelfContained
-	& (Join-Path $PSScriptRoot 'Assert-LicenseDependencies.ps1') `
-		-DepsPath (Join-Path $appRoot 'AiUsageDashboard.Antigravity.Setup.deps.json') `
-		-Profile setup `
 		-ExpectedManifestPath $legalManifestPath `
 		-SelfContained
 	& (Join-Path $PSScriptRoot 'Assert-LicenseDependencies.ps1') `
@@ -835,8 +626,6 @@ try {
 	}
 	foreach ($entry in @(
 		@('AiUsageDashboard.App.exe', 'app'),
-		@('AiUsageDashboard.Antigravity.Setup.exe', 'setup'),
-		@('AiUsageDashboard.AntigravityCapture.exe', 'capture'),
 		@('AiUsageDashboard.ClaudeCapture.exe', 'claude-capture')
 	)) {
 		& (Join-Path $PSScriptRoot 'Assert-LicensePayload.ps1') `
@@ -853,13 +642,11 @@ try {
 		(Join-Path $appRoot 'AiUsageDashboard.App.exe'),
 		(Join-Path $appRoot 'AiUsageDashboard.App.runtimeconfig.json'),
 		(Join-Path $appRoot 'AiUsageDashboard.App.deps.json'),
-		(Join-Path $appRoot 'AiUsageDashboard.Antigravity.Setup.exe'),
-		(Join-Path `
-			$appRoot `
-			'AiUsageDashboard.Antigravity.Setup.runtimeconfig.json'),
-		(Join-Path $appRoot 'AiUsageDashboard.Antigravity.Setup.deps.json'),
-		(Join-Path $appRoot 'AiUsageDashboard.AntigravityCapture.exe'),
+		(Join-Path $appRoot 'AiUsageDashboard.Antigravity.Setup.dll'),
 		(Join-Path $appRoot 'AiUsageDashboard.Antigravity.dll'),
+		(Join-Path $appRoot 'AiUsageDashboard.ClaudeCapture.exe'),
+		(Join-Path $appRoot 'AiUsageDashboard.ClaudeCapture.runtimeconfig.json'),
+		(Join-Path $appRoot 'AiUsageDashboard.ClaudeCapture.deps.json'),
 		(Join-Path $appRoot 'README.md'),
 		(Join-Path `
 			$appRoot `
@@ -881,10 +668,6 @@ try {
 		-ExpectedFeedUrl $FeedUrl `
 		-ExpectedChannel $Channel `
 		-ExpectedTrustedKeysFile $resolvedTrustedKeysFile
-	Assert-PublishedRuntime `
-		-PublishRoot $appRoot `
-		-AssemblyName 'AiUsageDashboard.Antigravity.Setup'
-
 	Compress-Archive `
 		-LiteralPath $stagedPackageRoot `
 		-DestinationPath $temporaryZipPath

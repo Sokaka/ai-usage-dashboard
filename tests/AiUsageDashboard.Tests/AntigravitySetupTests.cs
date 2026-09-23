@@ -1,5 +1,3 @@
-using System.ComponentModel;
-
 using AiUsageDashboard.Antigravity.Setup;
 using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App.Providers;
@@ -280,61 +278,6 @@ public sealed class AntigravitySetupTests
 	}
 
 	[Fact]
-	public void DashboardLauncher_WhenProcessStartFails_ReturnsFalse()
-	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string setupDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"setup");
-		string appDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"app");
-		Directory.CreateDirectory(setupDirectory);
-		Directory.CreateDirectory(appDirectory);
-		File.WriteAllBytes(
-			Path.Combine(appDirectory, "AiUsageDashboard.App.exe"),
-			new byte[] { 0 });
-
-		bool opened = DashboardLauncher.TryOpen(
-			setupDirectory,
-			_ => throw new System.ComponentModel.Win32Exception());
-
-		Assert.False(opened);
-	}
-
-	[Fact]
-	public void DashboardLauncher_WhenProcessStarts_PassesEnsureAccountArgument()
-	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string setupDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"setup");
-		string appDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"app");
-		Directory.CreateDirectory(setupDirectory);
-		Directory.CreateDirectory(appDirectory);
-		File.WriteAllBytes(
-			Path.Combine(appDirectory, "AiUsageDashboard.App.exe"),
-			new byte[] { 0 });
-		System.Diagnostics.ProcessStartInfo? observed = null;
-
-		bool opened = DashboardLauncher.TryOpen(
-			setupDirectory,
-			startInfo =>
-			{
-				observed = startInfo;
-				return System.Diagnostics.Process.GetCurrentProcess();
-			});
-
-		Assert.True(opened);
-		Assert.NotNull(observed);
-		Assert.Contains(
-			AntigravityMachineSetupLaunchArguments.EnsureDashboardAccount,
-			observed.ArgumentList);
-	}
-
-	[Fact]
 	public void AppEnsureAccountArgument_RequiresExactToken()
 	{
 		Assert.True(AiUsageDashboard.App.App
@@ -470,13 +413,11 @@ public sealed class AntigravitySetupTests
 		Assert.Contains("重新登入", guidance, StringComparison.Ordinal);
 	}
 
-	[Theory]
-	[InlineData(AntigravityMachineSetupFailureKind.ExistingProcessDetected)]
-	[InlineData(AntigravityMachineSetupFailureKind.SettingsRejected)]
-	public void GetFailureGuidance_WhenClosingAntigravityIsRequired_GivesDirectSteps(
-		AntigravityMachineSetupFailureKind failureKind)
+	[Fact]
+	public void GetFailureGuidance_WhenClosingAntigravityIsRequired_GivesDirectSteps()
 	{
-		string guidance = SetupWindow.GetFailureGuidance(failureKind);
+		string guidance = SetupWindow.GetFailureGuidance(
+			AntigravityMachineSetupFailureKind.ExistingProcessDetected);
 
 		Assert.Contains(
 			"關閉其他 Antigravity 視窗",
@@ -487,26 +428,17 @@ public sealed class AntigravitySetupTests
 	}
 
 	[Fact]
-	public void SetupDashboardManagedArgument_RequiresOneExactToken()
+	public void GetFailureGuidance_WhenSettingsAreRejected_DoesNotRequireStatusLineChanges()
 	{
-		Assert.True(AiUsageDashboard.Antigravity.Setup.App
-			.ShouldUseDashboardManagedMode(new[]
-		{
-			AntigravityMachineSetupLaunchArguments.DashboardManaged
-		}));
-		Assert.False(AiUsageDashboard.Antigravity.Setup.App
-			.ShouldUseDashboardManagedMode(new[]
-		{
-			"--dashboard-managed-extra"
-		}));
-		Assert.False(AiUsageDashboard.Antigravity.Setup.App
-			.ShouldUseDashboardManagedMode(new[]
-		{
-			AntigravityMachineSetupLaunchArguments.DashboardManaged,
-			"--unexpected"
-		}));
-		Assert.False(AiUsageDashboard.Antigravity.Setup.App
-			.ShouldUseDashboardManagedMode(Array.Empty<string>()));
+		string guidance = SetupWindow.GetFailureGuidance(
+			AntigravityMachineSetupFailureKind.SettingsRejected);
+
+		Assert.DoesNotContain("/statusline", guidance, StringComparison.Ordinal);
+		Assert.Contains("已登入且可正常使用", guidance, StringComparison.Ordinal);
+		Assert.DoesNotContain(
+			"關閉其他 Antigravity 視窗",
+			guidance,
+			StringComparison.Ordinal);
 	}
 
 	[Theory]
@@ -525,404 +457,167 @@ public sealed class AntigravitySetupTests
 				.SupportsPostSaveAction(provider));
 	}
 
-	[Fact]
-	public async Task AntigravitySetupLauncher_WhenPackagedHelperExists_UsesExactManagedLaunch()
-	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string appDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"app");
-		string setupDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"setup");
-		Directory.CreateDirectory(appDirectory);
-		Directory.CreateDirectory(setupDirectory);
-		string setupExecutablePath = Path.Combine(
-			setupDirectory,
-			"AiUsageDashboard.Antigravity.Setup.exe");
-		File.WriteAllBytes(setupExecutablePath, new byte[] { 0 });
-		System.Diagnostics.ProcessStartInfo? observed = null;
-		AntigravityAccountSetupLauncher launcher = new(
-			appDirectory,
-			(startInfo, _) =>
-			{
-				observed = startInfo;
-				return Task.FromResult<int?>(
-					AntigravityMachineSetupLaunchArguments
-						.DashboardManagedSuccessExitCode);
-			});
-		Guid setupAttemptId = Guid.NewGuid();
-
-		AntigravityAccountSetupOutcome outcome =
-			await launcher.RunAsync(setupAttemptId, CancellationToken.None);
-
-		Assert.Equal(
-			AntigravityAccountSetupOutcome.Completed,
-			outcome);
-		Assert.NotNull(observed);
-		Assert.Equal(setupExecutablePath, observed.FileName);
-		Assert.Equal(setupDirectory, observed.WorkingDirectory);
-		Assert.False(observed.UseShellExecute);
-		Assert.Equal(
-			new[]
-			{
-				AntigravityMachineSetupLaunchArguments.DashboardManaged
-			},
-			observed.ArgumentList);
-		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedSourceKindExitProtocol,
-			observed.Environment[
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedResultProtocolEnvironmentVariable]);
-		Assert.Equal(
-			setupAttemptId.ToString("N"),
-			observed.Environment[
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedSetupAttemptIdEnvironmentVariable]);
-	}
-
 	[Theory]
-	[InlineData(null, 0)]
-	[InlineData("", 0)]
-	[InlineData("unexpected", 0)]
-	[InlineData(
-		AntigravityMachineSetupLaunchArguments
-			.DashboardManagedSourceKindExitProtocol,
-		AntigravityMachineSetupLaunchArguments
-			.DashboardManagedOfficialPrintSuccessExitCode)]
-	public void ResolveDashboardManagedCompletionExitCode_RequiresNewParentProtocol(
-		string? resultProtocol,
-		int expected)
+	[InlineData(true)]
+	[InlineData(false)]
+	public void ShouldAutoCloseAfterApprovalUncertainty_MatchesApprovalStart(
+		bool hasApprovalStarted)
 	{
 		Assert.Equal(
-			expected,
-			SetupWindow.ResolveDashboardManagedCompletionExitCode(
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedOfficialPrintSuccessExitCode,
-				resultProtocol));
-		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedSuccessExitCode,
-			SetupWindow.ResolveDashboardManagedCompletionExitCode(
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedSuccessExitCode,
-				resultProtocol));
-	}
-
-	[Theory]
-	[InlineData(true, true, true)]
-	[InlineData(true, false, false)]
-	[InlineData(false, true, false)]
-	public void ShouldAutoCloseAfterApprovalUncertainty_OnlyForManagedCommittedFlow(
-		bool isDashboardManaged,
-		bool hasApprovalStarted,
-		bool expected)
-	{
-		Assert.Equal(
-			expected,
+			hasApprovalStarted,
 			SetupWindow.ShouldAutoCloseAfterApprovalUncertainty(
-				isDashboardManaged,
 				hasApprovalStarted));
 	}
 
-	[Fact]
-	public async Task AntigravitySetupLauncher_WhenOfficialPrintHelperCompletes_ReturnsOfficialPrintCompletion()
+	[Theory]
+	[InlineData("CompletedOfficialPrint", "CompletedOfficialPrint")]
+	[InlineData("CompletionUnknown", "CompletionUnknown")]
+	[InlineData("Cancelled", "Cancelled")]
+	[InlineData("Failed", "Failed")]
+	public async Task AntigravitySetupLauncher_MapsDialogResult(
+		string dialogOutcome,
+		string expected)
 	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string appDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"app");
-		string setupDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"setup");
-		Directory.CreateDirectory(appDirectory);
-		Directory.CreateDirectory(setupDirectory);
-		File.WriteAllBytes(
-			Path.Combine(
-				setupDirectory,
-				"AiUsageDashboard.Antigravity.Setup.exe"),
-			new byte[] { 0 });
 		AntigravityAccountSetupLauncher launcher = new(
-			appDirectory,
-			(_, _) => Task.FromResult<int?>(
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedOfficialPrintSuccessExitCode));
+			(_, _) => Task.FromResult(
+				new AntigravitySetupDialogResult(
+					Enum.Parse<AntigravitySetupDialogOutcome>(dialogOutcome))));
 
-		AntigravityAccountSetupOutcome outcome =
+		AntigravityAccountSetupOutcome actual =
 			await launcher.RunAsync(CancellationToken.None);
 
-		Assert.Equal(
-			AntigravityAccountSetupOutcome.CompletedOfficialPrint,
-			outcome);
+		Assert.Equal(expected, actual.ToString());
 	}
 
 	[Fact]
-	public async Task AntigravitySetupLauncher_WhenHelperIsMissing_DoesNotStartProcess()
+	public async Task AntigravitySetupLauncher_PassesAttemptIdAndMarksDurableStateActive()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
-		string appDirectory = Path.Combine(
+		AntigravitySetupAttemptStateStore attemptStateStore = new(Path.Combine(
 			temporaryDirectory.Path,
-			"app");
-		Directory.CreateDirectory(appDirectory);
-		int startCount = 0;
+			"attempts"));
+		Guid setupAttemptId = Guid.NewGuid();
+		Guid observedAttemptId = Guid.Empty;
 		AntigravityAccountSetupLauncher launcher = new(
-			appDirectory,
-			(_, _) =>
+			(attemptId, _) =>
 			{
-				startCount++;
-				return Task.FromResult<int?>(0);
-			});
+				observedAttemptId = attemptId;
+				return Task.FromResult(new AntigravitySetupDialogResult(
+					AntigravitySetupDialogOutcome.CompletedOfficialPrint));
+			},
+			attemptStateStore);
 
-		AntigravityAccountSetupOutcome outcome =
-			await launcher.RunAsync(CancellationToken.None);
+		AntigravityAccountSetupOutcome outcome = await launcher.RunAsync(
+			setupAttemptId,
+			CancellationToken.None);
+		AntigravitySetupAttemptState state = Assert.IsType<
+			AntigravitySetupAttemptState>(
+				await attemptStateStore.ReadAsync(setupAttemptId));
 
+		Assert.Equal(AntigravityAccountSetupOutcome.CompletedOfficialPrint, outcome);
+		Assert.Equal(setupAttemptId, observedAttemptId);
+		Assert.Equal(setupAttemptId, state.AttemptId);
+		Assert.Equal(AntigravitySetupAttemptPhase.Active, state.Phase);
 		Assert.Equal(
-			AntigravityAccountSetupOutcome.Unavailable,
-			outcome);
-		Assert.Equal(0, startCount);
+			AntigravitySetupProcessIdentity.CaptureCurrent().ProcessId,
+			state.ProcessId);
 	}
 
 	[Fact]
-	public async Task AntigravitySetupLauncher_WhenAlreadyCancelled_DoesNotStartProcess()
+	public async Task AntigravitySetupLauncher_WhenAlreadyCancelled_DoesNotOpenDialogOrWriteState()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
-		string appDirectory = Path.Combine(
+		AntigravitySetupAttemptStateStore attemptStateStore = new(Path.Combine(
 			temporaryDirectory.Path,
-			"app");
-		string setupDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"setup");
-		Directory.CreateDirectory(appDirectory);
-		Directory.CreateDirectory(setupDirectory);
-		File.WriteAllBytes(
-			Path.Combine(
-				setupDirectory,
-				"AiUsageDashboard.Antigravity.Setup.exe"),
-			new byte[] { 0 });
-		int startCount = 0;
+			"attempts"));
+		int dialogCount = 0;
 		AntigravityAccountSetupLauncher launcher = new(
-			appDirectory,
 			(_, _) =>
 			{
-				startCount++;
-				return Task.FromResult<int?>(0);
-			});
+				dialogCount++;
+				return Task.FromResult(new AntigravitySetupDialogResult(
+					AntigravitySetupDialogOutcome.CompletedOfficialPrint));
+			},
+			attemptStateStore);
 		using CancellationTokenSource cancellationSource = new();
 		cancellationSource.Cancel();
+		Guid setupAttemptId = Guid.NewGuid();
+
+		AntigravityAccountSetupOutcome outcome = await launcher.RunAsync(
+			setupAttemptId,
+			cancellationSource.Token);
+
+		Assert.Equal(AntigravityAccountSetupOutcome.Cancelled, outcome);
+		Assert.Equal(0, dialogCount);
+		Assert.Null(await attemptStateStore.ReadAsync(setupAttemptId));
+	}
+
+	[Fact]
+	public async Task AntigravitySetupLauncher_WhenDialogReturnsFailure_ReportsItAndPreservesOutcome()
+	{
+		Exception failure = new InvalidOperationException(
+			"Synthetic dialog failure.");
+		string? reportedOperation = null;
+		Exception? reportedFailure = null;
+		AntigravityAccountSetupLauncher launcher = new(
+			(_, _) => Task.FromResult(new AntigravitySetupDialogResult(
+				AntigravitySetupDialogOutcome.Failed,
+				failure)),
+			attemptStateStore: null,
+			(operation, exception) =>
+			{
+				reportedOperation = operation;
+				reportedFailure = exception;
+			});
+
+		AntigravityAccountSetupOutcome outcome =
+			await launcher.RunAsync(CancellationToken.None);
+
+		Assert.Equal(AntigravityAccountSetupOutcome.Failed, outcome);
+		Assert.Equal("antigravity-setup-window", reportedOperation);
+		Assert.Same(failure, reportedFailure);
+	}
+
+	[Fact]
+	public async Task AntigravitySetupLauncher_WhenDialogThrows_ReturnsFailedAndReportsFailure()
+	{
+		Exception failure = new IOException("Synthetic dialog failure.");
+		string? reportedOperation = null;
+		Exception? reportedFailure = null;
+		AntigravityAccountSetupLauncher launcher = new(
+			(_, _) => Task.FromException<AntigravitySetupDialogResult>(failure),
+			attemptStateStore: null,
+			(operation, exception) =>
+			{
+				reportedOperation = operation;
+				reportedFailure = exception;
+			});
+
+		AntigravityAccountSetupOutcome outcome =
+			await launcher.RunAsync(CancellationToken.None);
+
+		Assert.Equal(AntigravityAccountSetupOutcome.Failed, outcome);
+		Assert.Equal("antigravity-setup-session", reportedOperation);
+		Assert.Same(failure, reportedFailure);
+	}
+
+	[Fact]
+	public async Task AntigravitySetupLauncher_WhenDialogObservesCancellation_ReturnsCancelled()
+	{
+		using CancellationTokenSource cancellationSource = new();
+		AntigravityAccountSetupLauncher launcher = new(
+			(_, cancellationToken) =>
+			{
+				cancellationSource.Cancel();
+				return Task.FromCanceled<AntigravitySetupDialogResult>(
+					cancellationToken);
+			});
 
 		AntigravityAccountSetupOutcome outcome = await launcher.RunAsync(
 			Guid.NewGuid(),
 			cancellationSource.Token);
 
 		Assert.Equal(AntigravityAccountSetupOutcome.Cancelled, outcome);
-		Assert.Equal(0, startCount);
-	}
-
-	[Theory]
-	[InlineData(
-		AntigravityMachineSetupLaunchArguments.DashboardManagedCancelledExitCode,
-		"Cancelled")]
-	[InlineData(
-		AntigravityMachineSetupLaunchArguments.DashboardManagedFailedExitCode,
-		"Failed")]
-	[InlineData(
-		AntigravityMachineSetupLaunchArguments
-			.DashboardManagedCompletionUnknownExitCode,
-		"CompletionUnknown")]
-	[InlineData(99, "CompletionUnknown")]
-	[InlineData(225, "CompletionUnknown")]
-	[InlineData(226, "CompletionUnknown")]
-	public async Task AntigravitySetupLauncher_MapsNonSuccessExitCode(
-		int? exitCode,
-		string expected)
-	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string appDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"app");
-		string setupDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"setup");
-		Directory.CreateDirectory(appDirectory);
-		Directory.CreateDirectory(setupDirectory);
-		File.WriteAllBytes(
-			Path.Combine(
-				setupDirectory,
-				"AiUsageDashboard.Antigravity.Setup.exe"),
-			new byte[] { 0 });
-		AntigravityAccountSetupLauncher launcher = new(
-			appDirectory,
-			(_, _) => Task.FromResult<int?>(exitCode));
-
-		Assert.Equal(
-			expected,
-			(await launcher.RunAsync(CancellationToken.None)).ToString());
-	}
-
-	[Fact]
-	public async Task AntigravitySetupLauncher_WhenProcessReturnsNoExitCode_ReturnsLaunchFailed()
-	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string appDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"app");
-		string setupDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"setup");
-		Directory.CreateDirectory(appDirectory);
-		Directory.CreateDirectory(setupDirectory);
-		File.WriteAllBytes(
-			Path.Combine(
-				setupDirectory,
-				"AiUsageDashboard.Antigravity.Setup.exe"),
-			new byte[] { 0 });
-		AntigravityAccountSetupLauncher launcher = new(
-			appDirectory,
-			(_, _) => Task.FromResult<int?>(null));
-
-		AntigravityAccountSetupOutcome outcome =
-			await launcher.RunAsync(CancellationToken.None);
-
-		Assert.Equal(
-			AntigravityAccountSetupOutcome.LaunchFailed,
-			outcome);
-	}
-
-	[Fact]
-	public async Task AntigravitySetupLauncher_WhenProcessStartThrows_ReturnsLaunchFailed()
-	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string appDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"app");
-		string setupDirectory = Path.Combine(
-			temporaryDirectory.Path,
-			"setup");
-		Directory.CreateDirectory(appDirectory);
-		Directory.CreateDirectory(setupDirectory);
-		File.WriteAllBytes(
-			Path.Combine(
-				setupDirectory,
-				"AiUsageDashboard.Antigravity.Setup.exe"),
-			new byte[] { 0 });
-		AntigravityAccountSetupLauncher launcher = new(
-			appDirectory,
-			(_, _) => throw new IOException("Synthetic launch failure."));
-
-		AntigravityAccountSetupOutcome outcome =
-			await launcher.RunAsync(CancellationToken.None);
-
-		Assert.Equal(
-			AntigravityAccountSetupOutcome.LaunchFailed,
-			outcome);
-	}
-
-	[Theory]
-	[InlineData(225, "SecurityBlocked")]
-	[InlineData(226, "SecurityBlocked")]
-	[InlineData(5, "LaunchFailed")]
-	[InlineData(2, "LaunchFailed")]
-	public async Task AntigravitySetupLauncher_WhenWindowsRejectsLaunch_DistinguishesSecurityDetection(
-		int nativeErrorCode,
-		string expectedOutcome)
-	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string appDirectory = Path.Combine(temporaryDirectory.Path, "app");
-		Directory.CreateDirectory(appDirectory);
-		File.WriteAllBytes(
-			Path.Combine(appDirectory, "AiUsageDashboard.Antigravity.Setup.exe"),
-			new byte[] { 0 });
-		int launchCount = 0;
-		AntigravityAccountSetupLauncher launcher = new(
-			appDirectory,
-			(_, _) =>
-			{
-				launchCount++;
-				throw new Win32Exception(nativeErrorCode, "Synthetic launch rejection.");
-			});
-
-		AntigravityAccountSetupOutcome outcome =
-			await launcher.RunAsync(CancellationToken.None);
-
-		Assert.Equal(expectedOutcome, outcome.ToString());
-		Assert.Equal(1, launchCount);
-	}
-
-	[Fact]
-	public async Task AntigravitySetupLauncher_WhenActiveRegistrationFails_AcknowledgesUnknownCompletion()
-	{
-		bool wasRegistered = await AntigravityAccountSetupLauncher
-			.TryRegisterActiveProcessAsync(
-				() => Task.FromException(
-					new IOException("Synthetic state-store failure.")));
-
-		Assert.False(wasRegistered);
-	}
-
-	[Fact]
-	public async Task AntigravitySetupLauncher_WhenCancelled_RequestsCooperativeClose()
-	{
-		using CancellationTokenSource cancellationSource = new();
-		int terminateCount = 0;
-		TaskCompletionSource processExited = new(
-			TaskCreationOptions.RunContinuationsAsynchronously);
-
-		Task<bool> waitTask =
-			AntigravityAccountSetupLauncher.WaitForExitOrTerminateAsync(
-			cancellationToken => processExited.Task.WaitAsync(cancellationToken),
-			() => false,
-			() =>
-			{
-				terminateCount++;
-				processExited.TrySetResult();
-			},
-			TimeSpan.FromSeconds(1),
-			cancellationSource.Token);
-		cancellationSource.Cancel();
-
-		Assert.True(await waitTask);
-		Assert.Equal(1, terminateCount);
-	}
-
-	[Fact]
-	public async Task AntigravitySetupLauncher_WhenTerminationDoesNotExit_ReturnsWithinBound()
-	{
-		using CancellationTokenSource cancellationSource = new();
-		TaskCompletionSource processExited = new(
-			TaskCreationOptions.RunContinuationsAsynchronously);
-
-		Task<bool> waitTask =
-			AntigravityAccountSetupLauncher.WaitForExitOrTerminateAsync(
-			cancellationToken => processExited.Task.WaitAsync(cancellationToken),
-			() => false,
-			() => { },
-			TimeSpan.FromMilliseconds(30),
-			cancellationSource.Token);
-		cancellationSource.Cancel();
-
-		Assert.False(await waitTask.WaitAsync(TimeSpan.FromSeconds(1)));
-	}
-
-	[Fact]
-	public async Task AntigravitySetupLauncher_WhenCancellationRacesWithExit_DoesNotRequestClose()
-	{
-		using CancellationTokenSource cancellationSource = new();
-		cancellationSource.Cancel();
-		int closeRequestCount = 0;
-
-		bool hasConfirmedExit = await AntigravityAccountSetupLauncher
-			.WaitForExitOrTerminateAsync(
-				cancellationToken => Task.Delay(
-					Timeout.InfiniteTimeSpan,
-					cancellationToken),
-				() => true,
-				() => closeRequestCount++,
-				TimeSpan.FromSeconds(1),
-				cancellationSource.Token);
-
-		Assert.True(hasConfirmedExit);
-		Assert.Equal(0, closeRequestCount);
 	}
 
 	[Fact]
@@ -933,7 +628,7 @@ public sealed class AntigravitySetupTests
 		AntigravityMachineSetupCandidate candidate = CreateCandidate(
 			() => approveCount++,
 			() => releaseCount++,
-			AntigravityMachineSetupSourceKind.ReviewedConPty);
+			AntigravityMachineSetupSourceKind.OfficialPrint);
 		FakeMachineSetupService service = new(
 			new AntigravityMachineSetupPreparationResult(candidate));
 		await using AntigravitySetupWorkflow workflow = new(service);
@@ -962,13 +657,12 @@ public sealed class AntigravitySetupTests
 			AntigravitySetupWorkflowState.Completed,
 			workflow.State);
 		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedSuccessExitCode,
-			workflow.DashboardManagedExitCode);
+			AntigravitySetupDialogOutcome.CompletedOfficialPrint,
+			workflow.DialogOutcome);
 	}
 
 	[Fact]
-	public async Task ApproveAsync_WhenOfficialPrintCandidateCompletes_PreservesSourceAwareExitCode()
+	public async Task ApproveAsync_WhenOfficialPrintCandidateCompletes_PreservesSourceAwareDialogOutcome()
 	{
 		int approveCount = 0;
 		int releaseCount = 0;
@@ -995,9 +689,8 @@ public sealed class AntigravitySetupTests
 			AntigravitySetupWorkflowState.Completed,
 			workflow.State);
 		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedOfficialPrintSuccessExitCode,
-			workflow.DashboardManagedExitCode);
+			AntigravitySetupDialogOutcome.CompletedOfficialPrint,
+			workflow.DialogOutcome);
 	}
 
 	[Fact]
@@ -1015,7 +708,7 @@ public sealed class AntigravitySetupTests
 				sequence.Add("dispose");
 				return ValueTask.CompletedTask;
 			},
-			AntigravityMachineSetupSourceKind.ReviewedConPty);
+			AntigravityMachineSetupSourceKind.OfficialPrint);
 		FakeMachineSetupService service = new(
 			new AntigravityMachineSetupPreparationResult(candidate));
 		await using AntigravitySetupWorkflow workflow = new(
@@ -1070,9 +763,8 @@ public sealed class AntigravitySetupTests
 		Assert.True(workflow.HasCommittedSetting);
 		Assert.Equal(AntigravitySetupWorkflowState.Failed, workflow.State);
 		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedCompletionUnknownExitCode,
-			workflow.DashboardManagedExitCode);
+			AntigravitySetupDialogOutcome.CompletionUnknown,
+			workflow.DialogOutcome);
 	}
 
 	[Fact]
@@ -1100,9 +792,8 @@ public sealed class AntigravitySetupTests
 		Assert.True(workflow.HasCommittedSetting);
 		Assert.Equal(AntigravitySetupWorkflowState.Cancelled, workflow.State);
 		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedCompletionUnknownExitCode,
-			workflow.DashboardManagedExitCode);
+			AntigravitySetupDialogOutcome.CompletionUnknown,
+			workflow.DialogOutcome);
 	}
 
 	[Fact]
@@ -1133,9 +824,8 @@ public sealed class AntigravitySetupTests
 		Assert.False(workflow.HasCommittedSetting);
 		Assert.True(workflow.HasApprovalStarted);
 		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedCompletionUnknownExitCode,
-			workflow.DashboardManagedExitCode);
+			AntigravitySetupDialogOutcome.CompletionUnknown,
+			workflow.DialogOutcome);
 	}
 
 	[Fact]
@@ -1235,8 +925,8 @@ public sealed class AntigravitySetupTests
 		Assert.False(workflow.HasApprovalStarted);
 		Assert.False(workflow.HasCommittedSetting);
 		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments.DashboardManagedFailedExitCode,
-			workflow.DashboardManagedExitCode);
+			AntigravitySetupDialogOutcome.Failed,
+			workflow.DialogOutcome);
 	}
 
 	[Fact]
@@ -1343,9 +1033,8 @@ public sealed class AntigravitySetupTests
 			AntigravitySetupWorkflowState.Cancelled,
 			workflow.State);
 		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedCancelledExitCode,
-			workflow.DashboardManagedExitCode);
+			AntigravitySetupDialogOutcome.Cancelled,
+			workflow.DialogOutcome);
 	}
 
 	[Fact]
@@ -1461,9 +1150,8 @@ public sealed class AntigravitySetupTests
 			workflow.FailureKind);
 		Assert.False(workflow.HasCommittedSetting);
 		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedFailedExitCode,
-			workflow.DashboardManagedExitCode);
+			AntigravitySetupDialogOutcome.Failed,
+			workflow.DialogOutcome);
 	}
 
 	[Fact]
@@ -1493,9 +1181,8 @@ public sealed class AntigravitySetupTests
 			AntigravityMachineSetupFailureKind.PrivateStorageRejected,
 			workflow.FailureKind);
 		Assert.Equal(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedCompletionUnknownExitCode,
-			workflow.DashboardManagedExitCode);
+			AntigravitySetupDialogOutcome.CompletionUnknown,
+			workflow.DialogOutcome);
 	}
 
 	[Fact]
@@ -1980,7 +1667,7 @@ public sealed class AntigravitySetupTests
 		Action approve,
 		Action release,
 		AntigravityMachineSetupSourceKind sourceKind =
-			AntigravityMachineSetupSourceKind.ReviewedConPty)
+			AntigravityMachineSetupSourceKind.OfficialPrint)
 	{
 		return CreateCandidate(
 			_ =>
@@ -2000,7 +1687,7 @@ public sealed class AntigravitySetupTests
 		Func<CancellationToken, Task> approveAsync,
 		Func<ValueTask> releaseAsync,
 		AntigravityMachineSetupSourceKind sourceKind =
-			AntigravityMachineSetupSourceKind.ReviewedConPty)
+			AntigravityMachineSetupSourceKind.OfficialPrint)
 	{
 		AntigravityProductionUsageWindow[] windows =
 		{

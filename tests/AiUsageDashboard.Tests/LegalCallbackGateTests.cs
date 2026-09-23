@@ -11,7 +11,7 @@ public sealed class LegalCallbackGateTests
 		LegalAcceptanceStore store = CreateStore(directory);
 
 		int exitCode = LegalCallbackGate.CheckAcceptance(
-			() => LegalCatalog.Load(LegalProfile.Capture), () => store);
+			() => LegalCatalog.Load(LegalProfile.ClaudeCapture), () => store);
 
 		Assert.Equal(LegalCommandLine.AcceptanceRequiredExitCode, exitCode);
 		Assert.Empty(Directory.EnumerateFileSystemEntries(directory.Path));
@@ -25,7 +25,7 @@ public sealed class LegalCallbackGateTests
 		File.WriteAllText(receiptPath, "{broken-receipt");
 
 		int exitCode = LegalCallbackGate.CheckAcceptance(
-			() => LegalCatalog.Load(LegalProfile.Capture), () => CreateStore(directory));
+			() => LegalCatalog.Load(LegalProfile.ClaudeCapture), () => CreateStore(directory));
 
 		Assert.Equal(LegalCommandLine.FailureExitCode, exitCode);
 		Assert.Equal("{broken-receipt", File.ReadAllText(receiptPath));
@@ -52,17 +52,17 @@ public sealed class LegalCallbackGateTests
 	public void CheckAcceptance_WhenWindowsIdentityCannotBeResolved_ReturnsFailure()
 	{
 		int exitCode = LegalCallbackGate.CheckAcceptance(
-			() => LegalCatalog.Load(LegalProfile.Capture),
+			() => LegalCatalog.Load(LegalProfile.ClaudeCapture),
 			() => throw new InvalidOperationException("Injected unavailable Windows SID."));
 
 		Assert.Equal(LegalCommandLine.FailureExitCode, exitCode);
 	}
 
 	[Fact]
-	public void CheckAcceptance_WithAcceptedIsolatedTestReceipt_AllowsCapture()
+	public void CheckAcceptance_WithAcceptedIsolatedTestReceipt_AllowsClaudeCapture()
 	{
 		using TemporaryDirectory directory = new();
-		LegalCatalog catalog = LegalCatalog.Load(LegalProfile.Capture);
+		LegalCatalog catalog = LegalCatalog.Load(LegalProfile.ClaudeCapture);
 		LegalAcceptanceStore store = CreateStore(directory);
 		store.Accept(catalog, catalog.Digest);
 

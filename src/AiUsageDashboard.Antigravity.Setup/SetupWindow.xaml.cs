@@ -10,8 +10,6 @@ using System.Windows.Media;
 using System.Windows.Threading;
 
 using AiUsageDashboard.AntigravitySpike;
-using AiUsageDashboard.Presentation;
-
 namespace AiUsageDashboard.Antigravity.Setup;
 
 public partial class SetupWindow : Window
@@ -21,7 +19,7 @@ public partial class SetupWindow : Window
 		string RemainingText,
 		string ResetText);
 
-	private sealed record DashboardManagedAttemptPersistence(
+	private sealed record SetupAttemptPersistence(
 		Func<
 			AntigravityMachineSetupCandidate,
 			CancellationToken,
@@ -57,7 +55,9 @@ public partial class SetupWindow : Window
 		typeof(SetupWindow).Assembly.GetName().Version);
 
 	private readonly AntigravitySetupWorkflow _workflow;
-	private readonly bool _isDashboardManaged;
+	private readonly TaskCompletionSource<AntigravitySetupDialogResult>
+		_completionSource = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
 	private readonly double _preferredMinHeight;
 	private readonly double _preferredMinWidth;
 	private Task? _activeOperation;
@@ -65,68 +65,48 @@ public partial class SetupWindow : Window
 	private HwndSource? _windowSource;
 	private AntigravityMachineSetupStage? _lastStage;
 	private string _failureDiagnosticInfo = string.Empty;
+	private Exception? _completionFailure;
 	private bool _allowClose;
 	private bool _isClosePending;
 	private bool _isWorkAreaRefreshQueued;
 	private bool _shouldTransferOperationFocus = true;
 
-	public SetupWindow()
-		: this(
-			MachineSetupServiceFactory.Create(),
-			(System.Windows.Application.Current as App)
-				?.IsDashboardManagedLaunch == true)
-	{
-	}
-
 	internal SetupWindow(
 		IAntigravityMachineSetupService setupService,
-		bool isDashboardManaged = false)
+		Guid setupAttemptId)
 	{
+		if (setupAttemptId == Guid.Empty)
+		{
+			throw new ArgumentException(
+				"Antigravity setup attempt ID 不可為空。",
+				nameof(setupAttemptId));
+		}
+
 		InitializeComponent();
-		DashboardManagedAttemptPersistence? persistence =
-			CreateDashboardManagedAttemptPersistence(isDashboardManaged);
+		SetupAttemptPersistence persistence =
+			CreateSetupAttemptPersistence(setupAttemptId);
 		_workflow = new AntigravitySetupWorkflow(
 			setupService,
 			beforeApprovalCommitAsync:
-				persistence?.BeforeApprovalCommitAsync,
+				persistence.BeforeApprovalCommitAsync,
 			afterApprovalCommittedAsync:
-				persistence?.AfterApprovalCommittedAsync);
-		_isDashboardManaged = isDashboardManaged;
+				persistence.AfterApprovalCommittedAsync);
 		_preferredMinHeight = MinHeight;
 		_preferredMinWidth = MinWidth;
 		Loaded += SetupWindow_Loaded;
 	}
 
-	private static DashboardManagedAttemptPersistence?
-		CreateDashboardManagedAttemptPersistence(
-		bool isDashboardManaged)
+	internal Task<AntigravitySetupDialogResult> Completion =>
+		_completionSource.Task;
+
+	private static SetupAttemptPersistence CreateSetupAttemptPersistence(
+		Guid attemptId)
 	{
-		if (!isDashboardManaged)
-		{
-			return null;
-		}
-
-		string? rawAttemptId = Environment.GetEnvironmentVariable(
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedSetupAttemptIdEnvironmentVariable);
-		if (!Guid.TryParseExact(rawAttemptId, "N", out Guid attemptId) ||
-			(attemptId == Guid.Empty))
-		{
-			Task FailInvalidAttempt(
-				AntigravityMachineSetupCandidate _,
-				CancellationToken __) => Task.FromException(
-					new InvalidOperationException(
-						"AI Usage 未提供有效的 Antigravity setup attempt ID。"));
-			return new DashboardManagedAttemptPersistence(
-				FailInvalidAttempt,
-				FailInvalidAttempt);
-		}
-
 		AntigravitySetupAttemptStateStore attemptStateStore =
 			AntigravitySetupAttemptStateStore.CreateDefault();
 		AntigravitySetupApprovalReceiptStore receiptStore =
 			AntigravitySetupApprovalReceiptStore.CreateDefault();
-		return new DashboardManagedAttemptPersistence(
+		return new SetupAttemptPersistence(
 			(candidate, cancellationToken) =>
 				attemptStateStore.MarkApprovalRequestedAsync(
 					attemptId,
@@ -163,6 +143,9 @@ public partial class SetupWindow : Window
 		_windowSource?.RemoveHook(WindowMessageHook);
 		_windowSource = null;
 		base.OnClosed(e);
+		_completionSource.TrySetResult(new AntigravitySetupDialogResult(
+			_workflow.DialogOutcome,
+			_completionFailure));
 	}
 
 	internal static double CalculateMaximumWindowHeight(
@@ -396,7 +379,7 @@ public partial class SetupWindow : Window
 			(AntigravityMachineSetupFailureKind.PrivateStorageRejected, _) =>
 				"請再試一次；若仍失敗，請提供完整技術資訊給維護者。",
 			(AntigravityMachineSetupFailureKind.SettingsRejected, _) =>
-				"請開啟 Antigravity 完成登入並確認可正常使用，再關閉其他 Antigravity 視窗後重試。",
+				"請確認 Antigravity 已登入且可正常使用；若仍失敗，請更新 AI Usage 或 Antigravity，並提供技術資訊給維護者。",
 			(AntigravityMachineSetupFailureKind.PromptRejected, _) =>
 				"請開啟 Antigravity，確認已登入且可正常使用後再試。",
 			(AntigravityMachineSetupFailureKind.ApprovalRejected, _) =>
@@ -496,6 +479,11 @@ public partial class SetupWindow : Window
 		RoutedEventArgs e)
 	{
 		CaptureOperationFocusMode(sender);
+		await RunEventHandlerAsync(ApproveAsync);
+	}
+
+	private async Task ApproveAsync()
+	{
 		_lastStage = AntigravityMachineSetupStage.Approving;
 		SetBusyView("正在完成 Antigravity 連接…");
 		CancelButton.IsEnabled = false;
@@ -513,34 +501,15 @@ public partial class SetupWindow : Window
 
 			if (approved)
 			{
-				if (_isDashboardManaged)
-				{
-					await CompleteDashboardManagedLaunchAsync();
-					return;
-				}
-
-				ShowCompleted();
-
-				if (DashboardLauncher.TryOpen())
-				{
-					await CloseAfterWorkflowDisposalAsync();
-				}
-				else
-				{
-					CompletionTextBlock.Text =
-						"Antigravity 帳號已連接，但找不到相鄰的 AI Usage 主程式。請從解壓後的 app 資料夾手動開啟。";
-					QueueLiveRegionAnnouncement(
-						CompletionTextBlock);
-				}
+				await CompleteSetupAsync();
+				return;
 			}
 			else
 			{
 				if (ShouldAutoCloseAfterApprovalUncertainty(
-						_isDashboardManaged,
 						_workflow.HasApprovalStarted))
 				{
-					await CloseAfterWorkflowDisposalAsync(
-						completeDashboardManagedLaunch: true);
+					await CloseAfterWorkflowDisposalAsync();
 					return;
 				}
 
@@ -563,7 +532,7 @@ public partial class SetupWindow : Window
 		RoutedEventArgs e)
 	{
 		CaptureOperationFocusMode(sender);
-		await CancelAndCloseAsync();
+		await RunEventHandlerAsync(CancelAndCloseAsync);
 	}
 
 	private async Task CancelAndCloseAsync()
@@ -609,12 +578,6 @@ public partial class SetupWindow : Window
 		await _workflow.DisposeAsync();
 		_allowClose = true;
 
-		if (_isDashboardManaged)
-		{
-			ShutdownDashboardManaged();
-			return;
-		}
-
 		Close();
 	}
 
@@ -623,16 +586,7 @@ public partial class SetupWindow : Window
 		RoutedEventArgs e)
 	{
 		CaptureOperationFocusMode(sender);
-
-		if (!DashboardLauncher.TryOpen())
-		{
-			CompletionTextBlock.Text =
-				"找不到相鄰的 AI Usage 主程式。請從解壓後的 app 資料夾手動開啟。";
-			QueueLiveRegionAnnouncement(CompletionTextBlock);
-			return;
-		}
-
-		await CloseAfterWorkflowDisposalAsync();
+		await RunEventHandlerAsync(CloseAfterWorkflowDisposalAsync);
 	}
 
 	private async void RetryButton_Click(
@@ -640,7 +594,11 @@ public partial class SetupWindow : Window
 		RoutedEventArgs e)
 	{
 		CaptureOperationFocusMode(sender);
+		await RunEventHandlerAsync(RetryAsync);
+	}
 
+	private async Task RetryAsync()
+	{
 		if (_workflow.CanRevalidateSafety)
 		{
 			await StartSafetyRevalidationAsync();
@@ -654,10 +612,9 @@ public partial class SetupWindow : Window
 	}
 
 	internal static bool ShouldAutoCloseAfterApprovalUncertainty(
-		bool isDashboardManaged,
 		bool hasApprovalStarted)
 	{
-		return isDashboardManaged && hasApprovalStarted;
+		return hasApprovalStarted;
 	}
 
 	private async Task StartSafetyRevalidationAsync()
@@ -759,13 +716,6 @@ public partial class SetupWindow : Window
 
 	private void ShowFailure()
 	{
-		if (_isDashboardManaged)
-		{
-			Environment.ExitCode =
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedFailedExitCode;
-		}
-
 		bool hasCommittedSetting = _workflow.HasCommittedSetting;
 		FailureKindTextBlock.Text = GetFailureTitle(_workflow.FailureKind);
 		FailureGuidanceTextBlock.Text = hasCommittedSetting
@@ -816,7 +766,7 @@ public partial class SetupWindow : Window
 			AntigravityMachineSetupFailureKind.PrivateStorageRejected =>
 				"目前無法儲存 Antigravity 連接設定。請再試一次；若仍失敗，請提供技術資訊給維護者。",
 			AntigravityMachineSetupFailureKind.SettingsRejected =>
-				"請開啟 Antigravity 完成登入並確認可正常使用，再關閉其他 Antigravity 視窗後重試。",
+				"無法使用目前的 Antigravity 設定。請確認 Antigravity 已登入且可正常使用；若仍失敗，請更新 AI Usage 或 Antigravity。",
 			AntigravityMachineSetupFailureKind.PromptRejected =>
 				"無法確認 Antigravity 是否可用。請開啟 Antigravity，確認已登入且可正常使用後再試。",
 			AntigravityMachineSetupFailureKind.UsageRejected =>
@@ -844,7 +794,7 @@ public partial class SetupWindow : Window
 			AntigravityMachineSetupFailureKind.ExistingProcessDetected =>
 				"請先關閉其他 Antigravity 視窗",
 			AntigravityMachineSetupFailureKind.SettingsRejected =>
-				"Antigravity 尚未登入或目前無法使用",
+				"無法使用目前的 Antigravity 設定",
 			AntigravityMachineSetupFailureKind.PromptRejected =>
 				"無法確認 Antigravity 狀態",
 			AntigravityMachineSetupFailureKind.UsageRejected =>
@@ -1011,7 +961,7 @@ public partial class SetupWindow : Window
 		RoutedEventArgs e)
 	{
 		CaptureOperationFocusMode(sender);
-		await StartPreparationAsync();
+		await RunEventHandlerAsync(StartPreparationAsync);
 	}
 
 	private async Task StartPreparationAsync()
@@ -1049,46 +999,19 @@ public partial class SetupWindow : Window
 		}
 	}
 
-	private async Task CompleteDashboardManagedLaunchAsync()
+	private async Task CompleteSetupAsync()
 	{
 		FooterStatusTextBlock.Text = "連接完成";
-		await CloseAfterWorkflowDisposalAsync(
-			completeDashboardManagedLaunch: true);
+		await CloseAfterWorkflowDisposalAsync();
 	}
 
-	internal static int ResolveDashboardManagedCompletionExitCode(
-		int workflowExitCode,
-		string? resultProtocol)
+	private void RecordCompletionFailure(Exception failure)
 	{
-		if (workflowExitCode !=
-				AntigravityMachineSetupLaunchArguments
-					.DashboardManagedOfficialPrintSuccessExitCode)
-		{
-			return workflowExitCode;
-		}
-
-		return string.Equals(
-			resultProtocol,
-			AntigravityMachineSetupLaunchArguments
-				.DashboardManagedSourceKindExitProtocol,
-			StringComparison.Ordinal)
-				? workflowExitCode
-				: AntigravityMachineSetupLaunchArguments
-					.DashboardManagedSuccessExitCode;
+		ArgumentNullException.ThrowIfNull(failure);
+		_completionFailure ??= failure;
 	}
 
-	private void ShutdownDashboardManaged()
-	{
-		System.Windows.Application.Current.Shutdown(
-			ResolveDashboardManagedCompletionExitCode(
-				_workflow.DashboardManagedExitCode,
-				Environment.GetEnvironmentVariable(
-					AntigravityMachineSetupLaunchArguments
-						.DashboardManagedResultProtocolEnvironmentVariable)));
-	}
-
-	private async Task CloseAfterWorkflowDisposalAsync(
-		bool completeDashboardManagedLaunch = false)
+	private async Task CloseAfterWorkflowDisposalAsync()
 	{
 		if (_isClosePending)
 		{
@@ -1102,33 +1025,19 @@ public partial class SetupWindow : Window
 		{
 			await _workflow.DisposeAsync();
 			_allowClose = true;
-
-			if (completeDashboardManagedLaunch)
-			{
-				ShutdownDashboardManaged();
-				return;
-			}
-
 			Close();
 		}
-		catch (Exception)
+		catch (Exception exception)
 		{
+			RecordCompletionFailure(exception);
 			_allowClose = false;
 			_isClosePending = false;
 			if (ShouldAutoCloseAfterApprovalUncertainty(
-					_isDashboardManaged,
 					_workflow.HasApprovalStarted))
 			{
 				_allowClose = true;
-				ShutdownDashboardManaged();
+				Close();
 				return;
-			}
-
-			if (_isDashboardManaged)
-			{
-				Environment.ExitCode =
-					AntigravityMachineSetupLaunchArguments
-						.DashboardManagedFailedExitCode;
 			}
 
 			ShowFailure();
@@ -1274,13 +1183,7 @@ public partial class SetupWindow : Window
 
 	private async void SetupWindow_Loaded(object sender, RoutedEventArgs e)
 	{
-		if (_isDashboardManaged)
-		{
-			await StartPreparationAsync();
-			return;
-		}
-
-		ShowOnly(WelcomePanel);
+		await RunEventHandlerAsync(StartPreparationAsync);
 	}
 
 	private async void Window_Closing(
@@ -1299,6 +1202,59 @@ public partial class SetupWindow : Window
 			return;
 		}
 
-		await CancelAndCloseAsync();
+		await RunEventHandlerAsync(CancelAndCloseAsync);
+	}
+
+	private async Task RunEventHandlerAsync(Func<Task> operation)
+	{
+		ArgumentNullException.ThrowIfNull(operation);
+
+		try
+		{
+			await operation();
+		}
+		catch (Exception exception)
+		{
+			try
+			{
+				await CloseAfterUnexpectedFailureAsync(exception);
+			}
+			catch (Exception recoveryFailure)
+			{
+				Exception combinedFailure = new AggregateException(
+					"Antigravity 連接與視窗收尾都失敗。",
+					exception,
+					recoveryFailure);
+				RecordCompletionFailure(combinedFailure);
+				_completionSource.TrySetResult(
+					new AntigravitySetupDialogResult(
+						_workflow.DialogOutcome,
+						combinedFailure));
+			}
+		}
+	}
+
+	private async Task CloseAfterUnexpectedFailureAsync(Exception failure)
+	{
+		Exception completionFailure = failure;
+		_isClosePending = true;
+		CancelButton.IsEnabled = false;
+
+		try
+		{
+			await _workflow.CancelAsync();
+			await _workflow.DisposeAsync();
+		}
+		catch (Exception cleanupFailure)
+		{
+			completionFailure = new AggregateException(
+				"Antigravity 連接失敗，且清理未完整完成。",
+				failure,
+				cleanupFailure);
+		}
+
+		RecordCompletionFailure(completionFailure);
+		_allowClose = true;
+		Close();
 	}
 }

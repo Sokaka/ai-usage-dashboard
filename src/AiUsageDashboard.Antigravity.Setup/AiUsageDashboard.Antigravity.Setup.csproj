@@ -1,40 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <AssemblyName>AiUsageDashboard.Antigravity.Setup</AssemblyName>
-    <ApplicationIcon>..\AiUsageDashboard.App\Assets\AiUsageDashboard.ico</ApplicationIcon>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <DefineConstants>$(DefineConstants);ANTIGRAVITY_SETUP_PRESENTATION</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <Page Include="..\AiUsageDashboard.App\Themes\Palette.xaml"
-          Link="Themes\Palette.xaml" />
-    <Page Include="..\AiUsageDashboard.App\Themes\HighContrastPalette.xaml"
-          Link="Themes\HighContrastPalette.xaml" />
     <Compile Include="..\AiUsageDashboard.App\PointerFocusRelease.cs"
              Link="PointerFocusRelease.cs" />
-    <Resource Include="..\AiUsageDashboard.App\Assets\AiUsageDashboard.ico"
-              Link="Assets\AiUsageDashboard.ico" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AiUsageDashboard.Antigravity\AiUsageDashboard.Antigravity.csproj" />
   </ItemGroup>
 
-  <!-- Setup 與 App 會合併至同一個 self-contained runtime 目錄，這些套件版本必須一致。 -->
+  <!-- Setup UI 由 App 載入；共用套件版本必須一致。 -->
   <ItemGroup>
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.2" />
     <PackageReference Include="System.Text.Json" Version="10.0.12" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\AiUsageDashboard.Licensing\AiUsageDashboard.Licensing.csproj" />
-    <Compile Include="..\Shared\Licensing\LegalTermsDialog.cs" Link="LegalTermsDialog.cs" />
   </ItemGroup>
 
 </Project>

@@ -39,8 +39,9 @@ internal sealed class AntigravityCliVersionProbeException : Exception
 	internal AntigravityCliVersionProbeFailureReason FailureReason { get; }
 
 	internal AntigravityCliVersionProbeException(
-		AntigravityCliVersionProbeFailureReason failureReason)
-		: base("The AGY CLI version probe failed closed.")
+		AntigravityCliVersionProbeFailureReason failureReason,
+		Exception? innerException = null)
+		: base("The AGY CLI version probe failed closed.", innerException)
 	{
 		if (failureReason == AntigravityCliVersionProbeFailureReason.None)
 		{
@@ -213,7 +214,7 @@ internal sealed class AntigravityCliCapabilityValidator
 		: this(
 			allowlist,
 			new WindowsAntigravityExecutableInspector(),
-			new ConPtyAntigravityCliVersionProbe())
+			new RedirectedAntigravityCliVersionProbe())
 	{
 	}
 
@@ -953,14 +954,9 @@ internal static class AntigravityCliVersionOutputRenderer
 	}
 }
 
-internal sealed class ConPtyAntigravityCliVersionProbe : IAntigravityCliVersionProbe
+internal static class AntigravityCliProcessEnvironment
 {
-	private const int MaximumOutputBytes = 64 * 1024;
-	private static readonly TimeSpan CommandTimeout =
-		AntigravityOfficialPrintTiming.CapabilityCommandTimeout;
-	private static readonly TimeSpan ProcessCleanupTimeout =
-		AntigravityOfficialPrintTiming.CapabilityCleanupTimeout;
-	private static readonly string[] EnvironmentVariableAllowlist =
+	private static readonly string[] VariableAllowlist =
 	{
 		"APPDATA",
 		"HOMEDRIVE",
@@ -977,209 +973,12 @@ internal sealed class ConPtyAntigravityCliVersionProbe : IAntigravityCliVersionP
 		"WINDIR"
 	};
 
-	public async Task<string> ProbeAsync(
-		string absolutePath,
-		CancellationToken cancellationToken)
-	{
-		cancellationToken.ThrowIfCancellationRequested();
-
-		if (string.IsNullOrWhiteSpace(absolutePath) ||
-			!Path.IsPathFullyQualified(absolutePath))
-		{
-			throw new AntigravityCliVersionProbeException(
-				AntigravityCliVersionProbeFailureReason.Unexpected);
-		}
-
-		string? workingDirectory = Path.GetDirectoryName(absolutePath);
-
-		if (string.IsNullOrWhiteSpace(workingDirectory))
-		{
-			throw new AntigravityCliVersionProbeException(
-				AntigravityCliVersionProbeFailureReason.Unexpected);
-		}
-
-		ConPtyStartRequest request;
-
-		try
-		{
-			request = new ConPtyStartRequest(
-				absolutePath,
-				new[] { "--version" },
-				workingDirectory,
-				BuildEnvironmentAllowlist(),
-				80,
-				25,
-				MaximumOutputBytes,
-				ProcessCleanupTimeout);
-		}
-		catch
-		{
-			throw new AntigravityCliVersionProbeException(
-				AntigravityCliVersionProbeFailureReason.StartFailed);
-		}
-
-		using CancellationTokenSource timeoutSource = new(CommandTimeout);
-		using CancellationTokenSource linkedSource =
-			CancellationTokenSource.CreateLinkedTokenSource(
-				cancellationToken,
-				timeoutSource.Token);
-		WindowsConPtySession? session = null;
-		bool isDisposed = false;
-
-		try
-		{
-			try
-			{
-				session = await WindowsConPtySession.StartAsync(
-					request,
-					linkedSource.Token);
-			}
-			catch (OperationCanceledException)
-			{
-				throw;
-			}
-			catch
-			{
-				throw new AntigravityCliVersionProbeException(
-					AntigravityCliVersionProbeFailureReason.StartFailed);
-			}
-
-			int exitCode;
-
-			try
-			{
-				exitCode = await session.WaitForExitAsync(
-					linkedSource.Token);
-			}
-			catch (OperationCanceledException)
-			{
-				throw;
-			}
-			catch
-			{
-				throw new AntigravityCliVersionProbeException(
-					AntigravityCliVersionProbeFailureReason.WaitFailed);
-			}
-
-			try
-			{
-				await session.DisposeAsync();
-				isDisposed = true;
-			}
-			catch
-			{
-				throw new AntigravityCliVersionProbeException(
-					AntigravityCliVersionProbeFailureReason.Unexpected);
-			}
-
-			cancellationToken.ThrowIfCancellationRequested();
-			ConPtyOutputSnapshot output;
-
-			try
-			{
-				output = session.GetOutputSnapshot();
-			}
-			catch
-			{
-				throw new AntigravityCliVersionProbeException(
-					AntigravityCliVersionProbeFailureReason.OutputReadFailed);
-			}
-
-			if ((output.ReadFailure is not null) ||
-				(output.TotalBytesRead < output.SavedBytes.Length))
-			{
-				throw new AntigravityCliVersionProbeException(
-					AntigravityCliVersionProbeFailureReason.OutputReadFailed);
-			}
-
-			if (output.IsSavedByteLimitExceeded ||
-				(output.TotalBytesRead > MaximumOutputBytes) ||
-				(output.SavedBytes.Length > MaximumOutputBytes))
-			{
-				throw new AntigravityCliVersionProbeException(
-					AntigravityCliVersionProbeFailureReason.OutputLimitExceeded);
-			}
-
-			if (exitCode != 0)
-			{
-				throw new AntigravityCliVersionProbeException(
-					AntigravityCliVersionProbeFailureReason.NonZeroExit);
-			}
-
-			return AntigravityCliVersionOutputRenderer.Render(
-				output.SavedBytes.Span);
-		}
-		catch (OperationCanceledException) when (linkedSource.IsCancellationRequested)
-		{
-			if (cancellationToken.IsCancellationRequested)
-			{
-				cancellationToken.ThrowIfCancellationRequested();
-			}
-
-			throw new AntigravityCliVersionProbeException(
-				AntigravityCliVersionProbeFailureReason.TimedOut);
-		}
-		catch (OperationCanceledException)
-		{
-			if (cancellationToken.IsCancellationRequested)
-			{
-				cancellationToken.ThrowIfCancellationRequested();
-			}
-
-			throw new AntigravityCliVersionProbeException(
-				AntigravityCliVersionProbeFailureReason.Unexpected);
-		}
-		finally
-		{
-			AntigravityCliVersionProbeException? cleanupFailure = null;
-
-			if ((session is not null) && !isDisposed)
-			{
-				try
-				{
-					await session.DisposeAsync();
-				}
-				catch
-				{
-					if (!cancellationToken.IsCancellationRequested)
-					{
-						cleanupFailure = new AntigravityCliVersionProbeException(
-							AntigravityCliVersionProbeFailureReason.Unexpected);
-					}
-				}
-			}
-
-			if (session is not null)
-			{
-				try
-				{
-					await session.QuiescenceTask;
-				}
-				catch
-				{
-					if (!cancellationToken.IsCancellationRequested)
-					{
-						cleanupFailure ??=
-							new AntigravityCliVersionProbeException(
-								AntigravityCliVersionProbeFailureReason
-									.Unexpected);
-					}
-				}
-			}
-
-			if (cleanupFailure is not null)
-			{
-				throw cleanupFailure;
-			}
-		}
-	}
-
-	internal static IReadOnlyDictionary<string, string> BuildEnvironmentAllowlist()
+	internal static IReadOnlyDictionary<string, string> BuildAllowlist()
 	{
 		Dictionary<string, string> environment = new(
 			StringComparer.OrdinalIgnoreCase);
 
-		foreach (string name in EnvironmentVariableAllowlist)
+		foreach (string name in VariableAllowlist)
 		{
 			string? value = Environment.GetEnvironmentVariable(name);
 
@@ -1192,5 +991,159 @@ internal sealed class ConPtyAntigravityCliVersionProbe : IAntigravityCliVersionP
 		environment["NO_COLOR"] = "1";
 		environment["AGY_CLI_DISABLE_AUTO_UPDATE"] = "true";
 		return environment;
+	}
+}
+
+internal sealed class RedirectedAntigravityCliVersionProbe :
+	IAntigravityCliVersionProbe
+{
+	private const int MaximumOutputBytes = 64 * 1024;
+	private readonly WindowsAntigravityOfficialPrintProcessRunner _processRunner;
+
+	internal RedirectedAntigravityCliVersionProbe()
+		: this(new WindowsAntigravityOfficialPrintProcessRunner(
+			AntigravityOfficialPrintTiming.CapabilityCommandTimeout,
+			AntigravityOfficialPrintTiming.CapabilityCleanupTimeout,
+			activeProcessLimit:
+				WindowsAntigravityOfficialPrintProcessRunner
+					.ProductionActiveProcessLimit))
+	{
+	}
+
+	internal RedirectedAntigravityCliVersionProbe(
+		WindowsAntigravityOfficialPrintProcessRunner processRunner)
+	{
+		_processRunner = processRunner ??
+			throw new ArgumentNullException(nameof(processRunner));
+	}
+
+	public async Task<string> ProbeAsync(
+		string absolutePath,
+		CancellationToken cancellationToken)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+		ProcessStartInfo startInfo;
+
+		try
+		{
+			startInfo = CreateStartInfo(absolutePath);
+		}
+		catch (Exception exception)
+		{
+			throw new AntigravityCliVersionProbeException(
+				AntigravityCliVersionProbeFailureReason.StartFailed,
+				exception);
+		}
+
+		AntigravityOfficialPrintProcessResult processResult;
+
+		try
+		{
+			processResult = await _processRunner.RunAsync(
+				startInfo,
+				WindowsAntigravityOfficialPrintProcessRunner
+					.CreateAttemptJobName(Guid.NewGuid().ToString("N")),
+				beforeStartAsync: null,
+				cancellationToken);
+		}
+		catch (OperationCanceledException) when (
+			cancellationToken.IsCancellationRequested)
+		{
+			throw;
+		}
+		catch (AntigravityOfficialPrintProcessRunException exception)
+			when (exception.InnerException is TimeoutException)
+		{
+			throw new AntigravityCliVersionProbeException(
+				AntigravityCliVersionProbeFailureReason.TimedOut,
+				exception);
+		}
+		catch (AntigravityOfficialPrintProcessRunException exception)
+			when ((exception.InnerException is OperationCanceledException) &&
+				cancellationToken.IsCancellationRequested)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			throw;
+		}
+		catch (AntigravityOfficialPrintProcessRunException exception)
+			when (!exception.WasProcessStarted)
+		{
+			throw new AntigravityCliVersionProbeException(
+				AntigravityCliVersionProbeFailureReason.StartFailed,
+				exception);
+		}
+		catch (AntigravityOfficialPrintProcessRunException exception)
+		{
+			throw new AntigravityCliVersionProbeException(
+				AntigravityCliVersionProbeFailureReason.WaitFailed,
+				exception);
+		}
+		catch (Exception exception)
+		{
+			throw new AntigravityCliVersionProbeException(
+				AntigravityCliVersionProbeFailureReason.StartFailed,
+				exception);
+		}
+
+		using (processResult)
+		{
+			if (processResult.StdoutLimitExceeded ||
+				processResult.StderrLimitExceeded ||
+				(processResult.Stdout.Length > MaximumOutputBytes))
+			{
+				throw new AntigravityCliVersionProbeException(
+					AntigravityCliVersionProbeFailureReason.OutputLimitExceeded);
+			}
+
+			if (processResult.ExitCode != 0)
+			{
+				throw new AntigravityCliVersionProbeException(
+					AntigravityCliVersionProbeFailureReason.NonZeroExit);
+			}
+
+			if (processResult.HasStderr)
+			{
+				throw new AntigravityCliVersionProbeException(
+					AntigravityCliVersionProbeFailureReason.MalformedOutput);
+			}
+
+			return AntigravityCliVersionOutputRenderer.Render(
+				processResult.Stdout.Span);
+		}
+	}
+
+	internal static ProcessStartInfo CreateStartInfo(string absolutePath)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(absolutePath);
+		string? workingDirectory = Path.GetDirectoryName(absolutePath);
+
+		if (string.IsNullOrWhiteSpace(workingDirectory) ||
+			!Path.IsPathFullyQualified(absolutePath))
+		{
+			throw new ArgumentException(
+				"The AGY version-probe executable path is invalid.",
+				nameof(absolutePath));
+		}
+
+		ProcessStartInfo startInfo = new()
+		{
+			FileName = absolutePath,
+			WorkingDirectory = workingDirectory,
+			UseShellExecute = false,
+			CreateNoWindow = true,
+			RedirectStandardInput = true,
+			RedirectStandardOutput = true,
+			RedirectStandardError = true
+		};
+		startInfo.ArgumentList.Add("--version");
+		startInfo.Environment.Clear();
+
+		foreach ((string name, string value) in
+			AntigravityCliProcessEnvironment.BuildAllowlist())
+		{
+			startInfo.Environment[name] = value;
+		}
+
+		return startInfo;
 	}
 }
