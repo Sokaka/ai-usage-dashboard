@@ -193,7 +193,7 @@ AI Usage 不會安裝或讀取 status line，不會附帶 AGY capture EXE，也�
 
 執行正式發布腳本時使用 PowerShell 7.4 以上的 `pwsh`。Windows PowerShell 5.1 不支援成品使用的 .NET 8 assembly inspection，三個發布入口會在任何發布工作前停止。
 
-Production App 與 Updater 必須使用相同的 `FeedUrl`、`Channel` 與外部 `TrustedKeysFile`。`tools\Publish-Internal.ps1` 要求明確提供三項；`tools\Publish-UpdateBundle.ps1` 的 `Channel` 預設為 `stable`，省略 `FeedUrl` 時會使用該 channel 的 GitHub latest download URL，但仍須提供外部 `TrustedKeysFile`。`Publish-UpdateBundle.ps1` 會把解析後的同一組值分別交給 App 與 Updater 的 publish 入口；URL 或 trust store 無效時會停止，App package gate 也會從已發布 DLL 讀回 feed／channel metadata 與 embedded trust bytes 逐值核對。一般 dev build 可不嵌入，About 會標成此 build 無更新來源。App 只讀取並驗證 signed feed，不下載 artifacts，也不接受本機 cache 提供 URL 或安裝決策。
+Production App 與 Updater 必須使用相同的 `FeedUrl`、`Channel` 與外部 `TrustedKeysFile`。`tools\Publish-Internal.ps1` 要求明確提供三項；`tools\Publish-UpdateBundle.ps1` 的 `Channel` 預設為 `stable`，省略 `FeedUrl` 時會使用該 channel 的 GitHub latest download URL，但仍須提供外部 `TrustedKeysFile`。建立新版 Updater 時，bundle 會把同一組值交給 App 與 Updater 的 publish 入口；沿用前版 Updater 時，會核對前版 signed feed、EXE、來源及 installer 條款。URL 或 trust store 無效時會停止，App package gate 也會從已發布 DLL 讀回 feed／channel metadata 與 embedded trust bytes 逐值核對。一般 dev build 可不嵌入，About 會標成此 build 無更新來源。App 只讀取並驗證 signed feed，不下載 artifacts，也不接受本機 cache 提供 URL 或安裝決策。
 
 首次啟用會先以浮窗 banner 或 tray balloon 說明網路行為，至少保留 30 秒後才走 automatic path。成功後 24 小時內不再自動查詢；失敗依 15 分鐘、1 小時、4 小時、24 小時退避。自動檢查可從 banner 或 tray 關閉；關閉後不再自動連線，若仍有 snooze，只保留不連網的本機到期檢查。若開關無法寫入狀態檔，當次執行仍立即套用，但會警告重新啟動後可能恢復舊設定；排除本機資料夾寫入問題後必須再設定一次。Tray 與 About 的手動檢查仍立即可用；可見介面會顯示 inline 結果，從 tray 發起且浮窗隱藏／收合時，失敗會顯示結果 dialog，UpToDate 也會顯示完成提示。測試與支援時要分清楚用量背景更新和 App 版本檢查，兩者有獨立狀態及排程。
 
@@ -220,7 +220,7 @@ App 依 running executable 與 adjacent installed manifest 分流：canonical ma
 - `AiUsageDashboard-update-<channel>.json`
 - `AiUsageDashboard-update-<channel>.json.sha256`
 
-候選 workflow 產生相同 source/run/attempt 的六件。凍結前先保存 private 候選 Release；公開時只重驗並轉正同一 Release，不再重建、重包、重簽或替換 assets。正式 stable feed 使用公開 latest URL，private 受控測試 feed 另存，不代表匿名正式下載已通過。
+候選 workflow 組成六件；App ZIP 與 signed feed 來自本次 source/run/attempt，沿用模式的 Updater 是前一公開 Release 的原始 bytes。凍結前先保存 private 候選 Release；公開時只重驗並轉正同一 Release，不再重建、重包、重簽或替換 assets。正式 stable feed 使用公開 latest URL，private 受控測試 feed 另存，不代表匿名正式下載已通過。
 
 預設安裝目錄是 `%LOCALAPPDATA%\Programs\AiUsageDashboard`，固定啟動路徑是 `current\app\AiUsageDashboard.App.exe`。這是目前 Windows 使用者專用的安裝，必須以一般權限執行；若使用系統管理員權限，更新程式會在修改檔案前拒絕。
 
@@ -234,7 +234,7 @@ App 依 running executable 與 adjacent installed manifest 分流：canonical ma
 
 首次啟動 portable App 或 Updater 時可先閱讀適用條款，再接受或退出。紀錄僅存在同一 Windows 使用者的電腦，依條款內容版本與涵蓋範圍共用，不綁定 provider 帳號、不上傳。有效接受已涵蓋時，背景查詢與 helper 回呼不重複提示；條款變更後必須重新確認。
 
-App、Updater 與隨包的 Claude capture helper 提供 `--licenses` 閱讀、`--export-licenses <新目錄>` 離線匯出，以及 `--accept-licenses <本版顯示的 digest>` 明確預先接受。AGY 設定介面在 App process 內，沿用 App 的接受狀態，沒有獨立命令列入口。非互動入口缺少有效接受會停止；請先閱讀同一版本的文字。授權提示不會混入 helper 的回呼輸出。解除安裝、關閉 App 供更新與人工離線復原不受一般啟動提示阻擋。
+App、Updater 與隨包的 Claude capture helper 提供 `--licenses` 閱讀、`--export-licenses <新目錄>` 離線匯出，以及 `--accept-licenses <本版顯示的 digest>` 明確預先接受。AGY 設定介面在 App process 內，沿用 App 的接受狀態，沒有獨立命令列入口。非互動入口缺少有效接受會停止；請先閱讀該成品顯示的文字。授權提示不會混入 helper 的回呼輸出。解除安裝、關閉 App 供更新與人工離線復原不受一般啟動提示阻擋。
 
 ### 舊 internal 安裝銜接
 

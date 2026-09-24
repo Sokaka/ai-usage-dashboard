@@ -22,7 +22,7 @@ RSA 只接受 3072 或 4096 bits；hash 為 SHA256，PSS 使用 .NET `RSASignatu
 
 payload 是現有 `UpdateReleaseFeed` schema v1 的完整資料，最大 64 KiB。簽章涵蓋 schema、channel、sequence、minimumUpdaterVersion 與 App／Updater 的所有 artifact 欄位。
 
-signed v1 另要求 `minimumUpdaterVersion` 等於該 feed 的 Updater version。正式 bundle 的 App 與 Updater 使用同一版本，讓安裝新 App 前先更新並接受該候選 installer 交付的條款範圍；不得把 minimum override 調低來略過這一步。
+signed v1 另要求 `minimumUpdaterVersion` 等於該 feed 的 Updater version。App 與 Updater 可為不同版本：一般 App 更新可沿用前一公開 stable Release 已簽署、且安裝者條款範圍與本版 App 相同的 Updater；若 Updater 本身或條款改變，須發布新版。沿用時 feed 保留舊 Updater 的版本、大小、SHA256 與 sourceRevision，但 downloadUrl 指向本次 Release 內原封複製的 EXE。不得把 minimum override 調低來略過條款檢查。
 
 Canonical v1 由 `SignedUpdateFeed.Sign` 的固定 serializer 產生：UTF-8 無 BOM、無額外空白、數值為十進位整數，字串使用 `System.Text.Json` 的預設 JSON escaping。root 順序為 `schemaVersion`、`channel`、`releaseSequence`、`minimumUpdaterVersion`、`package`、`updater`；每個 artifact 的順序為 `artifactId`、`version`、`runtimeIdentifier`、`fileName`、`downloadUrl`、`sizeBytes`、`sha256`、`sourceRevision`。使用專案 signing tool 產生 bytes，勿用其他 JSON formatter 代替。
 
@@ -38,7 +38,7 @@ Canonical v1 由 `SignedUpdateFeed.Sign` 的固定 serializer 產生：UTF-8 無
 
 `Publish-UpdateBundle.ps1` 要求 `TrustedKeysFile`、`SigningKeyId`、`SigningPrivateKeyFile`、`ReleaseSequence` 與 `PreviousReleaseSequence`。後兩者都由完成既有分發盤點的維護者提供，工具僅驗證新值較大，不能證明盤點完整。不得使用新 repo 的 run number 當全域序號。
 
-封裝順序：最終 binaries → App ZIP → ZIP／Updater EXE hash 與 size → 正式 URL payload → 簽署並驗證 feed → feed SHA256 sidecar。發布仍是 ZIP、EXE、signed feed 及三份 sidecars，共六件。sidecar 只供完整性核對，沒有獨立的發布者信任效力。
+封裝順序：最終 binaries → App ZIP → ZIP／Updater EXE hash 與 size → 正式 URL payload → 簽署並驗證 feed → feed SHA256 sidecar。沿用 Updater 時，先驗證前版 signed feed、EXE 身分、內嵌 feed URL／channel／信任公鑰、來源與安裝者條款，再複製原 EXE；本次簽章須涵蓋它在新 Release 的 URL。發布仍是 ZIP、EXE、signed feed 及三份 sidecars，共六件。sidecar 只供完整性核對，沒有獨立的發布者信任效力。
 
 ## CI 與私鑰保管
 
@@ -61,6 +61,6 @@ production key 應由維護者在受控環境外部建立，依[簽章私鑰保�
 
 ## 安裝者與條款範圍
 
-signed online 安裝 App 前，執行中的 Updater 必須與 feed.Updater 的版本、size、SHA256 全部相同，包含委派的 `--skip-updater-refresh` 路徑。較新的 Updater 也不能直接安裝另一候選的 App，因為它內嵌的條款清單未必涵蓋該版本；請從正式 Release 取得匹配的 Updater。此檢查不更動人工 `apply-local` 復原政策。
+signed online 安裝 App 前，執行中的 Updater 必須與 feed.Updater 的版本、size、SHA256 全部相同，包含委派的 `--skip-updater-refresh` 路徑。App 版若沿用前版 Updater，候選封裝會比較兩支 Updater 的 installer 條款匯出，確保舊版涵蓋新 App ZIP；沿用檢查失敗須發新版 Updater。此檢查不更動人工 `apply-local` 復原政策。
 
 原本互動啟動的 Updater 會以 `--prompt-for-licenses` 將接受新條款的互動意圖交給新版；此旗標不啟用子程序的成功通知。一般非互動命令仍須先接受 exact digest，未接受時回 5；授權文件或紀錄讀取失敗回 4。

@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using AiUsageDashboard.Updater;
 using AiUsageDashboard.Updater.Core;
 
 namespace AiUsageDashboard.Tests;
@@ -149,6 +150,72 @@ public sealed class SignedUpdateFeedTests : IClassFixture<FeedSigningTestKeys>
 		Assert.Throws<InvalidDataException>(() => _keys.Sign(canonical));
 		string signed = _keys.SignRawPayload(canonical);
 		Assert.Throws<InvalidDataException>(() => SignedUpdateFeed.Verify(signed, _keys.Trust("test-first"), "stable"));
+	}
+
+	[Fact]
+	public void SignedFeed_AppOnlyReleaseRequiresExactUpdaterAndRejectsReplay()
+	{
+		UpdateReleaseArtifact package = new(
+			"AiUsageDashboard", "1.0.9", "win-x64",
+			"AiUsageDashboard-1.0.9-win-x64.zip",
+			"https://example.test/releases/AiUsageDashboard-1.0.9-win-x64.zip",
+			300, new string('a', 64), "new-source");
+		UpdateReleaseArtifact updater = new(
+			"AiUsageDashboard.Updater", "1.0.8", "win-x64",
+			"AiUsageDashboard-Updater-1.0.8-win-x64.exe",
+			"https://example.test/releases/AiUsageDashboard-Updater-1.0.8-win-x64.exe",
+			200, new string('b', 64), "old-source");
+		UpdateReleaseFeed proposal = new(
+			1, "stable", 1023, "1.0.8", package, updater);
+		string verifiedPayload = SignedUpdateFeed.Verify(
+			_keys.Sign(JsonSerializer.Serialize(proposal)),
+			_keys.Trust("test-first"),
+			"stable");
+		UpdateReleaseFeed verifiedFeed = UpdateReleaseFeed.Parse(verifiedPayload);
+		UpdateManifest available = verifiedFeed.CreatePackageManifest();
+		UpdateManifest installed = new(
+			UpdateManifest.CurrentSchemaVersion,
+			UpdateManifest.ExpectedPackageId,
+			"1.0.8",
+			UpdateManifest.ExpectedRuntimeIdentifier,
+			100,
+			new string('c', 64),
+			"old-source",
+			1022);
+		CurrentUpdaterIdentity runningUpdater = new(
+			@"C:\Tools\AiUsageDashboard.Updater.exe",
+			"1.0.8",
+			updater.SizeBytes,
+			updater.Sha256);
+
+		Assert.Equal("1.0.9", verifiedFeed.Package.Version);
+		Assert.Equal("1.0.8", verifiedFeed.Updater.Version);
+		Assert.Equal("old-source", verifiedFeed.Updater.SourceRevision);
+		Assert.Equal(1023, verifiedFeed.ReleaseSequence);
+		Assert.Equal(
+			OnlinePayloadUpdateAction.InstallAvailable,
+			OnlinePayloadUpdatePolicy.Evaluate(installed, available));
+		Assert.Equal(
+			UpdaterRefreshAction.RunCurrent,
+			UpdaterRefreshPolicy.Evaluate(runningUpdater, verifiedFeed.Updater));
+		UpdaterRefreshPolicy.EnsureMatchesSignedInstaller(
+			runningUpdater, verifiedFeed.Updater);
+		Assert.Throws<InvalidDataException>(() =>
+			UpdaterRefreshPolicy.Evaluate(
+				runningUpdater with { SizeBytes = 201 }, verifiedFeed.Updater));
+		Assert.Throws<InvalidDataException>(() =>
+			UpdaterRefreshPolicy.Evaluate(
+				runningUpdater with { Sha256 = new string('d', 64) },
+				verifiedFeed.Updater));
+		Assert.Throws<InvalidDataException>(() =>
+			UpdaterRefreshPolicy.EnsureMatchesSignedInstaller(
+				runningUpdater with { Version = "1.0.9" }, verifiedFeed.Updater));
+		Assert.Throws<InvalidDataException>(() =>
+			OnlinePayloadUpdatePolicy.Evaluate(
+				installed with { ReleaseSequence = 1024 }, available));
+		Assert.Throws<InvalidDataException>(() =>
+			OnlinePayloadUpdatePolicy.Evaluate(
+				installed with { Version = "1.0.10" }, available));
 	}
 
 	[Fact]

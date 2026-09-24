@@ -181,7 +181,7 @@ public sealed class UpdaterPackageInvariantsTests
 		Assert.Contains("-Channel stable", workflow);
 		Assert.Contains("AiUsageDashboard-update-stable.json", workflow);
 		Assert.Contains(
-			"$feed.minimumUpdaterVersion -cne $env:RELEASE_VERSION",
+			"$feed.minimumUpdaterVersion -cne $expectedUpdaterVersion",
 			workflow);
 		Assert.DoesNotContain(
 			"$version.g$shortSha.run$env:GITHUB_RUN_ID",

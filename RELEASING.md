@@ -26,7 +26,7 @@
 
 完整盤點已知分發來源的 feeds／manifests，包括所有 Release 和 assets 的分頁。首個 stable 的 `releaseSequence` 必須高於已核對上界，之後持續遞增；跨 channel 也不豁免。不得用新 repo 從 1 開始的 `run_number` 作序號。來源無法核對時明列未知，不宣稱已取得完整上界。
 
-App 與 Updater 版本都須高於舊版。重新建置造成 bytes 改變時使用新版本與新序號，不替換同版本的檔案。舊 installed manifest 的 sequence 有值與 null 兩種情況都要驗收。
+App 版本須高於舊版。Updater 有改動或安裝條款範圍改變時，建置較高版本；一般 App 更新可沿用前一公開 stable Release 已簽署的同一 Updater bytes、版本及來源。重新建置造成 bytes 改變時使用新版本與新序號，不替換同版本的檔案。舊 installed manifest 的 sequence 有值與 null 兩種情況都要驗收。
 
 feed 使用 [固定簽章格式](docs/UPDATE_FEED_FORMAT.md)。正式 build 從受控外部檔案嵌入可信公鑰，簽署使用對應私鑰；未知 signer 或無效簽章必須在信任 feed 欄位前失敗。公鑰不可從同一未驗證 feed 學習。私鑰不進 source、Git、成品或 logs。
 
@@ -46,16 +46,18 @@ App 與 Updater 必須嵌入相同的 stable `FeedUrl`、`Channel` 與 productio
 
 所有 workflow、版本、條款及簽章變更先完成，再建立候選。候選 workflow 必須勾選 `acknowledge_draft_candidate` 與 `publish_github_prerelease`；任一未勾選會在建置前停止，避免簽署後沒有可保存的候選。workflow 綁定指定 main SHA，確認同 SHA 的 Windows CI push run 已成功，再在同一個 job 建置、簽署、驗證並凍結 draft Release。run 與 attempt 來自本次建置，原 workflow 檔名保留為相容入口，實際參數以 repository 中的 workflow 為準。
 
-同一 job 產出的六件正式成品不經 Actions artifact 搬運；建置、驗證或上傳失敗時，不能單獨重跑發布步驟來補件。重跑 job 會重新建置，因此須先確認該版本尚未建立 Release；已有部分上傳的 draft 也不能用重跑取代原成品。凍結紀錄保存原始 run／attempt、Release ID 及六件 asset identity。
+一般 App 版若要沿用 Updater，在 workflow 的 `reuse_updater_from_tag` 填入目前最新公開 stable Release 的 tag（例如 `v1.0.8`）；留空則建立本版 Updater。沿用檢查失敗時候選停止，不會悄悄改用另一支 EXE。兩種模式都要以實際發布的前一正式版驗收一鍵更新，並確認 App、維護 Updater 與 Windows 安裝紀錄的最終身分。
 
-封裝順序固定為：最終 binaries → App ZIP → ZIP／Updater EXE 的 size 與 SHA256 → 帶正式 stable URL 與完整版本／sequence 的 feed → 簽署 → 最終 feed 的 SHA256。任何受簽欄位改變都須重簽。
+同一 job 組成的六件正式成品不經 Actions artifact 搬運；沿用模式的 Updater EXE 必須先從前一公開 stable Release 下載，並依其 signed feed 核對。建置、驗證或上傳失敗時，不能單獨重跑發布步驟來補件。重跑 job 會重新建置，因此須先確認該版本尚未建立 Release；已有部分上傳的 draft 也不能用重跑取代原成品。凍結紀錄保存原始 run／attempt、Release ID 及六件 asset identity。
+
+封裝順序固定為：最終 binaries → App ZIP → ZIP／Updater EXE 的 size 與 SHA256 → 帶正式 stable URL 與完整版本／sequence 的 feed → 簽署 → 最終 feed 的 SHA256。沿用模式須在簽署前核對前版 feed 簽章、Updater bytes、內嵌 feed URL／channel／信任公鑰、來源修訂、目前安裝者條款匯出及 Updater 相關 source；不符就改用新 Updater 版本。任何受簽欄位改變都須重簽。
 
 封裝工具會建立多層暫存目錄，請使用較短的 `OutputRoot`。未啟用 long paths 的 Windows 若使用過深目錄，可能在成品檢查時失敗；先縮短輸出路徑，不移除缺件檢查或要求使用者變更全機設定。
 
-正式候選只有六件，全部來自同 source/run/attempt：
+正式候選仍只有六件。App ZIP 與新 signed feed 來自本次 source/run/attempt；Updater 若沿用前版，保留前版原始 bytes、版本、SHA256 與 sourceRevision，並複製為本次 Release asset：
 
 - `AiUsageDashboard-<version>-win-x64.zip` 及 `.sha256`。
-- `AiUsageDashboard-Updater-<version>-win-x64.exe` 及 `.sha256`。
+- `AiUsageDashboard-Updater-<updater-version>-win-x64.exe` 及 `.sha256`。
 - `AiUsageDashboard-update-stable.json` 及 `.sha256`。
 
 ZIP 包含自有 LICENSE、精確第三方原約/notices 及元件交付清單。Updater、maintenance 副本、capture helper 的適用文字須由真正 trim/single-file 成品離線匯出後核對；缺件或 digest 不符就停止。接受紀錄按同 Windows 使用者、條款版本與範圍共用，不上傳；首次接受、拒絕、條款變更、portable／Setup／Updater／helper／委派及非互動入口都要測試。
@@ -66,12 +68,12 @@ draft Release 先以 `gh release view` 取得數值 `databaseId`，再依 Releas
 
 ## 候選驗收
 
-用受控 HTTPS 測試 feed 與同一候選 App／Updater bytes 驗收。測試 feed 的 URL／簽章另存，不覆蓋正式 feed；保持正式 channel、TLS 與簽章檢查，不增加產品 GitHub token 或略過驗證。draft GitHub Release 不能證明公開後匿名下載成功。
+用受控 HTTPS 測試 feed 與同一候選 App／Updater bytes 驗收。測試 feed 的 URL／簽章另存，不覆蓋正式 feed；保持正式 channel、TLS 與簽章檢查，不增加產品 GitHub token 或略過驗證。draft GitHub Release 不能證明公開後匿名下載成功。前一正式版 App 與 Updater 內嵌 GitHub latest feed URL；若在 draft 階段測試原始成品的 App 按鈕，須於隔離 Windows 環境以受控 HTTPS 路由提供正式鍵簽署的候選 feed 與相同資產。沒有該環境時將按鈕 E2E 列為待驗，公開成 latest 後立即於隔離環境補測；合成 signer 或 Updater CLI 成功不能當作按鈕 E2E。
 
 在乾淨 Windows x64 記錄 OS、每個官方 CLI 實際版本、使用版本／序號、步驟與結果：
 
 1. 五個 provider：Claude、Codex、GitHub Copilot、Grok 與 AGY 的官方登入、帳號隔離、用量、背景刷新、取消／失敗、安全冷卻及設定保留。
-2. fresh install、舊 internal→stable 一次手動銜接、installed sequence 有值／null、後續至少一次更新與 Updater 自更新。
+2. fresh install、舊 internal→stable 一次手動銜接、installed sequence 有值／null，以及以前一正式版標準安裝的 App 按鈕完成下一版更新、重啟與版本核對。若本版有新版 Updater，還須驗證自動下載、交接與固定維護副本提升；沿用前版 Updater 時須核對固定副本維持原 bytes。
 3. 拒絕舊 sequence、舊版本及同版本異 bytes；feed／artifact 竄改、未知鍵、缺簽、壞簽，以及換鍵。
 4. canonical maintenance EXE bytes／feed／channel／version 與 Windows 登錄；exit 0 仍須檢查登錄 warning。自訂 install root 維持不登錄行為。
 5. 每個 journal／rename 邊界終止程序、復原再中斷、rollback 失敗、磁碟不足、檔案鎖定與未知檔案保留。單元測試不等於真實斷電驗收。
