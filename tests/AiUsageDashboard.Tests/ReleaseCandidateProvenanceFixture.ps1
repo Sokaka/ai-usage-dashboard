@@ -23,6 +23,7 @@ $env:CREATE_DRAFT_RELEASE = if ($request.CreateDraftRelease) { 'true' } else { '
 $env:SEQUENCE_AUDIT = 'true'
 $env:RELEASE_SEQUENCE = '2'
 $env:PREVIOUS_RELEASE_SEQUENCE = '1'
+$env:PREVIOUS_SIGNED_FEED_PATH = ''
 $env:GITHUB_OUTPUT = Join-Path $fixtureRoot 'build-output.txt'
 $env:GITHUB_STEP_SUMMARY = Join-Path $fixtureRoot 'summary.md'
 $script:FixtureRemoteMainSha = if ($request.RemoteMainSha) { $request.RemoteMainSha } else { $env:GITHUB_SHA }
@@ -170,11 +171,23 @@ function Get-ReleaseApiResponse([hashtable] $BaseResponse, [hashtable] $Behavior
 # 驗簽與 GitHub transport 是此測試的外部邊界；checksum 與凍結 script 仍實際執行。
 function dotnet {
   $outputIndex = [Array]::IndexOf($args, '--output')
+  $feedIndex = [Array]::IndexOf($args, '--feed')
   if (($args[0] -cne 'run') -or ($args -cnotcontains 'verify') -or
-      ($outputIndex -lt 0) -or ($outputIndex + 1 -ge $args.Count)) {
+      ($outputIndex -lt 0) -or ($outputIndex + 1 -ge $args.Count) -or
+      ($feedIndex -lt 0) -or ($feedIndex + 1 -ge $args.Count)) {
     throw "Unexpected dotnet call in workflow fixture: $($args -join ' ')"
   }
-  [IO.File]::WriteAllText($args[$outputIndex + 1], ($script:FixtureFeed | ConvertTo-Json -Depth 5))
+  $feedPath = $args[$feedIndex + 1]
+  $verifiedFeed = if ($feedPath -ceq $script:CandidateFeedPath) {
+    $script:FixtureFeed
+  }
+  elseif (($request.ReuseUpdater) -and ($feedPath -ceq $env:PREVIOUS_SIGNED_FEED_PATH)) {
+    $script:PreviousFixtureFeed
+  }
+  else {
+    throw "Unexpected feed verification path in workflow fixture: $feedPath"
+  }
+  [IO.File]::WriteAllText($args[$outputIndex + 1], ($verifiedFeed | ConvertTo-Json -Depth 5))
   $global:LASTEXITCODE = 0
 }
 
@@ -182,8 +195,10 @@ function Initialize-ReleaseFiles {
   $releaseRoot = Join-Path $fixtureRoot 'internal-release'
   New-Item -ItemType Directory -Path $releaseRoot | Out-Null
   $packageName = 'AiUsageDashboard-0.2.0-win-x64.zip'
-  $updaterName = 'AiUsageDashboard-Updater-0.2.0-win-x64.exe'
+  $updaterVersion = if ($request.ReuseUpdater) { '0.1.0' } else { '0.2.0' }
+  $updaterName = "AiUsageDashboard-Updater-$updaterVersion-win-x64.exe"
   $feedName = 'AiUsageDashboard-update-stable.json'
+  $script:CandidateFeedPath = Join-Path $releaseRoot $feedName
   foreach ($name in @($packageName, $updaterName, $feedName)) {
     $path = Join-Path $releaseRoot $name
     [IO.File]::WriteAllText($path, "fixture bytes for $name")
@@ -194,16 +209,31 @@ function Initialize-ReleaseFiles {
     schemaVersion = 1
     channel = 'stable'
     releaseSequence = 2
-    minimumUpdaterVersion = '0.2.0'
+    minimumUpdaterVersion = $updaterVersion
   }
   foreach ($entry in @(@{ key = 'package'; name = $packageName }, @{ key = 'updater'; name = $updaterName })) {
     $path = Join-Path $releaseRoot $entry.name
     $script:FixtureFeed[$entry.key] = @{
-      version = '0.2.0'
+      version = if ($entry.key -ceq 'updater') { $updaterVersion } else { '0.2.0' }
       fileName = $entry.name
+      downloadUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/v0.2.0/$($entry.name)"
       sizeBytes = (Get-Item -LiteralPath $path).Length
       sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
-      sourceRevision = $env:GITHUB_SHA
+      sourceRevision = if (($entry.key -ceq 'updater') -and ($request.ReuseUpdater)) { 'b' * 40 } else { $env:GITHUB_SHA }
+    }
+  }
+  if ($request.ReuseUpdater) {
+    $script:PreviousFixtureFeed = @{
+      releaseSequence = 1
+      updater = $script:FixtureFeed.updater.Clone()
+    }
+    $script:PreviousFixtureFeed.updater.downloadUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/v0.1.0/$updaterName"
+    $env:PREVIOUS_SIGNED_FEED_PATH = Join-Path $fixtureRoot 'previous-signed-feed.json'
+    [IO.File]::WriteAllText($env:PREVIOUS_SIGNED_FEED_PATH, ($script:PreviousFixtureFeed | ConvertTo-Json -Depth 5))
+  }
+  if ($null -ne $request.CandidateUpdaterOverrides) {
+    foreach ($entry in $request.CandidateUpdaterOverrides.GetEnumerator()) {
+      $script:FixtureFeed.updater[$entry.Key] = $entry.Value
     }
   }
   $assetId = 0
@@ -268,5 +298,7 @@ $result = @{
   ReleaseOutputs = @(if (Test-Path -LiteralPath $releaseOutputPath) { [IO.File]::ReadAllLines($releaseOutputPath) })
   Notes = if (Test-Path -LiteralPath $notesPath) { [IO.File]::ReadAllText($notesPath) } else { $null }
   Receipt = if (Test-Path -LiteralPath $receiptPath) { Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json } else { $null }
+  Feed = $script:FixtureFeed
+  PreviousFeed = $script:PreviousFixtureFeed
 }
 [IO.File]::WriteAllText((Join-Path $fixtureRoot 'result.json'), ($result | ConvertTo-Json -Depth 8))

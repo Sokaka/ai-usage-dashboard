@@ -26,6 +26,10 @@ on:
         description: Audited maximum sequence from all previous distribution sources
         required: true
         type: string
+      reuse_updater_from_tag:
+        description: Optional latest public stable tag whose signed Updater is reused (for example, v1.0.8)
+        required: false
+        type: string
       acknowledge_sequence_audit:
         description: All known prior distribution sources were enumerated and the upper bound is complete
         required: true
@@ -216,6 +220,56 @@ jobs:
           -ResultsDirectory "${{ runner.temp }}/test-results"
           -MinimumLineCoveragePercent 70
 
+      - name: Download previously signed updater
+        id: previous_updater
+        if: ${{ inputs.reuse_updater_from_tag != '' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REUSE_UPDATER_FROM_TAG: ${{ inputs.reuse_updater_from_tag }}
+          RELEASE_VERSION: ${{ steps.release_source.outputs.candidate_version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:REUSE_UPDATER_FROM_TAG
+          if (($tag -cne $tag.Trim()) -or
+              ($tag -cnotmatch '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$')) {
+            throw 'reuse_updater_from_tag must be an exact stable release tag such as v1.0.8.'
+          }
+          $previousVersion = [Management.Automation.SemanticVersion]::Parse($tag.Substring(1))
+          $candidateVersion = [Management.Automation.SemanticVersion]::Parse($env:RELEASE_VERSION)
+          if ($previousVersion.CompareTo($candidateVersion) -ge 0) {
+            throw 'The reused updater release must precede the candidate version.'
+          }
+
+          $releaseJson = gh api "repos/$env:GITHUB_REPOSITORY/releases/latest"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to inspect the latest public release in $env:GITHUB_REPOSITORY."
+          }
+          $release = $releaseJson | ConvertFrom-Json
+          if (($release.tag_name -cne $tag) -or $release.draft -or $release.prerelease) {
+            throw "The requested updater source $tag is not the latest public stable release."
+          }
+
+          $previousRoot = Join-Path $env:RUNNER_TEMP 'previous-updater'
+          New-Item -ItemType Directory -Path $previousRoot -ErrorAction Stop | Out-Null
+          gh release download $tag --repo $env:GITHUB_REPOSITORY `
+            --pattern 'AiUsageDashboard-update-stable.json' `
+            --pattern 'AiUsageDashboard-Updater-*-win-x64.exe' `
+            --dir $previousRoot
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to download the signed feed and updater from $tag."
+          }
+          $feedPath = Join-Path $previousRoot 'AiUsageDashboard-update-stable.json'
+          $updaters = @(Get-ChildItem -LiteralPath $previousRoot -File |
+            Where-Object { $_.Name -match '^AiUsageDashboard-Updater-.*-win-x64\.exe$' })
+          $files = @(Get-ChildItem -LiteralPath $previousRoot -File)
+          if (!(Test-Path -LiteralPath $feedPath -PathType Leaf) -or
+              ($updaters.Count -ne 1) -or ($files.Count -ne 2)) {
+            throw "The public release $tag did not provide exactly one feed and one updater."
+          }
+          "feed_path=$feedPath" >> $env:GITHUB_OUTPUT
+          "updater_path=$($updaters[0].FullName)" >> $env:GITHUB_OUTPUT
+
       - name: Build and sign versioned update bundle
         shell: pwsh
         env:
@@ -224,6 +278,8 @@ jobs:
           PREVIOUS_RELEASE_SEQUENCE: ${{ inputs.previous_release_sequence }}
           SIGNING_KEY_ID: ${{ vars.UPDATE_FEED_SIGNING_KEY_ID }}
           SIGNING_KEY_PEM: ${{ secrets.UPDATE_FEED_SIGNING_PRIVATE_KEY_PEM }}
+          PREVIOUS_SIGNED_FEED_PATH: ${{ steps.previous_updater.outputs.feed_path }}
+          PREVIOUS_UPDATER_PATH: ${{ steps.previous_updater.outputs.updater_path }}
         run: |
           $ErrorActionPreference = 'Stop'
           if ([string]::IsNullOrWhiteSpace($env:SIGNING_KEY_ID) -or
@@ -236,6 +292,14 @@ jobs:
           try {
             [IO.File]::WriteAllText($privateKeyPath, $env:SIGNING_KEY_PEM, [Text.UTF8Encoding]::new($false))
             Remove-Item Env:SIGNING_KEY_PEM
+            $reuseArguments = @{}
+            if (![string]::IsNullOrWhiteSpace($env:PREVIOUS_SIGNED_FEED_PATH)) {
+              if ([string]::IsNullOrWhiteSpace($env:PREVIOUS_UPDATER_PATH)) {
+                throw 'A reused updater requires both the previous signed feed and its updater EXE.'
+              }
+              $reuseArguments['PreviousSignedFeedPath'] = $env:PREVIOUS_SIGNED_FEED_PATH
+              $reuseArguments['PreviousUpdaterPath'] = $env:PREVIOUS_UPDATER_PATH
+            }
             ./tools/Publish-UpdateBundle.ps1 `
               -Version $env:RELEASE_VERSION `
               -ReleaseSequence $env:RELEASE_SEQUENCE `
@@ -246,7 +310,8 @@ jobs:
               -Channel stable `
               -FeedUrl 'https://github.com/Sokaka/ai-usage-dashboard/releases/latest/download/AiUsageDashboard-update-stable.json' `
               -AssetBaseUrl "https://github.com/Sokaka/ai-usage-dashboard/releases/download/v$env:RELEASE_VERSION" `
-              -OutputRoot (Join-Path $env:RUNNER_TEMP 'internal-release')
+              -OutputRoot (Join-Path $env:RUNNER_TEMP 'internal-release') `
+              @reuseArguments
           }
           finally {
             if (Test-Path -LiteralPath $privateKeyPath) { Remove-Item -LiteralPath $privateKeyPath -Force }
@@ -258,22 +323,30 @@ jobs:
         env:
           RELEASE_VERSION: ${{ steps.release_source.outputs.candidate_version }}
           RELEASE_SEQUENCE: ${{ inputs.release_sequence }}
+          PREVIOUS_RELEASE_SEQUENCE: ${{ inputs.previous_release_sequence }}
+          PREVIOUS_SIGNED_FEED_PATH: ${{ steps.previous_updater.outputs.feed_path }}
         run: |
           $ErrorActionPreference = 'Stop'
 
+          $releaseRoot = '${{ runner.temp }}/internal-release'
           $packageName = "AiUsageDashboard-$env:RELEASE_VERSION-win-x64"
-          $zipPath = Join-Path '${{ runner.temp }}/internal-release' "$packageName.zip"
+          $zipPath = Join-Path $releaseRoot "$packageName.zip"
           $checksumPath = "$zipPath.sha256"
-          $updaterName = "AiUsageDashboard-Updater-$env:RELEASE_VERSION-win-x64.exe"
-          $updaterPath = Join-Path '${{ runner.temp }}/internal-release' $updaterName
+          $updaters = @(Get-ChildItem -LiteralPath $releaseRoot -File |
+            Where-Object { $_.Name -match '^AiUsageDashboard-Updater-.*-win-x64\.exe$' })
+          if ($updaters.Count -ne 1) {
+            throw 'The update bundle must contain exactly one Updater EXE.'
+          }
+          $updaterName = $updaters[0].Name
+          $updaterPath = $updaters[0].FullName
           $updaterChecksumPath = "$updaterPath.sha256"
-          $feedPath = Join-Path '${{ runner.temp }}/internal-release' 'AiUsageDashboard-update-stable.json'
+          $feedPath = Join-Path $releaseRoot 'AiUsageDashboard-update-stable.json'
           $feedChecksumPath = "$feedPath.sha256"
           $checksumText = (Get-Content -LiteralPath $checksumPath -Raw).Trim()
           $updaterChecksumText = (Get-Content -LiteralPath $updaterChecksumPath -Raw).Trim()
           $feedChecksumText = (Get-Content -LiteralPath $feedChecksumPath -Raw).Trim()
 
-          $bundleEntries = @(Get-ChildItem -LiteralPath '${{ runner.temp }}/internal-release' -Force)
+          $bundleEntries = @(Get-ChildItem -LiteralPath $releaseRoot -Force)
           if (($bundleEntries.Count -ne 6) -or
               (@($bundleEntries | Where-Object { !$_.PSIsContainer }).Count -ne 6)) {
             throw 'The update bundle must contain exactly six files.'
@@ -328,11 +401,29 @@ jobs:
             --channel stable --output $verifiedPayloadPath
           if ($LASTEXITCODE -ne 0) { throw 'Candidate feed signature verification failed.' }
           $feed = Get-Content -LiteralPath $verifiedPayloadPath -Raw | ConvertFrom-Json
+          $expectedUpdaterVersion = $env:RELEASE_VERSION
+          $expectedUpdaterSource = $env:GITHUB_SHA
+          if (![string]::IsNullOrWhiteSpace($env:PREVIOUS_SIGNED_FEED_PATH)) {
+            $previousPayloadPath = Join-Path $env:RUNNER_TEMP ('verified-previous-' + [Guid]::NewGuid().ToString('N') + '.json')
+            dotnet run --project tools/AiUsageDashboard.FeedSigning --configuration Release --no-build -- verify `
+              --feed $env:PREVIOUS_SIGNED_FEED_PATH --trust (Join-Path $env:RUNNER_TEMP 'update-public-trust.json') `
+              --channel stable --output $previousPayloadPath
+            if ($LASTEXITCODE -ne 0) { throw 'Previous updater feed signature verification failed.' }
+            $previousFeed = Get-Content -LiteralPath $previousPayloadPath -Raw | ConvertFrom-Json
+            if (($previousFeed.releaseSequence -gt [long]$env:PREVIOUS_RELEASE_SEQUENCE) -or
+                ($previousFeed.updater.fileName -cne $updaterName) -or
+                ($previousFeed.updater.sizeBytes -ne (Get-Item -LiteralPath $updaterPath).Length) -or
+                ($previousFeed.updater.sha256 -cne $actualUpdaterHash)) {
+              throw 'The reused updater does not match the previous signed feed.'
+            }
+            $expectedUpdaterVersion = $previousFeed.updater.version
+            $expectedUpdaterSource = $previousFeed.updater.sourceRevision
+          }
           $expectedAssetBaseUrl = "https://github.com/Sokaka/ai-usage-dashboard/releases/download/v$env:RELEASE_VERSION"
           if (($feed.schemaVersion -ne 1) -or
               ($feed.channel -cne 'stable') -or
               ($feed.releaseSequence -ne [long]$env:RELEASE_SEQUENCE) -or
-              ($feed.minimumUpdaterVersion -cne $env:RELEASE_VERSION) -or
+              ($feed.minimumUpdaterVersion -cne $expectedUpdaterVersion) -or
               ($feed.package.artifactId -cne 'AiUsageDashboard') -or
               ($feed.package.version -cne $env:RELEASE_VERSION) -or
               ($feed.package.runtimeIdentifier -cne 'win-x64') -or
@@ -341,14 +432,14 @@ jobs:
               ($feed.package.sizeBytes -ne (Get-Item -LiteralPath $zipPath).Length) -or
               ($feed.package.sha256 -cne $actualHash) -or
               ($feed.updater.artifactId -cne 'AiUsageDashboard.Updater') -or
-              ($feed.updater.version -cne $env:RELEASE_VERSION) -or
+              ($feed.updater.version -cne $expectedUpdaterVersion) -or
               ($feed.updater.runtimeIdentifier -cne 'win-x64') -or
               ($feed.updater.fileName -cne (Split-Path -Leaf $updaterPath)) -or
               ($feed.updater.downloadUrl -cne "$expectedAssetBaseUrl/$(Split-Path -Leaf $updaterPath)") -or
               ($feed.updater.sizeBytes -ne (Get-Item -LiteralPath $updaterPath).Length) -or
               ($feed.updater.sha256 -cne $actualUpdaterHash) -or
               ($feed.package.sourceRevision -cne $env:GITHUB_SHA) -or
-              ($feed.updater.sourceRevision -cne $env:GITHUB_SHA)) {
+              ($feed.updater.sourceRevision -cne $expectedUpdaterSource)) {
             throw 'Update feed does not match the generated package, updater, or source.'
           }
 
@@ -374,6 +465,8 @@ jobs:
           BUILD_RUN_ID: ${{ steps.release_source.outputs.build_run_id }}
           BUILD_RUN_ATTEMPT: ${{ steps.release_source.outputs.build_run_attempt }}
           RELEASE_SEQUENCE: ${{ inputs.release_sequence }}
+          PREVIOUS_RELEASE_SEQUENCE: ${{ inputs.previous_release_sequence }}
+          PREVIOUS_SIGNED_FEED_PATH: ${{ steps.previous_updater.outputs.feed_path }}
         run: |
           $ErrorActionPreference = 'Stop'
 
@@ -383,7 +476,12 @@ jobs:
           }
           $releaseRoot = Join-Path $env:RUNNER_TEMP 'internal-release'
           $packageName = "AiUsageDashboard-$env:RELEASE_VERSION-win-x64.zip"
-          $updaterName = "AiUsageDashboard-Updater-$env:RELEASE_VERSION-win-x64.exe"
+          $updaters = @(Get-ChildItem -LiteralPath $releaseRoot -File |
+            Where-Object { $_.Name -match '^AiUsageDashboard-Updater-.*-win-x64\.exe$' })
+          if ($updaters.Count -ne 1) {
+            throw 'Candidate output must contain exactly one Updater EXE.'
+          }
+          $updaterName = $updaters[0].Name
           $feedName = 'AiUsageDashboard-update-stable.json'
           $expectedNames = @(
             $packageName,
@@ -432,20 +530,41 @@ jobs:
             --channel stable --output $verifiedPayloadPath
           if ($LASTEXITCODE -ne 0) { throw 'Candidate feed signature verification failed.' }
           $feed = Get-Content -LiteralPath $verifiedPayloadPath -Raw | ConvertFrom-Json
+          $expectedUpdaterVersion = $env:RELEASE_VERSION
+          $expectedUpdaterSource = $env:GITHUB_SHA
+          if (![string]::IsNullOrWhiteSpace($env:PREVIOUS_SIGNED_FEED_PATH)) {
+            $previousPayloadPath = Join-Path $env:RUNNER_TEMP ('verified-previous-freeze-' + [Guid]::NewGuid().ToString('N') + '.json')
+            dotnet run --project tools/AiUsageDashboard.FeedSigning --configuration Release --no-build -- verify `
+              --feed $env:PREVIOUS_SIGNED_FEED_PATH --trust (Join-Path $env:RUNNER_TEMP 'update-public-trust.json') `
+              --channel stable --output $previousPayloadPath
+            if ($LASTEXITCODE -ne 0) { throw 'Previous updater feed signature verification failed.' }
+            $previousFeed = Get-Content -LiteralPath $previousPayloadPath -Raw | ConvertFrom-Json
+            if (($previousFeed.releaseSequence -gt [long]$env:PREVIOUS_RELEASE_SEQUENCE) -or
+                ($previousFeed.updater.fileName -cne $updaterName) -or
+                ($previousFeed.updater.sizeBytes -ne (Get-Item -LiteralPath $updaterPath).Length) -or
+                ($previousFeed.updater.sha256 -cne $verifiedHashes[$updaterName])) {
+              throw 'The reused updater changed before candidate freezing.'
+            }
+            $expectedUpdaterVersion = $previousFeed.updater.version
+            $expectedUpdaterSource = $previousFeed.updater.sourceRevision
+          }
+          $expectedAssetBaseUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/v$env:RELEASE_VERSION"
           if (($feed.schemaVersion -ne 1) -or
               ($feed.channel -cne 'stable') -or
               ($feed.releaseSequence -ne [long]$env:RELEASE_SEQUENCE) -or
-              ($feed.minimumUpdaterVersion -cne $env:RELEASE_VERSION) -or
+              ($feed.minimumUpdaterVersion -cne $expectedUpdaterVersion) -or
               ($feed.package.version -cne $env:RELEASE_VERSION) -or
               ($feed.package.fileName -cne $packageName) -or
+              ($feed.package.downloadUrl -cne "$expectedAssetBaseUrl/$packageName") -or
               ($feed.package.sizeBytes -ne (Get-Item -LiteralPath $packagePath).Length) -or
               ($feed.package.sha256 -cne $verifiedHashes[$packageName]) -or
               ($feed.package.sourceRevision -cne $env:GITHUB_SHA) -or
-              ($feed.updater.version -cne $env:RELEASE_VERSION) -or
+              ($feed.updater.version -cne $expectedUpdaterVersion) -or
               ($feed.updater.fileName -cne $updaterName) -or
+              ($feed.updater.downloadUrl -cne "$expectedAssetBaseUrl/$updaterName") -or
               ($feed.updater.sizeBytes -ne (Get-Item -LiteralPath $updaterPath).Length) -or
               ($feed.updater.sha256 -cne $verifiedHashes[$updaterName]) -or
-              ($feed.updater.sourceRevision -cne $env:GITHUB_SHA)) {
+              ($feed.updater.sourceRevision -cne $expectedUpdaterSource)) {
             throw 'Candidate feed no longer matches the verified release files.'
           }
 

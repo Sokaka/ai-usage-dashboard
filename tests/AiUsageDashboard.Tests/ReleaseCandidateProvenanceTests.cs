@@ -20,7 +20,9 @@ public sealed class ReleaseCandidateProvenanceTests
 		string? RemoteMainSha = null,
 		string? RemoteMainShaAtFreeze = null,
 		ReleaseApiResponse? ReleaseView = null,
-		ReleaseApiResponse? FreezeRead = null);
+		ReleaseApiResponse? FreezeRead = null,
+		bool ReuseUpdater = false,
+		Dictionary<string, object?>? CandidateUpdaterOverrides = null);
 
 	private sealed record FixtureResult(
 		string Phase,
@@ -31,7 +33,9 @@ public sealed class ReleaseCandidateProvenanceTests
 		string[] BuildOutputs,
 		string[] ReleaseOutputs,
 		string? Notes,
-		JsonElement Receipt);
+		JsonElement Receipt,
+		JsonElement Feed,
+		JsonElement PreviousFeed);
 
 	private const string RunId = "12345";
 	private const long ReleaseId = 3456;
@@ -85,6 +89,49 @@ public sealed class ReleaseCandidateProvenanceTests
 		Assert.False(result.Receipt.TryGetProperty("buildArtifactId", out _));
 		Assert.Equal(ReleaseId, result.Receipt.GetProperty("releaseId").GetInt64());
 		Assert.Equal(6, result.Receipt.GetProperty("assets").GetArrayLength());
+	}
+
+	[Fact]
+	public async Task Workflow_FreezesReusedUpdaterWithPreviousIdentityAndCandidateAssetUrl()
+	{
+		FixtureResult result = await RunFixtureAsync(new(ReuseUpdater: true));
+
+		Assert.Null(result.Error);
+		Assert.Equal("complete", result.Phase);
+		Assert.Equal(1, result.RemoteMutationCount);
+		Assert.Equal("0.2.0", result.Feed.GetProperty("package").GetProperty("version").GetString());
+		Assert.Equal("0.1.0", result.Feed.GetProperty("minimumUpdaterVersion").GetString());
+		JsonElement updater = result.Feed.GetProperty("updater");
+		JsonElement previousUpdater = result.PreviousFeed.GetProperty("updater");
+		Assert.Equal("0.1.0", updater.GetProperty("version").GetString());
+		Assert.Equal(new string('b', 40), updater.GetProperty("sourceRevision").GetString());
+		Assert.Equal(previousUpdater.GetProperty("sha256").GetString(), updater.GetProperty("sha256").GetString());
+		Assert.Equal(
+			"https://github.com/fixture/release-candidate/releases/download/v0.1.0/AiUsageDashboard-Updater-0.1.0-win-x64.exe",
+			previousUpdater.GetProperty("downloadUrl").GetString());
+		Assert.Equal(
+			"https://github.com/fixture/release-candidate/releases/download/v0.2.0/AiUsageDashboard-Updater-0.1.0-win-x64.exe",
+			updater.GetProperty("downloadUrl").GetString());
+		Assert.Contains(
+			"AiUsageDashboard-Updater-0.1.0-win-x64.exe",
+			result.Receipt.GetProperty("assets").EnumerateArray().Select(asset => asset.GetProperty("name").GetString()));
+		Assert.Equal(6, result.Receipt.GetProperty("assets").GetArrayLength());
+	}
+
+	[Theory]
+	[InlineData("version", "0.2.0")]
+	[InlineData("sourceRevision", "cccccccccccccccccccccccccccccccccccccccc")]
+	[InlineData("downloadUrl", "https://github.com/fixture/release-candidate/releases/download/v0.1.0/AiUsageDashboard-Updater-0.1.0-win-x64.exe")]
+	public async Task Workflow_RejectsReusedUpdaterWithWrongCandidateIdentity(string field, string value)
+	{
+		FixtureResult result = await RunFixtureAsync(new(
+			ReuseUpdater: true,
+			CandidateUpdaterOverrides: new() { [field] = value }));
+
+		Assert.Equal("freeze", result.Phase);
+		Assert.Contains("Candidate feed no longer matches the verified release files", result.Error);
+		Assert.Equal(0, result.RemoteMutationCount);
+		Assert.Equal(JsonValueKind.Null, result.Receipt.ValueKind);
 	}
 
 	[Theory]
