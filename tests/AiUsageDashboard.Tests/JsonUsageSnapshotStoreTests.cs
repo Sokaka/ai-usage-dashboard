@@ -203,6 +203,42 @@ public sealed class JsonUsageSnapshotStoreTests
 	}
 
 	[Fact]
+	public async Task SaveAndLoadAsync_WithCodexResetCreditDetails_KeepsV3CacheWithoutIndividualCredits()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "usage.json");
+		JsonUsageSnapshotStore store = CreateStore(filePath);
+		AccountProfile account = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Codex",
+			ProviderAccountIdentity: "person@example.com");
+		UsageSnapshot snapshot = CreateReadySnapshot(account) with
+		{
+			CodexResetCredits = new CodexResetCreditDetails(
+				1,
+				[
+					new CodexResetCredit(
+						"available", "codexRateLimits", TestNow.AddDays(-1),
+						TestNow.AddDays(1), "私有券標題", "私有券說明")
+				],
+				true)
+		};
+
+		await store.SaveAsync(snapshot);
+
+		string json = await File.ReadAllTextAsync(filePath);
+		using JsonDocument document = JsonDocument.Parse(json);
+		Assert.Equal(3, document.RootElement.GetProperty("schemaVersion").GetInt32());
+		Assert.DoesNotContain("codexResetCredits", json, StringComparison.OrdinalIgnoreCase);
+		Assert.DoesNotContain("私有券標題", json, StringComparison.Ordinal);
+		Assert.DoesNotContain("私有券說明", json, StringComparison.Ordinal);
+
+		UsageSnapshot? loaded = await store.LoadAsync(account);
+		Assert.NotNull(loaded);
+		Assert.Single(loaded.Metrics);
+		Assert.Null(loaded.CodexResetCredits);
+	}
+
+	[Fact]
 	public async Task SaveAndLoadAsync_WithExpiredMetrics_PersistsOnlyCurrentMetrics()
 	{
 		using TemporaryDirectory temporaryDirectory = new();

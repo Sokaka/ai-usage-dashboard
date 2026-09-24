@@ -78,6 +78,17 @@ public sealed class CodexUsageProviderTests
 		DateTimeOffset primaryReset = now + TimeSpan.FromHours(1);
 		DateTimeOffset secondaryReset = now + TimeSpan.FromDays(1);
 		DateTimeOffset creditExpiry = now + TimeSpan.FromDays(3);
+		CodexResetCreditDetails creditDetails = new(
+			2,
+			[
+				new CodexResetCredit(
+					"available", "codexRateLimits", now.AddDays(-1),
+					creditExpiry, "第一張", null),
+				new CodexResetCredit(
+					"available", "codexRateLimits", now.AddDays(-2),
+					now.AddDays(4), "第二張", null)
+			],
+			true);
 		AccountProfile account = CreateAccount();
 		FakeCodexUsagePoller poller = new((accountId, _) => Task.FromResult(
 			new CodexUsagePollResult(
@@ -93,7 +104,8 @@ public sealed class CodexUsageProviderTests
 				2,
 				observedAt,
 				ValidAccountIdentity,
-				NextResetCreditExpiresAt: creditExpiry)));
+				NextResetCreditExpiresAt: creditExpiry,
+				ResetCreditDetails: creditDetails)));
 		CodexUsageProvider provider = new(poller, new FakeTimeProvider(now));
 
 		UsageSnapshot snapshot = await provider.GetUsageAsync(
@@ -115,6 +127,14 @@ public sealed class CodexUsageProviderTests
 			snapshot.ProviderAccountDisplayIdentity);
 		Assert.Equal("plus", snapshot.PlanTier);
 		Assert.Null(snapshot.SubscriptionScopeDisplayName);
+		Assert.NotNull(snapshot.CodexResetCredits);
+		Assert.Equal(2, snapshot.CodexResetCredits.AvailableCount);
+		Assert.True(snapshot.CodexResetCredits.IsComplete);
+		IReadOnlyList<CodexResetCredit> credits = Assert.IsAssignableFrom<
+			IReadOnlyList<CodexResetCredit>>(snapshot.CodexResetCredits.Credits);
+		Assert.Equal(2, credits.Count);
+		Assert.Contains(credits, credit => credit.Title == "第一張");
+		Assert.Contains(credits, credit => credit.Title == "第二張");
 		Assert.Equal(
 			SubscriptionVerificationState.Verified,
 			snapshot.SubscriptionVerificationState);

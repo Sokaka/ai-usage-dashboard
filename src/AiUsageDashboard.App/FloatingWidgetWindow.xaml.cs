@@ -2932,6 +2932,8 @@ public partial class FloatingWidgetWindow : Window
 		object sender,
 		DependencyPropertyChangedEventArgs e)
 	{
+		SetCodexResetCreditsWindowsVisible(IsVisible && !_isCollapsed);
+
 		if (!_isApplyingPortableWidgetPreferences)
 		{
 			NotifyPortableWidgetPreferencesChanged();
@@ -2954,6 +2956,43 @@ public partial class FloatingWidgetWindow : Window
 		}
 
 		await RefreshAccountUsageWithFeedbackAsync(account, viewModel);
+	}
+
+	private void ViewCodexResetCreditsMenuItem_Click(
+		object sender,
+		RoutedEventArgs e)
+	{
+		if ((sender is not FrameworkElement element) ||
+			(element.DataContext is not AccountUsageViewModel account) ||
+			(DataContext is not DashboardViewModel viewModel) ||
+			viewModel.IsManagingAccounts ||
+			!account.IsCodex ||
+			!account.CanOpenWidgetAccountMenu ||
+			!viewModel.Accounts.Contains(account))
+		{
+			return;
+		}
+
+		CodexResetCreditsWindow? existingWindow = OwnedWindows
+			.OfType<CodexResetCreditsWindow>()
+			.FirstOrDefault(window => ReferenceEquals(window.Account, account));
+		if (existingWindow is not null)
+		{
+			if (existingWindow.WindowState == WindowState.Minimized)
+			{
+				existingWindow.WindowState = WindowState.Normal;
+			}
+
+			existingWindow.Show();
+			existingWindow.Activate();
+			return;
+		}
+
+		CodexResetCreditsWindow window = new(account, viewModel.Accounts)
+		{
+			Owner = this
+		};
+		window.Show();
 	}
 
 	private async void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -3200,6 +3239,11 @@ public partial class FloatingWidgetWindow : Window
 
 		bool shouldTransferFocus = IsKeyboardFocusWithin;
 		ResetAccountScrollDrag(releaseMouseCapture: true);
+		if (isCollapsed)
+		{
+			SetCodexResetCreditsWindowsVisible(false);
+		}
+
 		bool wasNativeWindowHidden = TryHideNativeWindowForLayoutTransition(
 			out IntPtr windowHandle);
 		_isCollapsed = isCollapsed;
@@ -3236,6 +3280,11 @@ public partial class FloatingWidgetWindow : Window
 			}
 		}
 
+		if (!isCollapsed)
+		{
+			SetCodexResetCreditsWindowsVisible(IsVisible);
+		}
+
 		TryAnnouncePendingUpdateBanner();
 
 		FrameworkElement focusTarget = isCollapsed
@@ -3260,6 +3309,28 @@ public partial class FloatingWidgetWindow : Window
 		if (notifyPreferences)
 		{
 			NotifyPreferencesChanged();
+		}
+	}
+
+	private void SetCodexResetCreditsWindowsVisible(bool isVisible)
+	{
+		foreach (CodexResetCreditsWindow window in OwnedWindows
+			.OfType<CodexResetCreditsWindow>()
+			.ToArray())
+		{
+			if (window.IsVisible == isVisible)
+			{
+				continue;
+			}
+
+			if (isVisible)
+			{
+				window.Show();
+			}
+			else
+			{
+				window.Hide();
+			}
 		}
 	}
 

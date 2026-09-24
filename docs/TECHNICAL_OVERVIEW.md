@@ -395,7 +395,9 @@ initialize → initialized → account/read → account/rateLimits/read
 
 流程不建立對話執行緒或模型互動（thread／turn）、不發送 prompt，也不呼叫模型。`account/read` 只接受 ChatGPT account；`account/rateLimits/read` 會讀取 primary、secondary 與 `rateLimitsByLimitId` 的多個額度區間。
 
-`rateLimitResetCredits.availableCount` 是可用重置次數的來源。只有官方 `credits` 明細完整且有效、可用項目數與 `availableCount` 相符時，才取尚未到期項目中最早的 `expiresAt` 顯示本機到期時間；距到期 48 小時內，時間改用警示色。舊版 count-only 回應、缺少明細或截斷明細仍顯示次數，不推測到期時間。
+`rateLimitResetCredits.availableCount` 是可用重置次數的來源。只有官方 `credits` 明細完整且有效、可用項目數與 `availableCount` 相符，且每張券的到期資訊可判定時，才取尚未到期項目中最早的 `expiresAt` 顯示本機到期時間；距到期 48 小時內，時間改用警示色。顯式 `expiresAt: null` 代表不會到期，缺少 `expiresAt` 則代表到期資訊未知；舊版 count-only 回應、缺少明細或截斷明細仍顯示次數，不推測到期時間。
+
+Codex 卡片的 **查看重置券** 視窗只讀取該卡片目前的用量快照，上方顯示可用總數與不帶服務名稱前綴的帳號，資料時間位於帳號正下方，並列出官方實際回傳且格式有效、狀態為 `available`、目前未確認已到期的逐券名稱與到期資訊。顯式 `expiresAt: null` 顯示「不會到期」，缺少欄位顯示「未提供到期時間」；有到期時間的券沿用卡片的 48 小時警示規則與 `ResetTimeTextStyle`，每張券獨立判斷。視窗保持開啟時會觀察該卡片的快照變更，背景或手動檢查完成後同步內容；主浮窗收合或隱藏時一起隱藏，重新展開或顯示時恢復；帳號身分不符時清空舊資料，帳號被移除或視窗關閉時解除觀察。`redeemed`、`expired` 和未知狀態不佔用可用券明細上限，也不在視窗列出。`availableCount` 仍是來源回傳的可用總數；明細可能為 `null`、空陣列、被截斷或有無效欄位，視窗會提示缺少或不完整的可用券明細，不把可見列數當成可用總數。若來源回傳的 `available` 列數超過 `availableCount`，視窗保留總數但隱藏矛盾的明細並提示重新檢查；若券在快照取得後到期，視窗隱藏該券，將總數標示為上次資料並提示重新檢查。逐券明細只留在記憶體，不保存到磁碟快取或匯出設定；重啟後要等下一次背景更新取得。此視窗不會自行發起 CLI 查詢，也不呼叫會消耗重置券的 `account/rateLimitResetCredit/consume`。
 
 `account/usage/read` 尚未實作，因此 token 活動不會與 rate-limit 額度混在一起顯示。
 

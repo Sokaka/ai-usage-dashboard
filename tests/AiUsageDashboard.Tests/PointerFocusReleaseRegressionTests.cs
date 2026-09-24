@@ -546,6 +546,7 @@ public sealed class PointerFocusReleaseRegressionTests
 		[
 			LoadAppXaml("AccountEditorWindow.xaml"),
 			LoadAppXaml("CodexWorkspacePromptWindow.xaml"),
+			LoadAppXaml("CodexResetCreditsWindow.xaml"),
 			LoadAppXaml("AboutWindow.xaml"),
 			floatingWindow
 		];
@@ -567,7 +568,7 @@ public sealed class PointerFocusReleaseRegressionTests
 
 		Assert.NotEmpty(buttonBaseActions);
 		Assert.Single(comboBoxActions);
-		Assert.Equal(25, menuItemActions.Length);
+		Assert.Equal(26, menuItemActions.Length);
 		string[] updateActionAutomationIds =
 		[
 			"CheckForUpdates",
@@ -715,7 +716,7 @@ public sealed class PointerFocusReleaseRegressionTests
 				element.Elements(Presentation + "MenuItem").Any())
 			.ToArray();
 
-		Assert.Equal(25, leafActions.Length);
+		Assert.Equal(26, leafActions.Length);
 		XElement aboutAction = Assert.Single(leafActions, element =>
 			(string?)element.Attribute("AutomationProperties.AutomationId") == "OpenAbout");
 		Assert.Empty(aboutAction.Elements(Presentation + "MenuItem"));

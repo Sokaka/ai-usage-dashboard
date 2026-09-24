@@ -1,3 +1,5 @@
+using AiUsageDashboard.Core.Models;
+
 namespace AiUsageDashboard.App.Providers;
 
 internal sealed record CodexRateLimitWindow(
@@ -20,4 +22,5 @@ internal sealed record CodexUsagePollResult(
 	CliVersionEvidence? VersionEvidence = null,
 	string? PublicBindingIdentity = null,
 	Guid WorkspaceId = default,
-	DateTimeOffset? NextResetCreditExpiresAt = null);
+	DateTimeOffset? NextResetCreditExpiresAt = null,
+	CodexResetCreditDetails? ResetCreditDetails = null);

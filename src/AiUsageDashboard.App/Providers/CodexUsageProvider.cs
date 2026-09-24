@@ -157,7 +157,8 @@ internal sealed class CodexUsageProvider : IUsageProvider
 				SubscriptionVerificationState:
 					isWorkspaceBound
 						? SubscriptionVerificationState.Verified
-						: SubscriptionVerificationState.Unverified);
+						: SubscriptionVerificationState.Unverified,
+				CodexResetCredits: pollResult.ResetCreditDetails);
 		}
 		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 		{
