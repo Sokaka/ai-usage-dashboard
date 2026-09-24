@@ -7,7 +7,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.7-0078D4" alt="目前正式版本 1.0.7"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.8-0078D4" alt="目前正式版本 1.0.8"></a>
 </p>
 
 <p align="center">
@@ -29,11 +29,9 @@
 
 ## 目前版本
 
-目前正式版本為 **`1.0.7`**，將 AGY 正式路徑收斂為直接呼叫使用者安裝的官方 `agy /usage`，把獨立 Setup EXE 改為 App 內載入的 DLL，並移除 standalone AGY Capture。一般使用不需要執行 `/statusline off`。從 [v1.0.7 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.7) 下載；檔案資訊見 [1.0.7 版本說明](docs/releases/1.0.7.md)。前一版的浮窗首幀與主題修正見 [1.0.6 版本說明](docs/releases/1.0.6.md)。
+目前正式版本為 **`1.0.8`**，Codex 卡片新增可用重置券的最近到期時間、到期前 48 小時警示色，以及查看逐張可用券資訊的小視窗。從 [v1.0.8 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.8) 下載；檔案資訊見 [1.0.8 版本說明](docs/releases/1.0.8.md)。前一版的 AGY 官方 `/usage` 路徑與封裝調整見 [1.0.7 版本說明](docs/releases/1.0.7.md)。
 
-`1.0.7` 的候選 workflow attempt 1 通過 4,208 項自動測試，production line coverage 為 74.39%。同一組 frozen candidate 已完成封裝 invariant、WithSecure 掃描、portable／canonical 啟動、既有標準安裝的 `apply-local` 與實際官方 AGY `/usage`；正式公開後另以匿名 client 下載六件成品，核對 tag target、asset identity、大小、SHA256、sidecar 與 stable feed 簽章。這些結果仍不等於乾淨 Windows 初裝、signed online update、舊版 Updater 自我交接、完整 UI／無障礙或所有 provider 真人驗收。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#107)。
-
-目前原始碼已加入 Codex 可用重置次數的最近到期時間、到期前 48 小時警示色，以及查看逐張重置券資訊的小視窗；這些功能尚未包含在 `1.0.7` 正式下載版。
+`1.0.8` 的候選 workflow attempt 1 通過 4,257 項自動測試，production line coverage 為 74.47%。同一組 frozen candidate 已完成六件成品、sidecar、stable feed 簽章及隨包指南核對；正式公開後另以匿名 client 下載六件成品，核對 Release identity、大小、SHA256、sidecar 與 stable feed 簽章。本版尚未完成實際官方 CLI 登入與用量、安裝或 signed online update 驗收。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#108-正式版)。
 
 ## 支援平台
 
