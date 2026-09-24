@@ -7,7 +7,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.8-0078D4" alt="目前正式版本 1.0.8"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.9-0078D4" alt="目前正式版本 1.0.9"></a>
 </p>
 
 <p align="center">
@@ -29,9 +29,9 @@
 
 ## 目前版本
 
-目前正式版本為 **`1.0.8`**，Codex 卡片新增可用重置券的最近到期時間、到期前 48 小時警示色，以及查看逐張可用券資訊的小視窗。從 [v1.0.8 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.8) 下載；檔案資訊見 [1.0.8 版本說明](docs/releases/1.0.8.md)。前一版的 AGY 官方 `/usage` 路徑與封裝調整見 [1.0.7 版本說明](docs/releases/1.0.7.md)。
+目前正式版本為 **`1.0.9`**，延續前一版的 Codex 重置券到期時間、48 小時警示色與逐券資訊視窗。本版讓發版流程可沿用前一正式版已簽署的 Updater；[v1.0.9 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.9) 隨附的 Updater 仍是 `1.0.8`，位元組與前版相同。下載與成品資訊見 [1.0.9 版本說明](docs/releases/1.0.9.md)。
 
-`1.0.8` 的候選 workflow attempt 1 通過 4,257 項自動測試，production line coverage 為 74.47%。同一組 frozen candidate 已完成六件成品、sidecar、stable feed 簽章及隨包指南核對；正式公開後另以匿名 client 下載六件成品，核對 Release identity、大小、SHA256、sidecar 與 stable feed 簽章。本版尚未完成實際官方 CLI 登入與用量、安裝或 signed online update 驗收。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#108-正式版)。
+`1.0.9` 的候選 workflow attempt 1 通過 4,262 項自動測試，production line coverage 為 74.46%。六件成品、sidecar、stable feed 簽章及隨包指南已與凍結紀錄核對；正式公開後另以匿名 client 下載六件原成品，核對 Release 身分、大小、SHA256、sidecar 與 latest stable feed 簽章。本版尚未完成實際官方 CLI 登入與用量、安裝或從 `1.0.8` App 按鈕發起的 signed online update 驗收。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#109)。
 
 ## 支援平台
 
@@ -74,6 +74,8 @@
 | --- | --- | --- |
 | **一般安裝：Updater** | `AiUsageDashboard-Updater-<version>-win-x64.exe` | Updater 也能首次安裝。以一般使用者權限執行，安裝後從開始選單搜尋 **AI Usage**；保留 Updater 供日後更新。 |
 | **免安裝：完整 ZIP** | `AiUsageDashboard-<version>-win-x64.zip` | 完整解壓到新資料夾後，執行其中的 App；不要下載 GitHub 自動產生的 Source code ZIP。 |
+
+`1.0.9` 的 Updater 檔名是 `AiUsageDashboard-Updater-1.0.8-win-x64.exe`；請依 Release 上的實際檔名下載。
 
 依[安裝與第一次啟動](使用說明.md#安裝與第一次啟動)操作、閱讀並接受適用條款，再新增帳號，透過服務的官方登入流程完成連接。
 

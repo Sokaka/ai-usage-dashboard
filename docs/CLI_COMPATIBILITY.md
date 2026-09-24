@@ -1,6 +1,6 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.9` 候選版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.9` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.9` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.9` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
 ## 版本要求
 
@@ -35,9 +35,9 @@
 | Grok | 未以本版實測 | 未驗證 | 未驗證 |
 | Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
 
-[同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36022467564) 與[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36023166191) attempt 1 已通過。候選 Release 建置 0 warnings／0 errors、完整自動測試 4,262 passed／0 failed／0 skipped，production line coverage 74.46%（48,278／64,841）；同一個 attempt 簽署、驗證並凍結六件成品。獨立回讀六件成品、sidecar、stable feed 簽章與隨包指南通過。這些結果不代替實際 CLI 登入、用量查詢、安裝或 signed online update；先前版本的實測不沿用為本版結果。
+[同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36022467564) 與[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36023166191) attempt 1 已通過。候選 Release 建置 0 warnings／0 errors、完整自動測試 4,262 passed／0 failed／0 skipped，production line coverage 74.46%（48,278／64,841）；同一個 attempt 簽署、驗證並凍結六件成品。正式公開後已匿名下載六件原凍結成品，核對 asset identity、大小、SHA256、sidecar、stable feed 簽章及 latest feed bytes。這些結果不代替實際 CLI 登入、用量查詢、安裝或 signed online update；先前版本的實測不沿用為本版結果。成品與發布驗證範圍見 [1.0.9 版本說明](releases/1.0.9.md)。
 
-### 1.0.8 正式版
+### 1.0.8 歷史正式版
 
 本表對應 `1.0.8 / sequence 1022`（[source `2241852d355767f2922a0e933b7c29d294e3ef00`](https://github.com/Sokaka/ai-usage-dashboard/commit/2241852d355767f2922a0e933b7c29d294e3ef00)）。上列 CLI 版本要求仍適用。Codex 舊版僅回傳可用次數、較新版回傳逐券狀態與到期時間，以及 Claude 新舊格式已有合成回歸測試；舊 Codex 回應仍顯示次數，不推測逐券資料或到期時間。這些測試不等於以舊版或最新版官方 CLI 對本版完成實測。
 
