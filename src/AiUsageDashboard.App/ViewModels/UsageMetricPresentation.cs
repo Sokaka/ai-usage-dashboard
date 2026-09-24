@@ -4,6 +4,8 @@ namespace AiUsageDashboard.App.ViewModels;
 
 internal static class UsageMetricPresentation
 {
+	internal const string CodexResetCreditsKey = "codex:rate_limit_reset_credits";
+
 	private const string FiveHourUsageLabel = "5小時用量";
 	private const string WeeklyUsageLabel = "週用量";
 	private static readonly TimeSpan ImminentResetThreshold = TimeSpan.FromHours(1);
@@ -61,11 +63,11 @@ internal static class UsageMetricPresentation
 		}
 
 		TimeSpan remaining = resetsAt - now;
-		TimeSpan resetThreshold = IsFiveHour(metric)
-			? ImminentResetThreshold
-			: IsWeekly(metric)
-				? WeeklyImminentResetThreshold
-				: ImminentResetThreshold;
+		bool hasTwoDayThreshold = (metric.Key == CodexResetCreditsKey) ||
+			((!IsFiveHour(metric)) && (IsWeekly(metric)));
+		TimeSpan resetThreshold = hasTwoDayThreshold
+			? WeeklyImminentResetThreshold
+			: ImminentResetThreshold;
 		return (remaining >= TimeSpan.Zero) &&
 			(remaining <= resetThreshold);
 	}
@@ -96,6 +98,7 @@ internal static class UsageMetricPresentation
 			_ when metric.Key.StartsWith(
 				"codex:codex:",
 				StringComparison.OrdinalIgnoreCase) => 0,
+			_ when metric.Key == CodexResetCreditsKey => 5,
 			"claude.rate_limit.five_hour" => 0,
 			"claude.rate_limit.seven_day.all_models" => 1,
 			_ when metric.Key.StartsWith(

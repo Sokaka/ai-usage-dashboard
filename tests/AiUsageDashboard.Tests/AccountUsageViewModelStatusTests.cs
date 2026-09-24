@@ -2585,10 +2585,17 @@ public sealed class AccountUsageViewModelStatusTests
 					"20%",
 					now.AddMinutes(30)),
 				new UsageMetric(
+					"codex:review:primary",
+					"Code Review · 1 天用量",
+					15,
+					"15%",
+					now.AddHours(1)),
+				new UsageMetric(
 					"codex:rate_limit_reset_credits",
 					"可用重置次數",
 					null,
-					"2 次")
+					"2 次",
+					now.AddMinutes(10))
 			},
 			SourceTrust.OfficialExperimental,
 			SnapshotStatus.Ready,
@@ -2603,6 +2610,7 @@ public sealed class AccountUsageViewModelStatusTests
 			{
 				"codex:codex:primary",
 				"codex:codex_bengalfox:primary",
+				"codex:review:primary",
 				"codex:rate_limit_reset_credits"
 			},
 			viewModel.UsageMetrics.Select(metric => metric.Key));

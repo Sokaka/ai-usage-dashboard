@@ -77,6 +77,7 @@ public sealed class CodexUsageProviderTests
 		DateTimeOffset observedAt = now - TimeSpan.FromSeconds(5);
 		DateTimeOffset primaryReset = now + TimeSpan.FromHours(1);
 		DateTimeOffset secondaryReset = now + TimeSpan.FromDays(1);
+		DateTimeOffset creditExpiry = now + TimeSpan.FromDays(3);
 		AccountProfile account = CreateAccount();
 		FakeCodexUsagePoller poller = new((accountId, _) => Task.FromResult(
 			new CodexUsagePollResult(
@@ -91,7 +92,8 @@ public sealed class CodexUsageProviderTests
 				},
 				2,
 				observedAt,
-				ValidAccountIdentity)));
+				ValidAccountIdentity,
+				NextResetCreditExpiresAt: creditExpiry)));
 		CodexUsageProvider provider = new(poller, new FakeTimeProvider(now));
 
 		UsageSnapshot snapshot = await provider.GetUsageAsync(
@@ -136,11 +138,34 @@ public sealed class CodexUsageProviderTests
 				Assert.Equal("可用重置次數", metric.Label);
 				Assert.Null(metric.UsedPercent);
 				Assert.Equal("2 次", metric.DisplayValue);
+				Assert.Equal(creditExpiry, metric.ResetsAt);
 			});
 		Assert.Equal(1, poller.CallCount);
 		Assert.Equal(
 			ValidPublicBindingIdentity,
 			poller.LastExpectedPublicBindingIdentity);
+	}
+
+	[Fact]
+	public async Task GetUsageAsync_WithZeroResetCredits_DoesNotShowExpiry()
+	{
+		DateTimeOffset now = new(2026, 7, 15, 2, 30, 0, TimeSpan.Zero);
+		FakeCodexUsagePoller poller = new((_, _) => Task.FromResult(
+			CreatePollResult(now) with
+			{
+				AvailableResetCredits = 0,
+				NextResetCreditExpiresAt = now.AddDays(1)
+			}));
+		CodexUsageProvider provider = new(poller, new FakeTimeProvider(now));
+
+		UsageSnapshot snapshot = await provider.GetUsageAsync(
+			CreateAccount(),
+			CancellationToken.None);
+
+		UsageMetric resetCredits = Assert.Single(snapshot.Metrics, metric =>
+			metric.Key == "codex:rate_limit_reset_credits");
+		Assert.Equal("0 次", resetCredits.DisplayValue);
+		Assert.Null(resetCredits.ResetsAt);
 	}
 
 	[Theory]

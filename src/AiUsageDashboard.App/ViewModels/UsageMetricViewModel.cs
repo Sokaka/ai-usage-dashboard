@@ -145,11 +145,14 @@ public sealed class UsageMetricViewModel
 			> 80 => UsageLevel.Warning,
 			_ => UsageLevel.Normal
 		};
+		string resetTimeLabel = metric.Key == UsageMetricPresentation.CodexResetCreditsKey
+			? "到期"
+			: "重置";
 		ResetText = !string.IsNullOrWhiteSpace(metric.ResetDisplayValue)
 			? metric.ResetDisplayValue
 			: metric.ResetsAt is null
 				? "未提供重置時間"
-				: $"重置 · {metric.ResetsAt.Value.ToLocalTime():MM/dd HH:mm}";
+				: $"{resetTimeLabel} · {metric.ResetsAt.Value.ToLocalTime():MM/dd HH:mm}";
 		HasResetText = showResetText &&
 			(HasUsageBar || (metric.ResetsAt is not null)) &&
 			!string.IsNullOrWhiteSpace(ResetText);

@@ -19,4 +19,5 @@ internal sealed record CodexUsagePollResult(
 	string? AccountIdentity = null,
 	CliVersionEvidence? VersionEvidence = null,
 	string? PublicBindingIdentity = null,
-	Guid WorkspaceId = default);
+	Guid WorkspaceId = default,
+	DateTimeOffset? NextResetCreditExpiresAt = null);

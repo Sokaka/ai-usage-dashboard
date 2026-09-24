@@ -33,6 +33,8 @@
 
 `1.0.7` 的候選 workflow attempt 1 通過 4,208 項自動測試，production line coverage 為 74.39%。同一組 frozen candidate 已完成封裝 invariant、WithSecure 掃描、portable／canonical 啟動、既有標準安裝的 `apply-local` 與實際官方 AGY `/usage`；正式公開後另以匿名 client 下載六件成品，核對 tag target、asset identity、大小、SHA256、sidecar 與 stable feed 簽章。這些結果仍不等於乾淨 Windows 初裝、signed online update、舊版 Updater 自我交接、完整 UI／無障礙或所有 provider 真人驗收。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#107)。
 
+`main` 原始碼已加入 Codex 可用重置次數的最近到期時間與到期前 48 小時警示色；此功能尚未包含在 `1.0.7` 正式下載版。
+
 ## 支援平台
 
 | 平台 | 使用前準備 | 帳號卡片 |
