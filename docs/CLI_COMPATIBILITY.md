@@ -1,6 +1,6 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.7` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.7` 已在既有登入下以正式成品完成 AGY `/usage` runtime smoke，但五個平台仍未完成真人登入與完整帳號流程驗收；舊版 Claude／Copilot 的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.8` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.8` 尚未以正式成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
 ## 版本要求
 
@@ -23,19 +23,19 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同候選官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
-### 1.0.8 候選（待建置）
+### 1.0.8 正式版
 
-本表只對應待建置的 `1.0.8` 候選；source SHA、release sequence 與候選成品在凍結後回填。上列 CLI 版本要求仍適用。Codex 舊版僅回傳可用次數的合成回應已有回歸測試：維持顯示次數，不推測逐券資料或到期時間；這不等於以舊版或最新版官方 CLI 對本候選完成實測。
+本表對應 `1.0.8 / sequence 1022`（[source `2241852d355767f2922a0e933b7c29d294e3ef00`](https://github.com/Sokaka/ai-usage-dashboard/commit/2241852d355767f2922a0e933b7c29d294e3ef00)）。上列 CLI 版本要求仍適用。Codex 舊版僅回傳可用次數、較新版回傳逐券狀態與到期時間，以及 Claude 新舊格式已有合成回歸測試；舊 Codex 回應仍顯示次數，不推測逐券資料或到期時間。這些測試不等於以舊版或最新版官方 CLI 對本版完成實測。
 
 | 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
 | --- | --- | --- | --- |
-| Claude | 未以本候選實測 | 未驗證 | 未驗證 |
-| Codex | 未以本候選實測 | 未驗證 | 未驗證 |
-| GitHub Copilot | 未以本候選實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
-| Grok | 未以本候選實測 | 未驗證 | 未驗證 |
-| Antigravity | 未以本候選實測 | 未驗證 | 未驗證 |
+| Claude | 未以本版實測 | 未驗證 | 未驗證 |
+| Codex | 未以本版實測 | 未驗證 | 未驗證 |
+| GitHub Copilot | 未以本版實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
+| Grok | 未以本版實測 | 未驗證 | 未驗證 |
+| Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
 
-同候選的 CI、實際 CLI 版本、逐平台結果與仍未驗項目待驗收後回填；先前 `1.0.7` 的 AGY runtime 結果不沿用為本候選結果。成品驗證範圍見 [1.0.8 版本說明](releases/1.0.8.md)。
+[同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35980432912) 與[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35981500721) attempt 1 已通過。候選 Release 建置 0 warnings／0 errors、完整自動測試 4,257 passed／0 failed／0 skipped，production line coverage 74.47%（48,286／64,841）；同一個 attempt 簽署、驗證並凍結六件成品。正式公開後已匿名下載六件原凍結成品，核對 asset identity、大小、SHA256、sidecar 與 stable feed 簽章。這些結果不代替實際 CLI 登入、用量查詢、安裝或 signed online update；先前 `1.0.7` 的 AGY runtime 結果也不沿用為本版結果。成品與發布驗證範圍見 [1.0.8 版本說明](releases/1.0.8.md)。
 
 ### 1.0.7
 

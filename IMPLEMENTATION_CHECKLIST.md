@@ -1,6 +1,6 @@
 # 實作與驗證清單
 
-更新日期：2026-09-23
+更新日期：2026-09-24
 
 讀者：負責 AI Usage Dashboard 開發、測試與交付的人員。本文只列現況、驗證界線與尚待工作。
 
@@ -8,7 +8,7 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些功能與 Copilot 訂閱資訊修正始於首個正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.7 / sequence 1021`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些功能與 Copilot 訂閱資訊修正始於首個正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.8 / sequence 1022`。
 
 ### AGY official-only 與封裝縮減
 
@@ -86,11 +86,22 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 後續捲動條提交 `8a564747` 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34764614043) 完整測試為 3,985 passed／0 failed／0 skipped，production line coverage 75.77%；這是另一份遠端驗證，沒有改寫上述本機失敗或其未知原因。對應本機 `0.0.0-verify-scrollbar.20260913.4` 已完成 90 案定向回歸、封裝與安裝，尚非正式凍結候選；這些結果也不代替本次新增功能的驗證。
 
-上述公開入口及 Copilot 相容性修正已在 `1.0.3` 凍結，真人 CLI 登入／用量驗收仍暫緩；歷史候選的成品與驗收只適用於各自 source，不代替 `1.0.7` 的結果。
+上述公開入口及 Copilot 相容性修正已在 `1.0.3` 凍結，真人 CLI 登入／用量驗收仍暫緩；歷史候選的成品與驗收只適用於各自 source，不代替目前正式版本的結果。
 
 ## 目前正式版本
 
-`1.0.7 / sequence 1021` 已沿用原凍結候選正式公開（[source `c4ad25f41e973b508583252945aafa05572a4299`](https://github.com/Sokaka/ai-usage-dashboard/commit/c4ad25f41e973b508583252945aafa05572a4299)）。同一筆 [v1.0.7 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.7) 現為 immutable stable／latest；Release ID `394622165`、tag target 與六件成品的 asset ID、大小及 SHA256 均維持凍結值。變更與下載檔案資訊見 [1.0.7 版本說明](docs/releases/1.0.7.md)。
+`1.0.8 / sequence 1022` 已沿用原凍結候選正式公開（[source `2241852d355767f2922a0e933b7c29d294e3ef00`](https://github.com/Sokaka/ai-usage-dashboard/commit/2241852d355767f2922a0e933b7c29d294e3ef00)）。[v1.0.8 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.8) 現為 immutable stable／latest；Release ID `395529211`，tag target、source 與六件 asset identity 均與凍結候選一致。變更與六件成品資料見 [1.0.8 版本說明](docs/releases/1.0.8.md)。
+
+- [x] 同 source 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35980432912) 通過。[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35981500721) attempt 1 通過 Release 建置（0 warnings／0 errors）、完整測試（4,257 passed／0 failed／0 skipped）與 production line coverage 74.47%（48,286／64,841）。
+- [x] 已從 draft 候選獨立核對 freeze receipt、Release ID、run／attempt、source、sequence，以及六件成品的 asset ID、大小、SHA256 與三份 sidecar；production public trust 對 stable feed 的 RSA-PSS-SHA256 驗簽通過。
+- [x] ZIP 有 323 個項目，隨包指南與候選 source 相符。正式公開後，latest Release metadata 的 tag、source、Release ID 與六件 asset identity 已回讀確認。
+- [x] 正式公開後，以無 GitHub token 或 cookie 的 client 從 latest 端點匿名下載六件成品。Release ID、tag target、六件 asset ID／名稱／大小／SHA256、三份 sidecar、stable feed `1.0.8 / sequence 1022`／source／正式 URL、RSA-PSS-SHA256 簽章及 latest feed bytes 均與原凍結候選一致；六件合計 106,791,242 bytes。
+
+`1.0.8` 的 Codex 舊版 count-only、逐券狀態／到期時間及 Claude 新舊格式已有合成回歸測試；本版仍未完成實際官方 CLI 登入／用量、安裝、signed online update、舊版 Updater 自我交接、完整 UI／無障礙驗收。歷史版本的實機結果不沿用為本版結果。逐平台狀態見 [1.0.8 CLI 實測表](docs/CLI_COMPATIBILITY.md#108-正式版)。
+
+### 1.0.7 歷史正式版
+
+`1.0.7 / sequence 1021` 已沿用原凍結候選正式公開（[source `c4ad25f41e973b508583252945aafa05572a4299`](https://github.com/Sokaka/ai-usage-dashboard/commit/c4ad25f41e973b508583252945aafa05572a4299)）。同一筆 [v1.0.7 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.7) 當時為 immutable stable／latest；Release ID `394622165`、tag target 與六件成品的 asset ID、大小及 SHA256 均維持凍結值。變更與下載檔案資訊見 [1.0.7 版本說明](docs/releases/1.0.7.md)。
 
 - [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/35857959043) attempt 1 通過 Release 建置與完整測試：0 warnings／0 errors，4,208 passed／0 failed／0 skipped，production line coverage 74.39%（47,907／64,400）。同一個 attempt 完成更新清單簽署、驗簽與六件成品凍結。
 - [x] 發布前已核對 freeze receipt、Release ID、run／attempt、source、sequence、六件 asset identity／大小／SHA256 與三份 sidecar；production public trust 對 stable feed 的 RSA-PSS-SHA256 驗簽通過。
@@ -213,7 +224,7 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 候選與歷史驗證的界線
 
-五 provider 登入／帳號隔離、較完整的人工 UI、固定 Windows 18 案與 50 案中斷復原已有歷史驗證；`1.0.1` 至 `1.0.7` 都沒有整套重跑。歷次 SDK／runtime 與成品 bytes 的變更仍須按適用性評估，歷史 PASS 不能改標為本版結果。
+五 provider 登入／帳號隔離、較完整的人工 UI、固定 Windows 18 案與 50 案中斷復原已有歷史驗證；`1.0.1` 至 `1.0.8` 都沒有整套重跑。歷次 SDK／runtime 與成品 bytes 的變更仍須按適用性評估，歷史 PASS 不能改標為本版結果。
 
 後續版本更新、Updater 自更新、HTTPS→HTTP 降級拒絕、磁碟不足／reapply、持久化與 rename 邊界中斷、再次復原失敗等範圍，仍按既有 source 機制證據與適用性評估處理。`1.0.0` 的 27 案不代表已重驗這些範圍，也不代表已涵蓋全部非 canonical 安裝、未知檔案或 Windows 政策環境。
 
