@@ -134,7 +134,8 @@ internal sealed class CodexUsageProvider : IUsageProvider
 
 			IReadOnlyList<UsageMetric> metrics = CreateMetrics(
 				pollResult.RateLimits,
-				pollResult.AvailableResetCredits);
+				pollResult.AvailableResetCredits,
+				pollResult.NextResetCreditExpiresAt);
 			EnsureValidMetricShape(metrics);
 
 			if (!metrics.Any(metric => metric.UsedPercent is not null))
@@ -403,7 +404,8 @@ internal sealed class CodexUsageProvider : IUsageProvider
 
 	private static IReadOnlyList<UsageMetric> CreateMetrics(
 		IReadOnlyList<CodexRateLimitBucket> rateLimits,
-		long? availableResetCredits)
+		long? availableResetCredits,
+		DateTimeOffset? nextResetCreditExpiresAt)
 	{
 		if ((rateLimits is null) ||
 			(rateLimits.Count > MaximumRateLimitBucketCount) ||
@@ -436,7 +438,10 @@ internal sealed class CodexUsageProvider : IUsageProvider
 				"codex:rate_limit_reset_credits",
 				"可用重置次數",
 				null,
-				$"{availableResetCredits.Value} 次"));
+				$"{availableResetCredits.Value} 次",
+				availableResetCredits.Value > 0
+					? nextResetCreditExpiresAt
+					: null));
 		}
 
 		return metrics;

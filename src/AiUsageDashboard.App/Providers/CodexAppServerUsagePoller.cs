@@ -1210,16 +1210,19 @@ internal sealed class CodexAppServerUsagePoller : ICodexUsagePoller
 					cancellationToken);
 			}
 			IReadOnlyList<CodexRateLimitBucket> rateLimits = ParseRateLimits(rateLimitsResult);
-			long? availableResetCredits = ParseAvailableResetCredits(rateLimitsResult);
+			DateTimeOffset observedAt = _timeProvider.GetUtcNow();
+			(long? availableResetCredits, DateTimeOffset? nextResetCreditExpiresAt) =
+				ParseResetCredits(rateLimitsResult, observedAt);
 			EnsureMetricCapacity(rateLimits, availableResetCredits);
 			return new CodexUsagePollResult(
 				accountResult.PlanType,
 				rateLimits,
 				availableResetCredits,
-				_timeProvider.GetUtcNow(),
+				observedAt,
 				accountResult.AccountIdentity,
 				PublicBindingIdentity: publicBindingIdentity,
-				WorkspaceId: workspaceId);
+				WorkspaceId: workspaceId,
+				NextResetCreditExpiresAt: nextResetCreditExpiresAt);
 		}
 		catch
 		{
@@ -1878,14 +1881,15 @@ internal sealed class CodexAppServerUsagePoller : ICodexUsagePoller
 		return workspaceId;
 	}
 
-	private static long? ParseAvailableResetCredits(JsonElement result)
+	private static (long? AvailableCount, DateTimeOffset? NextExpiresAt)
+		ParseResetCredits(JsonElement result, DateTimeOffset observedAt)
 	{
 		if (!result.TryGetProperty(
 			"rateLimitResetCredits",
 			out JsonElement resetCreditsElement) ||
 			(resetCreditsElement.ValueKind == JsonValueKind.Null))
 		{
-			return null;
+			return (null, null);
 		}
 
 		EnsureObject(resetCreditsElement, "Codex rateLimitResetCredits");
@@ -1901,7 +1905,94 @@ internal sealed class CodexAppServerUsagePoller : ICodexUsagePoller
 				"Codex rateLimitResetCredits.availableCount 必須是非負整數。");
 		}
 
-		return availableCount;
+		if (!resetCreditsElement.TryGetProperty("credits", out JsonElement creditsElement) ||
+			(creditsElement.ValueKind == JsonValueKind.Null))
+		{
+			return (availableCount, null);
+		}
+
+		if (creditsElement.ValueKind != JsonValueKind.Array)
+		{
+			return (availableCount, null);
+		}
+
+		DateTimeOffset? nextExpiresAt = FindNextResetCreditExpiry(
+			creditsElement,
+			availableCount,
+			observedAt);
+		return (availableCount, nextExpiresAt);
+	}
+
+	private static DateTimeOffset? FindNextResetCreditExpiry(
+		JsonElement creditsElement,
+		long availableCount,
+		DateTimeOffset observedAt)
+	{
+		DateTimeOffset? nextExpiresAt = null;
+		long availableDetailCount = 0;
+		HashSet<string> availableCreditIds = new(StringComparer.Ordinal);
+
+		foreach (JsonElement credit in creditsElement.EnumerateArray())
+		{
+			if ((credit.ValueKind != JsonValueKind.Object) ||
+				!credit.TryGetProperty("status", out JsonElement statusElement) ||
+				(statusElement.ValueKind != JsonValueKind.String))
+			{
+				return null;
+			}
+
+			if (!string.Equals(statusElement.GetString(),
+				"available", StringComparison.Ordinal))
+			{
+				continue;
+			}
+
+			availableDetailCount++;
+			if (!credit.TryGetProperty("id", out JsonElement idElement) ||
+				(idElement.ValueKind != JsonValueKind.String))
+			{
+				return null;
+			}
+
+			string? creditId = idElement.GetString();
+			if (string.IsNullOrWhiteSpace(creditId) ||
+				!credit.TryGetProperty("expiresAt", out JsonElement expiresAtElement) ||
+				(expiresAtElement.ValueKind != JsonValueKind.Number) ||
+				!expiresAtElement.TryGetInt64(out long expiresAtSeconds))
+			{
+				return null;
+			}
+
+			if (!availableCreditIds.Add(creditId))
+			{
+				return null;
+			}
+
+			DateTimeOffset expiresAt;
+			try
+			{
+				expiresAt = DateTimeOffset.FromUnixTimeSeconds(expiresAtSeconds);
+			}
+			catch (ArgumentOutOfRangeException)
+			{
+				return null;
+			}
+
+			if (expiresAt <= observedAt)
+			{
+				return null;
+			}
+
+			if ((nextExpiresAt is null) || (expiresAt < nextExpiresAt.Value))
+			{
+				nextExpiresAt = expiresAt;
+			}
+		}
+
+		return (availableCount > 0) &&
+			(availableDetailCount == availableCount)
+			? nextExpiresAt
+			: null;
 	}
 
 	private static IReadOnlyList<CodexRateLimitBucket> ParseRateLimits(

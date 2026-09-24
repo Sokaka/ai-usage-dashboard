@@ -270,6 +270,7 @@ public sealed class CodexAppServerUsagePollerTests
 			TimeSpan.FromMinutes(result.RateLimits[0].Primary!.WindowDurationMinutes!.Value));
 		Assert.Equal("review", result.RateLimits[1].LimitId);
 		Assert.Equal(2, result.AvailableResetCredits);
+		Assert.Null(result.NextResetCreditExpiresAt);
 		Assert.NotNull(transport);
 		Assert.False(transport.IsAborted);
 		Assert.True(transport.IsDisposed);
@@ -306,6 +307,98 @@ public sealed class CodexAppServerUsagePollerTests
 		Assert.Equal(
 			new[] { "app-server", "--listen", "stdio://" },
 			transport.StartInfo.ArgumentList);
+	}
+
+	[Fact]
+	public async Task PollAsync_WithResetCreditDetails_SelectsEarliestFutureAvailableExpiry()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CreateExecutable(temporaryDirectory.Path);
+		DateTimeOffset earliestExpiry = ObservedAt.AddDays(1);
+		DateTimeOffset laterExpiry = ObservedAt.AddDays(4);
+		string resetCredits = $$"""
+			{
+			  "availableCount": 2,
+			  "credits": [
+			    {"id":"opaque-later","status":"available","expiresAt":{{laterExpiry.ToUnixTimeSeconds()}}},
+			    {"id":"opaque-unavailable","status":"redeemed","expiresAt":{{ObservedAt.AddHours(1).ToUnixTimeSeconds()}}},
+			    {"id":"opaque-earliest","status":"available","expiresAt":{{earliestExpiry.ToUnixTimeSeconds()}}}
+			  ]
+			}
+			""";
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			executablePath,
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				resetCredits));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(),
+			CancellationToken.None);
+
+		Assert.Equal(2, result.AvailableResetCredits);
+		Assert.Equal(earliestExpiry, result.NextResetCreditExpiresAt);
+	}
+
+	[Theory]
+	[InlineData("""{"availableCount":2}""", 2)]
+	[InlineData("""{"availableCount":2,"credits":null}""", 2)]
+	[InlineData("""{"availableCount":2,"credits":[]}""", 2)]
+	[InlineData("""{"availableCount":0,"credits":[{"status":"available","expiresAt":1784500000}]}""", 0)]
+	[InlineData("""{"availableCount":2,"credits":[{"id":"one","status":"available","expiresAt":1784500000}]}""", 2)]
+	[InlineData("""{"availableCount":2,"credits":[{"id":"one","status":"available","expiresAt":1784500000},{"id":"two","status":"available","expiresAt":null}]}""", 2)]
+	[InlineData("""{"availableCount":2,"credits":[{"id":"one","status":"available","expiresAt":1784500000},{"id":"two","status":"available","expiresAt":1784000000}]}""", 2)]
+	[InlineData("""{"availableCount":2,"credits":[{"id":"one","status":"available","expiresAt":1784500000},{"id":"one","status":"available","expiresAt":1784500001}]}""", 2)]
+	[InlineData("""{"availableCount":1,"credits":[{"status":"available","expiresAt":1784500000}]}""", 1)]
+	public async Task PollAsync_WithoutUsableResetCreditDetails_KeepsCountWithoutExpiry(
+		string resetCredits,
+		long expectedAvailableCount)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CreateExecutable(temporaryDirectory.Path);
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			executablePath,
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				resetCredits));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(),
+			CancellationToken.None);
+
+		Assert.Equal(expectedAvailableCount, result.AvailableResetCredits);
+		Assert.Null(result.NextResetCreditExpiresAt);
+	}
+
+	[Theory]
+	[InlineData("""{"availableCount":1,"credits":{}}""")]
+	[InlineData("""{"availableCount":1,"credits":[42]}""")]
+	[InlineData("""{"availableCount":1,"credits":[{"id":"one","status":42,"expiresAt":1784500000}]}""")]
+	[InlineData("""{"availableCount":1,"credits":[{"id":"one","status":"available","expiresAt":"tomorrow"}]}""")]
+	[InlineData("""{"availableCount":1,"credits":[{"id":"one","status":"available","expiresAt":253402300800}]}""")]
+	public async Task PollAsync_WithMalformedResetCreditDetails_KeepsCountAndRateLimits(
+		string resetCredits)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CreateExecutable(temporaryDirectory.Path);
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			executablePath,
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				resetCredits));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(), CancellationToken.None);
+
+		Assert.Equal(1, result.AvailableResetCredits);
+		Assert.Null(result.NextResetCreditExpiresAt);
+		Assert.Single(result.RateLimits);
 	}
 
 	[Fact]

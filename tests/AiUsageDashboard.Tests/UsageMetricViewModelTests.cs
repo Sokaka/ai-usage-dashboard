@@ -457,6 +457,37 @@ public sealed class UsageMetricViewModelTests
 		Assert.Equal("未提供重置時間", viewModel.ResetText);
 	}
 
+	[Theory]
+	[InlineData(2881, false)]
+	[InlineData(2880, true)]
+	[InlineData(-1, false)]
+	[InlineData(null, false)]
+	public void Constructor_WithCodexResetCreditsExpiry_UsesTwoDayWarningThreshold(
+		int? minutesUntilExpiry,
+		bool expectedIsResetImminent)
+	{
+		DateTimeOffset now = new(2026, 7, 19, 12, 0, 0, TimeSpan.Zero);
+		DateTimeOffset? expiresAt = minutesUntilExpiry is int minutes
+			? now.AddMinutes(minutes)
+			: null;
+		UsageMetricViewModel viewModel = new(
+			new UsageMetric(
+				"codex:rate_limit_reset_credits",
+				"可用重置次數",
+				null,
+				"2 次",
+				expiresAt),
+			new FixedTimeProvider(now));
+
+		Assert.False(viewModel.HasUsageBar);
+		Assert.Equal(expiresAt is not null, viewModel.HasResetText);
+		Assert.Equal(expectedIsResetImminent, viewModel.IsResetImminent);
+		if (expiresAt is DateTimeOffset expiry)
+		{
+			Assert.Equal($"到期 · {expiry.ToLocalTime():MM/dd HH:mm}", viewModel.ResetText);
+		}
+	}
+
 	[Fact]
 	public void Constructor_WithNonPercentageMetricAndResetTime_ShowsResetTime()
 	{

@@ -395,6 +395,8 @@ initialize → initialized → account/read → account/rateLimits/read
 
 流程不建立對話執行緒或模型互動（thread／turn）、不發送 prompt，也不呼叫模型。`account/read` 只接受 ChatGPT account；`account/rateLimits/read` 會讀取 primary、secondary 與 `rateLimitsByLimitId` 的多個額度區間。
 
+`rateLimitResetCredits.availableCount` 是可用重置次數的來源。只有官方 `credits` 明細完整且有效、可用項目數與 `availableCount` 相符時，才取尚未到期項目中最早的 `expiresAt` 顯示本機到期時間；距到期 48 小時內，時間改用警示色。舊版 count-only 回應、缺少明細或截斷明細仍顯示次數，不推測到期時間。
+
 `account/usage/read` 尚未實作，因此 token 活動不會與 rate-limit 額度混在一起顯示。
 
 子程序會移除 `CODEX_ACCESS_TOKEN`、`CODEX_API_KEY` 與 `OPENAI_API_KEY`，並限制 JSONL 訊息與標準錯誤輸出（stderr）的大小。程序結束、逾時、取消或回應格式錯誤（malformed response）時，都會停止採用結果並終止程序。
