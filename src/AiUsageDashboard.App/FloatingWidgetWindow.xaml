@@ -180,6 +180,23 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="AccountDetailsMenuItemStyle"
+               TargetType="{x:Type MenuItem}"
+               BasedOn="{StaticResource {x:Type MenuItem}}">
+            <Setter Property="IsEnabled" Value="False" />
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding CanOpenWidgetAccountMenu}"
+                                   Value="True" />
+                        <Condition Binding="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                   Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="IsEnabled" Value="True" />
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="ConnectAccountButtonStyle"
                TargetType="{x:Type Button}"
                BasedOn="{StaticResource SecondaryButtonStyle}">
@@ -606,6 +623,11 @@
                                                             <MenuItem Click="RefreshAccountMenuItem_Click"
                                                                       Header="檢查此帳號用量"
                                                                       Style="{StaticResource AccountRefreshMenuItemStyle}" />
+                                                            <MenuItem AutomationProperties.AutomationId="ViewCodexResetCredits"
+                                                                      Click="ViewCodexResetCreditsMenuItem_Click"
+                                                                      Header="查看重置券"
+                                                                      Style="{StaticResource AccountDetailsMenuItemStyle}"
+                                                                      Visibility="{Binding IsCodex, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                             <MenuItem Click="EditAccountMenuItem_Click"
                                                                       Header="帳號設定"
                                                                       Style="{StaticResource AccountMutationMenuItemStyle}" />

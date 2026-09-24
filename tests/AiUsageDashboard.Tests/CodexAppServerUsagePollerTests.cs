@@ -3,6 +3,7 @@ using System.Text.Json;
 
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
+using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.Tests;
 
@@ -271,6 +272,10 @@ public sealed class CodexAppServerUsagePollerTests
 		Assert.Equal("review", result.RateLimits[1].LimitId);
 		Assert.Equal(2, result.AvailableResetCredits);
 		Assert.Null(result.NextResetCreditExpiresAt);
+		Assert.NotNull(result.ResetCreditDetails);
+		Assert.Equal(2, result.ResetCreditDetails.AvailableCount);
+		Assert.Null(result.ResetCreditDetails.Credits);
+		Assert.False(result.ResetCreditDetails.IsComplete);
 		Assert.NotNull(transport);
 		Assert.False(transport.IsAborted);
 		Assert.True(transport.IsDisposed);
@@ -322,6 +327,7 @@ public sealed class CodexAppServerUsagePollerTests
 			  "credits": [
 			    {"id":"opaque-later","status":"available","expiresAt":{{laterExpiry.ToUnixTimeSeconds()}}},
 			    {"id":"opaque-unavailable","status":"redeemed","expiresAt":{{ObservedAt.AddHours(1).ToUnixTimeSeconds()}}},
+			    {"id":"opaque-future-status","status":"futureStatus","expiresAt":{{ObservedAt.AddHours(2).ToUnixTimeSeconds()}}},
 			    {"id":"opaque-earliest","status":"available","expiresAt":{{earliestExpiry.ToUnixTimeSeconds()}}}
 			  ]
 			}
@@ -340,6 +346,341 @@ public sealed class CodexAppServerUsagePollerTests
 
 		Assert.Equal(2, result.AvailableResetCredits);
 		Assert.Equal(earliestExpiry, result.NextResetCreditExpiresAt);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		Assert.True(details.IsComplete);
+		IReadOnlyList<CodexResetCredit> credits = Assert.IsAssignableFrom<
+			IReadOnlyList<CodexResetCredit>>(details.Credits);
+		Assert.Equal(2, credits.Count);
+		Assert.All(credits, credit =>
+			Assert.Equal(CodexResetCredit.AvailableStatus, credit.Status));
+	}
+
+	[Fact]
+	public async Task PollAsync_WithManyRedeemedCredits_RetainsAvailableCredit()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		DateTimeOffset availableExpiry = ObservedAt.AddDays(2);
+		var credits = Enumerable.Range(0, 70)
+			.Select(index => new
+			{
+				id = $"used-{index}",
+				status = "redeemed",
+				expiresAt = (long?)null
+			})
+			.Concat(
+			[
+				new
+				{
+					id = "available",
+					status = CodexResetCredit.AvailableStatus,
+					expiresAt = (long?)availableExpiry.ToUnixTimeSeconds()
+				}
+			])
+			.ToArray();
+		string resetCredits = JsonSerializer.Serialize(new
+		{
+			availableCount = 1,
+			credits
+		});
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			CreateExecutable(temporaryDirectory.Path),
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				resetCredits));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(), CancellationToken.None);
+
+		Assert.Equal(1, result.AvailableResetCredits);
+		Assert.Equal(availableExpiry, result.NextResetCreditExpiresAt);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		Assert.True(details.IsComplete);
+		CodexResetCredit credit = Assert.Single(
+			Assert.IsAssignableFrom<IReadOnlyList<CodexResetCredit>>(
+				details.Credits));
+		Assert.Equal(CodexResetCredit.AvailableStatus, credit.Status);
+		Assert.Equal(availableExpiry, credit.ExpiresAt);
+	}
+
+	[Fact]
+	public async Task PollAsync_WithCompleteResetCreditDetails_MapsIndividualCreditsWithoutOpaqueIds()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CreateExecutable(temporaryDirectory.Path);
+		DateTimeOffset grantedAt = ObservedAt.AddDays(-2);
+		DateTimeOffset firstExpiry = ObservedAt.AddDays(1);
+		DateTimeOffset secondExpiry = ObservedAt.AddDays(4);
+		string resetCredits = $$"""
+			{
+			  "availableCount": 2,
+			  "credits": [
+			    {"id":"opaque-later","resetType":"codexRateLimits","status":"available","grantedAt":{{grantedAt.ToUnixTimeSeconds()}},"expiresAt":{{secondExpiry.ToUnixTimeSeconds()}},"title":"加贈重置券","description":"可重置 Codex 用量"},
+			    {"id":"opaque-earlier","status":"available","expiresAt":{{firstExpiry.ToUnixTimeSeconds()}}}
+			  ]
+			}
+			""";
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			executablePath,
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				resetCredits));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(), CancellationToken.None);
+
+		Assert.Equal(2, result.AvailableResetCredits);
+		Assert.Equal(firstExpiry, result.NextResetCreditExpiresAt);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		Assert.True(details.IsComplete);
+		Assert.Equal(2, details.AvailableCount);
+		IReadOnlyList<CodexResetCredit> credits = Assert.IsAssignableFrom<
+			IReadOnlyList<CodexResetCredit>>(details.Credits);
+		Assert.Equal(2, credits.Count);
+		Assert.Contains(credits, credit =>
+			(credit.Status == "available") &&
+			(credit.ResetType == "codexRateLimits") &&
+			(credit.GrantedAt == grantedAt) &&
+			(credit.ExpiresAt == secondExpiry) &&
+			(credit.Title == "加贈重置券") &&
+			(credit.Description == "可重置 Codex 用量"));
+		Assert.Contains(credits, credit =>
+			(credit.ExpiresAt == firstExpiry) &&
+			(credit.GrantedAt is null) &&
+			(credit.Title is null));
+		Assert.DoesNotContain(
+			"opaque-later",
+			JsonSerializer.Serialize(details),
+			StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task PollAsync_WithZeroResetCreditsAndEmptyDetails_ReportsCompleteEmptyInventory()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			CreateExecutable(temporaryDirectory.Path),
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				"""{"availableCount":0,"credits":[]}"""));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(), CancellationToken.None);
+
+		Assert.Equal(0, result.AvailableResetCredits);
+		Assert.Null(result.NextResetCreditExpiresAt);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		Assert.True(details.IsComplete);
+		Assert.Empty(Assert.IsAssignableFrom<IReadOnlyList<CodexResetCredit>>(
+			details.Credits));
+	}
+
+	[Theory]
+	[InlineData(0, 1)]
+	[InlineData(1, 2)]
+	[InlineData(64, 65)]
+	public async Task PollAsync_WhenAvailableRowsExceedCount_MarksConflictAndHidesDetails(
+		long availableCount,
+		int rowCount)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string resetCredits = JsonSerializer.Serialize(new
+		{
+			availableCount,
+			credits = Enumerable.Range(1, rowCount)
+				.Select(index => new
+				{
+					id = $"credit-{index}",
+					status = CodexResetCredit.AvailableStatus,
+					expiresAt = ObservedAt.AddDays(index).ToUnixTimeSeconds()
+				})
+				.ToArray()
+		});
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			CreateExecutable(temporaryDirectory.Path),
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				resetCredits));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(), CancellationToken.None);
+
+		Assert.Equal(availableCount, result.AvailableResetCredits);
+		Assert.Null(result.NextResetCreditExpiresAt);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		Assert.False(details.IsComplete);
+		Assert.True(details.HasCountConflict);
+		Assert.Empty(Assert.IsAssignableFrom<IReadOnlyList<CodexResetCredit>>(
+			details.Credits));
+	}
+
+	[Fact]
+	public async Task PollAsync_WithCappedResetCreditDetails_PreservesKnownRowsWithoutInferringEarliestExpiry()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		DateTimeOffset knownExpiry = ObservedAt.AddDays(3);
+		string resetCredits = $$"""
+			{"availableCount":3,"credits":[{"id":"one","status":"available","expiresAt":{{knownExpiry.ToUnixTimeSeconds()}}}]}
+			""";
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			CreateExecutable(temporaryDirectory.Path),
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				resetCredits));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(), CancellationToken.None);
+
+		Assert.Equal(3, result.AvailableResetCredits);
+		Assert.Null(result.NextResetCreditExpiresAt);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		Assert.Equal(3, details.AvailableCount);
+		Assert.False(details.IsComplete);
+		CodexResetCredit knownCredit = Assert.Single(
+			Assert.IsAssignableFrom<IReadOnlyList<CodexResetCredit>>(
+				details.Credits));
+		Assert.Equal(knownExpiry, knownCredit.ExpiresAt);
+		Assert.Single(result.RateLimits);
+	}
+
+	[Fact]
+	public async Task PollAsync_WithNullCreditExpiry_KeepsIndividualCreditWithoutSummaryExpiry()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string resetCredits = """
+			{"availableCount":1,"credits":[{"id":"one","status":"available","expiresAt":null,"title":"無期限重置券"}]}
+			""";
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			CreateExecutable(temporaryDirectory.Path),
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				resetCredits));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(), CancellationToken.None);
+
+		Assert.Equal(1, result.AvailableResetCredits);
+		Assert.Null(result.NextResetCreditExpiresAt);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		Assert.True(details.IsComplete);
+		CodexResetCredit credit = Assert.Single(
+			Assert.IsAssignableFrom<IReadOnlyList<CodexResetCredit>>(
+				details.Credits));
+		Assert.Null(credit.ExpiresAt);
+		Assert.True(credit.HasExpiresAtField);
+		Assert.Equal("無期限重置券", credit.Title);
+	}
+
+	[Fact]
+	public async Task PollAsync_WithNonExpiringAndFiniteCreditExpiry_SelectsFiniteExpiry()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		DateTimeOffset finiteExpiry = ObservedAt.AddDays(2);
+		string resetCredits = $$"""
+			{"availableCount":2,"credits":[{"id":"forever","status":"available","expiresAt":null},{"id":"finite","status":"available","expiresAt":{{finiteExpiry.ToUnixTimeSeconds()}}}]}
+			""";
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			CreateExecutable(temporaryDirectory.Path),
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				resetCredits));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(), CancellationToken.None);
+
+		Assert.Equal(2, result.AvailableResetCredits);
+		Assert.Equal(finiteExpiry, result.NextResetCreditExpiresAt);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		Assert.True(details.IsComplete);
+		IReadOnlyList<CodexResetCredit> credits = Assert.IsAssignableFrom<
+			IReadOnlyList<CodexResetCredit>>(details.Credits);
+		Assert.All(credits, credit => Assert.True(credit.HasExpiresAtField));
+		Assert.Contains(credits, credit => credit.ExpiresAt is null);
+		Assert.Contains(credits, credit => credit.ExpiresAt == finiteExpiry);
+	}
+
+	[Fact]
+	public async Task PollAsync_WithMissingCreditExpiry_KeepsUnknownExpiryDistinctFromNull()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			CreateExecutable(temporaryDirectory.Path),
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				"""{"availableCount":1,"credits":[{"id":"one","status":"available","title":"舊版券"}]}"""));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(), CancellationToken.None);
+
+		Assert.Equal(1, result.AvailableResetCredits);
+		Assert.Null(result.NextResetCreditExpiresAt);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		CodexResetCredit credit = Assert.Single(
+			Assert.IsAssignableFrom<IReadOnlyList<CodexResetCredit>>(
+				details.Credits));
+		Assert.Null(credit.ExpiresAt);
+		Assert.False(credit.HasExpiresAtField);
+		Assert.Equal("舊版券", credit.Title);
+	}
+
+	[Theory]
+	[InlineData("\"title\":42", "title")]
+	[InlineData("\"description\":{}", "description")]
+	public async Task PollAsync_WithMalformedOptionalCreditText_KeepsCreditAndRateLimits(
+		string malformedProperty,
+		string invalidField)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		DateTimeOffset expiry = ObservedAt.AddDays(2);
+		string resetCredits = $$"""
+			{"availableCount":1,"credits":[{"id":"one","status":"available","expiresAt":{{expiry.ToUnixTimeSeconds()}},{{malformedProperty}}}]}
+			""";
+		CodexAppServerUsagePoller poller = CreatePoller(
+			temporaryDirectory.Path,
+			CreateExecutable(temporaryDirectory.Path),
+			CreateResponses(
+				JsonSerializer.Serialize(CreateRateLimitBucketPayload("codex")),
+				"null",
+				resetCredits));
+
+		CodexUsagePollResult result = await poller.PollAsync(
+			Guid.NewGuid(), CancellationToken.None);
+
+		Assert.Equal(1, result.AvailableResetCredits);
+		Assert.Equal(expiry, result.NextResetCreditExpiresAt);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		Assert.False(details.IsComplete);
+		CodexResetCredit credit = Assert.Single(
+			Assert.IsAssignableFrom<IReadOnlyList<CodexResetCredit>>(
+				details.Credits));
+		Assert.Equal(expiry, credit.ExpiresAt);
+		Assert.Null(invalidField == "title" ? credit.Title : credit.Description);
+		Assert.Single(result.RateLimits);
 	}
 
 	[Theory]
@@ -348,7 +689,7 @@ public sealed class CodexAppServerUsagePollerTests
 	[InlineData("""{"availableCount":2,"credits":[]}""", 2)]
 	[InlineData("""{"availableCount":0,"credits":[{"status":"available","expiresAt":1784500000}]}""", 0)]
 	[InlineData("""{"availableCount":2,"credits":[{"id":"one","status":"available","expiresAt":1784500000}]}""", 2)]
-	[InlineData("""{"availableCount":2,"credits":[{"id":"one","status":"available","expiresAt":1784500000},{"id":"two","status":"available","expiresAt":null}]}""", 2)]
+	[InlineData("""{"availableCount":2,"credits":[{"id":"one","status":"available","expiresAt":1784500000},{"id":"two","status":"available"}]}""", 2)]
 	[InlineData("""{"availableCount":2,"credits":[{"id":"one","status":"available","expiresAt":1784500000},{"id":"two","status":"available","expiresAt":1784000000}]}""", 2)]
 	[InlineData("""{"availableCount":2,"credits":[{"id":"one","status":"available","expiresAt":1784500000},{"id":"one","status":"available","expiresAt":1784500001}]}""", 2)]
 	[InlineData("""{"availableCount":1,"credits":[{"status":"available","expiresAt":1784500000}]}""", 1)]
@@ -399,6 +740,9 @@ public sealed class CodexAppServerUsagePollerTests
 		Assert.Equal(1, result.AvailableResetCredits);
 		Assert.Null(result.NextResetCreditExpiresAt);
 		Assert.Single(result.RateLimits);
+		CodexResetCreditDetails details = Assert.IsType<CodexResetCreditDetails>(
+			result.ResetCreditDetails);
+		Assert.False(details.IsComplete);
 	}
 
 	[Fact]

@@ -9,7 +9,14 @@ internal static class UsageMetricPresentation
 	private const string FiveHourUsageLabel = "5小時用量";
 	private const string WeeklyUsageLabel = "週用量";
 	private static readonly TimeSpan ImminentResetThreshold = TimeSpan.FromHours(1);
-	private static readonly TimeSpan WeeklyImminentResetThreshold = TimeSpan.FromDays(2);
+	private static readonly TimeSpan TwoDayImminentThreshold = TimeSpan.FromDays(2);
+
+	internal static bool IsWithinTwoDayWarningWindow(
+		DateTimeOffset target,
+		DateTimeOffset now)
+	{
+		return IsWithinWarningWindow(target, now, TwoDayImminentThreshold);
+	}
 
 	internal static string GetDisplayLabel(UsageMetric metric)
 	{
@@ -62,14 +69,21 @@ internal static class UsageMetricPresentation
 			return false;
 		}
 
-		TimeSpan remaining = resetsAt - now;
 		bool hasTwoDayThreshold = (metric.Key == CodexResetCreditsKey) ||
 			((!IsFiveHour(metric)) && (IsWeekly(metric)));
-		TimeSpan resetThreshold = hasTwoDayThreshold
-			? WeeklyImminentResetThreshold
-			: ImminentResetThreshold;
+		return hasTwoDayThreshold
+			? IsWithinTwoDayWarningWindow(resetsAt, now)
+			: IsWithinWarningWindow(resetsAt, now, ImminentResetThreshold);
+	}
+
+	private static bool IsWithinWarningWindow(
+		DateTimeOffset target,
+		DateTimeOffset now,
+		TimeSpan threshold)
+	{
+		TimeSpan remaining = target - now;
 		return (remaining >= TimeSpan.Zero) &&
-			(remaining <= resetThreshold);
+			(remaining <= threshold);
 	}
 
 	internal static IOrderedEnumerable<UsageMetric> OrderMetrics(

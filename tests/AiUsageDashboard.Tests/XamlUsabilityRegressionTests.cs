@@ -902,6 +902,93 @@ public sealed class XamlUsabilityRegressionTests
 	}
 
 	[Fact]
+	public void FloatingAccountMenu_OffersCodexOnlyResetCreditDetails()
+	{
+		XDocument window = LoadAppXaml("FloatingWidgetWindow.xaml");
+		XElement menuItem = GetMenuItemByClick(
+			window,
+			"ViewCodexResetCreditsMenuItem_Click");
+
+		Assert.Equal("查看重置券", (string?)menuItem.Attribute("Header"));
+		Assert.Equal(
+			"ViewCodexResetCredits",
+			(string?)menuItem.Attribute("AutomationProperties.AutomationId"));
+		Assert.Equal(
+			"{Binding IsCodex, Converter={StaticResource BooleanToVisibilityConverter}}",
+			(string?)menuItem.Attribute("Visibility"));
+		Assert.Equal(
+			"{StaticResource AccountDetailsMenuItemStyle}",
+			(string?)menuItem.Attribute("Style"));
+		Assert.Contains(
+			"!account.IsCodex",
+			LoadAppSource("FloatingWidgetWindow.xaml.cs"),
+			StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void CodexResetCreditsWindow_ProvidesScrollableDetailsAndKeyboardClose()
+	{
+		XDocument window = LoadAppXaml("CodexResetCreditsWindow.xaml");
+		XElement scroll = Assert.Single(
+			window.Descendants(Presentation + "ScrollViewer"));
+		XElement rows = Assert.Single(
+			window.Descendants(Presentation + "ItemsControl"));
+		XElement close = GetNamedElement(window, "Button", "CloseButton");
+		XElement account = Assert.Single(
+			window.Descendants(Presentation + "TextBlock"),
+			text => string.Equals(
+				(string?)text.Attribute("Text"),
+				"{Binding AccountText}",
+				StringComparison.Ordinal));
+		XElement fetchedAt = Assert.Single(
+			window.Descendants(Presentation + "TextBlock"),
+			text => string.Equals(
+				(string?)text.Attribute("Text"),
+				"{Binding FetchedAtText}",
+				StringComparison.Ordinal));
+
+		Assert.Equal("Auto", (string?)scroll.Attribute("VerticalScrollBarVisibility"));
+		Assert.NotNull(scroll.Attribute("MaxHeight"));
+		Assert.Equal("1", (string?)scroll.Attribute("Grid.Row"));
+		Assert.Same(account.Parent, fetchedAt.Parent);
+		Assert.Same(fetchedAt, account.ElementsAfterSelf().First());
+		Assert.Equal("0", (string?)fetchedAt.Parent?.Attribute("Grid.Row"));
+		Assert.Equal("2", (string?)close.Attribute("Grid.Row"));
+		Assert.Equal("{Binding CreditRows}", (string?)rows.Attribute("ItemsSource"));
+		Assert.Equal("True", (string?)close.Attribute("IsCancel"));
+		Assert.Equal(
+			"CloseCodexResetCredits",
+			(string?)close.Attribute("AutomationProperties.AutomationId"));
+
+		string[] visibleFields =
+		[
+			"{Binding AvailableCountText}",
+			"{Binding AccountText}",
+			"{Binding FetchedAtText}",
+			"{Binding Heading}",
+			"{Binding ExpiresAtText}"
+		];
+		foreach (string field in visibleFields)
+		{
+			Assert.Contains(
+				window.Descendants(Presentation + "TextBlock"),
+				text => string.Equals(
+					(string?)text.Attribute("Text"),
+					field,
+					StringComparison.Ordinal));
+		}
+		Assert.DoesNotContain(
+			window.Descendants(Presentation + "TextBlock"),
+			text => new[]
+			{
+				"{Binding StatusText}",
+				"{Binding ResetTypeText}",
+				"{Binding GrantedAtText}",
+				"{Binding DescriptionText}"
+			}.Contains((string?)text.Attribute("Text"), StringComparer.Ordinal));
+	}
+
+	[Fact]
 	public void FloatingGlobalMenu_OffersThemeAndDockPosition()
 	{
 		XDocument window = LoadAppXaml("FloatingWidgetWindow.xaml");

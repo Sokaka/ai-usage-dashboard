@@ -16,7 +16,8 @@ public sealed record UsageSnapshot(
 	string? SubscriptionScopeDisplayName = null,
 	string? PlanTier = null,
 	SubscriptionVerificationState SubscriptionVerificationState =
-		SubscriptionVerificationState.Unverified)
+		SubscriptionVerificationState.Unverified,
+	CodexResetCreditDetails? CodexResetCredits = null)
 {
 	public bool IsStale => IsStaleAt(DateTimeOffset.UtcNow);
 
