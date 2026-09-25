@@ -8930,6 +8930,22 @@ public sealed class AccountConnectionCoordinatorTests
 	}
 
 	[Fact]
+	public void GetClaudeLoginFailureNotice_WhenFreePlanIsReported_UsesSubscriptionCaption()
+	{
+		ClaudeUsageNotConfiguredException cause = new(
+			"Claude Code 目前回報 Free，請確認訂閱。",
+			UsageRecoveryAction.ConfirmSubscription);
+		ClaudeAccountLoginException exception = new(cause.Message, cause);
+
+		(string message, string caption, MessageBoxImage image) =
+			AccountConnectionCoordinator.GetClaudeLoginFailureNotice(exception);
+
+		Assert.StartsWith(cause.Message, message, StringComparison.Ordinal);
+		Assert.Equal("需要確認 Claude 訂閱", caption);
+		Assert.Equal(MessageBoxImage.Warning, image);
+	}
+
+	[Fact]
 	public void GetCodexLoginFailureNotice_UsesTypedReasonWithoutExposingInnerException()
 	{
 		const string Reason = "Codex 登入逾時，請再試一次。";

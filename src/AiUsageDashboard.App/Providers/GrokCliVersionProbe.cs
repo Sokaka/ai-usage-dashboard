@@ -44,6 +44,7 @@ internal sealed class GrokCliVersionProbe : IGrokCliVersionProbe
 	private const int MaximumStandardErrorBytes = 8 * 1024;
 	private const int MaximumStandardOutputBytes = 1024;
 	private const int MinimumCommitLength = 7;
+	private const string StableChannelSuffix = " [stable]";
 	private static readonly TimeSpan DefaultCleanupTimeout =
 		TimeSpan.FromSeconds(5);
 	private static readonly TimeSpan DefaultProbeTimeout =
@@ -255,8 +256,17 @@ internal sealed class GrokCliVersionProbe : IGrokCliVersionProbe
 		if (!text.StartsWith("grok ", StringComparison.Ordinal) ||
 			text.Contains('\r') ||
 			text.Contains('\n') ||
-			text.Contains('\0') ||
-			!text.EndsWith(')'))
+			text.Contains('\0'))
+		{
+			return null;
+		}
+
+		if (text.EndsWith(StableChannelSuffix, StringComparison.Ordinal))
+		{
+			text = text[..^StableChannelSuffix.Length];
+		}
+
+		if (!text.EndsWith(')'))
 		{
 			return null;
 		}

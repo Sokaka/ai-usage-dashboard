@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
+using AiUsageDashboard.Core.Models;
+
 namespace AiUsageDashboard.App.Providers;
 
 internal sealed class ClaudeAccountLogin : IClaudeAccountLogin
@@ -303,6 +305,13 @@ internal sealed class ClaudeAccountLogin : IClaudeAccountLogin
 		{
 			throw new ClaudeAccountLoginException(
 				"Claude 登入完成，但無法確認目前登入的帳號。");
+		}
+		catch (ClaudeUsageNotConfiguredException exception) when (
+			exception.RecoveryAction == UsageRecoveryAction.ConfirmSubscription)
+		{
+			throw new ClaudeAccountLoginException(
+				exception.Message,
+				exception);
 		}
 		catch (InvalidDataException exception) when (
 			ClaudeCliUsagePoller.IsAccountIdentityUnavailable(exception))

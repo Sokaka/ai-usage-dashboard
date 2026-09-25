@@ -4033,9 +4033,16 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		GetClaudeLoginFailureNotice(ClaudeAccountLoginException exception)
 	{
 		ArgumentNullException.ThrowIfNull(exception);
+		string caption = exception.InnerException is
+			ClaudeUsageNotConfiguredException
+			{
+				RecoveryAction: UsageRecoveryAction.ConfirmSubscription
+			}
+			? "需要確認 Claude 訂閱"
+			: "Claude 登入失敗";
 		return (
 			BuildTypedLoginFailureMessage(exception.Message),
-			"Claude 登入失敗",
+			caption,
 			MessageBoxImage.Warning);
 	}
 
