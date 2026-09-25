@@ -1,17 +1,24 @@
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
 
+using FormsScreen = System.Windows.Forms.Screen;
 using WpfMessageBox = System.Windows.MessageBox;
 
 namespace AiUsageDashboard.App;
 
 public sealed partial class CodexWorkspacePromptWindow : Window
 {
+	private const double PreferredMinimumWidth = 380;
+
 	public Guid? WorkspaceId { get; private set; }
 
 	public CodexWorkspacePromptWindow()
 	{
 		InitializeComponent();
 		Loaded += (_, _) => DefaultConnectionButton.Focus();
+		DpiChanged += (_, _) => UpdateWorkAreaConstraints();
+		LocationChanged += (_, _) => UpdateWorkAreaConstraints();
 	}
 
 	internal static bool TryNormalizeWorkspaceId(
@@ -20,6 +27,50 @@ public sealed partial class CodexWorkspacePromptWindow : Window
 	{
 		return Guid.TryParse(value?.Trim(), out workspaceId) &&
 			(workspaceId != Guid.Empty);
+	}
+
+	protected override void OnSourceInitialized(EventArgs e)
+	{
+		base.OnSourceInitialized(e);
+		UpdateWorkAreaConstraints(preferOwner: true);
+	}
+
+	private void UpdateWorkAreaConstraints(bool preferOwner = false)
+	{
+		Window referenceWindow = this;
+		IntPtr referenceHandle = new WindowInteropHelper(this).Handle;
+
+		if (preferOwner && (Owner is Window owner))
+		{
+			IntPtr ownerHandle = new WindowInteropHelper(owner).Handle;
+			if (ownerHandle != IntPtr.Zero)
+			{
+				referenceWindow = owner;
+				referenceHandle = ownerHandle;
+			}
+		}
+
+		if (referenceHandle == IntPtr.Zero)
+		{
+			return;
+		}
+
+		System.Drawing.Rectangle workArea =
+			FormsScreen.FromHandle(referenceHandle).WorkingArea;
+		DpiScale dpi = VisualTreeHelper.GetDpi(referenceWindow);
+		double maximumWidth = WindowWorkAreaLayout.CalculateMaxWidth(
+			PreferredMinimumWidth, workArea.Width, dpi.DpiScaleX);
+		double targetMinimumWidth = Math.Min(
+			PreferredMinimumWidth, maximumWidth);
+		if (MaxWidth < targetMinimumWidth)
+		{
+			MaxWidth = maximumWidth;
+		}
+
+		MinWidth = targetMinimumWidth;
+		MaxWidth = maximumWidth;
+		MaxHeight = WindowWorkAreaLayout.CalculateMaxHeight(
+			0, workArea.Height, dpi.DpiScaleY);
 	}
 
 	private void ContinueWithoutWorkspaceButton_Click(

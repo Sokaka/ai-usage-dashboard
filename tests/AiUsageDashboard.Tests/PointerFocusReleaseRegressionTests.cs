@@ -538,9 +538,15 @@ public sealed class PointerFocusReleaseRegressionTests
 		AssertReleaseSetter(GetImplicitStyle(controls, "MenuItem"));
 		AssertReleaseSetter(GetKeyedStyle(floatingWindow, "PinButtonStyle"));
 		AssertReleaseSetter(
-			GetKeyedStyle(setupControls, "SetupPrimaryButtonStyle"));
-		AssertReleaseSetter(
-			GetKeyedStyle(setupControls, "SetupGhostButtonStyle"));
+			GetKeyedStyle(setupControls, "SetupDefaultButtonStyle"));
+		Assert.Equal(
+			"{StaticResource SetupDefaultButtonStyle}",
+			(string?)GetKeyedStyle(
+				setupControls, "SetupPrimaryButtonStyle").Attribute("BasedOn"));
+		Assert.Equal(
+			"{StaticResource SetupDefaultButtonStyle}",
+			(string?)GetKeyedStyle(
+				setupControls, "SetupGhostButtonStyle").Attribute("BasedOn"));
 
 		XDocument[] appWindows =
 		[

@@ -58,6 +58,7 @@ public sealed partial class CodexResetCreditsWindow : Window
 	private readonly AccountUsageViewModel _account;
 	private readonly ObservableCollection<AccountUsageViewModel> _accounts;
 	private readonly DispatcherTimer _expiryTimer;
+	private readonly TimeProvider _timeProvider;
 	private bool _isClosed;
 
 	internal AccountUsageViewModel Account => _account;
@@ -72,10 +73,12 @@ public sealed partial class CodexResetCreditsWindow : Window
 	internal CodexResetCreditsWindow(
 		AccountUsageViewModel account,
 		ObservableCollection<AccountUsageViewModel> accounts,
-		ResourceDictionary? resources)
+		ResourceDictionary? resources,
+		TimeProvider? timeProvider = null)
 	{
 		_account = account ?? throw new ArgumentNullException(nameof(account));
 		_accounts = accounts ?? throw new ArgumentNullException(nameof(accounts));
+		_timeProvider = timeProvider ?? TimeProvider.System;
 		if (!_account.IsCodex || !_accounts.Contains(_account))
 		{
 			throw new ArgumentException(
@@ -417,7 +420,7 @@ public sealed partial class CodexResetCreditsWindow : Window
 		UsageSnapshot? snapshot = _accounts.Contains(_account)
 			? GetCompatibleSnapshot(_account)
 			: null;
-		DateTimeOffset now = DateTimeOffset.UtcNow;
+		DateTimeOffset now = _timeProvider.GetUtcNow();
 		DataContext = CreateViewState(
 			_account.HasAccountNickname
 				? _account.AccountNickname

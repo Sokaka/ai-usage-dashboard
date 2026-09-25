@@ -290,9 +290,20 @@ public partial class App : System.Windows.Application
 
 			LegalCatalog catalog = LegalCatalog.Load(LegalProfile.App);
 			LegalAcceptanceStore acceptanceStore = LegalAcceptanceStore.CreateDefault();
-			bool canStart = (launchIntent == AppLaunchIntent.Interactive)
-				? LegalTermsDialog.EnsureAccepted(catalog, acceptanceStore)
-				: acceptanceStore.IsAccepted(catalog);
+			bool isAccepted = acceptanceStore.IsAccepted(catalog);
+			if (!isAccepted && (launchIntent == AppLaunchIntent.Interactive))
+			{
+				JsonDashboardPreferencesStore themePreviewStore = new(
+					AppDataPaths.GetDashboardPreferencesFilePath());
+				DashboardShellPreferences themePreview =
+					await themePreviewStore.LoadDashboardShellPreferencesAsync();
+				_selectedTheme = themePreview.Theme;
+				ApplyThemePalette();
+			}
+
+			bool canStart = isAccepted ||
+				((launchIntent == AppLaunchIntent.Interactive) &&
+					LegalTermsDialog.EnsureAccepted(catalog, acceptanceStore));
 			if (!canStart)
 			{
 				Shutdown(LegalCommandLine.AcceptanceRequiredExitCode);

@@ -610,6 +610,10 @@ public sealed class XamlUsabilityRegressionTests
 			setupControls,
 			"Style",
 			"SetupKeyboardFocusVisualStyle");
+		XElement setupDefaultButtonStyle = GetKeyedElement(
+			setupControls,
+			"Style",
+			"SetupDefaultButtonStyle");
 		XElement setupPrimaryButtonStyle = GetKeyedElement(
 			setupControls,
 			"Style",
@@ -634,13 +638,16 @@ public sealed class XamlUsabilityRegressionTests
 				"{DynamicResource AccentFocusBrush}",
 				StringComparison.Ordinal));
 		AssertSetter(
-			setupPrimaryButtonStyle,
+			setupDefaultButtonStyle,
 			"FocusVisualStyle",
 			SetupFocusVisual);
-		AssertSetter(
-			setupGhostButtonStyle,
-			"FocusVisualStyle",
-			SetupFocusVisual);
+		Assert.Equal(
+			"{StaticResource SetupDefaultButtonStyle}",
+			(string?)setupPrimaryButtonStyle.Attribute("BasedOn"));
+		Assert.Equal(
+			"{StaticResource SetupDefaultButtonStyle}",
+			(string?)setupGhostButtonStyle.Attribute("BasedOn"));
+		AssertDoesNotUsePersistentFocusTrigger(setupDefaultButtonStyle);
 		AssertDoesNotUsePersistentFocusTrigger(setupPrimaryButtonStyle);
 		AssertDoesNotUsePersistentFocusTrigger(setupGhostButtonStyle);
 	}

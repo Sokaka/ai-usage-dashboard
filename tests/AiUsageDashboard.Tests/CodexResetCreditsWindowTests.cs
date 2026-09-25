@@ -12,6 +12,18 @@ namespace AiUsageDashboard.Tests;
 
 public sealed class CodexResetCreditsWindowTests
 {
+	private sealed class FixedTimeProvider : TimeProvider
+	{
+		private readonly DateTimeOffset _utcNow;
+
+		internal FixedTimeProvider(DateTimeOffset utcNow)
+		{
+			_utcNow = utcNow;
+		}
+
+		public override DateTimeOffset GetUtcNow() => _utcNow;
+	}
+
 	private static readonly DateTimeOffset Now = new(
 		2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
 
@@ -364,7 +376,9 @@ public sealed class CodexResetCreditsWindowTests
 				Account = profile,
 				ProviderAccountIdentity = "codex-one"
 			});
-			CodexResetCreditsWindow window = new(account, accounts, resources)
+			CodexResetCreditsWindow window = new(
+				account, accounts, resources,
+				new FixedTimeProvider(Now.AddMinutes(2)))
 			{
 				Opacity = 0,
 				ShowActivated = false,
