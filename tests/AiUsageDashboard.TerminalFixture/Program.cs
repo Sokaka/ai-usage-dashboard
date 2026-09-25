@@ -35,7 +35,7 @@ if (args.SequenceEqual(new[]
 			CreateNoWindow = true,
 			RedirectStandardOutput = true,
 			RedirectStandardError = true,
-			ArgumentList = { "delayed-exit" }
+			ArgumentList = { "wait-for-child-release" }
 		}) ?? throw new InvalidOperationException("Unable to start fixture child process.");
 		await WriteProcessIdsAsync(
 			workingDirectory,
@@ -43,6 +43,7 @@ if (args.SequenceEqual(new[]
 			childProcess.Id);
 		Console.Write("fixture-output\r\n");
 		Console.Out.Flush();
+		WaitForFixtureExitSignal("root");
 		return 0;
 	}
 
@@ -229,8 +230,8 @@ switch (args[0])
 		await Task.Delay(Timeout.InfiniteTimeSpan);
 		return 0;
 
-	case "delayed-exit":
-		await Task.Delay(TimeSpan.FromMilliseconds(600));
+	case "wait-for-child-release":
+		WaitForFixtureExitSignal("child");
 		return 0;
 
 	case "spawn-child-and-hang":
@@ -259,6 +260,20 @@ switch (args[0])
 
 	default:
 		return 2;
+}
+
+static void WaitForFixtureExitSignal(string processRole)
+{
+	string signalPrefix = File.ReadAllText(Path.Combine(
+		AppContext.BaseDirectory,
+		"spawn-child-then-exit.mode"));
+	using EventWaitHandle exitSignal = EventWaitHandle.OpenExisting(
+		signalPrefix + "." + processRole);
+	if (!exitSignal.WaitOne(TimeSpan.FromSeconds(15)))
+	{
+		throw new TimeoutException(
+			$"The fixture {processRole} did not receive its exit signal '{signalPrefix}'.");
+	}
 }
 
 static async Task WriteProcessIdsAsync(

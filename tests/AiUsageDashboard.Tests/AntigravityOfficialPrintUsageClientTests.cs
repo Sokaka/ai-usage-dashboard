@@ -742,52 +742,84 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 		string executablePath = CopyTerminalFixture(
 			temporaryDirectory.Path,
 			"AiUsageDashboard.TerminalFixture.exe");
+		string signalPrefix =
+			"Local\\AiUsageDashboard.TerminalFixture." + Guid.NewGuid().ToString("N");
+		using EventWaitHandle releaseRoot = new(
+			initialState: false,
+			EventResetMode.ManualReset,
+			signalPrefix + ".root");
+		using EventWaitHandle releaseChild = new(
+			initialState: false,
+			EventResetMode.ManualReset,
+			signalPrefix + ".child");
 		File.WriteAllText(
 			Path.Combine(
 				temporaryDirectory.Path,
 				"spawn-child-then-exit.mode"),
-			string.Empty);
+			signalPrefix);
 		string processIdPath = Path.Combine(
 			temporaryDirectory.Path,
 			"runner-pids.txt");
 		WindowsAntigravityOfficialPrintProcessRunner runner = new(
 			commandTimeout: TimeSpan.FromSeconds(5),
 			cleanupTimeout: TimeSpan.FromSeconds(5));
-		Stopwatch stopwatch = Stopwatch.StartNew();
 		Task<AntigravityOfficialPrintProcessResult> run = runner.RunAsync(
 			executablePath,
 			CancellationToken.None);
-		await WaitForFileOrRunCompletionAsync(
-			processIdPath,
-			run,
-			WindowsFixtureTimeout);
-		(int _, int childProcessId) = ParseRunnerProcessIds(processIdPath);
-		using Process childProcess = Process.GetProcessById(childProcessId);
+		AntigravityOfficialPrintProcessResult? result = null;
 
-		using AntigravityOfficialPrintProcessResult result = await run.WaitAsync(
-			WindowsFixtureTimeout);
-		stopwatch.Stop();
-		await childProcess.WaitForExitAsync().WaitAsync(WindowsFixtureTimeout);
+		try
+		{
+			await WaitForFileOrRunCompletionAsync(
+				processIdPath,
+				run,
+				WindowsFixtureTimeout);
+			(int rootProcessId, int childProcessId) =
+				ParseRunnerProcessIds(processIdPath);
+			using Process rootProcess = Process.GetProcessById(rootProcessId);
+			using Process childProcess = Process.GetProcessById(childProcessId);
+			_ = rootProcess.Handle;
+			_ = childProcess.Handle;
 
-		Assert.Equal(0, result.ExitCode);
-		Assert.Equal("fixture-output\r\n", Encoding.UTF8.GetString(result.Stdout.Span));
-		Assert.True(childProcess.HasExited);
-		Assert.True(
-			stopwatch.Elapsed >= TimeSpan.FromMilliseconds(400),
-			$"The runner returned in {stopwatch.Elapsed} before the descendant could exit.");
-		childProcess.Dispose();
-		await DeleteFixtureImageAfterReleaseAsync(
-			Path.Combine(
-				temporaryDirectory.Path,
-				"AiUsageDashboard.TerminalFixture.dll"),
-			WindowsFixtureTimeout);
-		await DeleteFixtureImageAfterReleaseAsync(
-			executablePath,
-			WindowsFixtureTimeout);
-		await DeleteTemporaryFixtureDirectoryAsync(
-			temporaryDirectory.Path,
-			WindowsFixtureTimeout);
-		temporaryDirectory.MarkAsRemovedExternally();
+			releaseRoot.Set();
+			await rootProcess.WaitForExitAsync().WaitAsync(WindowsFixtureTimeout);
+			Assert.Equal(0, rootProcess.ExitCode);
+			Assert.False(childProcess.HasExited);
+			Assert.False(run.IsCompleted);
+
+			releaseChild.Set();
+			result = await run.WaitAsync(WindowsFixtureTimeout);
+
+			Assert.Equal(0, result.ExitCode);
+			Assert.Equal("fixture-output\r\n", Encoding.UTF8.GetString(result.Stdout.Span));
+			Assert.True(childProcess.HasExited);
+			Assert.Equal(0, childProcess.ExitCode);
+		}
+		finally
+		{
+			releaseRoot.Set();
+			releaseChild.Set();
+			try
+			{
+				result ??= await run.WaitAsync(WindowsFixtureTimeout);
+			}
+			finally
+			{
+				result?.Dispose();
+				await DeleteFixtureImageAfterReleaseAsync(
+					Path.Combine(
+						temporaryDirectory.Path,
+						"AiUsageDashboard.TerminalFixture.dll"),
+					WindowsFixtureTimeout);
+				await DeleteFixtureImageAfterReleaseAsync(
+					executablePath,
+					WindowsFixtureTimeout);
+				await DeleteTemporaryFixtureDirectoryAsync(
+					temporaryDirectory.Path,
+					WindowsFixtureTimeout);
+				temporaryDirectory.MarkAsRemovedExternally();
+			}
+		}
 	}
 
 	[Fact]
