@@ -145,6 +145,14 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				return string.Empty;
 			}
 
+			if (IsCopilot)
+			{
+				return CanDisplayCopilotSubscriptionPlan(currentSnapshot)
+					? CopilotPlanTierRules.CreateDisplayText(currentSnapshot.PlanTier) ??
+						string.Empty
+					: string.Empty;
+			}
+
 			bool canDisplayPlan = IsGrok
 				? CanDisplayGrokSubscriptionPlan(currentSnapshot)
 				: TryGetPrivateBindingAccountDisplayIdentity(
@@ -154,7 +162,6 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 					includePlanTier: false,
 					out _) ||
 				CanDisplayStandardCodexSubscriptionPlan(currentSnapshot) ||
-				CanDisplayCopilotSubscriptionPlan(currentSnapshot) ||
 				CanDisplayAntigravitySubscriptionPlan(currentSnapshot);
 			if (!canDisplayPlan)
 			{
@@ -2656,10 +2663,12 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		}
 		else if (IsCopilot &&
 			includePlanTier &&
-			!string.IsNullOrWhiteSpace(currentSnapshot.PlanTier))
+			CanDisplayCopilotSubscriptionPlan(currentSnapshot) &&
+			CopilotPlanTierRules.CreateDisplayText(
+				currentSnapshot.PlanTier) is string displayPlan)
 		{
 			displayIdentity =
-				$"{displayIdentity} · 方案 {currentSnapshot.PlanTier}";
+				$"{displayIdentity} · 方案 {displayPlan}";
 		}
 
 		return true;
