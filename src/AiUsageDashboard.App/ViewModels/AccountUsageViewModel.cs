@@ -138,15 +138,16 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		get
 		{
 			if (_isProviderAccountChangeInProgress ||
-				(!IsClaude && !IsCodex && !IsCopilot && !IsAntigravity) ||
+				(!IsClaude && !IsCodex && !IsCopilot && !IsGrok && !IsAntigravity) ||
 				(CurrentSnapshot is not UsageSnapshot currentSnapshot) ||
 				string.IsNullOrWhiteSpace(currentSnapshot.PlanTier))
 			{
 				return string.Empty;
 			}
 
-			bool canDisplayPlan =
-				TryGetPrivateBindingAccountDisplayIdentity(
+			bool canDisplayPlan = IsGrok
+				? CanDisplayGrokSubscriptionPlan(currentSnapshot)
+				: TryGetPrivateBindingAccountDisplayIdentity(
 					ProviderAccountIdentity,
 					" · ",
 					includeSubscriptionContext: false,
@@ -2744,6 +2745,33 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				snapshotIdentity) &&
 			!string.IsNullOrWhiteSpace(
 				snapshot.ProviderAccountDisplayIdentity);
+	}
+
+	private bool CanDisplayGrokSubscriptionPlan(UsageSnapshot snapshot)
+	{
+		if (!IsGrok ||
+			!HasUsableUsage(snapshot) ||
+			((snapshot.SourceTrust != SourceTrust.Official) &&
+				(snapshot.SourceTrust != SourceTrust.OfficialExperimental)) ||
+			(snapshot.SubscriptionVerificationState !=
+				SubscriptionVerificationState.Verified) ||
+			(GrokPlanTierRules.Normalize(snapshot.PlanTier) is null) ||
+			!GrokAccountBinding.TryNormalizePublicBindingIdentity(
+				ProviderAccountIdentity,
+				out string? accountIdentity) ||
+			(accountIdentity is null) ||
+			!GrokAccountBinding.TryNormalizePublicBindingIdentity(
+				snapshot.ProviderAccountIdentity,
+				out string? snapshotIdentity) ||
+			(snapshotIdentity is null))
+		{
+			return false;
+		}
+
+		return string.Equals(
+			accountIdentity,
+			snapshotIdentity,
+			StringComparison.Ordinal);
 	}
 
 	private bool CanDisplayAntigravitySubscriptionPlan(

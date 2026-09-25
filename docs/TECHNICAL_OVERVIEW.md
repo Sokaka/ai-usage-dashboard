@@ -447,6 +447,8 @@ grok --no-auto-update login --oauth
 
 ACP client 宣告不提供檔案系統讀寫與終端功能，只執行 `initialize`、billing 與 auth-info extension；不建立 session、不送出 prompt，也不呼叫模型。
 
+Billing 回應的可選 `subscriptionTier`（亦接受 `subscription_tier`）只在帳號綁定、每週用量與方案值均通過驗證後顯示於卡片標題；欄位缺失、衝突或無效不影響每週用量。
+
 JSONL 每行大小、總輸出量、回應數量（response count）、標準錯誤輸出（stderr）、資料格式（schema）、每週週期（weekly period）、用量百分比、重置時間與帳號主體（principal）都有固定上限或嚴格驗證；未知或矛盾資料會停止採用。
 
 每張卡片都有私有綁定檔，用其中的隨機 salt 與帳號主體的 SHA-256 指紋驗證實際帳號。`accounts.json` 只保存不能反推出原始帳號的公開綁定 ID。同一個 Grok 帳號主體不能綁定到兩張卡片；若官方資料沒有可顯示的 email，使用者可用本機暱稱區分卡片，暱稱不參與安全綁定。

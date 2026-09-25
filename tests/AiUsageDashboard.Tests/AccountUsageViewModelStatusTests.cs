@@ -250,12 +250,88 @@ public sealed class AccountUsageViewModelStatusTests
 	}
 
 	[Fact]
+	public void GrokPresentation_WithVerifiedPlan_ShowsPlanBesideProvider()
+	{
+		DateTimeOffset now = new(2026, 8, 18, 3, 0, 0, TimeSpan.Zero);
+		const string OpaqueBindingIdentity =
+			"00112233445566778899aabbccddeeff";
+		AccountProfile profile = CreateProfile(
+			ProviderKind.Grok,
+			providerAccountIdentity: OpaqueBindingIdentity);
+		AccountUsageViewModel viewModel = new(profile, canManage: true);
+
+		viewModel.ApplySnapshot(new UsageSnapshot(
+			profile,
+			[
+				new UsageMetric(
+					"grok.weekly",
+					"每週用量",
+					25,
+					"已使用 25%")
+			],
+			SourceTrust.OfficialExperimental,
+			SnapshotStatus.Ready,
+			now,
+			ProviderAccountIdentity: OpaqueBindingIdentity,
+			PlanTier: "SuperGrok",
+			SubscriptionVerificationState:
+				SubscriptionVerificationState.Verified));
+
+		Assert.Equal("SuperGrok", viewModel.SubscriptionPlanDisplayText);
+		Assert.Equal("Grok · SuperGrok · 測試帳號", viewModel.AccountHeaderText);
+	}
+
+	[Theory]
+	[InlineData(
+		SourceTrust.OfficialExperimental,
+		SubscriptionVerificationState.Unverified)]
+	[InlineData(
+		SourceTrust.Estimated,
+		SubscriptionVerificationState.Verified)]
+	public void GrokPresentation_WithUnverifiedPlanEvidence_HidesPlan(
+		SourceTrust sourceTrust,
+		SubscriptionVerificationState verificationState)
+	{
+		DateTimeOffset now = new(2026, 8, 18, 3, 0, 0, TimeSpan.Zero);
+		const string OpaqueBindingIdentity =
+			"00112233445566778899aabbccddeeff";
+		AccountProfile profile = CreateProfile(
+			ProviderKind.Grok,
+			providerAccountIdentity: OpaqueBindingIdentity);
+		AccountUsageViewModel viewModel = new(profile, canManage: true);
+
+		viewModel.ApplySnapshot(new UsageSnapshot(
+			profile,
+			[
+				new UsageMetric(
+					"grok.weekly",
+					"每週用量",
+					25,
+					"已使用 25%")
+			],
+			sourceTrust,
+			SnapshotStatus.Ready,
+			now,
+			ProviderAccountIdentity: OpaqueBindingIdentity,
+			ProviderAccountDisplayIdentity: "person@example.com",
+			PlanTier: "SuperGrok",
+			SubscriptionVerificationState: verificationState));
+
+		Assert.Empty(viewModel.SubscriptionPlanDisplayText);
+		Assert.Equal("Grok · 測試帳號", viewModel.AccountHeaderText);
+	}
+
+	[Fact]
 	public void GrokPresentation_WithMismatchedBinding_DoesNotShowReportedEmail()
 	{
 		const string AccountEmail = "wrong-account@example.com";
+		const string ExpectedBindingIdentity =
+			"00112233445566778899aabbccddeeff";
+		const string DifferentBindingIdentity =
+			"ffeeddccbbaa99887766554433221100";
 		AccountProfile profile = CreateProfile(
 			ProviderKind.Grok,
-			providerAccountIdentity: "expected-binding") with
+			providerAccountIdentity: ExpectedBindingIdentity) with
 		{
 			DisplayName = string.Empty
 		};
@@ -274,8 +350,11 @@ public sealed class AccountUsageViewModelStatusTests
 			SourceTrust.OfficialExperimental,
 			SnapshotStatus.Ready,
 			DateTimeOffset.UtcNow,
-			ProviderAccountIdentity: "different-binding",
-			ProviderAccountDisplayIdentity: AccountEmail));
+			ProviderAccountIdentity: DifferentBindingIdentity,
+			ProviderAccountDisplayIdentity: AccountEmail,
+			PlanTier: "SuperGrok",
+			SubscriptionVerificationState:
+				SubscriptionVerificationState.Verified));
 
 		Assert.DoesNotContain(
 			AccountEmail,
@@ -285,6 +364,7 @@ public sealed class AccountUsageViewModelStatusTests
 			AccountEmail,
 			viewModel.AccountDisplayText,
 			StringComparison.Ordinal);
+		Assert.Empty(viewModel.SubscriptionPlanDisplayText);
 		Assert.Equal(SnapshotStatus.Error, viewModel.CurrentSnapshot?.Status);
 	}
 

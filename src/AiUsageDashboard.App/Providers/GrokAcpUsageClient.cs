@@ -414,6 +414,7 @@ internal sealed class GrokAcpUsageClient : IGrokAcpUsageClient
 			JsonElement billingResult = GetResult(
 				billingResponse.RootElement,
 				billingNamespace + "billing");
+			string? planTier = ParsePlanTier(billingResult);
 
 			try
 			{
@@ -423,7 +424,8 @@ internal sealed class GrokAcpUsageClient : IGrokAcpUsageClient
 				return new GrokUsagePollResult(
 					principal,
 					weeklyUsage,
-					observedAt);
+					observedAt,
+					planTier: planTier);
 			}
 			catch (GrokUnsupportedBillingException)
 			{
@@ -432,7 +434,8 @@ internal sealed class GrokAcpUsageClient : IGrokAcpUsageClient
 					weeklyUsage: null,
 					observedAt,
 					usageAvailability: GrokUsageAvailability.Unsupported,
-					currentAuthUsability: GrokCurrentAuthUsability.Usable);
+					currentAuthUsability: GrokCurrentAuthUsability.Usable,
+					planTier: planTier);
 			}
 			catch (GrokUsageSchemaException)
 			{
@@ -442,7 +445,8 @@ internal sealed class GrokAcpUsageClient : IGrokAcpUsageClient
 					observedAt,
 					usageAvailability:
 						GrokUsageAvailability.TransientProbeError,
-					currentAuthUsability: GrokCurrentAuthUsability.Usable);
+					currentAuthUsability: GrokCurrentAuthUsability.Usable,
+					planTier: planTier);
 			}
 		}
 	}
@@ -704,6 +708,37 @@ internal sealed class GrokAcpUsageClient : IGrokAcpUsageClient
 		}
 
 		return new GrokPrincipal(type!, id!, email);
+	}
+
+	internal static string? ParsePlanTier(JsonElement result)
+	{
+		if (result.ValueKind != JsonValueKind.Object)
+		{
+			return null;
+		}
+
+		bool hasCurrentTier = result.TryGetProperty(
+			"subscriptionTier",
+			out JsonElement currentTier);
+		bool hasLegacyTier = result.TryGetProperty(
+			"subscription_tier",
+			out JsonElement legacyTier);
+		string? currentPlan = hasCurrentTier &&
+			(currentTier.ValueKind == JsonValueKind.String)
+			? GrokPlanTierRules.Normalize(currentTier.GetString())
+			: null;
+		string? legacyPlan = hasLegacyTier &&
+			(legacyTier.ValueKind == JsonValueKind.String)
+			? GrokPlanTierRules.Normalize(legacyTier.GetString())
+			: null;
+
+		if (hasCurrentTier && hasLegacyTier &&
+			!string.Equals(currentPlan, legacyPlan, StringComparison.Ordinal))
+		{
+			return null;
+		}
+
+		return currentPlan ?? legacyPlan;
 	}
 
 	internal static GrokWeeklyUsage ParseWeeklyUsage(

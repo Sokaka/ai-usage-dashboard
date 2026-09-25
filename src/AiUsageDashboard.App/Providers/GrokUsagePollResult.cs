@@ -10,6 +10,24 @@ internal sealed record GrokWeeklyUsage(
 	DateTimeOffset PeriodStartsAt,
 	DateTimeOffset ResetsAt);
 
+internal static class GrokPlanTierRules
+{
+	private const int MaximumPlanTierLength = 64;
+
+	internal static string? Normalize(string? value)
+	{
+		if (string.IsNullOrWhiteSpace(value) ||
+			(value.Length > MaximumPlanTierLength) ||
+			!string.Equals(value, value.Trim(), StringComparison.Ordinal) ||
+			value.Any(char.IsControl))
+		{
+			return null;
+		}
+
+		return value;
+	}
+}
+
 internal enum GrokUsageAvailability
 {
 	Available,
@@ -30,6 +48,8 @@ internal sealed record GrokUsagePollResult
 	public GrokPrincipal Principal { get; }
 
 	public GrokWeeklyUsage? WeeklyUsage { get; }
+
+	public string? PlanTier { get; }
 
 	public DateTimeOffset ObservedAt { get; }
 
@@ -59,7 +79,8 @@ internal sealed record GrokUsagePollResult
 		GrokUsageAvailability usageAvailability =
 			GrokUsageAvailability.Available,
 		GrokCurrentAuthUsability currentAuthUsability =
-			GrokCurrentAuthUsability.Usable)
+			GrokCurrentAuthUsability.Usable,
+		string? planTier = null)
 	{
 		ArgumentNullException.ThrowIfNull(principal);
 
@@ -117,6 +138,7 @@ internal sealed record GrokUsagePollResult
 
 		Principal = principal;
 		WeeklyUsage = weeklyUsage;
+		PlanTier = GrokPlanTierRules.Normalize(planTier);
 		ObservedAt = observedAt;
 		VersionEvidence = versionEvidence;
 		UsageAvailability = usageAvailability;
