@@ -1,6 +1,6 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.9` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版本的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.9` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.10` 候選版的 CLI 版本要求及實測狀態，並保留目前正式版 `1.0.9` 與歷史版本紀錄。本候選的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.10` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
 ## 版本要求
 
@@ -22,6 +22,20 @@
 ## 實測紀錄
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同候選官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
+
+### 1.0.10 候選版
+
+本表只對應 `1.0.10 / sequence 1024`（[source `79c0cae673078d74f92ef84f82f6ea316f707363`](https://github.com/Sokaka/ai-usage-dashboard/commit/79c0cae673078d74f92ef84f82f6ea316f707363)）的同一組凍結候選成品，目前尚未正式公開。候選沿用已簽署的 `1.0.8` Updater 原始 bytes；上列 CLI 版本要求仍適用。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本候選實測 | 未驗證 | 未驗證 |
+| Codex | 未以本候選實測 | 未驗證 | 未驗證 |
+| GitHub Copilot | 未以本候選實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
+| Grok | 未以本候選實測 | 未驗證 | 未驗證 |
+| Antigravity | 未以本候選實測 | 未驗證 | 未驗證 |
+
+[同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36104797457) 與[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36105323919) attempt 1 已通過。候選 Release 建置 0 warnings／0 errors、完整自動測試 4,286 passed／0 failed／0 skipped，production line coverage 74.49%（48,346／64,901）；同一個 attempt 簽署、驗證並凍結六件候選成品。尚未完成正式公開後的匿名下載、安裝或 signed online update；自動測試與先前版本的真人結果都不代替本候選的實際 CLI 登入與用量查詢。成品與發布驗證範圍見 [1.0.10 候選版本說明](releases/1.0.10.md)。
 
 ### 1.0.9
 
