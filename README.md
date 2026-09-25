@@ -31,7 +31,7 @@
 
 目前正式版本為 **`1.0.9`**，延續前一版的 Codex 重置券到期時間、48 小時警示色與逐券資訊視窗。本版讓發版流程可沿用前一正式版已簽署的 Updater；[v1.0.9 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.9) 隨附的 Updater 仍是 `1.0.8`，位元組與前版相同。下載與成品資訊見 [1.0.9 版本說明](docs/releases/1.0.9.md)。
 
-`1.0.9` 的候選 workflow attempt 1 通過 4,262 項自動測試，production line coverage 為 74.46%。六件成品、sidecar、stable feed 簽章及隨包指南已與凍結紀錄核對；正式公開後另以匿名 client 下載六件原成品，核對 Release 身分、大小、SHA256、sidecar 與 latest stable feed 簽章。本版尚未完成實際官方 CLI 登入與用量、安裝或從 `1.0.8` App 按鈕發起的 signed online update 驗收。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#109)。
+`1.0.9` 的候選 workflow attempt 1 通過 4,262 項自動測試，production line coverage 為 74.46%。六件成品、sidecar、stable feed 簽章及隨包指南已與凍結紀錄核對；正式公開後另以匿名 client 下載六件原成品，核對 Release 身分、大小、SHA256、sidecar 與 latest stable feed 簽章。使用者已完成既有標準安裝從 `1.0.8` 至 `1.0.9` 的更新，安裝結果經本機核對；實際官方 CLI 登入與用量仍待驗證。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#109)。
 
 ## 支援平台
 

@@ -97,8 +97,9 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 - [x] ZIP 有 323 個項目，隨包指南與候選 source 相符。正式公開後，latest Release metadata 的 tag、source、Release ID 與六件 asset identity 已回讀確認。
 - [x] 正式公開後，以無 GitHub token 或 cookie 的 client 從 latest 端點匿名下載六件原成品。Release ID、tag target、六件 asset ID／名稱／大小／SHA256、三份 sidecar、stable feed `1.0.9 / sequence 1023`／source／正式 URL、RSA-PSS-SHA256 簽章及 latest feed bytes 均與原凍結候選一致；六件合計 106,791,195 bytes。
 - [x] 以 Updater `CreateHttpClient()` 設定對正式 latest feed 執行唯讀 GET，取得 HTTP 200、1,916 bytes，SHA256 與凍結 feed 相同。這沒有啟動 `1.0.8` App 按鈕或安裝流程。
+- [x] 2026-09-25 使用者回報從既有 `1.0.8` App 執行更新成功；本機核對交易 `Committed`、App 重啟、Windows 安裝紀錄，以及 323 個安裝檔案與公開 ZIP 相符。詳見 [1.0.9 版本說明](docs/releases/1.0.9.md#已完成的檢查)。
 
-`1.0.9` 尚未完成實際官方 CLI 登入／用量、舊版與最新版 CLI 逐版實測、安裝、由 `1.0.8` App 按鈕發起的 signed online update、舊版 Updater 自我交接及完整 UI／無障礙驗收。匿名下載與簽章 smoke 不代替 App 更新的端到端驗證。歷史版本的實機結果不沿用為本版結果。逐平台狀態見 [1.0.9 CLI 實測表](docs/CLI_COMPATIBILITY.md#109)。
+`1.0.9` 尚未完成實際官方 CLI 登入／用量、舊版與最新版 CLI 逐版實測、舊版 Updater 自我交接、乾淨 Windows 初裝及完整 UI／無障礙驗收。本次安裝結果只涵蓋這台既有標準安裝；歷史版本的實機結果不沿用為本版結果。逐平台狀態見 [1.0.9 CLI 實測表](docs/CLI_COMPATIBILITY.md#109)。
 
 ### 1.0.8 歷史正式版
 
