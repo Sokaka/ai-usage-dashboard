@@ -39,6 +39,8 @@ internal static class LegalTermsDialog
 		};
 		window.SetResourceReference(Window.BackgroundProperty,
 			"WindowBackgroundBrush");
+		window.SetResourceReference(Window.IconProperty,
+			"ThemeWindowIcon");
 		DockPanel panel = new() { Margin = new Thickness(16) };
 		TextBlock explanation = new()
 		{

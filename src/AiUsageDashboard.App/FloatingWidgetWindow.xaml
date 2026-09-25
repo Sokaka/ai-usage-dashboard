@@ -7,6 +7,7 @@
          xmlns:system="clr-namespace:System.Windows;assembly=PresentationFramework"
          xmlns:viewModels="clr-namespace:AiUsageDashboard.App.ViewModels"
         Title="AI Usage"
+        Icon="{DynamicResource ThemeWindowIcon}"
         Width="390"
         Height="720"
         SizeToContent="Manual"

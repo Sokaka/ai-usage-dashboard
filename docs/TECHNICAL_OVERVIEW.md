@@ -68,7 +68,7 @@ presentation／排程 cache 寫在 `%LOCALAPPDATA%\AiUsageDashboard\update-check
 - `IsHeightFollowingCardCount` 從版本 6 起寫入；舊本機設定預設維持固定可用高度。
 - 匯出設定檔版本 6 會寫入 `isHeightFollowingCardCount`。匯入版本 3–5 時保留目標電腦目前的自動高度設定；版本 3 另會保留目前主題；版本 1／2 同時保留目前浮窗偏好與主題。
 
-一般主題共用相同的資源鍵與控制項樣式。介面透過 `DynamicResource` 取得配色；切換時，`App.UpdatePaletteResources` 會直接更新仍可修改的 `SolidColorBrush`，其餘資源則換成目標配色的值，避免已取得的筆刷物件仍顯示舊主題。浮窗展開與收合時的 Logo 都使用 `ThemeLogoStyle` 與配色資源；系統匣仍使用執行檔圖示，不會隨主題切換。
+一般主題共用相同的資源鍵與控制項樣式。介面透過 `DynamicResource` 取得配色；切換時，`App.UpdatePaletteResources` 會直接更新仍可修改的 `SolidColorBrush`，其餘資源則換成目標配色的值，避免已取得的筆刷物件仍顯示舊主題。浮窗展開與收合時的 Logo 都使用 `ThemeLogoStyle` 與配色資源；執行中的視窗標題列與系統匣圖示由同一 Logo 產生，切換主題或 Windows 高對比時更新。執行檔、開始選單捷徑及安裝項目仍使用固定的封裝圖示，工作列顯示也可能受 Windows 的合併與圖示快取影響。
 
 帳號設定、Codex 連接與重置券、關於、Antigravity 連接視窗都使用 App 配色；Antigravity 連接視窗保留獨立但與 App 對齊的按鈕樣式。互動啟動需要顯示法律條款時，App 會先唯讀取得已選主題，條款視窗使用同一組背景、文字與按鈕資源。Windows 原生標題列、系統對話框及系統匣選單仍由 Windows 繪製。
 

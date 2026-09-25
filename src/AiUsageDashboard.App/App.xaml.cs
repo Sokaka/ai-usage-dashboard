@@ -122,6 +122,7 @@ public partial class App : System.Windows.Application
 	private SingleInstanceActivationChannel? _activationChannel;
 	private UpdateShutdownChannel? _updateShutdownChannel;
 	private Icon? _applicationIcon;
+	private ThemeAppIcon? _themeAppIcon;
 	private DashboardViewModel? _dashboardViewModel;
 	private FloatingWidgetWindow? _floatingWidgetWindow;
 	private AppInstallationContext _appInstallationContext =
@@ -1152,6 +1153,7 @@ public partial class App : System.Windows.Application
 		_activationChannel?.Dispose();
 		_updateShutdownChannel?.Dispose();
 		_notifyIcon?.Dispose();
+		_themeAppIcon?.Dispose();
 		_applicationIcon?.Dispose();
 		_shellPreferencesSaveGate.Dispose();
 
@@ -3460,6 +3462,105 @@ public partial class App : System.Windows.Application
 		{
 			dictionaries.Insert(0, palette);
 		}
+
+		UpdateThemeAppIcon(paletteIndex >= 0
+			? dictionaries[paletteIndex]
+			: palette);
+	}
+
+	private void UpdateThemeAppIcon(ResourceDictionary palette)
+	{
+		try
+		{
+			if (Resources["ThemeLogoStyle"] is not Style logoStyle)
+			{
+				throw new InvalidOperationException(
+					"找不到用來更新視窗與系統匣圖示的 ThemeLogoStyle。");
+			}
+
+			ThemeAppIcon? previous = _themeAppIcon;
+			ImageSource previousWindowIcon =
+				(ImageSource)Resources["ThemeWindowIcon"];
+			Icon previousTrayIcon = _notifyIcon?.Icon ??
+				previous?.TrayIcon ?? _applicationIcon ?? SystemIcons.Application;
+			ThemeAppIcon replacement = ThemeAppIcon.Create(logoStyle, palette);
+			bool keepReplacement = false;
+			try
+			{
+				if (_notifyIcon is not null)
+				{
+					_notifyIcon.Icon = replacement.TrayIcon;
+				}
+				Resources["ThemeWindowIcon"] = replacement.WindowIcon;
+				keepReplacement = true;
+			}
+			catch (Exception updateException)
+			{
+				keepReplacement = RestoreThemeAppIcon(
+					previousTrayIcon, previousWindowIcon, replacement);
+				throw new InvalidOperationException(
+					"更新目前主題的視窗與系統匣圖示時失敗。",
+					updateException);
+			}
+			finally
+			{
+				if (keepReplacement)
+				{
+					_themeAppIcon = replacement;
+					previous?.Dispose();
+				}
+				else
+				{
+					replacement.Dispose();
+				}
+			}
+		}
+		catch (Exception exception)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"theme-app-icon",
+				"無法更新目前主題的視窗與系統匣圖示。",
+				exception);
+		}
+	}
+
+	private bool RestoreThemeAppIcon(
+		Icon previousTrayIcon,
+		ImageSource previousWindowIcon,
+		ThemeAppIcon replacement)
+	{
+		if (_notifyIcon is not null)
+		{
+			try
+			{
+				_notifyIcon.Icon = previousTrayIcon;
+			}
+			catch (Exception rollbackException)
+			{
+				_ = AppDiagnostics.TryWrite(
+					"theme-app-icon-rollback",
+					"無法還原原本的系統匣圖示。",
+					rollbackException);
+			}
+		}
+
+		bool keepReplacement = ReferenceEquals(
+			_notifyIcon?.Icon, replacement.TrayIcon);
+		try
+		{
+			Resources["ThemeWindowIcon"] = keepReplacement
+				? replacement.WindowIcon
+				: previousWindowIcon;
+		}
+		catch (Exception rollbackException)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"theme-app-icon-rollback",
+				"無法還原原本的視窗圖示。",
+				rollbackException);
+		}
+
+		return keepReplacement;
 	}
 
 	internal static bool ShouldShowFloatingWidgetOnStartup(
@@ -4113,7 +4214,8 @@ public partial class App : System.Windows.Application
 		_notifyIcon = new FormsNotifyIcon
 		{
 			ContextMenuStrip = menu,
-			Icon = _applicationIcon ?? SystemIcons.Application,
+			Icon = _themeAppIcon?.TrayIcon ??
+				_applicationIcon ?? SystemIcons.Application,
 			Text = "AI Usage",
 			Visible = true
 		};
