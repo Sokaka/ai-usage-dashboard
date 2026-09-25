@@ -8,7 +8,7 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些功能與 Copilot 訂閱資訊修正始於首個正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.9 / sequence 1023`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.10 / sequence 1024`。
 
 ### AGY official-only 與封裝縮減
 
@@ -90,7 +90,18 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 目前正式版本
 
-`1.0.9 / sequence 1023` 已沿用原凍結候選正式公開（[source `51d7cfd5d6ef31775b862967afc95a20223a5774`](https://github.com/Sokaka/ai-usage-dashboard/commit/51d7cfd5d6ef31775b862967afc95a20223a5774)）。[v1.0.9 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.9) 現為 immutable stable／latest；Release ID `395846934`，tag target、source 與六件 asset identity 均與凍結候選一致。變更與六件成品資料見 [1.0.9 版本說明](docs/releases/1.0.9.md)。本版 App 的 `src/` 與 `1.0.8` 相同；沿用前版已簽署的 Updater 原始 bytes，維護 Updater 版本仍為 `1.0.8`。
+`1.0.10 / sequence 1024` 已沿用原凍結候選正式公開（[source `79c0cae673078d74f92ef84f82f6ea316f707363`](https://github.com/Sokaka/ai-usage-dashboard/commit/79c0cae673078d74f92ef84f82f6ea316f707363)）。[v1.0.10 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.10) 現為 stable／latest；Release ID `396383087`，tag target、source 與六件 asset identity 均與凍結候選一致。Grok 與 Copilot 的訂閱方案顯示變更，以及六件成品資料見 [1.0.10 版本說明](docs/releases/1.0.10.md)。本版沿用前一正式版已簽署的 Updater 原始 bytes，維護 Updater 版本仍為 `1.0.8`。
+
+- [x] 同 source 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36104797457) 通過。[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36105323919) attempt 1 通過 Release 建置（0 warnings／0 errors）、完整測試（4,286 passed／0 failed／0 skipped）與 production line coverage 74.49%（48,346／64,901）。
+- [x] 已從 draft 候選獨立核對 freeze receipt、Release ID、run／attempt、source、sequence，以及六件成品的 asset ID、大小、SHA256 與三份 sidecar；production public trust 對 stable feed 的 RSA-PSS-SHA256 驗簽通過。
+- [x] ZIP 有 323 個項目，App ProductVersion 為 `1.0.10+79c0cae673078d74f92ef84f82f6ea316f707363`，沿用的 Updater ProductVersion 為 `1.0.8+2241852d355767f2922a0e933b7c29d294e3ef00`。正式公開後，latest Release metadata 的 tag、source、Release ID 與六件 asset identity 已回讀確認。
+- [x] 正式公開後，以無 GitHub token 或 cookie 的 client 匿名下載六件原凍結成品。Release ID、tag target、六件 asset ID／名稱／大小／SHA256、三份 sidecar、stable feed `1.0.10 / sequence 1024`／source／正式 URL、RSA-PSS-SHA256 簽章及 latest feed bytes 均與原凍結候選一致；六件合計 106,792,015 bytes。
+
+`1.0.10` 尚未完成實際官方 CLI 登入／用量、舊版與最新版 CLI 逐版實測、既有標準安裝的一鍵線上更新、舊版 Updater 自我交接、乾淨 Windows 初裝及完整 UI／無障礙驗收。匿名下載與驗簽不代替安裝或 App 更新按鈕驗收；歷史版本的實機結果不沿用為本版結果。逐平台狀態見 [1.0.10 CLI 實測表](docs/CLI_COMPATIBILITY.md#1010)。
+
+### 1.0.9 歷史正式版
+
+`1.0.9 / sequence 1023` 已沿用原凍結候選正式公開（[source `51d7cfd5d6ef31775b862967afc95a20223a5774`](https://github.com/Sokaka/ai-usage-dashboard/commit/51d7cfd5d6ef31775b862967afc95a20223a5774)）。[v1.0.9 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.9) 當時為 immutable stable／latest；Release ID `395846934`，tag target、source 與六件 asset identity 均與凍結候選一致。變更與六件成品資料見 [1.0.9 版本說明](docs/releases/1.0.9.md)。本版 App 的 `src/` 與 `1.0.8` 相同；沿用前版已簽署的 Updater 原始 bytes，維護 Updater 版本仍為 `1.0.8`。
 
 - [x] 同 source 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36022467564) 通過。[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36023166191) attempt 1 通過 Release 建置（0 warnings／0 errors）、完整測試（4,262 passed／0 failed／0 skipped）與 production line coverage 74.46%（48,278／64,841）。
 - [x] 已從 draft 候選獨立核對 freeze receipt、Release ID、run／attempt、source、sequence，以及六件成品的 asset ID、大小、SHA256 與三份 sidecar；production public trust 對 stable feed 的 RSA-PSS-SHA256 驗簽通過。
@@ -99,7 +110,7 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 - [x] 以 Updater `CreateHttpClient()` 設定對正式 latest feed 執行唯讀 GET，取得 HTTP 200、1,916 bytes，SHA256 與凍結 feed 相同。這沒有啟動 `1.0.8` App 按鈕或安裝流程。
 - [x] 2026-09-25 使用者回報從既有 `1.0.8` App 執行更新成功；本機核對交易 `Committed`、App 重啟、Windows 安裝紀錄，以及 323 個安裝檔案與公開 ZIP 相符。詳見 [1.0.9 版本說明](docs/releases/1.0.9.md#已完成的檢查)。
 
-`1.0.9` 尚未完成實際官方 CLI 登入／用量、舊版與最新版 CLI 逐版實測、舊版 Updater 自我交接、乾淨 Windows 初裝及完整 UI／無障礙驗收。本次安裝結果只涵蓋這台既有標準安裝；歷史版本的實機結果不沿用為本版結果。逐平台狀態見 [1.0.9 CLI 實測表](docs/CLI_COMPATIBILITY.md#109)。
+`1.0.9` 尚未完成實際官方 CLI 登入／用量、舊版與最新版 CLI 逐版實測、舊版 Updater 自我交接、乾淨 Windows 初裝及完整 UI／無障礙驗收。本次安裝結果只涵蓋這台既有標準安裝；歷史版本的實機結果不沿用為本版結果。逐平台狀態見 [1.0.9 CLI 實測表](docs/CLI_COMPATIBILITY.md#109-歷史正式版)。
 
 ### 1.0.8 歷史正式版
 
