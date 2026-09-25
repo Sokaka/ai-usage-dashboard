@@ -121,6 +121,27 @@ public sealed class GrokUsageProviderTests
 		}
 	}
 
+	[Theory]
+	[InlineData("SuperGrok", "SuperGrok")]
+	[InlineData("SuperGrok Heavy", "SuperGrok Heavy")]
+	[InlineData(null, null)]
+	[InlineData("", null)]
+	[InlineData(" SuperGrok", null)]
+	[InlineData("SuperGrok ", null)]
+	[InlineData("SuperGrok\nHeavy", null)]
+	public void PlanTierRules_NormalizesOnlySafeProviderValues(
+		string? value,
+		string? expected)
+	{
+		Assert.Equal(expected, GrokPlanTierRules.Normalize(value));
+	}
+
+	[Fact]
+	public void PlanTierRules_WithOverlongValue_HidesPlan()
+	{
+		Assert.Null(GrokPlanTierRules.Normalize(new string('p', 65)));
+	}
+
 	[Fact]
 	public async Task GetUsageAsync_WithMatchingBinding_ReturnsOfficialWeeklyMetric()
 	{
@@ -134,7 +155,8 @@ public sealed class GrokUsageProviderTests
 			new GrokWeeklyUsage(37.25, now - TimeSpan.FromDays(4), resetsAt),
 			observedAt,
 			"person@example.com",
-			CliVersionPolicies.AssessGrok(new GrokExecutableVersion(1, 0, 4)));
+			CliVersionPolicies.AssessGrok(new GrokExecutableVersion(1, 0, 4)),
+			planTier: "SuperGrok");
 		GrokUsageProvider provider = new(
 			poller,
 			bindingStore,
@@ -155,6 +177,7 @@ public sealed class GrokUsageProviderTests
 		Assert.Equal(
 			"person@example.com",
 			snapshot.ProviderAccountDisplayIdentity);
+		Assert.Equal("SuperGrok", snapshot.PlanTier);
 		Assert.Null(snapshot.Error);
 		Assert.Equal(UsageRecoveryAction.None, snapshot.RecoveryAction);
 		Assert.Equal(
@@ -790,7 +813,8 @@ public sealed class GrokUsageProviderTests
 		GrokUsageAvailability usageAvailability =
 			GrokUsageAvailability.Available,
 		GrokCurrentAuthUsability currentAuthUsability =
-			GrokCurrentAuthUsability.Usable)
+			GrokCurrentAuthUsability.Usable,
+		string? planTier = null)
 	{
 		return new FakePoller((_, _) => Task.FromResult(
 			new GrokUsagePollResult(
@@ -799,7 +823,8 @@ public sealed class GrokUsageProviderTests
 				observedAt,
 				versionEvidence,
 				usageAvailability,
-				currentAuthUsability)));
+				currentAuthUsability,
+				planTier)));
 	}
 
 	private static Exception CreateFailure(

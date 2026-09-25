@@ -222,6 +222,7 @@ internal sealed class GrokUsageProvider : IUsageProvider
 				fetchedAt + StaleAfter,
 				ProviderAccountIdentity: publicBindingId,
 				ProviderAccountDisplayIdentity: verifiedEmail,
+				PlanTier: result.PlanTier,
 				SubscriptionVerificationState:
 					SubscriptionVerificationState.Verified);
 		}

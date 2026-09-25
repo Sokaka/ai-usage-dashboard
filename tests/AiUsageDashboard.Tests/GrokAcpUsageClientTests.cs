@@ -220,7 +220,8 @@ public sealed class GrokAcpUsageClientTests
 		FakeProcess process = new(CreateSuccessfulOutput(
 			now,
 			creditUsagePercent: 27.5,
-			accountEmail: "person@example.com"));
+			accountEmail: "person@example.com",
+			subscriptionTier: "SuperGrok"));
 		FakeProcessFactory factory = new(process);
 		GrokAcpUsageClient client = new(factory, new FakeTimeProvider(now));
 
@@ -242,6 +243,7 @@ public sealed class GrokAcpUsageClientTests
 		Assert.Equal(now, result.ObservedAt);
 		Assert.Equal(GrokUsageAvailability.Available, result.UsageAvailability);
 		Assert.Equal(GrokCurrentAuthUsability.Usable, result.CurrentAuthUsability);
+		Assert.Equal("SuperGrok", result.PlanTier);
 		Assert.True(result.ScopeObserved);
 		Assert.True(result.UsageAvailable);
 		Assert.True(result.CurrentAuthUsable);
@@ -253,6 +255,45 @@ public sealed class GrokAcpUsageClientTests
 		Assert.Equal(1, process.DisposeCallCount);
 
 		AssertRequestSequence(process.ReadStandardInput());
+	}
+
+	[Fact]
+	public async Task QueryAsync_WithMalformedSubscriptionTier_KeepsUsageAndHidesPlan()
+	{
+		DateTimeOffset now = new(2026, 8, 18, 3, 0, 0, TimeSpan.Zero);
+		FakeProcess process = new(CreateSuccessfulOutput(
+			now,
+			creditUsagePercent: 27.5,
+			subscriptionTier: 42));
+		GrokAcpUsageClient client = new(
+			new FakeProcessFactory(process),
+			new FakeTimeProvider(now));
+
+		GrokUsagePollResult result = await client.QueryAsync(
+			CreateLaunchOptions(),
+			CancellationToken.None);
+
+		Assert.Equal(
+			27.5,
+			Assert.IsType<GrokWeeklyUsage>(result.WeeklyUsage).UsedPercent);
+		Assert.Null(result.PlanTier);
+		Assert.Equal(GrokUsageAvailability.Available, result.UsageAvailability);
+	}
+
+	[Theory]
+	[InlineData("{\"subscriptionTier\":\"SuperGrok\"}", "SuperGrok")]
+	[InlineData("{\"subscription_tier\":\"SuperGrok\"}", "SuperGrok")]
+	[InlineData("{\"subscriptionTier\":\"SuperGrok\",\"subscription_tier\":\"SuperGrok\"}", "SuperGrok")]
+	[InlineData("{\"subscriptionTier\":\"SuperGrok\",\"subscription_tier\":\"Other\"}", null)]
+	[InlineData("{\"subscriptionTier\":42,\"subscription_tier\":\"SuperGrok\"}", null)]
+	[InlineData("{}", null)]
+	public void ParsePlanTier_WithCurrentAndLegacyFields_UsesOnlyConsistentSafeValues(
+		string billingJson,
+		string? expected)
+	{
+		using JsonDocument billing = JsonDocument.Parse(billingJson);
+
+		Assert.Equal(expected, GrokAcpUsageClient.ParsePlanTier(billing.RootElement));
 	}
 
 	[Fact]
@@ -443,6 +484,7 @@ public sealed class GrokAcpUsageClientTests
 			42.5,
 			Assert.IsType<GrokWeeklyUsage>(result.WeeklyUsage).UsedPercent);
 		Assert.Equal("legacy@example.com", result.Principal.Email);
+		Assert.Null(result.PlanTier);
 		Assert.Equal(
 			new[]
 			{
@@ -490,7 +532,8 @@ public sealed class GrokAcpUsageClientTests
 		FakeProcess process = new(CreateSuccessfulOutput(
 			now,
 			creditUsagePercent: 31,
-			useLegacyBillingNamespace: true));
+			useLegacyBillingNamespace: true,
+			subscriptionTier: "SuperGrok"));
 		GrokAcpUsageClient client = new(
 			new FakeProcessFactory(process),
 			new FakeTimeProvider(now));
@@ -500,6 +543,7 @@ public sealed class GrokAcpUsageClientTests
 			CancellationToken.None);
 
 		Assert.True(result.UsageAvailable);
+		Assert.Equal("SuperGrok", result.PlanTier);
 		Assert.Equal(
 			new[]
 			{
@@ -972,7 +1016,8 @@ public sealed class GrokAcpUsageClientTests
 		string? notification = null,
 		string? accountEmail = null,
 		bool isUnifiedBillingUser = true,
-		string? periodType = "USAGE_PERIOD_TYPE_WEEKLY")
+		string? periodType = "USAGE_PERIOD_TYPE_WEEKLY",
+		object? subscriptionTier = null)
 	{
 		Dictionary<string, object?> config = new()
 		{
@@ -988,6 +1033,15 @@ public sealed class GrokAcpUsageClientTests
 		if (creditUsagePercent is not null)
 		{
 			config["creditUsagePercent"] = creditUsagePercent.Value;
+		}
+
+		Dictionary<string, object?> billingResult = new()
+		{
+			["config"] = config
+		};
+		if (subscriptionTier is not null)
+		{
+			billingResult["subscriptionTier"] = subscriptionTier;
 		}
 
 		List<string> responses =
@@ -1020,11 +1074,11 @@ public sealed class GrokAcpUsageClientTests
 		if (useLegacyBillingNamespace)
 		{
 			responses.Add(CreateErrorResponse(2, -32601, "Method not found"));
-			responses.Add(CreateResultResponse(3, new { config }));
+			responses.Add(CreateResultResponse(3, billingResult));
 		}
 		else
 		{
-			responses.Add(CreateResultResponse(2, new { config }));
+			responses.Add(CreateResultResponse(2, billingResult));
 		}
 
 		return string.Join('\n', responses) + "\n";
