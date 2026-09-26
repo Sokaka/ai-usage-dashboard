@@ -7,7 +7,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.11-0078D4" alt="目前正式版本 1.0.11"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.12-0078D4" alt="目前正式版本 1.0.12"></a>
 </p>
 
 <p align="center">
@@ -29,9 +29,9 @@
 
 ## 目前版本
 
-目前正式版本為 **`1.0.11`**。本版修正 Claude Free 提示與 Grok CLI 版號辨識，統一視窗、提示與各主題圖示，補上自動排序規則，並讓收合浮窗圖示可在畫面限制範圍內自由定位。本版沿用前一正式版已簽署的 Updater，維持 `1.0.8` 版號與原始位元組。從 [v1.0.11 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.11) 下載；成品資訊見 [1.0.11 版本說明](docs/releases/1.0.11.md)。
+目前正式版本為 **`1.0.12`**。首次安裝的第三方元件條款確認改用較清楚的說明，不再於視窗顯示暫存檔路徑及 SHA-256；完整條款仍會在記事本開啟。這項確認不會安裝 Windows 憑證，也不會授權存取服務帳號。新版 `1.0.12` Updater 已包含此提示。從 [v1.0.12 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.12) 下載；成品資訊見 [1.0.12 版本說明](docs/releases/1.0.12.md)。
 
-`1.0.11` 的候選 workflow attempt 1 通過 4,320 項自動測試，production line coverage 為 74.26%。正式公開後，已匿名下載並核對六件原凍結成品、三份 sidecar 與 latest stable feed 的簽章。實際官方 CLI 登入與用量、乾淨 Windows 安裝及本版完整線上更新仍待驗證。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#1011)。
+`1.0.12` 的候選 workflow attempt 1 通過 4,320 項自動測試，production line coverage 為 74.27%。正式公開後，已匿名下載並核對六件原凍結成品、三份 sidecar 與 latest stable feed 的簽章。乾淨 Windows 環境的首次安裝條款接受／拒絕、舊 Updater 交接、既有安裝的一鍵線上更新、五個平台官方 CLI 的真人登入與用量，以及完整 UI／無障礙驗收仍待驗證。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#1012)。
 
 ## 支援平台
 
@@ -75,7 +75,7 @@
 | **一般安裝：Updater** | `AiUsageDashboard-Updater-<version>-win-x64.exe` | Updater 也能首次安裝。以一般使用者權限執行，安裝後從開始選單搜尋 **AI Usage**；保留 Updater 供日後更新。 |
 | **免安裝：完整 ZIP** | `AiUsageDashboard-<version>-win-x64.zip` | 完整解壓到新資料夾後，執行其中的 App；不要下載 GitHub 自動產生的 Source code ZIP。 |
 
-`1.0.11` 隨附的 Updater 檔名仍是 `AiUsageDashboard-Updater-1.0.8-win-x64.exe`；請依 Release 上的實際檔名下載。
+`1.0.12` 的 Updater 檔名是 `AiUsageDashboard-Updater-1.0.12-win-x64.exe`；請依 Release 上的實際檔名下載。
 
 依[安裝與第一次啟動](使用說明.md#安裝與第一次啟動)操作、閱讀並接受適用條款，再新增帳號，透過服務的官方登入流程完成連接。
 
