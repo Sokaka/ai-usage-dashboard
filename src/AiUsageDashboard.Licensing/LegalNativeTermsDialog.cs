@@ -26,13 +26,13 @@ public static class LegalNativeTermsDialog
 			throw new InvalidOperationException("License acceptance requires an interactive Windows desktop. Use --licenses and then --accept-licenses <displayed-digest> before unattended installation.");
 		}
 
-		string viewerPath = OpenReadableTerms(catalog);
+		OpenReadableTerms(catalog);
 		int result = MessageBox(nint.Zero,
 			"已在記事本開啟完整授權與第三方條款。請先閱讀，再選擇是否接受。\n\n" +
-			$"文件：{viewerPath}\n\n條款版本：{catalog.TermsVersion}\n" +
-			$"接受範圍 SHA256：{catalog.Digest}\n\n" +
-			"選擇「是」表示接受這個版本及範圍，並在目前 Windows 使用者的本機保存接受紀錄。選擇「否」即離開，不會進行安裝或更新。",
-			"AI Usage Dashboard：是否接受第三方條款？",
+			"這是隨附元件的使用條款確認，不會安裝 Windows 憑證，也不會授權存取服務帳號。\n\n" +
+			"選擇「是」會在目前 Windows 使用者的電腦保存接受紀錄，並繼續安裝或更新。\n" +
+			"選擇「否」就離開。適用條款或隨附元件未變時，不會重複詢問。",
+			"AI Usage Dashboard：是否接受第三方元件條款？",
 			YesNoButtons | InformationIcon | DefaultSecondButton | SetForeground);
 		if (result == 0)
 		{
@@ -50,7 +50,7 @@ public static class LegalNativeTermsDialog
 		return true;
 	}
 
-	private static string OpenReadableTerms(LegalCatalog catalog)
+	private static void OpenReadableTerms(LegalCatalog catalog)
 	{
 		string viewerDirectory = Path.Combine(Path.GetTempPath(), "AiUsageDashboard.LicenseText");
 		Directory.CreateDirectory(viewerDirectory);
@@ -75,7 +75,6 @@ public static class LegalNativeTermsDialog
 		// 記事本由使用者操作；只釋放 process handle，文字快取保留供視窗讀取。
 		using Process viewer = Process.Start(startInfo) ??
 			throw new InvalidOperationException($"Cannot open the full license text '{viewerPath}' in Windows Notepad.");
-		return viewerPath;
 	}
 
 	[DllImport("user32.dll", EntryPoint = "MessageBoxW", CharSet = CharSet.Unicode, SetLastError = true)]
