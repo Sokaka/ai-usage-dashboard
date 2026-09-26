@@ -18,6 +18,7 @@ using AiUsageDashboard.Presentation;
 
 using DrawingPoint = System.Drawing.Point;
 using DrawingRectangle = System.Drawing.Rectangle;
+using DrawingSize = System.Drawing.Size;
 using FormsScreen = System.Windows.Forms.Screen;
 using WpfClipboard = System.Windows.Clipboard;
 using WpfMessageBox = System.Windows.MessageBox;
@@ -87,9 +88,12 @@ public partial class FloatingWidgetWindow : Window
 	private DateTimeOffset _lastViewModelAnnouncementAt;
 	private double _collapsedDragOffsetXRatio;
 	private double _collapsedDragOffsetYRatio;
+	private double? _collapsedPositionXRatio;
+	private double? _collapsedPositionYRatio;
 	private int _focusInteractionGeneration;
 	private bool _hasPlacement;
 	private bool _hasPersistentInlineStatus;
+	private bool _hasCollapsedDragFailure;
 	private bool _hasShownExpandedView;
 	private bool _isShellPreferencesFailureInlineStatus;
 	private bool _isApplyingPlacement;
@@ -179,6 +183,8 @@ public partial class FloatingWidgetWindow : Window
 		_inlineStatusTimer.Tick += InlineStatusTimer_Tick;
 		_screenDeviceName = preferences.MonitorDeviceName;
 		_corner = preferences.Corner;
+		_collapsedPositionXRatio = preferences.CollapsedPositionXRatio;
+		_collapsedPositionYRatio = preferences.CollapsedPositionYRatio;
 		_theme = preferences.Theme;
 		_isHeightFollowingCardCount = preferences.IsHeightFollowingCardCount;
 		_hasPlacement = true;
@@ -236,7 +242,9 @@ public partial class FloatingWidgetWindow : Window
 				? DashboardStartupSurface.Widget
 				: DashboardStartupSurface.Tray,
 			_theme,
-			_isHeightFollowingCardCount);
+			_isHeightFollowingCardCount,
+			_collapsedPositionXRatio,
+			_collapsedPositionYRatio);
 	}
 
 	internal static PortableWidgetPreferences CreatePortableWidgetPreferencesSnapshot(
@@ -306,6 +314,8 @@ public partial class FloatingWidgetWindow : Window
 		try
 		{
 			_screenDeviceName = preferences.MonitorDeviceName;
+			_collapsedPositionXRatio = preferences.CollapsedPositionXRatio;
+			_collapsedPositionYRatio = preferences.CollapsedPositionYRatio;
 			_theme = preferences.Theme;
 			SetHeightFollowingCardCount(
 				preferences.IsHeightFollowingCardCount,
@@ -2249,10 +2259,9 @@ public partial class FloatingWidgetWindow : Window
 			return;
 		}
 
-		DrawingPoint topLeft = FloatingWidgetPlacement.GetTopLeft(
+		DrawingPoint topLeft = GetCurrentTopLeft(
 			windowBounds.Size,
 			workingArea,
-			_corner,
 			margin);
 
 		_isApplyingPlacement = true;
@@ -2281,6 +2290,30 @@ public partial class FloatingWidgetWindow : Window
 		{
 			QueueDpiPlacementCorrection();
 		}
+	}
+
+	private DrawingPoint GetCurrentTopLeft(
+		DrawingSize windowSize,
+		DrawingRectangle workingArea,
+		int margin)
+	{
+		if (_isCollapsed &&
+			(_collapsedPositionXRatio is double xRatio) &&
+			(_collapsedPositionYRatio is double yRatio))
+		{
+			return FloatingWidgetPlacement.GetTopLeftFromRatios(
+				windowSize,
+				workingArea,
+				margin,
+				xRatio,
+				yRatio);
+		}
+
+		return FloatingWidgetPlacement.GetTopLeft(
+			windowSize,
+			workingArea,
+			_corner,
+			margin);
 	}
 
 	private void CollapseButton_Click(object sender, RoutedEventArgs e)
@@ -2431,9 +2464,17 @@ public partial class FloatingWidgetWindow : Window
 			return;
 		}
 
-		SetCorner(corner);
+		bool didPlacementChange = (_corner != corner) ||
+			_collapsedPositionXRatio.HasValue;
+		_collapsedPositionXRatio = null;
+		_collapsedPositionYRatio = null;
+		SetCorner(corner, notifyPreferences: false);
 		_hasPlacement = true;
 		ApplyCurrentPlacement();
+		if (didPlacementChange)
+		{
+			NotifyPreferencesChanged();
+		}
 	}
 
 	private void HeightFollowsCardCountMenuItem_Click(
@@ -2569,6 +2610,7 @@ public partial class FloatingWidgetWindow : Window
 			1);
 		_isCollapsedDragPending = true;
 		_isCollapsedDragging = false;
+		_hasCollapsedDragFailure = false;
 
 		if (!CollapsedButton.CaptureMouse())
 		{
@@ -2589,9 +2631,9 @@ public partial class FloatingWidgetWindow : Window
 		}
 
 		bool shouldExpand = _isCollapsedDragPending;
-		bool shouldSnap = _isCollapsedDragging;
+		bool didDrag = _isCollapsedDragging;
 
-		if (shouldSnap && GetPhysicalCursorPos(out NativePoint cursorPosition))
+		if (didDrag && GetPhysicalCursorPos(out NativePoint cursorPosition))
 		{
 			MoveCollapsedWindowToCursor(cursorPosition);
 		}
@@ -2601,9 +2643,9 @@ public partial class FloatingWidgetWindow : Window
 		CollapsedButton.ReleaseMouseCapture();
 		e.Handled = true;
 
-		if (shouldSnap)
+		if (didDrag)
 		{
-			SnapToNearestCorner();
+			SaveCollapsedPosition();
 		}
 		else if (shouldExpand)
 		{
@@ -2657,6 +2699,7 @@ public partial class FloatingWidgetWindow : Window
 
 		if (!TryGetWindowBounds(windowHandle, out DrawingRectangle windowBounds))
 		{
+			ReportCollapsedDragFailure(windowHandle, "取得拖曳中的浮窗範圍");
 			return;
 		}
 
@@ -2664,16 +2707,98 @@ public partial class FloatingWidgetWindow : Window
 			windowBounds.Width * _collapsedDragOffsetXRatio);
 		int y = cursorPosition.Y - (int)Math.Round(
 			windowBounds.Height * _collapsedDragOffsetYRatio);
-		SetWindowPos(
+		FormsScreen targetScreen = FormsScreen.FromPoint(
+			new DrawingPoint(cursorPosition.X, cursorPosition.Y));
+		DpiScale dpi = VisualTreeHelper.GetDpi(this);
+		int margin = Math.Max(
+			0,
+			(int)Math.Round(CornerMargin * dpi.DpiScaleX));
+		DrawingPoint topLeft = FloatingWidgetPlacement.ClampTopLeft(
+			new DrawingPoint(x, y),
+			windowBounds.Size,
+			targetScreen.WorkingArea,
+			margin);
+		if (!SetWindowPos(
 			windowHandle,
 			IntPtr.Zero,
-			x,
-			y,
+			topLeft.X,
+			topLeft.Y,
 			0,
 			0,
 			SetWindowPositionNoActivate |
 			SetWindowPositionNoSize |
-			SetWindowPositionNoZOrder);
+			SetWindowPositionNoZOrder))
+		{
+			ReportCollapsedDragFailure(windowHandle, "移動拖曳中的浮窗");
+		}
+	}
+
+	private void SaveCollapsedPosition()
+	{
+		IntPtr windowHandle = new WindowInteropHelper(this).Handle;
+		if (!TryGetWindowBounds(windowHandle, out DrawingRectangle windowBounds))
+		{
+			ReportCollapsedDragFailure(windowHandle, "儲存浮窗位置時取得範圍");
+			return;
+		}
+
+		FormsScreen targetScreen = FormsScreen.FromHandle(windowHandle);
+		DrawingRectangle workingArea = targetScreen.WorkingArea;
+		DpiScale dpi = VisualTreeHelper.GetDpi(this);
+		int margin = Math.Max(
+			0,
+			(int)Math.Round(CornerMargin * dpi.DpiScaleX));
+		DrawingPoint topLeft = FloatingWidgetPlacement.ClampTopLeft(
+			windowBounds.Location,
+			windowBounds.Size,
+			workingArea,
+			margin);
+		if ((topLeft != windowBounds.Location) &&
+			!SetWindowPos(
+				windowHandle,
+				IntPtr.Zero,
+				topLeft.X,
+				topLeft.Y,
+				0,
+				0,
+				SetWindowPositionNoActivate |
+				SetWindowPositionNoSize |
+				SetWindowPositionNoZOrder))
+		{
+			ReportCollapsedDragFailure(windowHandle, "限制浮窗位置");
+			return;
+		}
+
+		(_collapsedPositionXRatio, _collapsedPositionYRatio) =
+			FloatingWidgetPlacement.GetPositionRatios(
+				topLeft,
+				windowBounds.Size,
+				workingArea,
+				margin);
+		_screenDeviceName = targetScreen.DeviceName;
+		_corner = FloatingWidgetPlacement.GetNearestCorner(
+			new DrawingRectangle(topLeft, windowBounds.Size),
+			workingArea);
+		UpdateCornerDependentVisuals();
+		_hasPlacement = true;
+		NotifyPreferencesChanged();
+		ApplyCurrentPlacement();
+	}
+
+	private void ReportCollapsedDragFailure(
+		IntPtr windowHandle,
+		string operation)
+	{
+		if (_hasCollapsedDragFailure)
+		{
+			return;
+		}
+
+		_hasCollapsedDragFailure = true;
+		AppDiagnostics.TryWrite(
+			"floating-icon-position",
+			$"{operation}失敗；windowHandle={windowHandle}。",
+			new Win32Exception(Marshal.GetLastWin32Error()));
 	}
 
 	private void CollapsedButton_LostMouseCapture(
@@ -2685,13 +2810,13 @@ public partial class FloatingWidgetWindow : Window
 			return;
 		}
 
-		bool shouldSnap = _isCollapsedDragging;
+		bool didDrag = _isCollapsedDragging;
 		_isCollapsedDragPending = false;
 		_isCollapsedDragging = false;
 
-		if (shouldSnap)
+		if (didDrag)
 		{
-			SnapToNearestCorner();
+			SaveCollapsedPosition();
 		}
 	}
 
@@ -2932,7 +3057,7 @@ public partial class FloatingWidgetWindow : Window
 		object sender,
 		DependencyPropertyChangedEventArgs e)
 	{
-		SetCodexResetCreditsWindowsVisible(IsVisible && !_isCollapsed);
+		SetInformationalWindowsVisible(IsVisible && !_isCollapsed);
 
 		if (!_isApplyingPortableWidgetPreferences)
 		{
@@ -2978,13 +3103,7 @@ public partial class FloatingWidgetWindow : Window
 			.FirstOrDefault(window => ReferenceEquals(window.Account, account));
 		if (existingWindow is not null)
 		{
-			if (existingWindow.WindowState == WindowState.Minimized)
-			{
-				existingWindow.WindowState = WindowState.Normal;
-			}
-
-			existingWindow.Show();
-			existingWindow.Activate();
+			ShowExistingInformationalWindow(existingWindow);
 			return;
 		}
 
@@ -3150,6 +3269,23 @@ public partial class FloatingWidgetWindow : Window
 		}
 	}
 
+	private void ShowAutomaticSortRulesMenuItem_Click(
+		object sender,
+		RoutedEventArgs e)
+	{
+		AutomaticSortRulesWindow? existingWindow = OwnedWindows
+			.OfType<AutomaticSortRulesWindow>()
+			.FirstOrDefault();
+		if (existingWindow is not null)
+		{
+			ShowExistingInformationalWindow(existingWindow);
+			return;
+		}
+
+		AutomaticSortRulesWindow rulesWindow = new() { Owner = this };
+		rulesWindow.Show();
+	}
+
 	private async void ToggleUsageDisplayModeMenuItem_Click(
 		object sender,
 		RoutedEventArgs e)
@@ -3241,7 +3377,7 @@ public partial class FloatingWidgetWindow : Window
 		ResetAccountScrollDrag(releaseMouseCapture: true);
 		if (isCollapsed)
 		{
-			SetCodexResetCreditsWindowsVisible(false);
+			SetInformationalWindowsVisible(false);
 		}
 
 		bool wasNativeWindowHidden = TryHideNativeWindowForLayoutTransition(
@@ -3282,7 +3418,7 @@ public partial class FloatingWidgetWindow : Window
 
 		if (!isCollapsed)
 		{
-			SetCodexResetCreditsWindowsVisible(IsVisible);
+			SetInformationalWindowsVisible(IsVisible);
 		}
 
 		TryAnnouncePendingUpdateBanner();
@@ -3312,10 +3448,24 @@ public partial class FloatingWidgetWindow : Window
 		}
 	}
 
-	private void SetCodexResetCreditsWindowsVisible(bool isVisible)
+	private static void ShowExistingInformationalWindow(Window window)
 	{
-		foreach (CodexResetCreditsWindow window in OwnedWindows
-			.OfType<CodexResetCreditsWindow>()
+		if (window.WindowState == WindowState.Minimized)
+		{
+			window.WindowState = WindowState.Normal;
+		}
+
+		window.Show();
+		window.Activate();
+	}
+
+	private void SetInformationalWindowsVisible(bool isVisible)
+	{
+		foreach (Window window in OwnedWindows
+			.OfType<Window>()
+			.Where(window =>
+				window is CodexResetCreditsWindow or
+					AutomaticSortRulesWindow or AboutWindow)
 			.ToArray())
 		{
 			if (window.IsVisible == isVisible)
@@ -3402,14 +3552,14 @@ public partial class FloatingWidgetWindow : Window
 		}
 
 		FloatingWidgetCorner previousCorner = _corner;
-		SetCorner(nearestCorner);
-
-		if (didScreenChange && (previousCorner == nearestCorner))
+		SetCorner(nearestCorner, notifyPreferences: false);
+		_hasPlacement = true;
+		ApplyCurrentPlacement();
+		if (didScreenChange ||
+			(previousCorner != nearestCorner))
 		{
 			NotifyPreferencesChanged();
 		}
-		_hasPlacement = true;
-		ApplyCurrentPlacement();
 	}
 
 	private void UpdateCornerDependentVisuals()
@@ -3440,7 +3590,9 @@ public partial class FloatingWidgetWindow : Window
 			_ => "↘"
 		};
 
-		string collapseText = $"收合 AI Usage 到{cornerText}";
+		string collapseText = _collapsedPositionXRatio.HasValue
+			? "收合 AI Usage 到自訂位置"
+			: $"收合 AI Usage 到{cornerText}";
 		AutomationProperties.SetName(AnchorToggleButton, collapseText);
 		AnchorToggleButton.ToolTip = collapseText;
 		UpdateCollapsedButtonPresentation(cornerText);
@@ -3477,11 +3629,14 @@ public partial class FloatingWidgetWindow : Window
 			!string.IsNullOrWhiteSpace(_updateAvailableVersion)
 				? $"；有新版 {_updateAvailableVersion} 可用"
 				: string.Empty;
+		string positionText = _collapsedPositionXRatio.HasValue
+			? "位於自訂位置"
+			: $"目前停靠在{cornerText}";
 		AutomationProperties.SetName(
 			CollapsedButton,
-			$"展開 AI Usage 浮窗，目前停靠在{cornerText}{updateHint}");
+			$"展開 AI Usage 浮窗，{positionText}{updateHint}");
 		string expandHelpText =
-			$"按一下展開 AI Usage；拖曳可變更停靠角落。目前停靠在{cornerText}{updateHint}。";
+			$"按一下展開 AI Usage；拖曳可在螢幕可用範圍內移動。{positionText}{updateHint}。";
 		AutomationProperties.SetHelpText(CollapsedButton, expandHelpText);
 		CollapsedButton.ToolTip = expandHelpText;
 		CollapsedUpdateBadge.Visibility = _hasUpdateBadge
@@ -3614,10 +3769,9 @@ public partial class FloatingWidgetWindow : Window
 					$"無法取得切換版面後的浮窗範圍；windowHandle={windowHandle}。");
 			}
 
-			DrawingPoint topLeft = FloatingWidgetPlacement.GetTopLeft(
+			DrawingPoint topLeft = GetCurrentTopLeft(
 				windowBounds.Size,
 				workingArea,
-				_corner,
 				margin);
 			_isApplyingPlacement = true;
 

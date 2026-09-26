@@ -91,13 +91,6 @@ internal static class FloatingWidgetPlacement
 		FloatingWidgetCorner corner,
 		int margin)
 	{
-		if (margin < 0)
-		{
-			throw new ArgumentOutOfRangeException(
-				nameof(margin),
-				"吸附邊距不可小於零。");
-		}
-
 		int left = corner is FloatingWidgetCorner.TopLeft or
 			FloatingWidgetCorner.BottomLeft
 			? workingArea.Left + margin
@@ -106,15 +99,94 @@ internal static class FloatingWidgetPlacement
 			FloatingWidgetCorner.TopRight
 			? workingArea.Top + margin
 			: workingArea.Bottom - windowSize.Height - margin;
-		int maximumLeft = Math.Max(
-			workingArea.Left,
-			workingArea.Right - windowSize.Width);
-		int maximumTop = Math.Max(
-			workingArea.Top,
-			workingArea.Bottom - windowSize.Height);
+		return ClampTopLeft(
+			new Point(left, top),
+			windowSize,
+			workingArea,
+			margin);
+	}
 
+	internal static Point ClampTopLeft(
+		Point desiredTopLeft,
+		Size windowSize,
+		Rectangle workingArea,
+		int margin)
+	{
+		(int minX, int maxX, int minY, int maxY) =
+			GetAllowedTopLeftRange(windowSize, workingArea, margin);
 		return new Point(
-			Math.Clamp(left, workingArea.Left, maximumLeft),
-			Math.Clamp(top, workingArea.Top, maximumTop));
+			Math.Clamp(desiredTopLeft.X, minX, maxX),
+			Math.Clamp(desiredTopLeft.Y, minY, maxY));
+	}
+
+	internal static Point GetTopLeftFromRatios(
+		Size windowSize,
+		Rectangle workingArea,
+		int margin,
+		double xRatio,
+		double yRatio)
+	{
+		ValidateRatio(xRatio, nameof(xRatio));
+		ValidateRatio(yRatio, nameof(yRatio));
+		(int minX, int maxX, int minY, int maxY) =
+			GetAllowedTopLeftRange(windowSize, workingArea, margin);
+		return new Point(
+			minX + (int)Math.Round((maxX - minX) * xRatio),
+			minY + (int)Math.Round((maxY - minY) * yRatio));
+	}
+
+	internal static (double XRatio, double YRatio) GetPositionRatios(
+		Point topLeft,
+		Size windowSize,
+		Rectangle workingArea,
+		int margin)
+	{
+		(int minX, int maxX, int minY, int maxY) =
+			GetAllowedTopLeftRange(windowSize, workingArea, margin);
+		Point clampedTopLeft = new(
+			Math.Clamp(topLeft.X, minX, maxX),
+			Math.Clamp(topLeft.Y, minY, maxY));
+		return (
+			maxX == minX ? 0 : (clampedTopLeft.X - minX) / (double)(maxX - minX),
+			maxY == minY ? 0 : (clampedTopLeft.Y - minY) / (double)(maxY - minY));
+	}
+
+	private static (int MinX, int MaxX, int MinY, int MaxY) GetAllowedTopLeftRange(
+		Size windowSize,
+		Rectangle workingArea,
+		int margin)
+	{
+		if (margin < 0)
+		{
+			throw new ArgumentOutOfRangeException(
+				nameof(margin),
+				"吸附邊距不可小於零。");
+		}
+
+		int minX = workingArea.Left + margin;
+		int maxX = workingArea.Right - windowSize.Width - margin;
+		int minY = workingArea.Top + margin;
+		int maxY = workingArea.Bottom - windowSize.Height - margin;
+		if (maxX < minX)
+		{
+			minX = workingArea.Left;
+			maxX = Math.Max(minX, workingArea.Right - windowSize.Width);
+		}
+
+		if (maxY < minY)
+		{
+			minY = workingArea.Top;
+			maxY = Math.Max(minY, workingArea.Bottom - windowSize.Height);
+		}
+
+		return (minX, maxX, minY, maxY);
+	}
+
+	private static void ValidateRatio(double ratio, string parameterName)
+	{
+		if (!double.IsFinite(ratio) || (ratio < 0) || (ratio > 1))
+		{
+			throw new ArgumentOutOfRangeException(parameterName);
+		}
 	}
 }

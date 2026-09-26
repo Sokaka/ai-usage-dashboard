@@ -122,7 +122,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
 		const string FutureDocument =
-			"{\"schemaVersion\":7,\"usageSortMode\":\"Manual\"," +
+			"{\"schemaVersion\":8,\"usageSortMode\":\"Manual\"," +
 			"\"usageDisplayMode\":\"Used\",\"futureField\":true}";
 		await File.WriteAllTextAsync(filePath, FutureDocument);
 		JsonDashboardPreferencesStore store = new(filePath);
@@ -223,7 +223,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 	}
 
 	[Theory]
-	[InlineData("{\"schemaVersion\":7,\"usageSortMode\":\"Automatic\"}")]
+	[InlineData("{\"schemaVersion\":8,\"usageSortMode\":\"Automatic\"}")]
 	[InlineData("{\"schemaVersion\":1,\"usageSortMode\":\"Unknown\"}")]
 	[InlineData("not-json")]
 	public async Task LoadUsageSortModeAsync_WithUnsupportedOrInvalidDocument_ReturnsManual(
@@ -272,7 +272,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
 		const string FutureDocument =
-			"{\"schemaVersion\":7,\"usageSortMode\":\"Automatic\",\"futureField\":true}";
+			"{\"schemaVersion\":8,\"usageSortMode\":\"Automatic\",\"futureField\":true}";
 		await File.WriteAllTextAsync(filePath, FutureDocument);
 		JsonDashboardPreferencesStore store = new(filePath);
 
@@ -354,7 +354,9 @@ public sealed class JsonDashboardPreferencesStoreTests
 		DashboardShellPreferences expected = DashboardShellPreferences.Default with
 		{
 			Theme = AppTheme.Sakura,
-			IsHeightFollowingCardCount = true
+			IsHeightFollowingCardCount = true,
+			CollapsedPositionXRatio = 0.25,
+			CollapsedPositionYRatio = 0.75
 		};
 
 		await store.SaveDashboardShellPreferencesAsync(expected);
@@ -364,10 +366,18 @@ public sealed class JsonDashboardPreferencesStoreTests
 			await new JsonDashboardPreferencesStore(filePath)
 				.LoadDashboardShellPreferencesAsync());
 		string json = await File.ReadAllTextAsync(filePath);
-		Assert.Contains("\"schemaVersion\": 6", json, StringComparison.Ordinal);
+		Assert.Contains("\"schemaVersion\": 7", json, StringComparison.Ordinal);
 		Assert.Contains("\"theme\": \"Sakura\"", json, StringComparison.Ordinal);
 		Assert.Contains(
 			"\"isHeightFollowingCardCount\": true",
+			json,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"\"collapsedPositionXRatio\": 0.25",
+			json,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"\"collapsedPositionYRatio\": 0.75",
 			json,
 			StringComparison.Ordinal);
 		Assert.DoesNotContain("showClaudeOrganization", json, StringComparison.Ordinal);
@@ -515,7 +525,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 			shellPreferences,
 			await store.LoadDashboardShellPreferencesAsync());
 		Assert.Contains(
-			"\"schemaVersion\": 6",
+			"\"schemaVersion\": 7",
 			await File.ReadAllTextAsync(filePath),
 			StringComparison.Ordinal);
 	}
@@ -604,13 +614,58 @@ public sealed class JsonDashboardPreferencesStoreTests
 			UsageDisplayMode.Remaining,
 			await store.LoadUsageDisplayModeAsync());
 		string savedJson = await File.ReadAllTextAsync(filePath);
-		Assert.Contains("\"schemaVersion\": 6", savedJson, StringComparison.Ordinal);
+		Assert.Contains("\"schemaVersion\": 7", savedJson, StringComparison.Ordinal);
 		Assert.Contains(
 			"\"isHeightFollowingCardCount\": false",
 			savedJson,
 			StringComparison.Ordinal);
 		Assert.DoesNotContain(
 			"showClaudeOrganization",
+			savedJson,
+			StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task VersionSixDocument_PreservesCornerAndDefaultsCollapsedPosition()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
+		await File.WriteAllTextAsync(
+			filePath,
+			"""
+			{
+			  "schemaVersion": 6,
+			  "usageDisplayMode": "Remaining",
+			  "monitorDeviceName": "\\\\.\\DISPLAY2",
+			  "corner": "TopLeft",
+			  "theme": "Light",
+			  "isHeightFollowingCardCount": true
+			}
+			""");
+		JsonDashboardPreferencesStore store = new(filePath);
+
+		DashboardShellPreferences loaded =
+			await store.LoadDashboardShellPreferencesAsync();
+		await store.SaveDashboardShellPreferencesAsync(loaded);
+
+		Assert.Equal(FloatingWidgetCorner.TopLeft, loaded.Corner);
+		Assert.Equal(@"\\.\DISPLAY2", loaded.MonitorDeviceName);
+		Assert.Equal(AppTheme.Light, loaded.Theme);
+		Assert.True(loaded.IsHeightFollowingCardCount);
+		Assert.Null(loaded.CollapsedPositionXRatio);
+		Assert.Null(loaded.CollapsedPositionYRatio);
+		Assert.Equal(
+			loaded,
+			await new JsonDashboardPreferencesStore(filePath)
+				.LoadDashboardShellPreferencesAsync());
+		string savedJson = await File.ReadAllTextAsync(filePath);
+		Assert.Contains("\"schemaVersion\": 7", savedJson, StringComparison.Ordinal);
+		Assert.Contains(
+			"\"collapsedPositionXRatio\": null",
+			savedJson,
+			StringComparison.Ordinal);
+		Assert.Contains(
+			"\"collapsedPositionYRatio\": null",
 			savedJson,
 			StringComparison.Ordinal);
 	}
@@ -651,7 +706,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
 		const string FutureDocument =
-			"{\"schemaVersion\":7,\"usageDisplayMode\":\"Remaining\",\"futureField\":true}";
+			"{\"schemaVersion\":8,\"usageDisplayMode\":\"Remaining\",\"futureField\":true}";
 		await File.WriteAllTextAsync(filePath, FutureDocument);
 		JsonDashboardPreferencesStore store = new(filePath);
 
@@ -665,6 +720,11 @@ public sealed class JsonDashboardPreferencesStoreTests
 	[InlineData("not-json")]
 	[InlineData("{\"schemaVersion\":2,\"corner\":\"Unknown\"}")]
 	[InlineData("{\"schemaVersion\":2,\"monitorDeviceName\":null}")]
+	[InlineData("{\"schemaVersion\":7,\"isCollapsed\":true,\"collapsedPositionXRatio\":0.5}")]
+	[InlineData("{\"schemaVersion\":7,\"isCollapsed\":true,\"collapsedPositionXRatio\":null,\"collapsedPositionYRatio\":0.5}")]
+	[InlineData("{\"schemaVersion\":7,\"isCollapsed\":true,\"collapsedPositionXRatio\":-0.01,\"collapsedPositionYRatio\":0.5}")]
+	[InlineData("{\"schemaVersion\":7,\"isCollapsed\":true,\"collapsedPositionXRatio\":0.5,\"collapsedPositionYRatio\":1.01}")]
+	[InlineData("{\"schemaVersion\":7,\"isCollapsed\":true,\"collapsedPositionXRatio\":\"0.5\",\"collapsedPositionYRatio\":0.5}")]
 	[InlineData("{\"schemaVersion\":99,\"isWidgetVisible\":true}")]
 	public async Task LoadDashboardShellPreferencesAsync_WithInvalidDocument_ReturnsDefaults(
 		string json)
@@ -713,6 +773,35 @@ public sealed class JsonDashboardPreferencesStoreTests
 			() => store.SaveDashboardShellPreferencesAsync(invalidPreferences));
 
 		Assert.False(File.Exists(filePath));
+	}
+
+	[Fact]
+	public async Task SaveDashboardShellPreferencesAsync_WithInvalidCollapsedPosition_ThrowsWithoutWriting()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
+		JsonDashboardPreferencesStore store = new(filePath);
+		(double? X, double? Y)[] invalidPositions =
+		[
+			(null, 0.5),
+			(0.5, null),
+			(-0.01, 0.5),
+			(0.5, 1.01),
+			(double.NaN, 0.5),
+			(0.5, double.PositiveInfinity)
+		];
+
+		foreach ((double? x, double? y) in invalidPositions)
+		{
+			DashboardShellPreferences invalid = DashboardShellPreferences.Default with
+			{
+				CollapsedPositionXRatio = x,
+				CollapsedPositionYRatio = y
+			};
+			await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+				() => store.SaveDashboardShellPreferencesAsync(invalid));
+			Assert.False(File.Exists(filePath));
+		}
 	}
 
 	[Fact]
@@ -882,7 +971,9 @@ public sealed class JsonDashboardPreferencesStoreTests
 			Corner: FloatingWidgetCorner.TopRight,
 			StartupSurface: DashboardStartupSurface.Tray,
 			Theme: AppTheme.Midnight,
-			IsHeightFollowingCardCount: true);
+			IsHeightFollowingCardCount: true,
+			CollapsedPositionXRatio: 0.4,
+			CollapsedPositionYRatio: 0.6);
 
 		await using (FileStream exclusiveLease = new(
 			filePath,
@@ -1227,7 +1318,9 @@ public sealed class JsonDashboardPreferencesStoreTests
 			{
 				IsTopmost = false,
 				MonitorDeviceName = @"\\.\DISPLAY6",
-				Corner = FloatingWidgetCorner.TopLeft
+				Corner = FloatingWidgetCorner.TopLeft,
+				CollapsedPositionXRatio = 0.4,
+				CollapsedPositionYRatio = 0.6
 			};
 		DashboardPreferencesSnapshot runtimePreferences = new(
 			UsageSortMode.Manual,
@@ -1278,6 +1371,97 @@ public sealed class JsonDashboardPreferencesStoreTests
 			commitResult.Preferences);
 		Assert.True(await store.CompleteRecoveryAsync(commitResult.Generation));
 		Assert.Empty(Directory.GetFiles(temporaryDirectory.Path, "*.tmp"));
+	}
+
+	[Fact]
+	public async Task SaveDashboardShellPreferencesAsync_MergesMonitorAndCollapsedPositionAsUnit()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
+		DashboardShellPreferences original = DashboardShellPreferences.Default with
+		{
+			MonitorDeviceName = @"\\.\DISPLAY1",
+			CollapsedPositionXRatio = 0.1,
+			CollapsedPositionYRatio = 0.2
+		};
+		DashboardShellPreferences runtime = original with
+		{
+			CollapsedPositionYRatio = 0.8
+		};
+		DashboardShellPreferences external = original with
+		{
+			IsTopmost = false,
+			MonitorDeviceName = @"\\.\DISPLAY9",
+			CollapsedPositionXRatio = 0.9
+		};
+		DashboardShellPreferences expected = external with
+		{
+			MonitorDeviceName = runtime.MonitorDeviceName,
+			CollapsedPositionXRatio = runtime.CollapsedPositionXRatio,
+			CollapsedPositionYRatio = runtime.CollapsedPositionYRatio
+		};
+		JsonDashboardPreferencesStore store = new(filePath);
+		await store.SaveDashboardShellPreferencesAsync(original);
+		await new JsonDashboardPreferencesStore(filePath)
+			.SaveDashboardShellPreferencesAsync(external);
+
+		await store.SaveDashboardShellPreferencesAsync(runtime);
+
+		Assert.True(((IDashboardPreferencesRecoveryStore)store).IsRecoveryActive);
+		Assert.Equal(
+			expected,
+			await new JsonDashboardPreferencesStore(filePath)
+				.LoadDashboardShellPreferencesAsync());
+
+		DashboardPreferencesSnapshot runtimeSnapshot = new(
+			UsageSortMode.Manual,
+			UsageDisplayMode.Used,
+			runtime);
+		DashboardPreferencesRecoveryPrepareResult prepareResult =
+			await store.PrepareRecoveryAsync(runtimeSnapshot);
+		DashboardPreferencesRecoveryCommitResult commitResult =
+			await store.CommitRecoveryAsync(
+				prepareResult.Generation,
+				runtimeSnapshot);
+
+		Assert.Equal(DashboardPreferencesRecoveryStatus.Ready, commitResult.Status);
+		Assert.Equal(expected, commitResult.Preferences?.ShellPreferences);
+		Assert.True(await store.CompleteRecoveryAsync(commitResult.Generation));
+	}
+
+	[Fact]
+	public async Task SaveDashboardShellPreferencesAsync_WhenMonitorChanges_PreservesRuntimePositionPair()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
+		DashboardShellPreferences original = DashboardShellPreferences.Default with
+		{
+			MonitorDeviceName = @"\\.\DISPLAY1",
+			CollapsedPositionXRatio = 0.1,
+			CollapsedPositionYRatio = 0.2
+		};
+		DashboardShellPreferences runtime = original with
+		{
+			MonitorDeviceName = @"\\.\DISPLAY2"
+		};
+		DashboardShellPreferences external = original with
+		{
+			IsTopmost = false,
+			CollapsedPositionXRatio = 0.8,
+			CollapsedPositionYRatio = 0.9
+		};
+		JsonDashboardPreferencesStore store = new(filePath);
+		await store.SaveDashboardShellPreferencesAsync(original);
+		await new JsonDashboardPreferencesStore(filePath)
+			.SaveDashboardShellPreferencesAsync(external);
+
+		await store.SaveDashboardShellPreferencesAsync(runtime);
+
+		Assert.Equal(
+			runtime with { IsTopmost = false },
+			await new JsonDashboardPreferencesStore(filePath)
+				.LoadDashboardShellPreferencesAsync());
+		Assert.True(((IDashboardPreferencesRecoveryStore)store).IsRecoveryActive);
 	}
 
 	[Fact]
@@ -1940,7 +2124,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
 		const string FutureDocument =
-			"{\"schemaVersion\":7,\"usageSortMode\":\"Automatic\",\"futureField\":true}";
+			"{\"schemaVersion\":8,\"usageSortMode\":\"Automatic\",\"futureField\":true}";
 		await File.WriteAllTextAsync(filePath, FutureDocument);
 		JsonDashboardPreferencesStore store = new(filePath);
 

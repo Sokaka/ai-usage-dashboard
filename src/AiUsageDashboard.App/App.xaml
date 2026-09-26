@@ -9,6 +9,8 @@
             </ResourceDictionary.MergedDictionaries>
 
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <BitmapImage x:Key="ThemeWindowIcon"
+                         UriSource="pack://application:,,,/AiUsageDashboard.App;component/Assets/AppIcon.png" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

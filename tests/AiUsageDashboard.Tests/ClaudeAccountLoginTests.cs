@@ -37,6 +37,11 @@ public sealed class ClaudeAccountLoginTests
 		"\"apiProvider\":\"firstParty\",\"email\":\"claude@example.com\"," +
 		"\"orgId\":\"org-123\",\"orgName\":\"Example Organization\"," +
 		"\"subscriptionType\":\"max\"}";
+	private const string FreeAuthStatusJson =
+		"{\"loggedIn\":true,\"authMethod\":\"claude.ai\"," +
+		"\"apiProvider\":\"firstParty\",\"email\":\"claude@example.com\"," +
+		"\"orgId\":\"org-123\",\"orgName\":\"Example Organization\"," +
+		"\"subscriptionType\":\"free\"}";
 	private const string SupportedVersion = "2.1.220 (Claude Code)";
 	private static readonly TimeSpan AsyncWatchdogTimeout =
 		TimeSpan.FromSeconds(15);
@@ -394,6 +399,35 @@ public sealed class ClaudeAccountLoginTests
 		Assert.DoesNotContain(statusOutput, exception.ToString(), StringComparison.Ordinal);
 		Assert.DoesNotContain("private-error", exception.ToString(), StringComparison.Ordinal);
 		Assert.Null(exception.InnerException);
+		Assert.Equal(3, callCount);
+	}
+
+	[Fact]
+	public async Task LoginAsync_WhenStatusReportsFree_ShowsSubscriptionGuidance()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CreateExecutable(temporaryDirectory.Path);
+		int callCount = 0;
+		ClaudeAccountLogin login = CreateLogin(
+			Path.Combine(temporaryDirectory.Path, "claude-config"),
+			executablePath,
+			(startInfo, _) =>
+			{
+				callCount++;
+				return Task.FromResult(new ClaudeAccountLogin.ProcessResult(
+					0,
+					GetStandardOutput(startInfo, FreeAuthStatusJson),
+					string.Empty));
+			});
+
+		ClaudeAccountLoginException exception =
+			await Assert.ThrowsAsync<ClaudeAccountLoginException>(() =>
+				login.LoginAsync(Guid.NewGuid()));
+
+		Assert.Contains("回報 Free", exception.Message, StringComparison.Ordinal);
+		Assert.Contains("Settings > Billing", exception.Message, StringComparison.Ordinal);
+		Assert.DoesNotContain("已到期", exception.Message, StringComparison.Ordinal);
+		Assert.IsType<ClaudeUsageNotConfiguredException>(exception.InnerException);
 		Assert.Equal(3, callCount);
 	}
 

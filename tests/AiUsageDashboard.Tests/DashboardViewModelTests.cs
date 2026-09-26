@@ -3405,7 +3405,7 @@ public sealed class DashboardViewModelTests
 		Assert.Equal(UsageSortMode.Automatic, snapshot.UsageSortMode);
 		Assert.Equal(UsageDisplayMode.Remaining, snapshot.UsageDisplayMode);
 		Assert.Equal(
-			"依服務、主要用量週期與重置時間排序，不依用量百分比排序。按一下切換為手動。",
+			"先依服務，再依 5 小時、週用量的重置時間排序，不看用量百分比。按一下切換為手動。",
 			viewModel.SortModeToolTip);
 		Assert.Empty(accountStore.SavedSnapshots);
 	}
@@ -8758,6 +8758,127 @@ public sealed class DashboardViewModelTests
 			{
 				codexFutureAccount.Id,
 				codexPastAccount.Id
+			},
+			viewModel.Accounts.Select(account => account.Id));
+	}
+
+	[Fact]
+	public async Task ToggleUsageSortModeAsync_OrdersByProviderThenFiveHourThenWeeklyReset()
+	{
+		DateTimeOffset now = DateTimeOffset.UtcNow;
+		AccountProfile codexLaterFiveHour = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Codex later 5h");
+		AccountProfile antigravitySingleFiveHour = new(
+			Guid.NewGuid(), ProviderKind.Antigravity, "AGY single 5h");
+		AccountProfile codexLaterWeekly = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Codex later weekly");
+		AccountProfile antigravityMultipleFiveHour = new(
+			Guid.NewGuid(), ProviderKind.Antigravity, "AGY multiple 5h");
+		AccountProfile codexEarlierWeekly = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Codex earlier weekly");
+		DashboardViewModel viewModel = new(
+			new FakeAccountProfileStore(
+				codexLaterFiveHour,
+				antigravitySingleFiveHour,
+				codexLaterWeekly,
+				antigravityMultipleFiveHour,
+				codexEarlierWeekly),
+			new FakeUsageRefreshCoordinator());
+		await viewModel.InitializeAsync();
+
+		ApplySortSnapshot(viewModel, codexLaterFiveHour, now,
+			new UsageMetric("five_hour", "5 小時用量", 10, "10%", now.AddHours(2)),
+			new UsageMetric("seven_day", "週用量", 10, "10%", now.AddDays(1)));
+		ApplySortSnapshot(viewModel, codexLaterWeekly, now,
+			new UsageMetric("five_hour", "5 小時用量", 10, "10%", now.AddHours(1)),
+			new UsageMetric("seven_day", "週用量", 10, "10%", now.AddDays(6)));
+		ApplySortSnapshot(viewModel, codexEarlierWeekly, now,
+			new UsageMetric("five_hour", "5 小時用量", 10, "10%", now.AddHours(1)),
+			new UsageMetric("seven_day", "週用量", 10, "10%", now.AddDays(2)));
+		ApplySortSnapshot(viewModel, antigravitySingleFiveHour, now,
+			new UsageMetric(
+				"agy.gemini.rolling-5h", "Gemini rolling 5h", 10, "10%",
+				now.AddHours(1)));
+		ApplySortSnapshot(viewModel, antigravityMultipleFiveHour, now,
+			new UsageMetric(
+				"agy.gemini.rolling-5h", "Gemini rolling 5h", 10, "10%",
+				now.AddHours(3)),
+			new UsageMetric(
+				"agy.claude.rolling-5h", "Claude rolling 5h", 10, "10%",
+				now.AddMinutes(30)));
+
+		await viewModel.ToggleUsageSortModeAsync();
+
+		Assert.Equal(
+			new[]
+			{
+				codexEarlierWeekly.Id,
+				codexLaterWeekly.Id,
+				codexLaterFiveHour.Id,
+				antigravityMultipleFiveHour.Id,
+				antigravitySingleFiveHour.Id
+			},
+			viewModel.Accounts.Select(account => account.Id));
+	}
+
+	[Fact]
+	public async Task ToggleUsageSortModeAsync_MissingResetsAndMetricsUseLaterKeysThenManualOrder()
+	{
+		DateTimeOffset now = DateTimeOffset.UtcNow;
+		AccountProfile noMetricsFirst = new(
+			Guid.NewGuid(), ProviderKind.Codex, "No metrics first");
+		AccountProfile pastFiveHour = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Past 5h");
+		AccountProfile noMetricsSecond = new(
+			Guid.NewGuid(), ProviderKind.Codex, "No metrics second");
+		AccountProfile missingFiveHour = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Missing 5h");
+		AccountProfile futureFiveHour = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Future 5h");
+		AccountProfile missingWeekly = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Missing weekly");
+		AccountProfile otherWindow = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Other window");
+		DashboardViewModel viewModel = new(
+			new FakeAccountProfileStore(
+				noMetricsFirst,
+				pastFiveHour,
+				noMetricsSecond,
+				missingFiveHour,
+				futureFiveHour,
+				missingWeekly,
+				otherWindow),
+			new FakeUsageRefreshCoordinator());
+		await viewModel.InitializeAsync();
+
+		ApplySortSnapshot(viewModel, noMetricsFirst, now);
+		ApplySortSnapshot(viewModel, pastFiveHour, now,
+			new UsageMetric("five_hour", "5 小時用量", 10, "10%", now.AddHours(-1)),
+			new UsageMetric("seven_day", "週用量", 10, "10%", now.AddDays(2)));
+		ApplySortSnapshot(viewModel, noMetricsSecond, now);
+		ApplySortSnapshot(viewModel, missingFiveHour, now,
+			new UsageMetric("five_hour", "5 小時用量", 10, "10%"),
+			new UsageMetric("seven_day", "週用量", 10, "10%", now.AddDays(1)));
+		ApplySortSnapshot(viewModel, futureFiveHour, now,
+			new UsageMetric("five_hour", "5 小時用量", 10, "10%", now.AddHours(1)),
+			new UsageMetric("seven_day", "週用量", 10, "10%", now.AddDays(6)));
+		ApplySortSnapshot(viewModel, missingWeekly, now,
+			new UsageMetric("five_hour", "5 小時用量", 10, "10%"));
+		ApplySortSnapshot(viewModel, otherWindow, now,
+			new UsageMetric("other_window", "其他用量", 10, "10%", now.AddHours(2)));
+
+		await viewModel.ToggleUsageSortModeAsync();
+
+		Assert.Equal(
+			new[]
+			{
+				futureFiveHour.Id,
+				missingFiveHour.Id,
+				pastFiveHour.Id,
+				otherWindow.Id,
+				missingWeekly.Id,
+				noMetricsFirst.Id,
+				noMetricsSecond.Id
 			},
 			viewModel.Accounts.Select(account => account.Id));
 	}
@@ -16292,6 +16413,24 @@ public sealed class DashboardViewModelTests
 			PlanTier: "max",
 			SubscriptionVerificationState:
 				SubscriptionVerificationState.Verified));
+	}
+
+	private static void ApplySortSnapshot(
+		DashboardViewModel viewModel,
+		AccountProfile profile,
+		DateTimeOffset observedAt,
+		params UsageMetric[] metrics)
+	{
+		AccountUsageViewModel account = viewModel.Accounts.Single(
+			item => item.Id == profile.Id);
+		account.ApplySnapshot(new UsageSnapshot(
+			profile,
+			metrics,
+			SourceTrust.Official,
+			SnapshotStatus.Ready,
+			observedAt,
+			ProviderAccountIdentity: profile.ProviderAccountIdentity ??
+				$"sort-{profile.Id:N}@example.com"));
 	}
 
 	private static async Task WaitForConditionAsync(

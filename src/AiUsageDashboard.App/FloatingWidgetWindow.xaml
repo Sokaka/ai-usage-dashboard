@@ -7,6 +7,7 @@
          xmlns:system="clr-namespace:System.Windows;assembly=PresentationFramework"
          xmlns:viewModels="clr-namespace:AiUsageDashboard.App.ViewModels"
         Title="AI Usage"
+        Icon="{DynamicResource ThemeWindowIcon}"
         Width="390"
         Height="720"
         SizeToContent="Manual"
@@ -336,10 +337,6 @@
                                 <MenuItem Click="AddAccountMenuItem_Click"
                                           Header="新增帳號"
                                           IsEnabled="{Binding CanStartAccountManagement}" />
-                                <MenuItem Click="ToggleSortModeMenuItem_Click"
-                                          Header="{Binding SortModeActionText}"
-                                          IsEnabled="{Binding CanChangeSortMode}"
-                                          ToolTip="{Binding SortModeToolTip}" />
                                 <MenuItem Click="ToggleUsageDisplayModeMenuItem_Click"
                                           Header="{Binding UsageDisplayModeActionText}"
                                           IsEnabled="{Binding CanChangeUsageDisplayMode}"
@@ -435,6 +432,23 @@
                                           Header="高度隨卡片數量調整"
                                           IsCheckable="True"
                                           ToolTip="依目前卡片與提示內容自動縮短視窗；卡片過多時仍可捲動。" />
+                                <Separator />
+                                <MenuItem Click="ToggleSortModeMenuItem_Click"
+                                          Header="{Binding SortModeActionText}"
+                                          IsEnabled="{Binding CanChangeSortMode}"
+                                          ToolTip="{Binding SortModeToolTip}" />
+                                <MenuItem AutomationProperties.AutomationId="ShowAutomaticSortRules"
+                                          AutomationProperties.Name="自動排序規則"
+                                          Click="ShowAutomaticSortRulesMenuItem_Click"
+                                          Header="自動排序規則…">
+                                    <MenuItem.Icon>
+                                        <TextBlock VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource InfoBrush}"
+                                                   FontSize="15"
+                                                   FontWeight="SemiBold"
+                                                   Text="ⓘ" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
                                 <Separator />
                                 <MenuItem Header="匯入或匯出設定">
                                     <MenuItem AutomationProperties.AutomationId="ExportPortableSettings"
@@ -536,15 +550,15 @@
                         <Border Grid.Row="0"
                                 Margin="0,0,0,8"
                                 Padding="10,8"
-                                Background="{DynamicResource ControlBackgroundBrush}"
-                                BorderBrush="{DynamicResource InfoBrush}"
+                                Background="{DynamicResource WarningSurfaceBrush}"
+                                BorderBrush="{DynamicResource WarningBrush}"
                                 BorderThickness="1"
                                 CornerRadius="9"
                                 Visibility="{Binding HasAccountSettingsHealthMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock x:Name="AccountSettingsHealthTextBlock"
                                        AutomationProperties.LiveSetting="Assertive"
-                                       Foreground="{DynamicResource PrimaryTextBrush}"
-                                       FontSize="10"
+                                       Foreground="{DynamicResource WarningTextBrush}"
+                                       FontSize="12"
                                        FontWeight="SemiBold"
                                        Text="{Binding AccountSettingsHealthMessage}"
                                        TextWrapping="Wrap" />

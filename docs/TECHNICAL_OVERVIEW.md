@@ -19,7 +19,7 @@
 - Claude、Codex、GitHub Copilot 與 Grok 支援多個帳號。每張卡片平時都使用自己的登入資料與用量。Copilot 只有在使用者操作連接時，會暫時使用官方 CLI 共用的登入清單，詳見後文。AGY 使用目前 Windows 使用者的單一設定，因此暫限一張卡片。
 - 系統匣提供顯示、隱藏、置頂、使用說明、關於與結束程式；帳號管理可用時也能匯出設定，本次執行仍有可用還原點時則能還原匯入前設定。隱藏浮窗不會停止背景更新。
 - 同一個 Windows 使用者同時只能執行一份 AI Usage。再次啟動時會帶回既有浮窗，不會開出第二份程式。
-- 浮窗位置、停靠角落、置頂、收合、主題與排序偏好會保存在本機。舊版 `Dashboard`、`Widget`、`DashboardAndWidget` 與 `Tray` 值仍可讀取，避免升級後遺失顯示偏好。
+- 展開浮窗的停靠角落與收合圖示在工作區內的自訂位置，以及置頂、收合、主題與排序偏好會保存在本機。圖示拖曳時依所在螢幕的工作區與邊距限制位置；工作區或 DPI 改變時依儲存的相對座標重新定位。舊版 `Dashboard`、`Widget`、`DashboardAndWidget` 與 `Tray` 值仍可讀取，避免升級後遺失顯示偏好。
 - 每張卡片都有自己的快取。同一張卡片已有查詢在執行時，不會再啟動重複查詢；查詢失敗時可保留上次成功的資料並標成舊資料。讀到快取不會標示成剛完成更新。
 - 動態狀態、表單標籤、按鈕與選單都提供鍵盤、螢幕閱讀器與 Windows 高對比模式所需的資訊。
 
@@ -66,9 +66,14 @@ presentation／排程 cache 寫在 `%LOCALAPPDATA%\AiUsageDashboard\update-check
 
 - 從版本 4 起，`DashboardShellPreferences.Theme` 會寫入 `%LOCALAPPDATA%\AiUsageDashboard\preferences.json`；舊版本沒有主題欄位時使用 `ClassicBlue`。
 - `IsHeightFollowingCardCount` 從版本 6 起寫入；舊本機設定預設維持固定可用高度。
+- 本機設定版本 7 會成對儲存收合圖示的相對 X／Y 座標與螢幕識別；舊版沒有座標時，仍依原本的停靠角落顯示。匯出設定不包含這組僅適用於原電腦的座標與螢幕識別。
 - 匯出設定檔版本 6 會寫入 `isHeightFollowingCardCount`。匯入版本 3–5 時保留目標電腦目前的自動高度設定；版本 3 另會保留目前主題；版本 1／2 同時保留目前浮窗偏好與主題。
 
-一般主題共用相同的資源鍵與控制項樣式。介面透過 `DynamicResource` 取得配色；切換時，`App.UpdatePaletteResources` 會直接更新仍可修改的 `SolidColorBrush`，其餘資源則換成目標配色的值，避免已取得的筆刷物件仍顯示舊主題。浮窗展開與收合時的 Logo 都使用 `ThemeLogoStyle` 與配色資源；系統匣仍使用執行檔圖示，不會隨主題切換。
+一般主題共用相同的資源鍵與控制項樣式。介面透過 `DynamicResource` 取得配色；切換時，`App.UpdatePaletteResources` 會直接更新仍可修改的 `SolidColorBrush`，其餘資源則換成目標配色的值，避免已取得的筆刷物件仍顯示舊主題。浮窗展開與收合時的 Logo 都使用 `ThemeLogoStyle` 與配色資源；執行中的視窗標題列與系統匣圖示由同一 Logo 產生，切換主題或 Windows 高對比時更新。執行檔、開始選單捷徑及安裝項目仍使用固定的封裝圖示，工作列顯示也可能受 Windows 的合併與圖示快取影響。
+
+帳號設定、Codex 連接與重置券、關於、Antigravity 連接視窗都使用 App 配色；Antigravity 連接視窗保留獨立但與 App 對齊的按鈕樣式。互動啟動需要顯示法律條款時，App 會先唯讀取得已選主題，條款視窗使用同一組背景、文字與按鈕資源。Windows 原生標題列、系統對話框及系統匣選單仍由 Windows 繪製。
+
+從展開浮窗開啟的重置券、排序規則與關於視窗使用非模態顯示；重置券依帳號卡片、排序規則與關於視窗各自重用已開啟的實例。浮窗收合或隱藏時同步隱藏這些視窗，展開或顯示時恢復。從系統匣開啟的關於視窗獨立顯示並保留工作列入口。帳號編輯、Codex workspace 選擇及確認視窗維持模態，關閉後才繼續依結果執行操作。
 
 一般主題的捲動滑塊沒有外框，平常的 `ScrollBarThumbColor` 與用量條底色 `ProgressTrackColor` 相同。滑鼠移入與拖曳時保留同色系，逐步小幅提高與背景的色差，避免狀態切換時突然變亮或變深。可見滑塊維持 6 DIP，操作區域維持 18 DIP。Windows 高對比模式保留系統文字色與選取色。
 
@@ -78,6 +83,7 @@ presentation／排程 cache 寫在 `%LOCALAPPDATA%\AiUsageDashboard\update-check
 - 正常用量進度條使用對應的 `ProviderAccentBrush`。名稱與進度條保留相同色系，但文字色會依背景調整：`ClassicBlue`／`Midnight` 略提亮名稱，`ClassicBlue` 的 Grok 已接近白色，因此維持原亮度；`Light`／`Sakura` 的名稱略深於進度條，以保留小字對比。各 `ProviderTextBrush` 都透過 `DynamicResource` 參照同主題的 `ProviderTextColor`，供切換主題時更新。
 - `UsageLevel` 依 `UsedPercent` 判定：超過 80% 為 `Warning`，達到 100% 為 `Critical`。即使畫面切換為顯示剩餘用量，狀態仍以已使用比例計算。用量進度條與數字在 `Warning` 時改用 `WarningBrush`／`WarningTextBrush`，`Critical` 時改用 `DangerBrush`／`DangerTextBrush`；平台名稱不隨用量警示改色。
 - `AccountStatusSeverity.Warning` 與 `AccountStatusSeverity.Critical` 的狀態標記、復原提示及文字，分別使用 `Warning*` 與 `Danger*` 資源。警告因此維持黃色系，危險與錯誤維持紅色系，不會被平台色取代。
+- 浮窗的帳號設定健康提示使用 `Warning*` 資源及 12 DIP 文字，與一般資訊提示區分。
 - 開啟 Windows 高對比模式時，`HighContrastPalette.xaml` 會暫時取代目前配色，平台名稱與後綴改用系統文字色；正常進度條使用系統強調色，用量警示仍由對應的系統色資源覆寫。關閉高對比模式後，程式會重新套用使用者目前選擇的主題。
 
 ## 各服務如何取得用量
@@ -429,7 +435,7 @@ AI Usage 不從 `PATH` 接受任意 `grok.exe`，只解析目前 Windows 使用�
 
 登入與背景查詢只執行 `%SystemDrive%\AiUsageDashboard.GrokCli.<current-user-SID>\executables-v1\grok-<sha256>.exe` 下重新驗證過的副本。
 
-`1.0.3` 是相容性基準，不是最低允許版本。可信任執行檔的版號不同或無法解析時，仍會啟動 ACP，再以實際的初始交握、方法與資料格式判斷是否相容。任一來源檢查失敗時都會停止，並引導安裝或更新官方 CLI。
+`1.0.3` 是相容性基準，不是最低允許版本。版本探查接受單行的 `grok x.y.z (commit)`，也接受同格式加上精確的 ` [stable]` 尾綴；其他尾綴不推測版號。可信任執行檔的版號不同或無法解析時，仍會啟動 ACP，再以實際的初始交握、方法與資料格式判斷是否相容。任一來源檢查失敗時都會停止，並引導安裝或更新官方 CLI。
 
 只有使用者選擇新增、連接、切換或重新連接 Grok 卡片時，AI Usage 才會在沿用目前 console 輸入輸出的終端執行：
 

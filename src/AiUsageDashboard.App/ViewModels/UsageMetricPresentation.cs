@@ -8,6 +8,9 @@ internal static class UsageMetricPresentation
 
 	private const string FiveHourUsageLabel = "5小時用量";
 	private const string WeeklyUsageLabel = "週用量";
+	private const int FiveHourWindowSortOrder = 0;
+	private const int WeeklyWindowSortOrder = 1;
+	private const int OtherWindowSortOrder = 2;
 	private static readonly TimeSpan ImminentResetThreshold = TimeSpan.FromHours(1);
 	private static readonly TimeSpan TwoDayImminentThreshold = TimeSpan.FromDays(2);
 
@@ -51,10 +54,37 @@ internal static class UsageMetricPresentation
 
 		if (IsFiveHour(metric))
 		{
-			return 0;
+			return FiveHourWindowSortOrder;
 		}
 
-		return IsWeekly(metric) ? 1 : 2;
+		return IsWeekly(metric)
+			? WeeklyWindowSortOrder
+			: OtherWindowSortOrder;
+	}
+
+	internal static (bool HasMetrics, DateTimeOffset FiveHour,
+		DateTimeOffset Weekly, DateTimeOffset Other) GetResetSortValues(
+		IReadOnlyList<UsageMetric> metrics,
+		DateTimeOffset now)
+	{
+		ArgumentNullException.ThrowIfNull(metrics);
+		return (
+			metrics.Count > 0,
+			GetEarliestResetSortValue(metrics, FiveHourWindowSortOrder, now),
+			GetEarliestResetSortValue(metrics, WeeklyWindowSortOrder, now),
+			GetEarliestResetSortValue(metrics, OtherWindowSortOrder, now));
+	}
+
+	private static DateTimeOffset GetEarliestResetSortValue(
+		IEnumerable<UsageMetric> metrics,
+		int windowSortOrder,
+		DateTimeOffset now)
+	{
+		return metrics
+			.Where(metric => GetWindowSortOrder(metric) == windowSortOrder)
+			.Select(metric => GetResetSortValue(metric, now))
+			.DefaultIfEmpty(DateTimeOffset.MaxValue)
+			.Min();
 	}
 
 	internal static bool IsResetImminent(

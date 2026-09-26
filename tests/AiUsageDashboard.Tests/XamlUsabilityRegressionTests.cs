@@ -610,6 +610,10 @@ public sealed class XamlUsabilityRegressionTests
 			setupControls,
 			"Style",
 			"SetupKeyboardFocusVisualStyle");
+		XElement setupDefaultButtonStyle = GetKeyedElement(
+			setupControls,
+			"Style",
+			"SetupDefaultButtonStyle");
 		XElement setupPrimaryButtonStyle = GetKeyedElement(
 			setupControls,
 			"Style",
@@ -634,13 +638,16 @@ public sealed class XamlUsabilityRegressionTests
 				"{DynamicResource AccentFocusBrush}",
 				StringComparison.Ordinal));
 		AssertSetter(
-			setupPrimaryButtonStyle,
+			setupDefaultButtonStyle,
 			"FocusVisualStyle",
 			SetupFocusVisual);
-		AssertSetter(
-			setupGhostButtonStyle,
-			"FocusVisualStyle",
-			SetupFocusVisual);
+		Assert.Equal(
+			"{StaticResource SetupDefaultButtonStyle}",
+			(string?)setupPrimaryButtonStyle.Attribute("BasedOn"));
+		Assert.Equal(
+			"{StaticResource SetupDefaultButtonStyle}",
+			(string?)setupGhostButtonStyle.Attribute("BasedOn"));
+		AssertDoesNotUsePersistentFocusTrigger(setupDefaultButtonStyle);
 		AssertDoesNotUsePersistentFocusTrigger(setupPrimaryButtonStyle);
 		AssertDoesNotUsePersistentFocusTrigger(setupGhostButtonStyle);
 	}
@@ -1021,12 +1028,21 @@ public sealed class XamlUsabilityRegressionTests
 				(string?)item.Attribute("Click"),
 				"HeightFollowsCardCountMenuItem_Click",
 				StringComparison.Ordinal));
-		Assert.Equal(3, Array.IndexOf(menuItems, theme));
-		Assert.Equal(4, Array.IndexOf(menuItems, dockPosition));
-		Assert.Equal(5, Array.IndexOf(menuItems, heightFollowingCardCount));
 		Assert.Equal(
 			"ToggleUsageDisplayModeMenuItem_Click",
-			(string?)menuItems[2].Attribute("Click"));
+			(string?)menuItems[1].Attribute("Click"));
+		Assert.Equal(2, Array.IndexOf(menuItems, theme));
+		Assert.Equal(3, Array.IndexOf(menuItems, dockPosition));
+		Assert.Equal(4, Array.IndexOf(menuItems, heightFollowingCardCount));
+		Assert.Equal(
+			"ToggleSortModeMenuItem_Click",
+			(string?)menuItems[5].Attribute("Click"));
+		Assert.Equal(
+			"ShowAutomaticSortRulesMenuItem_Click",
+			(string?)menuItems[6].Attribute("Click"));
+		Assert.Equal(
+			Presentation + "Separator",
+			menuItems[6].ElementsAfterSelf().First().Name);
 		XElement[] themeChoices = theme
 			.Elements(Presentation + "MenuItem")
 			.ToArray();

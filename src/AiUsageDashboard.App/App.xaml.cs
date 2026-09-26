@@ -122,6 +122,7 @@ public partial class App : System.Windows.Application
 	private SingleInstanceActivationChannel? _activationChannel;
 	private UpdateShutdownChannel? _updateShutdownChannel;
 	private Icon? _applicationIcon;
+	private ThemeAppIcon? _themeAppIcon;
 	private DashboardViewModel? _dashboardViewModel;
 	private FloatingWidgetWindow? _floatingWidgetWindow;
 	private AppInstallationContext _appInstallationContext =
@@ -290,9 +291,20 @@ public partial class App : System.Windows.Application
 
 			LegalCatalog catalog = LegalCatalog.Load(LegalProfile.App);
 			LegalAcceptanceStore acceptanceStore = LegalAcceptanceStore.CreateDefault();
-			bool canStart = (launchIntent == AppLaunchIntent.Interactive)
-				? LegalTermsDialog.EnsureAccepted(catalog, acceptanceStore)
-				: acceptanceStore.IsAccepted(catalog);
+			bool isAccepted = acceptanceStore.IsAccepted(catalog);
+			if (!isAccepted && (launchIntent == AppLaunchIntent.Interactive))
+			{
+				JsonDashboardPreferencesStore themePreviewStore = new(
+					AppDataPaths.GetDashboardPreferencesFilePath());
+				DashboardShellPreferences themePreview =
+					await themePreviewStore.LoadDashboardShellPreferencesAsync();
+				_selectedTheme = themePreview.Theme;
+				ApplyThemePalette();
+			}
+
+			bool canStart = isAccepted ||
+				((launchIntent == AppLaunchIntent.Interactive) &&
+					LegalTermsDialog.EnsureAccepted(catalog, acceptanceStore));
 			if (!canStart)
 			{
 				Shutdown(LegalCommandLine.AcceptanceRequiredExitCode);
@@ -1141,6 +1153,7 @@ public partial class App : System.Windows.Application
 		_activationChannel?.Dispose();
 		_updateShutdownChannel?.Dispose();
 		_notifyIcon?.Dispose();
+		_themeAppIcon?.Dispose();
 		_applicationIcon?.Dispose();
 		_shellPreferencesSaveGate.Dispose();
 
@@ -2018,21 +2031,27 @@ public partial class App : System.Windows.Application
 	{
 		StartUpdateUiOperation(
 			CheckForUpdatesManuallyAsync,
-			"manual-update-check");
+			"manual-update-check",
+			sender as AboutWindow);
 	}
 
 	private void StartUpdateUiOperation(
 		Func<Task> operation,
-		string diagnosticOperation)
+		string diagnosticOperation,
+		Window? preferredOwner = null)
 	{
 		ArgumentNullException.ThrowIfNull(operation);
 		ArgumentException.ThrowIfNullOrWhiteSpace(diagnosticOperation);
-		_ = CompleteUpdateUiOperationAsync(operation, diagnosticOperation);
+		_ = CompleteUpdateUiOperationAsync(
+			operation,
+			diagnosticOperation,
+			preferredOwner);
 	}
 
 	private async Task CompleteUpdateUiOperationAsync(
 		Func<Task> operation,
-		string diagnosticOperation)
+		string diagnosticOperation,
+		Window? preferredOwner)
 	{
 		try
 		{
@@ -2058,7 +2077,8 @@ public partial class App : System.Windows.Application
 				$"無法完成更新操作。\n\n原因：{reason}",
 				"更新操作失敗",
 				MessageBoxButton.OK,
-				MessageBoxImage.Warning);
+				MessageBoxImage.Warning,
+				preferredOwner: preferredOwner);
 		}
 	}
 
@@ -2754,12 +2774,16 @@ public partial class App : System.Windows.Application
 		string title,
 		MessageBoxButton buttons,
 		MessageBoxImage image,
-		MessageBoxResult defaultResult = MessageBoxResult.None)
+		MessageBoxResult defaultResult = MessageBoxResult.None,
+		Window? preferredOwner = null)
 	{
-		if (_floatingWidgetWindow?.IsVisible == true)
+		Window? messageOwner = preferredOwner?.IsVisible == true
+			? preferredOwner
+			: _floatingWidgetWindow;
+		if (messageOwner?.IsVisible == true)
 		{
 			return WpfMessageBox.Show(
-				_floatingWidgetWindow,
+				messageOwner,
 				message,
 				title,
 				buttons,
@@ -3449,6 +3473,105 @@ public partial class App : System.Windows.Application
 		{
 			dictionaries.Insert(0, palette);
 		}
+
+		UpdateThemeAppIcon(paletteIndex >= 0
+			? dictionaries[paletteIndex]
+			: palette);
+	}
+
+	private void UpdateThemeAppIcon(ResourceDictionary palette)
+	{
+		try
+		{
+			if (Resources["ThemeLogoStyle"] is not Style logoStyle)
+			{
+				throw new InvalidOperationException(
+					"找不到用來更新視窗與系統匣圖示的 ThemeLogoStyle。");
+			}
+
+			ThemeAppIcon? previous = _themeAppIcon;
+			ImageSource previousWindowIcon =
+				(ImageSource)Resources["ThemeWindowIcon"];
+			Icon previousTrayIcon = _notifyIcon?.Icon ??
+				previous?.TrayIcon ?? _applicationIcon ?? SystemIcons.Application;
+			ThemeAppIcon replacement = ThemeAppIcon.Create(logoStyle, palette);
+			bool keepReplacement = false;
+			try
+			{
+				if (_notifyIcon is not null)
+				{
+					_notifyIcon.Icon = replacement.TrayIcon;
+				}
+				Resources["ThemeWindowIcon"] = replacement.WindowIcon;
+				keepReplacement = true;
+			}
+			catch (Exception updateException)
+			{
+				keepReplacement = RestoreThemeAppIcon(
+					previousTrayIcon, previousWindowIcon, replacement);
+				throw new InvalidOperationException(
+					"更新目前主題的視窗與系統匣圖示時失敗。",
+					updateException);
+			}
+			finally
+			{
+				if (keepReplacement)
+				{
+					_themeAppIcon = replacement;
+					previous?.Dispose();
+				}
+				else
+				{
+					replacement.Dispose();
+				}
+			}
+		}
+		catch (Exception exception)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"theme-app-icon",
+				"無法更新目前主題的視窗與系統匣圖示。",
+				exception);
+		}
+	}
+
+	private bool RestoreThemeAppIcon(
+		Icon previousTrayIcon,
+		ImageSource previousWindowIcon,
+		ThemeAppIcon replacement)
+	{
+		if (_notifyIcon is not null)
+		{
+			try
+			{
+				_notifyIcon.Icon = previousTrayIcon;
+			}
+			catch (Exception rollbackException)
+			{
+				_ = AppDiagnostics.TryWrite(
+					"theme-app-icon-rollback",
+					"無法還原原本的系統匣圖示。",
+					rollbackException);
+			}
+		}
+
+		bool keepReplacement = ReferenceEquals(
+			_notifyIcon?.Icon, replacement.TrayIcon);
+		try
+		{
+			Resources["ThemeWindowIcon"] = keepReplacement
+				? replacement.WindowIcon
+				: previousWindowIcon;
+		}
+		catch (Exception rollbackException)
+		{
+			_ = AppDiagnostics.TryWrite(
+				"theme-app-icon-rollback",
+				"無法還原原本的視窗圖示。",
+				rollbackException);
+		}
+
+		return keepReplacement;
 	}
 
 	internal static bool ShouldShowFloatingWidgetOnStartup(
@@ -4091,7 +4214,7 @@ public partial class App : System.Windows.Application
 		menu.Items.Add(
 			"關於 AI Usage",
 			null,
-			(_, _) => Dispatcher.Invoke(ShowAboutWindow));
+			(_, _) => Dispatcher.Invoke(ShowAboutWindowFromTray));
 		menu.Items.Add("-");
 		menu.Items.Add(
 			"結束 AI Usage",
@@ -4102,7 +4225,8 @@ public partial class App : System.Windows.Application
 		_notifyIcon = new FormsNotifyIcon
 		{
 			ContextMenuStrip = menu,
-			Icon = _applicationIcon ?? SystemIcons.Application,
+			Icon = _themeAppIcon?.TrayIcon ??
+				_applicationIcon ?? SystemIcons.Application,
 			Text = "AI Usage",
 			Visible = true
 		};
@@ -4123,6 +4247,22 @@ public partial class App : System.Windows.Application
 
 	internal void ShowAboutWindow()
 	{
+		FloatingWidgetWindow? widget = _floatingWidgetWindow;
+		ShowAboutWindowCore(
+			(widget is not null) &&
+			widget.IsVisible &&
+			!widget.IsCollapsed
+				? widget
+				: null);
+	}
+
+	private void ShowAboutWindowFromTray()
+	{
+		ShowAboutWindowCore(owner: null);
+	}
+
+	private void ShowAboutWindowCore(FloatingWidgetWindow? owner)
+	{
 		if (IsQuitting)
 		{
 			return;
@@ -4130,9 +4270,15 @@ public partial class App : System.Windows.Application
 
 		if (_aboutWindow is not null)
 		{
+			ConfigureAboutWindowOwnership(_aboutWindow, owner);
 			if (_aboutWindow.WindowState == WindowState.Minimized)
 			{
 				_aboutWindow.WindowState = WindowState.Normal;
+			}
+
+			if (!_aboutWindow.IsVisible)
+			{
+				_aboutWindow.Show();
 			}
 
 			_aboutWindow.Activate();
@@ -4141,15 +4287,12 @@ public partial class App : System.Windows.Application
 
 		AboutWindow aboutWindow = new();
 		aboutWindow.UpdateCheckRequested += AboutWindow_UpdateCheckRequested;
+		aboutWindow.Closed += AboutWindow_Closed;
+		ConfigureAboutWindowOwnership(aboutWindow, owner);
 
-		if (_floatingWidgetWindow?.IsVisible == true)
-		{
-			aboutWindow.Owner = _floatingWidgetWindow;
-		}
-		else
+		if (aboutWindow.Owner is null)
 		{
 			aboutWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-			aboutWindow.ShowInTaskbar = true;
 		}
 
 		_aboutWindow = aboutWindow;
@@ -4163,13 +4306,54 @@ public partial class App : System.Windows.Application
 
 		try
 		{
-			aboutWindow.ShowDialog();
+			aboutWindow.Show();
 		}
-		finally
+		catch
 		{
-			aboutWindow.UpdateCheckRequested -= AboutWindow_UpdateCheckRequested;
+			ReleaseAboutWindow(aboutWindow);
+			throw;
+		}
+	}
+
+	private void AboutWindow_Closed(object? sender, EventArgs e)
+	{
+		if (sender is AboutWindow aboutWindow)
+		{
+			ReleaseAboutWindow(aboutWindow);
+		}
+	}
+
+	private void ReleaseAboutWindow(AboutWindow aboutWindow)
+	{
+		aboutWindow.UpdateCheckRequested -= AboutWindow_UpdateCheckRequested;
+		aboutWindow.Closed -= AboutWindow_Closed;
+		if (ReferenceEquals(_aboutWindow, aboutWindow))
+		{
 			_aboutWindow = null;
 		}
+	}
+
+	private static void ConfigureAboutWindowOwnership(
+		AboutWindow aboutWindow,
+		FloatingWidgetWindow? owner)
+	{
+		if (owner is not null)
+		{
+			if (!ReferenceEquals(aboutWindow.Owner, owner))
+			{
+				aboutWindow.Owner = owner;
+			}
+
+			aboutWindow.ShowInTaskbar = false;
+			return;
+		}
+
+		if (aboutWindow.Owner is not null)
+		{
+			aboutWindow.Owner = null;
+		}
+
+		aboutWindow.ShowInTaskbar = true;
 	}
 
 	private void OpenUserGuide()

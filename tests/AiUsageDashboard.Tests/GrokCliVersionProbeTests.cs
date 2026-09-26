@@ -153,7 +153,7 @@ public sealed class GrokCliVersionProbeTests
 			temporaryDirectory.Path,
 			"version-probe");
 		FakeProcess process = new(
-			Encoding.UTF8.GetBytes("grok 1.0.4 (d846eb93d9)\r\n"));
+			Encoding.UTF8.GetBytes("grok 1.0.41 (4220f3b224a6) [stable]\r\n"));
 		FakeProcessFactory processFactory = new(process);
 		(string Home, string Working)? prepared = null;
 		string? cleaned = null;
@@ -166,7 +166,7 @@ public sealed class GrokCliVersionProbeTests
 		GrokExecutableVersion? version = await probe.ReadVersionAsync(
 			executablePath);
 
-		Assert.Equal(new GrokExecutableVersion(1, 0, 4), version);
+		Assert.Equal(new GrokExecutableVersion(1, 0, 41), version);
 		Assert.NotNull(processFactory.ObservedOptions);
 		Assert.Equal(
 			Path.GetFullPath(executablePath),
@@ -312,6 +312,8 @@ public sealed class GrokCliVersionProbeTests
 	[Theory]
 	[InlineData("grok 1.0.3 (abcdef0)", 1, 0, 3)]
 	[InlineData("grok 12.34.56 (0123456789abcdef)\n", 12, 34, 56)]
+	[InlineData("grok 1.0.41 (4220f3b224a6) [stable]", 1, 0, 41)]
+	[InlineData("grok 1.0.41 (4220f3b224a6) [stable]\r\n", 1, 0, 41)]
 	public void ParseVersionOutput_WithExactOfficialShape_ReturnsVersion(
 		string output,
 		int major,
@@ -333,6 +335,13 @@ public sealed class GrokCliVersionProbeTests
 	[InlineData("grok 1.0.4 (d846eb9)\n\n")]
 	[InlineData("prefix grok 1.0.4 (d846eb9)")]
 	[InlineData("grok 999999999999999999999.0.4 (d846eb9)")]
+	[InlineData("grok 1.0.41 (4220f3b224a6) [beta]")]
+	[InlineData("grok 1.0.41 (4220f3b224a6) [STABLE]")]
+	[InlineData("grok 1.0.41 (4220f3b224a6) [stable]extra")]
+	[InlineData("grok 1.0.41 (4220f3b224a6) [stable] [stable]")]
+	[InlineData("grok 1.0.41 (4220f3b224a6)  [stable]")]
+	[InlineData("grok 1.0.41 (4220f3b224a6) [stable]\nextra")]
+	[InlineData("grok 1.0.41 (D220f3b224a6) [stable]")]
 	public void ParseVersionOutput_WithUnexpectedShape_ReturnsNull(string output)
 	{
 		Assert.Null(GrokCliVersionProbe.ParseVersionOutput(

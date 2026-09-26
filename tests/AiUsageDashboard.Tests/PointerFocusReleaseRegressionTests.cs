@@ -538,13 +538,20 @@ public sealed class PointerFocusReleaseRegressionTests
 		AssertReleaseSetter(GetImplicitStyle(controls, "MenuItem"));
 		AssertReleaseSetter(GetKeyedStyle(floatingWindow, "PinButtonStyle"));
 		AssertReleaseSetter(
-			GetKeyedStyle(setupControls, "SetupPrimaryButtonStyle"));
-		AssertReleaseSetter(
-			GetKeyedStyle(setupControls, "SetupGhostButtonStyle"));
+			GetKeyedStyle(setupControls, "SetupDefaultButtonStyle"));
+		Assert.Equal(
+			"{StaticResource SetupDefaultButtonStyle}",
+			(string?)GetKeyedStyle(
+				setupControls, "SetupPrimaryButtonStyle").Attribute("BasedOn"));
+		Assert.Equal(
+			"{StaticResource SetupDefaultButtonStyle}",
+			(string?)GetKeyedStyle(
+				setupControls, "SetupGhostButtonStyle").Attribute("BasedOn"));
 
 		XDocument[] appWindows =
 		[
 			LoadAppXaml("AccountEditorWindow.xaml"),
+			LoadAppXaml("AutomaticSortRulesWindow.xaml"),
 			LoadAppXaml("CodexWorkspacePromptWindow.xaml"),
 			LoadAppXaml("CodexResetCreditsWindow.xaml"),
 			LoadAppXaml("AboutWindow.xaml"),
@@ -568,7 +575,7 @@ public sealed class PointerFocusReleaseRegressionTests
 
 		Assert.NotEmpty(buttonBaseActions);
 		Assert.Single(comboBoxActions);
-		Assert.Equal(26, menuItemActions.Length);
+		Assert.Equal(27, menuItemActions.Length);
 		string[] updateActionAutomationIds =
 		[
 			"CheckForUpdates",
@@ -716,7 +723,7 @@ public sealed class PointerFocusReleaseRegressionTests
 				element.Elements(Presentation + "MenuItem").Any())
 			.ToArray();
 
-		Assert.Equal(26, leafActions.Length);
+		Assert.Equal(27, leafActions.Length);
 		XElement aboutAction = Assert.Single(leafActions, element =>
 			(string?)element.Attribute("AutomationProperties.AutomationId") == "OpenAbout");
 		Assert.Empty(aboutAction.Elements(Presentation + "MenuItem"));

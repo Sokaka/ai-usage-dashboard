@@ -40,7 +40,9 @@ internal sealed record DashboardShellPreferences(
 	FloatingWidgetCorner Corner,
 	DashboardStartupSurface StartupSurface,
 	AppTheme Theme = AppTheme.ClassicBlue,
-	bool IsHeightFollowingCardCount = false)
+	bool IsHeightFollowingCardCount = false,
+	double? CollapsedPositionXRatio = null,
+	double? CollapsedPositionYRatio = null)
 {
 	internal static DashboardShellPreferences Default { get; } = new(
 		IsWidgetVisible: true,

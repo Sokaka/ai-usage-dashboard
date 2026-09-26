@@ -60,7 +60,7 @@ internal sealed class JsonDashboardPreferencesStore :
 		IsWidgetVisible = 1 << 2,
 		IsCollapsed = 1 << 3,
 		IsTopmost = 1 << 4,
-		MonitorDeviceName = 1 << 5,
+		MonitorAndCollapsedPosition = 1 << 5,
 		Corner = 1 << 6,
 		StartupSurface = 1 << 7,
 		Theme = 1 << 8,
@@ -68,7 +68,7 @@ internal sealed class JsonDashboardPreferencesStore :
 		AllShellPreferences = IsWidgetVisible |
 			IsCollapsed |
 			IsTopmost |
-			MonitorDeviceName |
+			MonitorAndCollapsedPosition |
 			Corner |
 			StartupSurface |
 			Theme |
@@ -119,14 +119,20 @@ internal sealed class JsonDashboardPreferencesStore :
 		public AppTheme Theme { get; init; } = AppTheme.ClassicBlue;
 
 		public bool IsHeightFollowingCardCount { get; init; }
+
+		public double? CollapsedPositionXRatio { get; init; }
+
+		public double? CollapsedPositionYRatio { get; init; }
 	}
 
 	internal event Action? RecoveryRequested;
 
-	private const int CurrentSchemaVersion = 6;
+	private const int CurrentSchemaVersion = 7;
 	private const int HeightFollowingCardCountSchemaVersion = 6;
+	private const int CollapsedPositionSchemaVersion = 7;
 	private const int LegacySortOnlySchemaVersion = 1;
-	private const int PreviousSchemaVersion = 5;
+	private const int LegacySchemaVersionFive = 5;
+	private const int PreviousSchemaVersion = 6;
 	private const long MaximumDocumentSizeBytes = 64 * 1024;
 	private const int MaximumMonitorDeviceNameLength = 260;
 	private const string ManagedPathDescription = "The dashboard preferences path";
@@ -845,7 +851,11 @@ internal sealed class JsonDashboardPreferencesStore :
 			StartupSurface = shellPreferences.StartupSurface,
 			Theme = shellPreferences.Theme,
 			IsHeightFollowingCardCount =
-				shellPreferences.IsHeightFollowingCardCount
+				shellPreferences.IsHeightFollowingCardCount,
+			CollapsedPositionXRatio =
+				shellPreferences.CollapsedPositionXRatio,
+			CollapsedPositionYRatio =
+				shellPreferences.CollapsedPositionYRatio
 		};
 	}
 
@@ -855,6 +865,7 @@ internal sealed class JsonDashboardPreferencesStore :
 		return (document is not null) &&
 			(document.SchemaVersion is UsageDisplayModeSchemaVersion or
 				ThemeSchemaVersion or
+				LegacySchemaVersionFive or
 				PreviousSchemaVersion or
 				CurrentSchemaVersion) &&
 			Enum.IsDefined(document!.UsageDisplayMode)
@@ -890,16 +901,22 @@ internal sealed class JsonDashboardPreferencesStore :
 				ShellPreferencesSchemaVersion or
 				UsageDisplayModeSchemaVersion or
 				ThemeSchemaVersion or
+				LegacySchemaVersionFive or
 				PreviousSchemaVersion or
 				CurrentSchemaVersion)) ||
 			!Enum.IsDefined(document.Corner) ||
 			!Enum.IsDefined(document.StartupSurface) ||
 			((document.SchemaVersion is ThemeSchemaVersion or
+				LegacySchemaVersionFive or
 				PreviousSchemaVersion or
 				CurrentSchemaVersion) &&
 				!Enum.IsDefined(document.Theme)) ||
 			(document.MonitorDeviceName is null) ||
-			(document.MonitorDeviceName.Length > MaximumMonitorDeviceNameLength))
+			(document.MonitorDeviceName.Length > MaximumMonitorDeviceNameLength) ||
+			((document.SchemaVersion >= CollapsedPositionSchemaVersion) &&
+				!IsValidCollapsedPosition(
+					document.CollapsedPositionXRatio,
+					document.CollapsedPositionYRatio)))
 		{
 			preferences = DashboardShellPreferences.Default;
 			return false;
@@ -913,12 +930,19 @@ internal sealed class JsonDashboardPreferencesStore :
 			document.Corner,
 			document.StartupSurface,
 			document.SchemaVersion is ThemeSchemaVersion or
+				LegacySchemaVersionFive or
 				PreviousSchemaVersion or
 				CurrentSchemaVersion
 				? document.Theme
 				: AppTheme.ClassicBlue,
 			document.SchemaVersion >= HeightFollowingCardCountSchemaVersion &&
-				document.IsHeightFollowingCardCount);
+				document.IsHeightFollowingCardCount,
+			document.SchemaVersion >= CollapsedPositionSchemaVersion
+				? document.CollapsedPositionXRatio
+				: null,
+			document.SchemaVersion >= CollapsedPositionSchemaVersion
+				? document.CollapsedPositionYRatio
+				: null);
 		return true;
 	}
 
@@ -929,6 +953,7 @@ internal sealed class JsonDashboardPreferencesStore :
 				ShellPreferencesSchemaVersion or
 				UsageDisplayModeSchemaVersion or
 				ThemeSchemaVersion or
+				LegacySchemaVersionFive or
 				PreviousSchemaVersion or
 				CurrentSchemaVersion);
 	}
@@ -973,6 +998,15 @@ internal sealed class JsonDashboardPreferencesStore :
 				"螢幕識別名稱過長。");
 		}
 
+		if (!IsValidCollapsedPosition(
+			preferences.CollapsedPositionXRatio,
+			preferences.CollapsedPositionYRatio))
+		{
+			throw new ArgumentOutOfRangeException(
+				nameof(preferences),
+				"收合浮窗位置比例必須成對且介於 0 與 1 之間。");
+		}
+
 		if (!Enum.IsDefined(preferences.Theme))
 		{
 			throw new ArgumentOutOfRangeException(
@@ -980,6 +1014,19 @@ internal sealed class JsonDashboardPreferencesStore :
 				preferences.Theme,
 				"未知的應用程式主題。");
 		}
+	}
+
+	private static bool IsValidCollapsedPosition(
+		double? xRatio,
+		double? yRatio)
+	{
+		return ((xRatio is null) && (yRatio is null)) ||
+			((xRatio is double x) &&
+			(yRatio is double y) &&
+			double.IsFinite(x) &&
+			double.IsFinite(y) &&
+			(x >= 0) && (x <= 1) &&
+			(y >= 0) && (y <= 1));
 	}
 
 	private static void ValidateDashboardPreferencesSnapshot(
@@ -1028,12 +1075,16 @@ internal sealed class JsonDashboardPreferencesStore :
 			changedFields |= DashboardPreferencesField.IsTopmost;
 		}
 
-		if (!string.Equals(
+		if ((!string.Equals(
 			previousPreferences.MonitorDeviceName,
 			currentPreferences.MonitorDeviceName,
-			StringComparison.Ordinal))
+			StringComparison.Ordinal)) ||
+			(previousPreferences.CollapsedPositionXRatio !=
+				currentPreferences.CollapsedPositionXRatio) ||
+			(previousPreferences.CollapsedPositionYRatio !=
+				currentPreferences.CollapsedPositionYRatio))
 		{
-			changedFields |= DashboardPreferencesField.MonitorDeviceName;
+			changedFields |= DashboardPreferencesField.MonitorAndCollapsedPosition;
 		}
 
 		if (previousPreferences.Corner != currentPreferences.Corner)
@@ -1085,7 +1136,7 @@ internal sealed class JsonDashboardPreferencesStore :
 				: existingPreferences.IsTopmost,
 			MonitorDeviceName = HasChanged(
 				changedFields,
-				DashboardPreferencesField.MonitorDeviceName)
+				DashboardPreferencesField.MonitorAndCollapsedPosition)
 				? currentPreferences.MonitorDeviceName
 				: existingPreferences.MonitorDeviceName,
 			Corner = HasChanged(changedFields, DashboardPreferencesField.Corner)
@@ -1103,7 +1154,17 @@ internal sealed class JsonDashboardPreferencesStore :
 				changedFields,
 				DashboardPreferencesField.IsHeightFollowingCardCount)
 				? currentPreferences.IsHeightFollowingCardCount
-				: existingPreferences.IsHeightFollowingCardCount
+				: existingPreferences.IsHeightFollowingCardCount,
+			CollapsedPositionXRatio = HasChanged(
+				changedFields,
+				DashboardPreferencesField.MonitorAndCollapsedPosition)
+				? currentPreferences.CollapsedPositionXRatio
+				: existingPreferences.CollapsedPositionXRatio,
+			CollapsedPositionYRatio = HasChanged(
+				changedFields,
+				DashboardPreferencesField.MonitorAndCollapsedPosition)
+				? currentPreferences.CollapsedPositionYRatio
+				: existingPreferences.CollapsedPositionYRatio
 		};
 	}
 

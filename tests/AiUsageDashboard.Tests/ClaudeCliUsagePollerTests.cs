@@ -2508,15 +2508,16 @@ public sealed class ClaudeCliUsagePollerTests
 	}
 
 	[Theory]
-	[InlineData(false, "claude.ai", "firstParty", "max")]
-	[InlineData(true, "apiKey", "firstParty", "max")]
-	[InlineData(true, "claude.ai", "bedrock", "max")]
-	[InlineData(true, "claude.ai", "firstParty", "free")]
+	[InlineData(false, "claude.ai", "firstParty", "max", UsageRecoveryAction.ConnectAccount)]
+	[InlineData(true, "apiKey", "firstParty", "max", UsageRecoveryAction.SwitchAccount)]
+	[InlineData(true, "claude.ai", "bedrock", "max", UsageRecoveryAction.SwitchAccount)]
+	[InlineData(true, "claude.ai", "firstParty", "free", UsageRecoveryAction.ConfirmSubscription)]
 	public async Task PollAsync_WhenSubscriptionAuthenticationIsUnavailable_DoesNotRunUsage(
 		bool loggedIn,
 		string authMethod,
 		string apiProvider,
-		string subscriptionType)
+		string subscriptionType,
+		UsageRecoveryAction expectedRecoveryAction)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = Path.Combine(temporaryDirectory.Path, "claude.exe");
@@ -2561,11 +2562,13 @@ public sealed class ClaudeCliUsagePollerTests
 		Assert.Equal(
 			loggedIn ? "claude@example.com" : null,
 			exception.AccountIdentity);
-		Assert.Equal(
-			loggedIn
-				? UsageRecoveryAction.SwitchAccount
-				: UsageRecoveryAction.ConnectAccount,
-			exception.RecoveryAction);
+		Assert.Equal(expectedRecoveryAction, exception.RecoveryAction);
+		if (subscriptionType == "free")
+		{
+			Assert.Contains("回報 Free", exception.Message, StringComparison.Ordinal);
+			Assert.Contains("Settings > Billing", exception.Message, StringComparison.Ordinal);
+			Assert.DoesNotContain("已到期", exception.Message, StringComparison.Ordinal);
+		}
 	}
 
 	[Fact]

@@ -1320,6 +1320,16 @@ internal sealed class ClaudeCliUsagePoller :
 			root,
 			"subscriptionType");
 
+		if (string.Equals(authMethod, "claude.ai", StringComparison.Ordinal) &&
+			string.Equals(apiProvider, "firstParty", StringComparison.Ordinal) &&
+			string.Equals(subscriptionType, "free", StringComparison.Ordinal))
+		{
+			throw new ClaudeUsageNotConfiguredException(
+				"Claude Code 目前回報 Free，AI Usage 暫不支援顯示 Claude Free 用量。請到 Claude 的 Settings > Billing 確認登入帳號、訂閱與付款狀態。",
+				UsageRecoveryAction.ConfirmSubscription,
+				accountIdentity);
+		}
+
 		if (!string.Equals(authMethod, "claude.ai", StringComparison.Ordinal) ||
 			!string.Equals(apiProvider, "firstParty", StringComparison.Ordinal) ||
 			!IsSupportedSubscriptionType(subscriptionType))

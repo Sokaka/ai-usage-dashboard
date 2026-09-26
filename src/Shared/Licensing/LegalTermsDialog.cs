@@ -37,6 +37,10 @@ internal static class LegalTermsDialog
 			MinHeight = 360,
 			WindowStartupLocation = WindowStartupLocation.CenterScreen
 		};
+		window.SetResourceReference(Window.BackgroundProperty,
+			"WindowBackgroundBrush");
+		window.SetResourceReference(Window.IconProperty,
+			"ThemeWindowIcon");
 		DockPanel panel = new() { Margin = new Thickness(16) };
 		TextBlock explanation = new()
 		{
@@ -46,6 +50,8 @@ internal static class LegalTermsDialog
 			TextWrapping = TextWrapping.Wrap,
 			Margin = new Thickness(0, 0, 0, 12)
 		};
+		explanation.SetResourceReference(TextBlock.ForegroundProperty,
+			"SecondaryTextBrush");
 		DockPanel.SetDock(explanation, Dock.Top);
 		panel.Children.Add(explanation);
 		StackPanel buttons = new()
@@ -57,9 +63,10 @@ internal static class LegalTermsDialog
 		Button close = new()
 		{
 			Content = allowAcceptance ? "不接受並離開" : "關閉",
-			Padding = new Thickness(18, 8, 18, 8),
 			IsCancel = true
 		};
+		close.SetResourceReference(FrameworkElement.StyleProperty,
+			"SecondaryButtonStyle");
 		close.Click += (_, _) => window.DialogResult = false;
 		buttons.Children.Add(close);
 		if (allowAcceptance)
@@ -67,9 +74,10 @@ internal static class LegalTermsDialog
 			Button accept = new()
 			{
 				Content = "接受並繼續",
-				Margin = new Thickness(12, 0, 0, 0),
-				Padding = new Thickness(18, 8, 18, 8)
+				Margin = new Thickness(12, 0, 0, 0)
 			};
+			accept.SetResourceReference(FrameworkElement.StyleProperty,
+				"PrimaryButtonStyle");
 			accept.Click += (_, _) => window.DialogResult = true;
 			buttons.Children.Add(accept);
 		}
