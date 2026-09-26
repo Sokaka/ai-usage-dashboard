@@ -19,7 +19,7 @@
 - Claude、Codex、GitHub Copilot 與 Grok 支援多個帳號。每張卡片平時都使用自己的登入資料與用量。Copilot 只有在使用者操作連接時，會暫時使用官方 CLI 共用的登入清單，詳見後文。AGY 使用目前 Windows 使用者的單一設定，因此暫限一張卡片。
 - 系統匣提供顯示、隱藏、置頂、使用說明、關於與結束程式；帳號管理可用時也能匯出設定，本次執行仍有可用還原點時則能還原匯入前設定。隱藏浮窗不會停止背景更新。
 - 同一個 Windows 使用者同時只能執行一份 AI Usage。再次啟動時會帶回既有浮窗，不會開出第二份程式。
-- 浮窗位置、停靠角落、置頂、收合、主題與排序偏好會保存在本機。舊版 `Dashboard`、`Widget`、`DashboardAndWidget` 與 `Tray` 值仍可讀取，避免升級後遺失顯示偏好。
+- 展開浮窗的停靠角落與收合圖示在工作區內的自訂位置，以及置頂、收合、主題與排序偏好會保存在本機。圖示拖曳時依所在螢幕的工作區與邊距限制位置；工作區或 DPI 改變時依儲存的相對座標重新定位。舊版 `Dashboard`、`Widget`、`DashboardAndWidget` 與 `Tray` 值仍可讀取，避免升級後遺失顯示偏好。
 - 每張卡片都有自己的快取。同一張卡片已有查詢在執行時，不會再啟動重複查詢；查詢失敗時可保留上次成功的資料並標成舊資料。讀到快取不會標示成剛完成更新。
 - 動態狀態、表單標籤、按鈕與選單都提供鍵盤、螢幕閱讀器與 Windows 高對比模式所需的資訊。
 
@@ -66,6 +66,7 @@ presentation／排程 cache 寫在 `%LOCALAPPDATA%\AiUsageDashboard\update-check
 
 - 從版本 4 起，`DashboardShellPreferences.Theme` 會寫入 `%LOCALAPPDATA%\AiUsageDashboard\preferences.json`；舊版本沒有主題欄位時使用 `ClassicBlue`。
 - `IsHeightFollowingCardCount` 從版本 6 起寫入；舊本機設定預設維持固定可用高度。
+- 本機設定版本 7 會成對儲存收合圖示的相對 X／Y 座標與螢幕識別；舊版沒有座標時，仍依原本的停靠角落顯示。匯出設定不包含這組僅適用於原電腦的座標與螢幕識別。
 - 匯出設定檔版本 6 會寫入 `isHeightFollowingCardCount`。匯入版本 3–5 時保留目標電腦目前的自動高度設定；版本 3 另會保留目前主題；版本 1／2 同時保留目前浮窗偏好與主題。
 
 一般主題共用相同的資源鍵與控制項樣式。介面透過 `DynamicResource` 取得配色；切換時，`App.UpdatePaletteResources` 會直接更新仍可修改的 `SolidColorBrush`，其餘資源則換成目標配色的值，避免已取得的筆刷物件仍顯示舊主題。浮窗展開與收合時的 Logo 都使用 `ThemeLogoStyle` 與配色資源；執行中的視窗標題列與系統匣圖示由同一 Logo 產生，切換主題或 Windows 高對比時更新。執行檔、開始選單捷徑及安裝項目仍使用固定的封裝圖示，工作列顯示也可能受 Windows 的合併與圖示快取影響。

@@ -152,4 +152,64 @@ public sealed class FloatingWidgetPlacementTests
 
 		Assert.Equal(new Point(100, 200), actual);
 	}
+
+	[Theory]
+	[InlineData(-2000, -100, -1902, 18)]
+	[InlineData(0, 1100, -74, 966)]
+	[InlineData(-800, 500, -800, 500)]
+	public void ClampTopLeft_KeepsCollapsedIconInsideInsetWorkArea(
+		int desiredX,
+		int desiredY,
+		int expectedX,
+		int expectedY)
+	{
+		Point actual = FloatingWidgetPlacement.ClampTopLeft(
+			new Point(desiredX, desiredY),
+			new Size(56, 56),
+			new Rectangle(-1920, 0, 1920, 1040),
+			18);
+
+		Assert.Equal(new Point(expectedX, expectedY), actual);
+	}
+
+	[Fact]
+	public void PositionRatios_PreserveRelativeLocationWhenWorkAreaChanges()
+	{
+		Rectangle originalArea = new(-1920, 0, 1920, 1040);
+		Size iconSize = new(56, 56);
+		Point original = new(-988, 492);
+		(double xRatio, double yRatio) =
+			FloatingWidgetPlacement.GetPositionRatios(
+				original,
+				iconSize,
+				originalArea,
+				18);
+
+		Point restored = FloatingWidgetPlacement.GetTopLeftFromRatios(
+			iconSize,
+			new Rectangle(100, 200, 1280, 800),
+			18,
+			xRatio,
+			yRatio);
+
+		Assert.Equal(original, FloatingWidgetPlacement.GetTopLeftFromRatios(
+			iconSize,
+			originalArea,
+			18,
+			xRatio,
+			yRatio));
+		Assert.Equal(new Point(712, 572), restored);
+	}
+
+	[Fact]
+	public void ClampTopLeft_UsesAvailableWorkAreaWhenInsetCannotFit()
+	{
+		Point actual = FloatingWidgetPlacement.ClampTopLeft(
+			new Point(1000, 1000),
+			new Size(56, 56),
+			new Rectangle(100, 200, 70, 70),
+			18);
+
+		Assert.Equal(new Point(114, 214), actual);
+	}
 }
