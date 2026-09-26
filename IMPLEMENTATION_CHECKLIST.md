@@ -8,7 +8,7 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.12 / sequence 1026`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.13 / sequence 1027`。
 
 ### AGY official-only 與封裝縮減
 
@@ -90,7 +90,18 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 目前正式版本
 
-`1.0.12 / sequence 1026` 已沿用原凍結候選正式公開（[source `1f7dfa10c606e500096f7af3472ee3277a94615a`](https://github.com/Sokaka/ai-usage-dashboard/commit/1f7dfa10c606e500096f7af3472ee3277a94615a)）。[v1.0.12 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.12) 現為 stable／latest；Release ID `397119353`，六件成品資料見 [1.0.12 版本說明](docs/releases/1.0.12.md)。本版重新建置 Updater，App 與 Updater 版本皆為 `1.0.12`。
+`1.0.13 / sequence 1027` 已沿用原凍結候選正式公開（[source `f98b36cc9efd78b6ae2a7cf38956241f1690aef8`](https://github.com/Sokaka/ai-usage-dashboard/commit/f98b36cc9efd78b6ae2a7cf38956241f1690aef8)）。[v1.0.13 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.13) 現為 stable／latest；Release ID `397172037`，六件成品資料見 [1.0.13 版本說明](docs/releases/1.0.13.md)。本版只調整浮窗選單的「自動排序規則」標示，沿用前一正式版已簽署的 `1.0.12` Updater 原始 bytes。
+
+- [x] 同 source 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36232019499) 通過 Release 建置（0 warnings／0 errors）、完整測試（4,320 passed／0 failed／0 skipped）與 production line coverage 74.27%（48,540／65,360）。
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36232360073/attempts/1) attempt 1 通過 Release 建置（0 warnings／0 errors）、完整測試（4,320 passed／0 failed／0 skipped）與 production line coverage 74.27%（48,540／65,360），並簽署、驗證及凍結六件成品。
+- [x] Draft 候選的 freeze receipt、Release ID `397172037`、run `36232360073` attempt 1、source、sequence `1027`、六件 asset ID／大小／SHA256 與三份 sidecar 已獨立核對；production public trust 對 stable feed 的簽章驗證通過，沿用 Updater 與 v1.0.12 原 bytes 相同。
+- [x] 正式公開後以無 token／cookie 的 client 匿名下載六件原凍結成品，核對 tag target、資產 ID／大小／SHA256、三份 sidecar 與最新 stable feed 1,923 bytes／SHA256 `b5d09bddf71f3a10d1924b1305d55e7da5e30d689010e6604bcc9dea03d75ca2`；production public trust 驗簽通過，六件合計 106,800,906 bytes。
+
+`1.0.13` 尚未完成乾淨 Windows 初裝與條款視窗接受／拒絕、舊版 Updater 自我交接、既有標準安裝從 `1.0.12` 的 App 一鍵線上更新、五個平台官方 CLI 的真人登入／用量、舊版與最新版 CLI 逐版實測及完整 UI／無障礙驗收。匿名下載與驗簽不代替安裝或 App 更新按鈕驗收；歷史版本的實機結果不沿用為本版結果。逐平台狀態見 [1.0.13 CLI 實測表](docs/CLI_COMPATIBILITY.md#1013)。
+
+### 1.0.12 歷史正式版
+
+`1.0.12 / sequence 1026` 已沿用原凍結候選正式公開（[source `1f7dfa10c606e500096f7af3472ee3277a94615a`](https://github.com/Sokaka/ai-usage-dashboard/commit/1f7dfa10c606e500096f7af3472ee3277a94615a)）。[v1.0.12 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.12) 公開時為 stable／latest；Release ID `397119353`，六件成品資料見 [1.0.12 版本說明](docs/releases/1.0.12.md)。本版重新建置 Updater，App 與 Updater 版本皆為 `1.0.12`。
 
 - [x] 同 source 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36222460207) 通過。[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36222763387/attempts/1) 通過 Release 建置（0 warnings／0 errors）、完整測試（4,320 passed／0 failed／0 skipped）與 production line coverage 74.27%（48,540／65,360）。
 - [x] 已從 draft 候選獨立核對 freeze receipt、Release ID、run／attempt、source、sequence，以及六件成品的 asset ID、大小、SHA256 與三份 sidecar；production public trust 對 stable feed 的 RSA-PSS-SHA256 驗簽通過。
