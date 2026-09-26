@@ -2031,21 +2031,27 @@ public partial class App : System.Windows.Application
 	{
 		StartUpdateUiOperation(
 			CheckForUpdatesManuallyAsync,
-			"manual-update-check");
+			"manual-update-check",
+			sender as AboutWindow);
 	}
 
 	private void StartUpdateUiOperation(
 		Func<Task> operation,
-		string diagnosticOperation)
+		string diagnosticOperation,
+		Window? preferredOwner = null)
 	{
 		ArgumentNullException.ThrowIfNull(operation);
 		ArgumentException.ThrowIfNullOrWhiteSpace(diagnosticOperation);
-		_ = CompleteUpdateUiOperationAsync(operation, diagnosticOperation);
+		_ = CompleteUpdateUiOperationAsync(
+			operation,
+			diagnosticOperation,
+			preferredOwner);
 	}
 
 	private async Task CompleteUpdateUiOperationAsync(
 		Func<Task> operation,
-		string diagnosticOperation)
+		string diagnosticOperation,
+		Window? preferredOwner)
 	{
 		try
 		{
@@ -2071,7 +2077,8 @@ public partial class App : System.Windows.Application
 				$"無法完成更新操作。\n\n原因：{reason}",
 				"更新操作失敗",
 				MessageBoxButton.OK,
-				MessageBoxImage.Warning);
+				MessageBoxImage.Warning,
+				preferredOwner: preferredOwner);
 		}
 	}
 
@@ -2767,12 +2774,16 @@ public partial class App : System.Windows.Application
 		string title,
 		MessageBoxButton buttons,
 		MessageBoxImage image,
-		MessageBoxResult defaultResult = MessageBoxResult.None)
+		MessageBoxResult defaultResult = MessageBoxResult.None,
+		Window? preferredOwner = null)
 	{
-		if (_floatingWidgetWindow?.IsVisible == true)
+		Window? messageOwner = preferredOwner?.IsVisible == true
+			? preferredOwner
+			: _floatingWidgetWindow;
+		if (messageOwner?.IsVisible == true)
 		{
 			return WpfMessageBox.Show(
-				_floatingWidgetWindow,
+				messageOwner,
 				message,
 				title,
 				buttons,
@@ -4203,7 +4214,7 @@ public partial class App : System.Windows.Application
 		menu.Items.Add(
 			"關於 AI Usage",
 			null,
-			(_, _) => Dispatcher.Invoke(ShowAboutWindow));
+			(_, _) => Dispatcher.Invoke(ShowAboutWindowFromTray));
 		menu.Items.Add("-");
 		menu.Items.Add(
 			"結束 AI Usage",
@@ -4236,6 +4247,22 @@ public partial class App : System.Windows.Application
 
 	internal void ShowAboutWindow()
 	{
+		FloatingWidgetWindow? widget = _floatingWidgetWindow;
+		ShowAboutWindowCore(
+			(widget is not null) &&
+			widget.IsVisible &&
+			!widget.IsCollapsed
+				? widget
+				: null);
+	}
+
+	private void ShowAboutWindowFromTray()
+	{
+		ShowAboutWindowCore(owner: null);
+	}
+
+	private void ShowAboutWindowCore(FloatingWidgetWindow? owner)
+	{
 		if (IsQuitting)
 		{
 			return;
@@ -4243,9 +4270,15 @@ public partial class App : System.Windows.Application
 
 		if (_aboutWindow is not null)
 		{
+			ConfigureAboutWindowOwnership(_aboutWindow, owner);
 			if (_aboutWindow.WindowState == WindowState.Minimized)
 			{
 				_aboutWindow.WindowState = WindowState.Normal;
+			}
+
+			if (!_aboutWindow.IsVisible)
+			{
+				_aboutWindow.Show();
 			}
 
 			_aboutWindow.Activate();
@@ -4254,15 +4287,12 @@ public partial class App : System.Windows.Application
 
 		AboutWindow aboutWindow = new();
 		aboutWindow.UpdateCheckRequested += AboutWindow_UpdateCheckRequested;
+		aboutWindow.Closed += AboutWindow_Closed;
+		ConfigureAboutWindowOwnership(aboutWindow, owner);
 
-		if (_floatingWidgetWindow?.IsVisible == true)
-		{
-			aboutWindow.Owner = _floatingWidgetWindow;
-		}
-		else
+		if (aboutWindow.Owner is null)
 		{
 			aboutWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-			aboutWindow.ShowInTaskbar = true;
 		}
 
 		_aboutWindow = aboutWindow;
@@ -4276,13 +4306,54 @@ public partial class App : System.Windows.Application
 
 		try
 		{
-			aboutWindow.ShowDialog();
+			aboutWindow.Show();
 		}
-		finally
+		catch
 		{
-			aboutWindow.UpdateCheckRequested -= AboutWindow_UpdateCheckRequested;
+			ReleaseAboutWindow(aboutWindow);
+			throw;
+		}
+	}
+
+	private void AboutWindow_Closed(object? sender, EventArgs e)
+	{
+		if (sender is AboutWindow aboutWindow)
+		{
+			ReleaseAboutWindow(aboutWindow);
+		}
+	}
+
+	private void ReleaseAboutWindow(AboutWindow aboutWindow)
+	{
+		aboutWindow.UpdateCheckRequested -= AboutWindow_UpdateCheckRequested;
+		aboutWindow.Closed -= AboutWindow_Closed;
+		if (ReferenceEquals(_aboutWindow, aboutWindow))
+		{
 			_aboutWindow = null;
 		}
+	}
+
+	private static void ConfigureAboutWindowOwnership(
+		AboutWindow aboutWindow,
+		FloatingWidgetWindow? owner)
+	{
+		if (owner is not null)
+		{
+			if (!ReferenceEquals(aboutWindow.Owner, owner))
+			{
+				aboutWindow.Owner = owner;
+			}
+
+			aboutWindow.ShowInTaskbar = false;
+			return;
+		}
+
+		if (aboutWindow.Owner is not null)
+		{
+			aboutWindow.Owner = null;
+		}
+
+		aboutWindow.ShowInTaskbar = true;
 	}
 
 	private void OpenUserGuide()

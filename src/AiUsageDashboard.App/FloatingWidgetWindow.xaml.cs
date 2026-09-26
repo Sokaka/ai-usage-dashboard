@@ -3057,7 +3057,7 @@ public partial class FloatingWidgetWindow : Window
 		object sender,
 		DependencyPropertyChangedEventArgs e)
 	{
-		SetCodexResetCreditsWindowsVisible(IsVisible && !_isCollapsed);
+		SetInformationalWindowsVisible(IsVisible && !_isCollapsed);
 
 		if (!_isApplyingPortableWidgetPreferences)
 		{
@@ -3103,13 +3103,7 @@ public partial class FloatingWidgetWindow : Window
 			.FirstOrDefault(window => ReferenceEquals(window.Account, account));
 		if (existingWindow is not null)
 		{
-			if (existingWindow.WindowState == WindowState.Minimized)
-			{
-				existingWindow.WindowState = WindowState.Normal;
-			}
-
-			existingWindow.Show();
-			existingWindow.Activate();
+			ShowExistingInformationalWindow(existingWindow);
 			return;
 		}
 
@@ -3279,8 +3273,17 @@ public partial class FloatingWidgetWindow : Window
 		object sender,
 		RoutedEventArgs e)
 	{
+		AutomaticSortRulesWindow? existingWindow = OwnedWindows
+			.OfType<AutomaticSortRulesWindow>()
+			.FirstOrDefault();
+		if (existingWindow is not null)
+		{
+			ShowExistingInformationalWindow(existingWindow);
+			return;
+		}
+
 		AutomaticSortRulesWindow rulesWindow = new() { Owner = this };
-		_ = rulesWindow.ShowDialog();
+		rulesWindow.Show();
 	}
 
 	private async void ToggleUsageDisplayModeMenuItem_Click(
@@ -3374,7 +3377,7 @@ public partial class FloatingWidgetWindow : Window
 		ResetAccountScrollDrag(releaseMouseCapture: true);
 		if (isCollapsed)
 		{
-			SetCodexResetCreditsWindowsVisible(false);
+			SetInformationalWindowsVisible(false);
 		}
 
 		bool wasNativeWindowHidden = TryHideNativeWindowForLayoutTransition(
@@ -3415,7 +3418,7 @@ public partial class FloatingWidgetWindow : Window
 
 		if (!isCollapsed)
 		{
-			SetCodexResetCreditsWindowsVisible(IsVisible);
+			SetInformationalWindowsVisible(IsVisible);
 		}
 
 		TryAnnouncePendingUpdateBanner();
@@ -3445,10 +3448,24 @@ public partial class FloatingWidgetWindow : Window
 		}
 	}
 
-	private void SetCodexResetCreditsWindowsVisible(bool isVisible)
+	private static void ShowExistingInformationalWindow(Window window)
 	{
-		foreach (CodexResetCreditsWindow window in OwnedWindows
-			.OfType<CodexResetCreditsWindow>()
+		if (window.WindowState == WindowState.Minimized)
+		{
+			window.WindowState = WindowState.Normal;
+		}
+
+		window.Show();
+		window.Activate();
+	}
+
+	private void SetInformationalWindowsVisible(bool isVisible)
+	{
+		foreach (Window window in OwnedWindows
+			.OfType<Window>()
+			.Where(window =>
+				window is CodexResetCreditsWindow or
+					AutomaticSortRulesWindow or AboutWindow)
 			.ToArray())
 		{
 			if (window.IsVisible == isVisible)
