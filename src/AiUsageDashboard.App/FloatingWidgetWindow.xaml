@@ -440,15 +440,7 @@
                                 <MenuItem AutomationProperties.AutomationId="ShowAutomaticSortRules"
                                           AutomationProperties.Name="自動排序規則"
                                           Click="ShowAutomaticSortRulesMenuItem_Click"
-                                          Header="自動排序規則…">
-                                    <MenuItem.Icon>
-                                        <TextBlock VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource InfoBrush}"
-                                                   FontSize="15"
-                                                   FontWeight="SemiBold"
-                                                   Text="ⓘ" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
+                                          Header="自動排序規則" />
                                 <Separator />
                                 <MenuItem Header="匯入或匯出設定">
                                     <MenuItem AutomationProperties.AutomationId="ExportPortableSettings"
