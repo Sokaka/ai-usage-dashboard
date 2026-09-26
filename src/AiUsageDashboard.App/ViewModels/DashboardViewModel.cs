@@ -429,7 +429,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		: "排序：手動";
 
 	public string SortModeToolTip => IsAutomaticUsageSorting
-		? "依服務、主要用量週期與重置時間排序，不依用量百分比排序。按一下切換為手動。"
+		? "先依服務，再依 5 小時、週用量的重置時間排序，不看用量百分比。按一下切換為手動。"
 		: "保留自訂帳號順序。按一下切換為自動。";
 
 	public UsageDisplayMode DisplayMode => _usageDisplayMode;
@@ -9738,19 +9738,16 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				.Select(account => new
 				{
 					Account = account,
-					LeadingMetric = account.CurrentSnapshot is UsageSnapshot snapshot
-						? UsageMetricPresentation.OrderMetrics(snapshot.Metrics, now)
-							.FirstOrDefault()
-						: null,
+					ResetSortValues = UsageMetricPresentation.GetResetSortValues(
+						account.CurrentSnapshot?.Metrics ?? Array.Empty<UsageMetric>(),
+						now),
 					ManualIndex = manualIndexes.GetValueOrDefault(account.Id, int.MaxValue)
 				})
 				.OrderBy(item => GetProviderSortOrder(item.Account.Provider))
-				.ThenBy(item => item.LeadingMetric is null
-					? int.MaxValue
-					: UsageMetricPresentation.GetWindowSortOrder(item.LeadingMetric))
-				.ThenBy(item => item.LeadingMetric is null
-					? DateTimeOffset.MaxValue
-					: UsageMetricPresentation.GetResetSortValue(item.LeadingMetric, now))
+				.ThenBy(item => !item.ResetSortValues.HasMetrics)
+				.ThenBy(item => item.ResetSortValues.FiveHour)
+				.ThenBy(item => item.ResetSortValues.Weekly)
+				.ThenBy(item => item.ResetSortValues.Other)
 				.ThenBy(item => item.ManualIndex)
 				.Select(item => item.Account)
 				.ToArray();

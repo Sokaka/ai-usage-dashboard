@@ -3150,6 +3150,14 @@ public partial class FloatingWidgetWindow : Window
 		}
 	}
 
+	private void ShowAutomaticSortRulesMenuItem_Click(
+		object sender,
+		RoutedEventArgs e)
+	{
+		AutomaticSortRulesWindow rulesWindow = new() { Owner = this };
+		_ = rulesWindow.ShowDialog();
+	}
+
 	private async void ToggleUsageDisplayModeMenuItem_Click(
 		object sender,
 		RoutedEventArgs e)

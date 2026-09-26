@@ -735,7 +735,7 @@ public sealed class InternalPackageInvariantsTests
 			userGuide,
 			StringComparison.Ordinal);
 		Assert.Contains(
-			"依服務、主要用量週期與重置時間排列",
+			"同一服務的卡片依序比較 5 小時、週用量、其他用量的重置時間",
 			userGuide,
 			StringComparison.Ordinal);
 		Assert.Contains(

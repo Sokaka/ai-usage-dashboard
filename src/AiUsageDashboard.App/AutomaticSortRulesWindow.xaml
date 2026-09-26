@@ -1,0 +1,78 @@
+<Window x:Class="AiUsageDashboard.App.AutomaticSortRulesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="自動排序規則"
+        Icon="{DynamicResource ThemeWindowIcon}"
+        Width="460"
+        MinWidth="320"
+        SizeToContent="Height"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
+                           FontSize="21"
+                           FontWeight="SemiBold"
+                           Text="卡片怎麼排？" />
+                <TextBlock Margin="0,8,0,0"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
+                           Text="自動排序只調整畫面上的卡片順序。"
+                           TextWrapping="Wrap" />
+
+                <TextBlock Margin="0,22,0,6"
+                           Foreground="{DynamicResource PrimaryTextBrush}"
+                           FontWeight="SemiBold"
+                           Text="1  服務順序" />
+                <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
+                           Text="Claude → Codex → Antigravity → Grok → Copilot"
+                           TextWrapping="Wrap" />
+
+                <TextBlock Margin="0,18,0,6"
+                           Foreground="{DynamicResource PrimaryTextBrush}"
+                           FontWeight="SemiBold"
+                           Text="2  同一服務的卡片" />
+                <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
+                           Text="依序比較 5 小時、週用量、其他用量的重置時間；前一項相同，才看下一項。未來重置時間較近者排前。"
+                           TextWrapping="Wrap" />
+
+                <TextBlock Margin="0,18,0,6"
+                           Foreground="{DynamicResource PrimaryTextBrush}"
+                           FontWeight="SemiBold"
+                           Text="3  其他情況" />
+                <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
+                           Text="未提供或已過的重置時間排在同項最後；沒有用量項目的卡片排在同服務最後。條件相同時沿用手動順序。"
+                           TextWrapping="Wrap" />
+
+                <Border Margin="0,22,0,0"
+                        Padding="12"
+                        Background="{DynamicResource InfoSurfaceBrush}"
+                        BorderBrush="{DynamicResource InfoBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                    <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
+                               Text="排序不看用量百分比。切回手動後，會恢復原本的自訂順序。"
+                               TextWrapping="Wrap" />
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Button x:Name="CloseButton"
+                Grid.Row="1"
+                Margin="0,22,0,0"
+                HorizontalAlignment="Right"
+                AutomationProperties.Name="關閉自動排序規則"
+                Click="CloseButton_Click"
+                Content="知道了"
+                IsCancel="True"
+                Style="{StaticResource GhostButtonStyle}" />
+    </Grid>
+</Window>
