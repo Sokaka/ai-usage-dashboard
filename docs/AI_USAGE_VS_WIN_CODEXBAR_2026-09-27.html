@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="build_selection_brief.py:6bdcd73d">
+<meta name="generator" content="build_selection_brief.py:8d97a159">
 <title>AI 用量儀表板</title>
 <style>
 :root {
@@ -33,6 +33,7 @@ a { color: var(--ai); text-decoration: underline; text-underline-offset: .14em; 
 a:focus-visible { outline: 3px solid var(--ai); outline-offset: 3px; }
 .meta, .note, .sources { color: var(--t3); }
 .meta { font-size: .9rem; }
+.purpose { color: var(--t3); font-size: 1.04rem; max-width: 64ch; }
 .verdict { padding: 22px 26px; border: 1px solid var(--line); border-left: 3px solid var(--neutral); background: var(--card); font-size: 1.18rem; font-weight: 700; line-height: 1.5; }
 .products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .product { padding: 22px 24px; border: 1px solid var(--line); border-left: 3px solid var(--neutral); background: var(--card); display: flex; flex-direction: column; gap: 17px; }
@@ -50,7 +51,7 @@ a:focus-visible { outline: 3px solid var(--ai); outline-offset: 3px; }
 .win-text { color: var(--win); }
 .note { font-size: .88rem; }
 footer { padding-top: 18px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 7px; font-size: .82rem; line-height: 1.5; }
-.repo-links { display: flex; flex-wrap: wrap; gap: 2px 16px; }
+.repo-links { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; line-height: 1.5; }
 .repo-links a { overflow-wrap: anywhere; }
 .sources { display: flex; flex-wrap: wrap; gap: 5px 16px; padding: 10px 0 0; }
 .sources a { color: var(--t3); }
@@ -98,6 +99,11 @@ footer { padding-top: 18px; border-top: 1px solid var(--line); display: flex; fl
 <main class="wrap">
   <header>
     <h1>AI 用量儀表板</h1>
+    <p class="purpose">這份簡報整理 AI Usage Dashboard 與 Win-CodexBar 的優缺點，協助團隊依需求選用。</p>
+    <nav class="repo-links" aria-label="兩款工具的 GitHub 網址">
+      <a href="https://github.com/Sokaka/ai-usage-dashboard">AI Usage Dashboard｜https://github.com/Sokaka/ai-usage-dashboard</a>
+      <a href="https://github.com/nesszer/Win-CodexBar">Win-CodexBar｜https://github.com/nesszer/Win-CodexBar</a>
+    </nav>
     <p class="meta">截至 2026-09-27 最新正式版：AI Usage Dashboard v1.0.13／Win-CodexBar v0.60.3</p>
     <p class="verdict">要在同一浮窗並列看多個支援帳號，先試 AI Usage Dashboard；要更多服務，或部分來源的歷史／花費、通知與流程整合，先試 Win-CodexBar。</p>
   </header>
@@ -156,7 +162,6 @@ footer { padding-top: 18px; border-top: 1px solid var(--line); display: flex; fl
 
   <footer>
     <p>依正式版 Release、文件與程式碼查核；尚未用兩款工具的真人帳號逐項試用。</p>
-    <p class="repo-links"><strong>GitHub repo：</strong><a href="https://github.com/Sokaka/ai-usage-dashboard">https://github.com/Sokaka/ai-usage-dashboard</a><a href="https://github.com/nesszer/Win-CodexBar">https://github.com/nesszer/Win-CodexBar</a></p>
     <div class="sources" aria-label="查核來源">
         <a href="https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.13">AI Release</a>
         <a href="https://github.com/Sokaka/ai-usage-dashboard/blob/f98b36cc9efd78b6ae2a7cf38956241f1690aef8/README.md#支援平台">AI 支援平台</a>
