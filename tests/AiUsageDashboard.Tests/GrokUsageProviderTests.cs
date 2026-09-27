@@ -121,6 +121,23 @@ public sealed class GrokUsageProviderTests
 		}
 	}
 
+	[Fact]
+	public void RequiresSerializedRefresh_IncludesDisconnectedAccounts()
+	{
+		GrokAccountBinding binding = CreateBinding();
+		FakeBindingStore bindingStore = new(binding);
+		FakePoller poller = new((_, _) =>
+			throw new InvalidOperationException("Admission must not poll Grok."));
+		GrokUsageProvider provider = new(poller, bindingStore);
+		AccountProfile account = CreateAccount(binding);
+
+		Assert.True(provider.RequiresSerializedRefresh(account));
+		Assert.True(provider.RequiresSerializedRefresh(
+			account with { ProviderAccountIdentity = null }));
+		Assert.Equal(0, bindingStore.LoadCallCount);
+		Assert.Equal(0, poller.CallCount);
+	}
+
 	[Theory]
 	[InlineData("SuperGrok", "SuperGrok")]
 	[InlineData("SuperGrok Heavy", "SuperGrok Heavy")]
