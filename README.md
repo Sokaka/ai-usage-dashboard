@@ -96,7 +96,7 @@
 | 需求 | 文件 |
 | --- | --- |
 | 一般使用、設定與問題排除 | [使用說明](使用說明.md) |
-| AI 用量儀表板與 Win-CodexBar：優缺點與選用建議（2026-09-27） | [單頁 HTML 檔（下載後開啟）](docs/AI_USAGE_VS_WIN_CODEXBAR_2026-09-27.html) |
+| AI 用量儀表板 | [與 Win-CodexBar 的優缺點及選用建議（2026-09-27 HTML，下載後開啟）](docs/AI_USAGE_VS_WIN_CODEXBAR_2026-09-27.html) |
 | 回報問題或提出功能建議 | [支援與問題回報](SUPPORT.md) |
 | 私密回報安全問題 | [安全問題回報](SECURITY.md) |
 | 架構、資料保存與服務串接 | [技術總覽](docs/TECHNICAL_OVERVIEW.md) |
