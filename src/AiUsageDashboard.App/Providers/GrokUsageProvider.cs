@@ -11,7 +11,8 @@ using AiUsageDashboard.Core.Providers;
 
 namespace AiUsageDashboard.App.Providers;
 
-internal sealed class GrokUsageProvider : IUsageProvider
+internal sealed class GrokUsageProvider : IUsageProvider,
+	IUsageProviderRefreshAdmission
 {
 	private const int MaximumDisplayIdentityLength = 320;
 	private const string ConnectAccountMessage =
@@ -50,6 +51,12 @@ internal sealed class GrokUsageProvider : IUsageProvider
 			throw new ArgumentNullException(nameof(bindingStore));
 		_timeProvider = timeProvider ?? TimeProvider.System;
 		_bindingCommitGate = bindingCommitGate ?? new GrokBindingCommitGate();
+	}
+
+	public bool RequiresSerializedRefresh(AccountProfile account)
+	{
+		ArgumentNullException.ThrowIfNull(account);
+		return true;
 	}
 
 	public async Task<UsageSnapshot> GetUsageAsync(

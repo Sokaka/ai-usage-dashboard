@@ -40,9 +40,13 @@ public sealed class UsageRefreshCoordinatorTests
 		}
 	}
 
-	private sealed class FakeUsageProvider : IUsageProvider, IUsageProviderInvalidator
+	private sealed class FakeUsageProvider :
+		IUsageProvider,
+		IUsageProviderInvalidator,
+		IUsageProviderRefreshAdmission
 	{
 		private readonly Func<AccountProfile, int, CancellationToken, Task<UsageSnapshot>> _handler;
+		private readonly Func<AccountProfile, bool>? _requiresSerializedRefresh;
 		private int _callCount;
 
 		public ProviderKind Provider { get; }
@@ -56,11 +60,18 @@ public sealed class UsageRefreshCoordinatorTests
 		internal FakeUsageProvider(
 			ProviderKind provider,
 			TimeSpan minimumRefreshInterval,
-			Func<AccountProfile, int, CancellationToken, Task<UsageSnapshot>> handler)
+			Func<AccountProfile, int, CancellationToken, Task<UsageSnapshot>> handler,
+			Func<AccountProfile, bool>? requiresSerializedRefresh = null)
 		{
 			Provider = provider;
 			MinimumRefreshInterval = minimumRefreshInterval;
 			_handler = handler;
+			_requiresSerializedRefresh = requiresSerializedRefresh;
+		}
+
+		public bool RequiresSerializedRefresh(AccountProfile account)
+		{
+			return _requiresSerializedRefresh?.Invoke(account) ?? false;
 		}
 
 		public Task<UsageSnapshot> GetUsageAsync(
@@ -159,6 +170,325 @@ public sealed class UsageRefreshCoordinatorTests
 
 		Assert.Equal(20, provider.CallCount);
 		Assert.Equal(4, peakActiveCalls);
+	}
+
+	[Fact]
+	public async Task RefreshAsync_WhenSerializedProviderQueues_DoesNotBlockOtherProvider()
+	{
+		DateTimeOffset now = new(2026, 8, 1, 1, 5, 0, TimeSpan.Zero);
+		FakeTimeProvider timeProvider = new(now);
+		AccountProfile[] grokAccounts = Enumerable.Range(0, 4)
+			.Select(index => new AccountProfile(
+				Guid.NewGuid(),
+				ProviderKind.Grok,
+				$"Grok {index + 1}"))
+			.ToArray();
+		AccountProfile copilotAccount = new(
+			Guid.NewGuid(),
+			ProviderKind.Copilot,
+			"Copilot");
+		TaskCompletionSource<bool> firstGrokStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> releaseFirstGrok = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeUsageProvider grokProvider = new(
+			ProviderKind.Grok,
+			TimeSpan.Zero,
+			async (account, _, cancellationToken) =>
+			{
+				if (account.Id == grokAccounts[0].Id)
+				{
+					firstGrokStarted.TrySetResult(true);
+					await releaseFirstGrok.Task.WaitAsync(cancellationToken);
+				}
+
+				return CreateReadySnapshot(account, now, "grok");
+			},
+			requiresSerializedRefresh: _ => true);
+		FakeUsageProvider copilotProvider = new(
+			ProviderKind.Copilot,
+			TimeSpan.Zero,
+			(account, _, _) => Task.FromResult(
+				CreateReadySnapshot(account, now, "copilot")));
+		UsageRefreshCoordinator coordinator = new(
+			new UsageProviderRegistry(new IUsageProvider[]
+			{
+				grokProvider,
+				copilotProvider
+			}),
+			timeProvider,
+			maximumConcurrentRefreshes: 4);
+
+		Task<UsageSnapshot>[] grokRefreshes = grokAccounts
+			.Select(account => coordinator.RefreshAsync(account))
+			.ToArray();
+		await firstGrokStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+		try
+		{
+			UsageSnapshot copilotSnapshot = await coordinator
+				.RefreshAsync(copilotAccount)
+				.WaitAsync(TimeSpan.FromSeconds(5));
+
+			Assert.Equal(SnapshotStatus.Ready, copilotSnapshot.Status);
+			Assert.Equal(1, copilotProvider.CallCount);
+			Assert.Equal(1, grokProvider.CallCount);
+		}
+		finally
+		{
+			releaseFirstGrok.TrySetResult(true);
+		}
+
+		await Task.WhenAll(grokRefreshes).WaitAsync(TimeSpan.FromSeconds(5));
+		Assert.Equal(4, grokProvider.CallCount);
+	}
+
+	[Fact]
+	public async Task Invalidate_WhenSerializedRefreshWaitsForGlobalCapacity_ReleasesAdmission()
+	{
+		DateTimeOffset now = new(2026, 8, 1, 1, 7, 0, TimeSpan.Zero);
+		FakeTimeProvider timeProvider = new(now);
+		AccountProfile[] copilotAccounts = Enumerable.Range(0, 4)
+			.Select(index => new AccountProfile(
+				Guid.NewGuid(),
+				ProviderKind.Copilot,
+				$"Copilot {index + 1}"))
+			.ToArray();
+		AccountProfile canceledGrokAccount = new(
+			Guid.NewGuid(),
+			ProviderKind.Grok,
+			"Grok A");
+		AccountProfile nextGrokAccount = new(
+			Guid.NewGuid(),
+			ProviderKind.Grok,
+			"Grok B");
+		TaskCompletionSource<bool> fourCopilotCallsStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> releaseOneCopilot = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> releaseOtherCopilots = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeUsageProvider copilotProvider = new(
+			ProviderKind.Copilot,
+			TimeSpan.Zero,
+			async (account, callNumber, cancellationToken) =>
+			{
+				if (callNumber == 4)
+				{
+					fourCopilotCallsStarted.TrySetResult(true);
+				}
+
+				Task releaseCall = callNumber == 1
+					? releaseOneCopilot.Task
+					: releaseOtherCopilots.Task;
+				await releaseCall.WaitAsync(cancellationToken);
+				return CreateReadySnapshot(account, now, "copilot");
+			});
+		FakeUsageProvider grokProvider = new(
+			ProviderKind.Grok,
+			TimeSpan.Zero,
+			(account, _, _) => Task.FromResult(
+				CreateReadySnapshot(account, now, "grok")),
+			requiresSerializedRefresh: _ => true);
+		UsageRefreshCoordinator coordinator = new(
+			new UsageProviderRegistry(new IUsageProvider[]
+			{
+				copilotProvider,
+				grokProvider
+			}),
+			timeProvider,
+			maximumConcurrentRefreshes: 4);
+
+		Task<UsageSnapshot>[] copilotRefreshes = copilotAccounts
+			.Select(account => coordinator.RefreshAsync(account))
+			.ToArray();
+		await fourCopilotCallsStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		Task<UsageSnapshot> canceledGrokRefresh =
+			coordinator.RefreshAsync(canceledGrokAccount);
+		Task<UsageSnapshot> nextGrokRefresh =
+			coordinator.RefreshAsync(nextGrokAccount);
+
+		try
+		{
+			Assert.Equal(0, grokProvider.CallCount);
+			coordinator.Invalidate(canceledGrokAccount.Id);
+			UsageSnapshot stopped = await canceledGrokRefresh.WaitAsync(
+				TimeSpan.FromSeconds(5));
+			Assert.Equal(SnapshotStatus.NotConfigured, stopped.Status);
+			Assert.Equal(0, grokProvider.CallCount);
+
+			releaseOneCopilot.TrySetResult(true);
+			UsageSnapshot next = await nextGrokRefresh.WaitAsync(
+				TimeSpan.FromSeconds(5));
+			Assert.Equal(SnapshotStatus.Ready, next.Status);
+			Assert.Equal(1, grokProvider.CallCount);
+		}
+		finally
+		{
+			releaseOneCopilot.TrySetResult(true);
+			releaseOtherCopilots.TrySetResult(true);
+		}
+
+		await Task.WhenAll(copilotRefreshes).WaitAsync(TimeSpan.FromSeconds(5));
+	}
+
+	[Fact]
+	public async Task Invalidate_WhenRefreshIsWaitingForAdmission_DoesNotCallProvider()
+	{
+		DateTimeOffset now = new(2026, 8, 1, 1, 10, 0, TimeSpan.Zero);
+		FakeTimeProvider timeProvider = new(now);
+		AccountProfile activeAccount = CreateAccount();
+		AccountProfile canceledAccount = CreateAccount();
+		AccountProfile nextAccount = CreateAccount();
+		TaskCompletionSource<bool> activeCallStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> releaseActiveCall = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeUsageProvider provider = new(
+			ProviderKind.Claude,
+			TimeSpan.Zero,
+			async (account, _, cancellationToken) =>
+			{
+				if (account.Id == activeAccount.Id)
+				{
+					activeCallStarted.TrySetResult(true);
+					await releaseActiveCall.Task.WaitAsync(cancellationToken);
+				}
+
+				return CreateReadySnapshot(account, now, "usage");
+			},
+			requiresSerializedRefresh: _ => true);
+		UsageRefreshCoordinator coordinator = new(
+			new UsageProviderRegistry(new[] { provider }),
+			timeProvider,
+			maximumConcurrentRefreshes: 4);
+
+		Task<UsageSnapshot> activeRefresh = coordinator.RefreshAsync(activeAccount);
+		await activeCallStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		Task<UsageSnapshot> canceledRefresh = coordinator.RefreshAsync(canceledAccount);
+		Task<UsageSnapshot> nextRefresh = coordinator.RefreshAsync(nextAccount);
+
+		try
+		{
+			coordinator.Invalidate(canceledAccount.Id);
+			UsageSnapshot stopped = await canceledRefresh.WaitAsync(
+				TimeSpan.FromSeconds(5));
+
+			Assert.Equal(SnapshotStatus.NotConfigured, stopped.Status);
+			Assert.Equal("用量檢查已停止。", stopped.Error);
+			Assert.Equal(1, provider.CallCount);
+		}
+		finally
+		{
+			releaseActiveCall.TrySetResult(true);
+		}
+
+		UsageSnapshot[] completed = await Task.WhenAll(activeRefresh, nextRefresh)
+			.WaitAsync(TimeSpan.FromSeconds(5));
+		Assert.All(completed, snapshot => Assert.Equal(
+			SnapshotStatus.Ready,
+			snapshot.Status));
+		Assert.Equal(2, provider.CallCount);
+	}
+
+	[Fact]
+	public async Task RefreshAsync_WhenSerializedProviderFails_ReleasesAdmission()
+	{
+		DateTimeOffset now = new(2026, 8, 1, 1, 12, 0, TimeSpan.Zero);
+		FakeTimeProvider timeProvider = new(now);
+		AccountProfile failingAccount = CreateAccount();
+		AccountProfile nextAccount = CreateAccount();
+		TaskCompletionSource<bool> firstCallStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> failFirstCall = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeUsageProvider provider = new(
+			ProviderKind.Claude,
+			TimeSpan.Zero,
+			async (account, _, cancellationToken) =>
+			{
+				if (account.Id == failingAccount.Id)
+				{
+					firstCallStarted.TrySetResult(true);
+					await failFirstCall.Task.WaitAsync(cancellationToken);
+					throw new IOException("synthetic provider failure");
+				}
+
+				return CreateReadySnapshot(account, now, "recovered");
+			},
+			requiresSerializedRefresh: _ => true);
+		UsageRefreshCoordinator coordinator = CreateCoordinator(provider, timeProvider);
+
+		Task<UsageSnapshot> failingRefresh = coordinator.RefreshAsync(failingAccount);
+		await firstCallStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		Task<UsageSnapshot> nextRefresh = coordinator.RefreshAsync(nextAccount);
+		try
+		{
+			Assert.Equal(1, provider.CallCount);
+		}
+		finally
+		{
+			failFirstCall.TrySetResult(true);
+		}
+
+		UsageSnapshot[] completed = await Task.WhenAll(failingRefresh, nextRefresh)
+			.WaitAsync(TimeSpan.FromSeconds(5));
+
+		Assert.Equal(SnapshotStatus.Error, completed[0].Status);
+		Assert.Equal(SnapshotStatus.Ready, completed[1].Status);
+		Assert.Equal(2, provider.CallCount);
+	}
+
+	[Fact]
+	public async Task RefreshAsync_WhenAccountIsWaitingForAdmission_CoalescesCallers()
+	{
+		DateTimeOffset now = new(2026, 8, 1, 1, 13, 0, TimeSpan.Zero);
+		FakeTimeProvider timeProvider = new(now);
+		AccountProfile activeAccount = CreateAccount();
+		AccountProfile queuedAccount = CreateAccount();
+		TaskCompletionSource<bool> activeCallStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> releaseActiveCall = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeUsageProvider provider = new(
+			ProviderKind.Claude,
+			TimeSpan.Zero,
+			async (account, _, cancellationToken) =>
+			{
+				if (account.Id == activeAccount.Id)
+				{
+					activeCallStarted.TrySetResult(true);
+					await releaseActiveCall.Task.WaitAsync(cancellationToken);
+				}
+
+				return CreateReadySnapshot(account, now, "usage");
+			},
+			requiresSerializedRefresh: _ => true);
+		UsageRefreshCoordinator coordinator = CreateCoordinator(provider, timeProvider);
+
+		Task<UsageSnapshot> activeRefresh = coordinator.RefreshAsync(activeAccount);
+		await activeCallStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		Task<UsageSnapshot> firstQueuedRefresh = coordinator.RefreshAsync(queuedAccount);
+		Task<UsageSnapshot> secondQueuedRefresh = coordinator.RefreshAsync(queuedAccount);
+
+		try
+		{
+			Assert.Equal(1, provider.CallCount);
+			Assert.False(firstQueuedRefresh.IsCompleted);
+			Assert.False(secondQueuedRefresh.IsCompleted);
+		}
+		finally
+		{
+			releaseActiveCall.TrySetResult(true);
+		}
+
+		await activeRefresh.WaitAsync(TimeSpan.FromSeconds(5));
+		UsageSnapshot[] queuedSnapshots = await Task.WhenAll(
+			firstQueuedRefresh,
+			secondQueuedRefresh).WaitAsync(TimeSpan.FromSeconds(5));
+
+		Assert.Same(queuedSnapshots[0], queuedSnapshots[1]);
+		Assert.Equal(2, provider.CallCount);
 	}
 
 	[Fact]

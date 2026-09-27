@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Providers;
 
@@ -45,6 +47,8 @@ public sealed class UsageRefreshCoordinator : IUsageRefreshCoordinator
 	private readonly Dictionary<Guid, AccountRefreshState> _accountStates = new();
 	private readonly Action<ProviderKind, Exception>? _reportUnexpectedException;
 	private readonly SemaphoreSlim _refreshConcurrencyGate;
+	private readonly ConcurrentDictionary<ProviderKind, SemaphoreSlim>
+		_serializedRefreshGates = new();
 	private readonly object _stateGate = new();
 	private readonly TimeProvider _timeProvider;
 	private readonly UsageProviderRegistry _providerRegistry;
@@ -702,10 +706,23 @@ public sealed class UsageRefreshCoordinator : IUsageRefreshCoordinator
 		TaskCompletionSource<UsageSnapshot> completionSource,
 		CancellationTokenSource refreshCancellationSource)
 	{
+		SemaphoreSlim? acquiredSerializedRefreshGate = null;
 		bool hasConcurrencyLease = false;
 
 		try
 		{
+			if ((provider is IUsageProviderRefreshAdmission admission) &&
+				admission.RequiresSerializedRefresh(account))
+			{
+				SemaphoreSlim serializedRefreshGate =
+					_serializedRefreshGates.GetOrAdd(
+					account.Provider,
+					static _ => new SemaphoreSlim(1, 1));
+				await serializedRefreshGate.WaitAsync(
+					refreshCancellationSource.Token).ConfigureAwait(false);
+				acquiredSerializedRefreshGate = serializedRefreshGate;
+			}
+
 			await _refreshConcurrencyGate.WaitAsync(
 				refreshCancellationSource.Token).ConfigureAwait(false);
 			hasConcurrencyLease = true;
@@ -815,6 +832,8 @@ public sealed class UsageRefreshCoordinator : IUsageRefreshCoordinator
 			{
 				_refreshConcurrencyGate.Release();
 			}
+
+			acquiredSerializedRefreshGate?.Release();
 
 			refreshCancellationSource.Dispose();
 		}
