@@ -2905,7 +2905,25 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				refreshReservationsTransferred[index] = true;
 			}
 
-			UsageSnapshot[] snapshots = await Task.WhenAll(refreshTasks);
+			UsageSnapshot[] snapshots;
+			try
+			{
+				// 新綁定與 AGY 帳號仍由整批流程完成身分及顯示關聯檢查。
+				if ((providerAccountChangeId is null) &&
+					(tryBeginProviderAccountCommit is null) &&
+					(onlyAccountId is null) &&
+					(refreshTasks.Length > 1) &&
+					(refreshTasks.Any(task => !task.IsCompleted)))
+				{
+					await ApplyCompletedBoundRefreshesAsync(
+						refreshTargets,
+						refreshTasks);
+				}
+			}
+			finally
+			{
+				snapshots = await Task.WhenAll(refreshTasks);
+			}
 
 			if (IsRefreshStopped())
 			{
@@ -3041,6 +3059,85 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 			EndRefreshOperation();
 		}
+	}
+
+	private async Task ApplyCompletedBoundRefreshesAsync(
+		IReadOnlyList<(AccountUsageViewModel Account, long LifecycleRevision)>
+			refreshTargets,
+		IReadOnlyList<Task<UsageSnapshot>> refreshTasks)
+	{
+		Dictionary<Task<UsageSnapshot>, int> pendingRefreshes = new();
+		for (int index = 0; index < refreshTargets.Count; index++)
+		{
+			AccountUsageViewModel account = refreshTargets[index].Account;
+			if ((!account.IsAntigravity) &&
+				(!string.IsNullOrWhiteSpace(
+					account.Profile.ProviderAccountIdentity)))
+			{
+				pendingRefreshes.Add(refreshTasks[index], index);
+			}
+		}
+
+		while (pendingRefreshes.Count > 0)
+		{
+			Task<UsageSnapshot> completedTask = await Task.WhenAny(
+				pendingRefreshes.Keys);
+			int targetIndex = pendingRefreshes[completedTask];
+			pendingRefreshes.Remove(completedTask);
+
+			if (!completedTask.IsCompletedSuccessfully)
+			{
+				continue;
+			}
+
+			(AccountUsageViewModel account, long lifecycleRevision) =
+				refreshTargets[targetIndex];
+			UsageSnapshot snapshot = await completedTask;
+			if (CanApplyCompletedBoundSnapshotEarly(
+					account,
+					lifecycleRevision,
+					snapshot))
+			{
+				account.ApplyLiveSnapshot(snapshot);
+			}
+		}
+	}
+
+	private bool CanApplyCompletedBoundSnapshotEarly(
+		AccountUsageViewModel account,
+		long lifecycleRevision,
+		UsageSnapshot snapshot)
+	{
+		if ((IsRefreshStopped()) ||
+			(!account.IsEnabled) ||
+			(account.IsAntigravity) ||
+			(account.IsProviderAccountChangeInProgress) ||
+			(IsAccountCleanupBlocked(account.Id, account.Provider)) ||
+			(!Accounts.Contains(account)) ||
+			(account.LifecycleRevision != lifecycleRevision) ||
+			(snapshot.Account.Id != account.Id) ||
+			(snapshot.Account.Provider != account.Provider) ||
+			(snapshot.SubscriptionVerificationState ==
+				SubscriptionVerificationState.DefiniteScopeMismatch) ||
+			(!account.CanAcceptLiveProviderAccountSnapshot(snapshot)) ||
+			(!TryGetUsableProviderAccountIdentity(
+				snapshot,
+				out string? snapshotIdentity)) ||
+			(!ProviderAccountIdentityRules.TryNormalize(
+				account.Profile.ProviderAccountIdentity,
+				out string? persistedIdentity)) ||
+			(persistedIdentity is null) ||
+			(!ProviderAccountIdentityRules.Comparer.Equals(
+				persistedIdentity,
+				snapshotIdentity)))
+		{
+			return false;
+		}
+
+		return !FindProviderAccountIdentityConflicts(
+			new[] { account },
+			new[] { snapshot },
+			new[] { lifecycleRevision }).ContainsKey(account.Id);
 	}
 
 	private async Task RefreshAccountUsageCoreAsync(

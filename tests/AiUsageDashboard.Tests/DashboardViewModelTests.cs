@@ -12878,6 +12878,267 @@ public sealed class DashboardViewModelTests
 	}
 
 	[Fact]
+	public async Task RefreshUsageAsync_WhenBoundCardFinishesFirst_ShowsItBeforeSlowCard()
+	{
+		AccountProfile fastProfile = new(
+			Guid.NewGuid(),
+			ProviderKind.Codex,
+			"Fast Codex",
+			ProviderAccountIdentity: "codex@example.com");
+		AccountProfile slowProfile = new(
+			Guid.NewGuid(),
+			ProviderKind.Claude,
+			"Slow Claude",
+			ProviderAccountIdentity: "claude@example.com",
+			HasAcceptedClaudeQuotaRisk: true);
+		TaskCompletionSource fastStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource slowStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<UsageSnapshot> fastResult = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<UsageSnapshot> slowResult = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeUsageRefreshCoordinator refreshCoordinator = new()
+		{
+			RefreshHandler = account =>
+			{
+				if (account.Id == fastProfile.Id)
+				{
+					fastStarted.TrySetResult();
+					return fastResult.Task;
+				}
+
+				slowStarted.TrySetResult();
+				return slowResult.Task;
+			}
+		};
+		DashboardViewModel viewModel = new(
+			new FakeAccountProfileStore(fastProfile, slowProfile),
+			refreshCoordinator);
+		await viewModel.InitializeAsync();
+		AccountUsageViewModel fastAccount = viewModel.Accounts.Single(
+			account => account.Id == fastProfile.Id);
+		AccountUsageViewModel slowAccount = viewModel.Accounts.Single(
+			account => account.Id == slowProfile.Id);
+		TaskCompletionSource<UsageSnapshot> fastDisplayed = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		fastAccount.PropertyChanged += (_, args) =>
+		{
+			if ((args.PropertyName == nameof(AccountUsageViewModel.CurrentSnapshot)) &&
+				(fastAccount.CurrentSnapshot is UsageSnapshot snapshot) &&
+				(snapshot.Status == SnapshotStatus.Ready))
+			{
+				fastDisplayed.TrySetResult(snapshot);
+			}
+		};
+
+		Task refreshTask = viewModel.RefreshUsageAsync();
+		try
+		{
+			await Task.WhenAll(fastStarted.Task, slowStarted.Task)
+				.WaitAsync(TimeSpan.FromSeconds(5));
+			fastResult.SetResult(CreateReadySnapshot(fastProfile, 42));
+
+			UsageSnapshot displayedSnapshot = await fastDisplayed.Task
+				.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.Equal(42d, Assert.Single(displayedSnapshot.Metrics).UsedPercent);
+			Assert.False(slowResult.Task.IsCompleted);
+			Assert.False(refreshTask.IsCompleted);
+			Assert.Null(slowAccount.CurrentSnapshot);
+		}
+		finally
+		{
+			fastResult.TrySetResult(CreateReadySnapshot(fastProfile, 42));
+			slowResult.TrySetResult(CreateReadySnapshot(slowProfile, 33));
+			await refreshTask.WaitAsync(TimeSpan.FromSeconds(5));
+		}
+	}
+
+	[Fact]
+	public async Task RefreshUsageAsync_WhenSecondUnboundCardFinishesFirst_KeepsFirstIdentityClaim()
+	{
+		const string SharedIdentity = "shared@example.com";
+		AccountProfile first = new(
+			Guid.NewGuid(),
+			ProviderKind.Claude,
+			"Claude 1",
+			HasAcceptedClaudeQuotaRisk: true);
+		AccountProfile second = new(
+			Guid.NewGuid(),
+			ProviderKind.Claude,
+			"Claude 2",
+			HasAcceptedClaudeQuotaRisk: true);
+		TaskCompletionSource firstStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource secondStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<UsageSnapshot> firstResult = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeAccountProfileStore profileStore = new(first, second);
+		FakeUsageRefreshCoordinator refreshCoordinator = new()
+		{
+			RefreshHandler = account =>
+			{
+				if (account.Id == first.Id)
+				{
+					firstStarted.TrySetResult();
+					return firstResult.Task;
+				}
+
+				secondStarted.TrySetResult();
+				return Task.FromResult(CreateReadySnapshot(second) with
+				{
+					ProviderAccountIdentity = SharedIdentity
+				});
+			}
+		};
+		FakeUsageSnapshotStore snapshotStore = new();
+		DashboardViewModel viewModel = new(
+			profileStore,
+			refreshCoordinator,
+			snapshotStore);
+		await viewModel.InitializeAsync();
+		AccountUsageViewModel secondAccount = viewModel.Accounts.Single(
+			account => account.Id == second.Id);
+		TaskCompletionSource secondWasShownReady = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		secondAccount.PropertyChanged += (_, args) =>
+		{
+			if ((args.PropertyName == nameof(AccountUsageViewModel.CurrentSnapshot)) &&
+				(secondAccount.CurrentSnapshot?.Status == SnapshotStatus.Ready))
+			{
+				secondWasShownReady.TrySetResult();
+			}
+		};
+		UsageSnapshot firstSnapshot = CreateReadySnapshot(first) with
+		{
+			ProviderAccountIdentity = SharedIdentity
+		};
+		Task refreshTask = viewModel.RefreshUsageAsync();
+		try
+		{
+			Assert.True(firstStarted.Task.IsCompleted);
+			Assert.True(secondStarted.Task.IsCompleted);
+			Assert.False(firstResult.Task.IsCompleted);
+			Assert.False(refreshTask.IsCompleted);
+			Assert.False(secondWasShownReady.Task.IsCompleted);
+		}
+		finally
+		{
+			firstResult.TrySetResult(firstSnapshot);
+			await refreshTask.WaitAsync(TimeSpan.FromSeconds(5));
+		}
+
+		Assert.False(secondWasShownReady.Task.IsCompleted);
+		Assert.Equal(
+			SharedIdentity,
+			Assert.Single(profileStore.SavedSnapshots)
+				.Single(account => account.Id == first.Id)
+				.ProviderAccountIdentity);
+		Assert.Null(
+			Assert.Single(profileStore.SavedSnapshots)
+				.Single(account => account.Id == second.Id)
+				.ProviderAccountIdentity);
+		Assert.Equal(
+			AccountStatusKind.Ready,
+			viewModel.Accounts.Single(account => account.Id == first.Id).StatusKind);
+		Assert.Equal(AccountStatusKind.Error, secondAccount.StatusKind);
+		Assert.Equal(
+			UsageRecoveryAction.SwitchAccount,
+			secondAccount.CurrentSnapshot?.RecoveryAction);
+		Assert.Equal(first.Id, Assert.Single(snapshotStore.SavedSnapshots).Account.Id);
+	}
+
+	[Fact]
+	public async Task RefreshUsageAfterInvalidationAsync_WhenCommitIsDeclined_DoesNotShowOtherCard()
+	{
+		AccountProfile fastProfile = new(
+			Guid.NewGuid(),
+			ProviderKind.Codex,
+			"Fast Codex",
+			ProviderAccountIdentity: "codex@example.com");
+		AccountProfile changingProfile = new(
+			Guid.NewGuid(),
+			ProviderKind.Claude,
+			"Changing Claude",
+			ProviderAccountIdentity: "claude@example.com",
+			HasAcceptedClaudeQuotaRisk: true);
+		TaskCompletionSource fastStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource changingStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<UsageSnapshot> fastResult = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<UsageSnapshot> changingResult = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource commitWasAttempted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeUsageRefreshCoordinator refreshCoordinator = new()
+		{
+			RefreshHandler = account =>
+			{
+				if (account.Id == fastProfile.Id)
+				{
+					fastStarted.TrySetResult();
+					return fastResult.Task;
+				}
+
+				changingStarted.TrySetResult();
+				return changingResult.Task;
+			}
+		};
+		DashboardViewModel viewModel = new(
+			new FakeAccountProfileStore(fastProfile, changingProfile),
+			refreshCoordinator);
+		await viewModel.InitializeAsync();
+		AccountUsageViewModel fastAccount = viewModel.Accounts.Single(
+			account => account.Id == fastProfile.Id);
+		AccountUsageViewModel changingAccount = viewModel.Accounts.Single(
+			account => account.Id == changingProfile.Id);
+		changingAccount.BeginProviderAccountChange();
+		TaskCompletionSource fastWasShownReady = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		fastAccount.PropertyChanged += (_, args) =>
+		{
+			if ((args.PropertyName == nameof(AccountUsageViewModel.CurrentSnapshot)) &&
+				(fastAccount.CurrentSnapshot?.Status == SnapshotStatus.Ready))
+			{
+				fastWasShownReady.TrySetResult();
+			}
+		};
+
+		Task refreshTask = viewModel.RefreshUsageAfterInvalidationAsync(
+			changingProfile.Id,
+			tryBeginProviderAccountCommit: () =>
+			{
+				commitWasAttempted.TrySetResult();
+				return false;
+			});
+		try
+		{
+			await Task.WhenAll(fastStarted.Task, changingStarted.Task)
+				.WaitAsync(TimeSpan.FromSeconds(5));
+			fastResult.SetResult(CreateReadySnapshot(fastProfile, 41));
+
+			Assert.False(changingResult.Task.IsCompleted);
+			Assert.False(refreshTask.IsCompleted);
+			Assert.False(fastWasShownReady.Task.IsCompleted);
+		}
+		finally
+		{
+			fastResult.TrySetResult(CreateReadySnapshot(fastProfile, 41));
+			changingResult.TrySetResult(CreateReadySnapshot(changingProfile, 52));
+			await refreshTask.WaitAsync(TimeSpan.FromSeconds(5));
+		}
+
+		Assert.True(commitWasAttempted.Task.IsCompleted);
+		Assert.False(fastWasShownReady.Task.IsCompleted);
+		Assert.Null(fastAccount.CurrentSnapshot);
+		Assert.Null(changingAccount.CurrentSnapshot);
+	}
+
+	[Fact]
 	public async Task RefreshUsageAsync_WhenTwoUnboundCardsResolveToSameProviderIdentity_BindsOnlyFirst()
 	{
 		const string SharedIdentity = "shared@example.com";
