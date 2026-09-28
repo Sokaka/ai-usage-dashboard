@@ -1,6 +1,6 @@
 # 實作與驗證清單
 
-更新日期：2026-09-28
+更新日期：2026-09-29
 
 讀者：負責 AI Usage Dashboard 開發、測試與交付的人員。本文只列現況、驗證界線與尚待工作。
 
@@ -9,6 +9,27 @@
 ## 目前 source
 
 標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.15 / sequence 1029`。
+
+### 英文與繁體中文語系
+
+本輪預定發布 `1.0.16 / sequence 1030`，App 與 Updater 均重新建置；目前公開版仍為 `1.0.15`。正式 source／CI／凍結與匿名下載結果完成後回填 [1.0.16 版本說明](docs/releases/1.0.16.md)。
+
+- [x] Repository 預設 README 使用英文；繁中內容保留於 `README.zh-TW.md`，兩份正文可互相切換，`README.en.md` 保留舊英文入口。
+- [x] 2026-09-29 README 入口調整：Release 建置 0 warnings／errors，相關既有測試 44／44 通過，0 failed／skipped。三份 README 的 62 筆本機連結、13 份文件的 20 筆既有章節引用，以及 UTF-8、正文保留與 diff 檢查通過；GitHub 線上呈現尚未驗證。
+- [x] App 預設使用英文；浮窗與系統匣選單提供 English／繁體中文切換，既有視窗、帳號狀態與更新提示會立即更新。
+- [x] 語系寫入本機 preferences schema `8`，並納入 portable settings schema `7` 的匯出、匯入、復原與復原點；舊版本機設定缺少語系時使用英文，舊版匯入檔缺少語系時保留目前選擇。
+- [x] 帳號名稱、原始用量及無法辨識的來源訊息保持原樣；條款只翻譯介面標示，原文、catalog hash 與接受紀錄不變。畫面使用各語系的格式，不改動 process `CurrentCulture` 或持久化格式。
+- [x] 五組資源共 1,849 對 English／繁體中文文字；已檢查 key、format placeholders、UTF-8、XAML 引用及缺少資源時的明確錯誤。
+- [x] 合成資料回歸涵蓋即時切換、顯示狀態保留、設定跨版本相容性、匯入復原，以及 400 × 400 工作區下兩種語系與三種 DPI 的排序視窗布局。
+- [x] 修正長來源診斷的語系比對逾時、匯入／還原狀態混語、登入失敗理由與手動更新失敗理由未翻譯。新增 39 個合成資料回歸案例；修正後 Release 建置 0 warnings／errors，定向測試 604／604 通過，0 failed／skipped。
+- [x] 2026-09-29 語系修正後、README 入口調整前的完整測試 4,503／4,503 通過，0 failed／skipped，測試執行 4 分 49 秒。Production line coverage 74.83%（49,701／66,421，門檻 70%）；39 個新增回歸案例均包含於完整測試。
+- [x] README 入口調整前的語系修正驗證包 `0.0.0-verify-language.20260929.2` 通過封裝、授權匯出、update configuration 與 package stager gates。直接讀取成品確認預設 English，兩種語系各 1,849 筆資源均與 source 相符（XML 換行正規化後），process `CurrentCulture` 不變，繁中 satellite resource 已包含於 ZIP；324 個 payload files、ZIP 71,657,735 bytes，逐檔 bytes 與 checksum sidecar 核對通過。先前 `.1` 驗證包的 bytes 保持原樣；本次 `.2` 未安裝、簽署、上傳或發布。
+- [x] 2026-09-29 修正前的本機 Release 建置通過，0 warnings／errors；完整測試 4,464／4,464 通過，0 failed／skipped，耗時 3 分 53 秒。Production line coverage 74.74%（49,626／66,400，門檻 70%）。
+- [x] 修正前的本機驗證包 `0.0.0-verify-language.20260929.1` 通過封裝、授權匯出、update configuration 與 package stager gates。直接讀取成品確認預設 English，兩種語系各 1,847 筆資源均與當時 source 相符（XML 換行正規化後），繁中 satellite resource 已包含於 ZIP；324 個 payload files、ZIP 71,657,321 bytes，逐檔 bytes 與 checksum sidecar 核對通過。此包未安裝、簽署、上傳或發布。
+
+首輪完整測試為 4,442 passed／19 failed；其中 17 項為原繁中文案、選單數量或布局測試缺少新文字資源的預期，已修正並通過定向回歸。另外兩項 native 子程序測試曾在清理 fixture 或 parent exit code 檢查失敗；獨立重跑結果不一致，修正前最後一次完整含 coverage 重跑均通過，原失敗仍保留，根因尚未定位。
+
+本輪未執行真實 CLI 登入／用量、安裝升級、真人多螢幕或螢幕閱讀器驗收。語系功能尚未正式發布，正式下載版狀態仍見下方紀錄。
 
 ### 使用者體驗一致性與操作回饋
 
@@ -95,7 +116,7 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 連接與用量查詢的 CLI 搜尋、驗簽及副本準備已移到背景；取消後晚到的執行檔鎖會清理。這項程式修正完成時，Release 建置通過（0 warnings／0 errors），404／404 項相關回歸測試通過，0 failed／0 skipped，包含阻塞解析器時呼叫先返回、取消、晚到檔案鎖釋放及未啟動 CLI／SDK 的測試。
 
-目前封裝只保留繁中、簡中、英文及日文的執行環境資源，App 自身介面仍為繁中。語系設定後 Release 建置通過（0 warnings／0 errors），62／62 項封裝、授權及隱私相關測試通過；該次調整未重跑完整套件、coverage 或真人 UI／CLI 驗收。
+2026-09-13 當時的封裝只保留繁中、簡中、英文及日文的執行環境資源，App 自身介面當時仍為繁中。封裝語系篩選設定後 Release 建置通過（0 warnings／0 errors），62／62 項封裝、授權及隱私相關測試通過；該次調整未重跑完整套件、coverage 或真人 UI／CLI 驗收。
 
 語系調整時的驗證包 `0.0.0-verify-locales.20260913.1` 封裝及四組實際授權匯出通過。ZIP 從前一驗證包的 82,248,336 bytes 降到 77,735,352 bytes，減少 5.49%；完整列舉共 328 files，只移除其他 10 種語系的 170 個資源檔。保留的 294 個相依元件 binary 與 15 個授權／manifest 檔案均與前包 bytes 相同；繁中、簡中及日文各保留 17 個資源檔，英文內建資源亦保留。主包維持不含第三方 CLI。
 
@@ -228,7 +249,7 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 - [x] 2026-09-23 以 exact candidate Updater 的 `apply-local --no-restart` 套用至既有標準安裝。Updater 自然關閉 App，transaction `Committed`、無 staging；新 current 的 328 個 ZIP payload 逐檔相符，previous 完整保留。App 與維護 Updater 的 ProductVersion、Windows 安裝紀錄及開始選單 target／working directory 均已核對，App 從 canonical 路徑重新啟動且正常回應。離線 installed manifest 的 source／release sequence 依設計為 null，不列為 signed online update。
 - [x] 同一 exact candidate 在單螢幕 100% DPI、四個停靠角各完成高頻展開取樣；中間 resize／移動狀態保持 hidden，第一個可見 expanded frame 均已在最終位置，錯位可見 frame 為 0。經典藍、曜石黑、柔霧灰、櫻花粉四個一般主題的收合箭頭皆無 accent 背景／外框；捲動條實際像素分別符合 `#26344B`、`#24242B`、`#D7D1C8`、`#E5D2D9`。
 
-`1.0.6` 的 exact frozen 成品已完成既有標準安裝的 `apply-local` 與指定 UI smoke，但仍未完成乾淨 Windows 初裝、App 內一鍵更新、舊版 Updater 自我交接、custom／portable、High Contrast、多螢幕／混合 DPI、完整 UI／無障礙，以及五個 provider 的真人登入與用量驗收。離線 `apply-local` 不等於 signed online update；歷史合成候選的 canonical managed E2E 也不能改列為本版正式成品的實機驗收。逐平台狀態見 [1.0.6 CLI 實測表](docs/CLI_COMPATIBILITY.md#106)。
+`1.0.6` 的 exact frozen 成品已完成既有標準安裝的 `apply-local` 與指定 UI smoke，但仍未完成乾淨 Windows 初裝、App 內一鍵更新、舊版 Updater 自我交接、custom／portable、High Contrast、多螢幕／混合 DPI、完整 UI／無障礙，以及五個 provider 的真人登入與用量驗收。離線 `apply-local` 不等於 signed online update；歷史合成候選的 canonical managed E2E 也不能改列為本版正式成品的實機驗收。逐平台狀態見 [1.0.6 CLI 實測表](docs/CLI_COMPATIBILITY.md#106-歷史正式版)。
 
 ### 1.0.5 歷史正式版
 

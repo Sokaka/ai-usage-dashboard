@@ -5,6 +5,7 @@ using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class AccountUsageViewModelStatusTests
 {
 	[Fact]

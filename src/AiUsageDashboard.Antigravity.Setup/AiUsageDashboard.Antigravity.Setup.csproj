@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AiUsageDashboard.Antigravity\AiUsageDashboard.Antigravity.csproj" />
+    <ProjectReference Include="..\AiUsageDashboard.Core\AiUsageDashboard.Core.csproj" />
   </ItemGroup>
 
   <!-- Setup UI 由 App 載入；共用套件版本必須一致。 -->

@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.App.ViewModels;
@@ -80,6 +81,8 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 	private bool _isUsingProviderAccountChangeFallback;
 	private long _lifecycleRevision;
 	private string _noticeText = string.Empty;
+	private UsageSnapshot? _staleNoticeSnapshot;
+	private UsageSnapshot? _usageSummarySnapshot;
 	private string _primaryText = string.Empty;
 	private string? _expectedProviderAccountIdentity;
 	private string? _providerAccountChangeFallbackIdentity;
@@ -108,6 +111,15 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			: ProviderName;
 
 	public string AccountNickname => Profile.DisplayName ?? string.Empty;
+
+	public string AccountActionsAutomationName =>
+		UiText.Format("Windows.Card.ActionsAutomation", AccountName);
+
+	public string MoveAccountUpAutomationName =>
+		UiText.Format("Windows.Card.MoveUpAutomation", AccountName);
+
+	public string MoveAccountDownAutomationName =>
+		UiText.Format("Windows.Card.MoveDownAutomation", AccountName);
 
 	public string AccountCardTitle => HasAccountNickname
 		? AccountNickname
@@ -182,9 +194,9 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		includeSubscriptionContext: true,
 		includePlanTier: true);
 
-	public string AccountAliasText => HasAccountNickname
+	public string AccountAliasText => UiText.Translate(HasAccountNickname
 		? $"暱稱 · {AccountNickname}"
-		: string.Empty;
+		: string.Empty);
 
 	public string ClaudeAccountActionText
 	{
@@ -192,60 +204,60 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		{
 			if (IsProviderAccountChangeCommitInProgress)
 			{
-				return "正在完成 Claude 帳號連接";
+				return UiText.Translate("正在完成 Claude 帳號連接");
 			}
 
 			if (CanCancelProviderAccountConnection)
 			{
-				return "取消 Claude 帳號連接";
+				return UiText.Translate("取消 Claude 帳號連接");
 			}
 
 			if (RequiresClaudeQuotaRiskConsent)
 			{
-				return "確認 Claude 用量讀取";
+				return UiText.Translate("確認 Claude 用量讀取");
 			}
 
 			if (RecoveryAction == UsageRecoveryAction.ConfirmSubscription)
 			{
-				return "確認 Claude 訂閱";
+				return UiText.Translate("確認 Claude 訂閱");
 			}
 
 			return HasProviderAccountIdentity
-				? "切換 Claude 帳號"
-				: "連接 Claude 帳號";
+				? UiText.Translate("切換 Claude 帳號")
+				: UiText.Translate("連接 Claude 帳號");
 		}
 	}
 
 	public string CodexAccountActionText =>
-		IsProviderAccountChangeCommitInProgress
+		UiText.Translate(IsProviderAccountChangeCommitInProgress
 			? "正在完成 Codex 帳號連接"
 			: CanCancelProviderAccountConnection
 				? "取消 Codex 帳號連接"
 				: HasProviderAccountIdentity
 					? "切換 Codex 帳號"
-					: "連接 Codex 帳號";
+					: "連接 Codex 帳號");
 
 	public string CopilotAccountActionText =>
-		IsProviderAccountChangeCommitInProgress
+		UiText.Translate(IsProviderAccountChangeCommitInProgress
 			? "正在完成 Copilot 帳號連接"
 			: CanCancelProviderAccountConnection
 				? "取消 Copilot 帳號連接"
 				: HasProviderAccountIdentity
 					? "切換 Copilot 帳號"
-					: "連接 Copilot 帳號";
+					: "連接 Copilot 帳號");
 
 	public string GrokAccountActionText =>
-		IsProviderAccountChangeCommitInProgress
+		UiText.Translate(IsProviderAccountChangeCommitInProgress
 			? "正在完成 Grok 帳號連接"
 			: CanCancelProviderAccountConnection
 				? "取消 Grok 帳號連接"
 				: HasProviderAccountIdentity
 					? "切換 Grok 帳號"
-					: "連接 Grok 帳號";
+					: "連接 Grok 帳號");
 
-	public string AntigravityAccountActionText => HasProviderAccountIdentity
+	public string AntigravityAccountActionText => UiText.Translate(HasProviderAccountIdentity
 		? "重新連接 Antigravity 帳號"
-		: "連接 Antigravity 帳號";
+		: "連接 Antigravity 帳號");
 
 	public bool HasAccountAlias =>
 		HasAccountNickname &&
@@ -300,19 +312,19 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 	public bool ShowSubscriptionContext =>
 		SupportsSubscriptionContext && Profile.ShowSubscriptionContext;
 
-	public string SubscriptionContextMenuText => Provider switch
+	public string SubscriptionContextMenuText => UiText.Translate(Provider switch
 	{
 		ProviderKind.Claude => "顯示組織",
 		ProviderKind.Codex => "顯示 workspace",
 		_ => string.Empty
-	};
+	});
 
-	public string SubscriptionContextToolTip => Provider switch
+	public string SubscriptionContextToolTip => UiText.Translate(Provider switch
 	{
 		ProviderKind.Claude => "在這張卡片顯示組織名稱",
 		ProviderKind.Codex => "在這張卡片顯示 workspace 連接資訊",
 		_ => string.Empty
-	};
+	});
 
 	public bool IsAntigravity => Provider == ProviderKind.Antigravity;
 
@@ -409,22 +421,22 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		(!IsAntigravity || (RecoveryAction != UsageRecoveryAction.Retry)) &&
 		!HasInlineAutomaticRetryGuidance(CurrentSnapshot);
 
-	public string RecoveryPanelTitle => RecoveryAction switch
+	public string RecoveryPanelTitle => UiText.Translate(RecoveryAction switch
 	{
 		UsageRecoveryAction.ConnectAccount when
-			IsClaude && RequiresClaudeQuotaRiskConsent => "需要確認用量讀取",
-		UsageRecoveryAction.ConnectAccount => "尚未連接",
-		UsageRecoveryAction.SwitchAccount => "需要切換帳號",
-		UsageRecoveryAction.ConfirmSubscription => "需要確認 Claude 訂閱",
-		UsageRecoveryAction.ReconfigureUsageSource => "需要確認用量讀取",
-		UsageRecoveryAction.RestartApplication => "需要重新啟動",
-		UsageRecoveryAction.InstallOrUpdate => "需要安裝或更新",
-		UsageRecoveryAction.RevalidateUsage => "需要重新檢查",
-		UsageRecoveryAction.UpdateApplication => "需要更新 AI Usage",
-		UsageRecoveryAction.Retry => "稍後會自動再試",
-		UsageRecoveryAction.None => "用量狀態",
-		_ => "用量需要確認"
-	};
+			IsClaude && RequiresClaudeQuotaRiskConsent => UiText.Translate("需要確認用量讀取"),
+		UsageRecoveryAction.ConnectAccount => UiText.Translate("尚未連接"),
+		UsageRecoveryAction.SwitchAccount => UiText.Translate("需要切換帳號"),
+		UsageRecoveryAction.ConfirmSubscription => UiText.Translate("需要確認 Claude 訂閱"),
+		UsageRecoveryAction.ReconfigureUsageSource => UiText.Translate("需要確認用量讀取"),
+		UsageRecoveryAction.RestartApplication => UiText.Translate("需要重新啟動"),
+		UsageRecoveryAction.InstallOrUpdate => UiText.Translate("需要安裝或更新"),
+		UsageRecoveryAction.RevalidateUsage => UiText.Translate("需要重新檢查"),
+		UsageRecoveryAction.UpdateApplication => UiText.Translate("需要更新 AI Usage"),
+		UsageRecoveryAction.Retry => UiText.Translate("稍後會自動再試"),
+		UsageRecoveryAction.None => UiText.Translate("用量狀態"),
+		_ => UiText.Translate("用量需要確認")
+	});
 
 	public bool HasExecutableRecoveryAction => RecoveryAction switch
 	{
@@ -501,7 +513,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			(StatusKind == AccountStatusKind.Error));
 
 	public string RecoveryActionText =>
-		(IsProviderAccountChangeInProgress &&
+		UiText.Translate((IsProviderAccountChangeInProgress &&
 			(IsClaude || IsCodex || IsCopilot || IsGrok))
 			? IsClaude
 				? ClaudeAccountActionText
@@ -536,9 +548,9 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				"重新檢查 Antigravity 用量",
 			UsageRecoveryAction.RevalidateUsage => "重新檢查 Claude 用量",
 			_ => string.Empty
-		};
+		});
 
-	public string RecoveryActionDescription => RecoveryAction switch
+	public string RecoveryActionDescription => UiText.Translate(RecoveryAction switch
 	{
 		UsageRecoveryAction.Retry =>
 			CreateAutomaticRetryDescription(CurrentSnapshot),
@@ -577,7 +589,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		UsageRecoveryAction.RevalidateUsage =>
 			"上次 Claude 用量檢查未完成。按下後只會重新檢查這個帳號一次，不會重新啟動 AI Usage 或登入 Claude。",
 		_ => string.Empty
-	};
+	});
 
 	public bool CanMoveDown
 	{
@@ -609,38 +621,38 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				? GetProviderAccountIdentityDisplayText(
 					ProviderAccountIdentity,
 					" · ")
-				: "尚未確認";
+				: UiText.Translate("尚未確認");
 			string retainedDataMessage = Provider switch
 			{
 				ProviderKind.Claude =>
-					"不會登出 Claude Code，也不會刪除 Claude 的登入憑證。",
+					UiText.Translate("不會登出 Claude Code，也不會刪除 Claude 的登入憑證。"),
 				ProviderKind.Codex =>
-					"不會登出 Codex CLI，也不會刪除 Codex 的登入憑證。",
+					UiText.Translate("不會登出 Codex CLI，也不會刪除 Codex 的登入憑證。"),
 				ProviderKind.Copilot =>
-					"會刪除 AI Usage 為這張卡片儲存在 Windows Credential Manager 的 GitHub credential；其他 Copilot 卡片不受影響。",
+					UiText.Translate("會刪除 AI Usage 為這張卡片儲存在 Windows Credential Manager 的 GitHub credential；其他 Copilot 卡片不受影響。"),
 				ProviderKind.Antigravity =>
-					"不會登出 Antigravity，也不會刪除登入資料。若移除後已沒有會檢查用量的 Antigravity 帳號，AI Usage 也會移除自己建立的用量顯示設定；其他 Antigravity 設定不受影響。",
+					UiText.Translate("不會登出 Antigravity，也不會刪除登入資料。若移除後已沒有會檢查用量的 Antigravity 帳號，AI Usage 也會移除自己建立的用量顯示設定；其他 Antigravity 設定不受影響。"),
 				ProviderKind.Grok =>
-					"會刪除 AI Usage 為這個帳號另外儲存的 Grok Build CLI 登入資料；不會影響 Grok Build CLI 預設的登入狀態。",
+					UiText.Translate("會刪除 AI Usage 為這個帳號另外儲存的 Grok Build CLI 登入資料；不會影響 Grok Build CLI 預設的登入狀態。"),
 				_ =>
-					"不會登出服務，也不會刪除服務的登入憑證。"
+					UiText.Translate("不會登出服務，也不會刪除服務的登入憑證。")
 			};
 
 			return
-				$"確定要從 AI Usage 移除這個帳號嗎？\n\n" +
+				UiText.Translate($"確定要從 AI Usage 移除這個帳號嗎？\n\n") +
 				(HasAccountNickname
-					? $"暱稱：{AccountNickname}\n"
+					? UiText.Translate($"暱稱：{AccountNickname}\n")
 					: string.Empty) +
-				$"服務：{ProviderName}\n" +
-				$"帳號：{identity}\n\n" +
-				"會從 AI Usage 移除這個帳號，並嘗試清除上次用量。\n" +
+				UiText.Translate($"服務：{ProviderName}\n") +
+				UiText.Translate($"帳號：{identity}\n\n") +
+				UiText.Translate("會從 AI Usage 移除這個帳號，並嘗試清除上次用量。\n") +
 				retainedDataMessage;
 		}
 	}
 
 	public string NoticeText
 	{
-		get => _noticeText;
+		get => LocalizeNoticeText();
 		private set
 		{
 			if (_noticeText == value)
@@ -658,13 +670,13 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 
 	public string PrimaryText
 	{
-		get => _primaryText;
+		get => UiText.Translate(_primaryText);
 		private set => SetField(ref _primaryText, value);
 	}
 
 	public string SecondaryText
 	{
-		get => _secondaryText;
+		get => LocalizeSecondaryText();
 		private set => SetField(ref _secondaryText, value);
 	}
 
@@ -699,11 +711,11 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				? AccountStatusSeverity.Warning
 				: StatusSeverity;
 
-	public string DisplayStatusText => IsProviderAccountChangeInProgress
+	public string DisplayStatusText => UiText.Translate(IsProviderAccountChangeInProgress
 		? "連接中"
 		: RequiresClaudeQuotaRiskConsent
 			? "等待確認"
-			: StatusText;
+			: StatusText);
 
 	public AccountStatusSeverity StatusSeverity => StatusKind switch
 	{
@@ -718,7 +730,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		_ => AccountStatusSeverity.Neutral
 	};
 
-	public string StatusText => StatusKind switch
+	public string StatusText => UiText.Translate(StatusKind switch
 	{
 		AccountStatusKind.Ready => "可用",
 		AccountStatusKind.Refreshing => "檢查中",
@@ -729,7 +741,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		AccountStatusKind.Unsupported => "暫不支援",
 		AccountStatusKind.NotConnected => "尚未連接",
 		_ => "未知狀態"
-	};
+	});
 
 	public string? StatusToolTip
 	{
@@ -743,7 +755,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				return null;
 			}
 
-			return CreateObservationText(snapshot);
+			return UiText.Translate(CreateObservationText(snapshot));
 		}
 	}
 
@@ -807,6 +819,35 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		_isProviderAccountChangeCommitInProgress;
 
 	internal long LifecycleRevision => _lifecycleRevision;
+
+	internal void RefreshLocalizedPresentation()
+	{
+		UsageMetrics = _usageMetrics.Select(metric => metric.CreateLocalizedCopy()).ToArray();
+		OnPropertyChanged(string.Empty);
+		OnPropertyChanged(nameof(AccountAliasText));
+		OnPropertyChanged(nameof(CodexAccountActionText));
+		OnPropertyChanged(nameof(CopilotAccountActionText));
+		OnPropertyChanged(nameof(GrokAccountActionText));
+		OnPropertyChanged(nameof(AntigravityAccountActionText));
+		OnPropertyChanged(nameof(SubscriptionContextMenuText));
+		OnPropertyChanged(nameof(SubscriptionContextToolTip));
+		OnPropertyChanged(nameof(RecoveryPanelTitle));
+		OnPropertyChanged(nameof(RecoveryActionText));
+		OnPropertyChanged(nameof(RecoveryActionDescription));
+		OnPropertyChanged(nameof(DisplayStatusText));
+		OnPropertyChanged(nameof(StatusText));
+		OnPropertyChanged(nameof(ClaudeAccountActionText));
+		OnPropertyChanged(nameof(AccountCardDisplayText));
+		OnPropertyChanged(nameof(AccountDisplayText));
+		OnPropertyChanged(nameof(AccountDeletionConfirmationText));
+		OnPropertyChanged(nameof(AccountActionsAutomationName));
+		OnPropertyChanged(nameof(MoveAccountUpAutomationName));
+		OnPropertyChanged(nameof(MoveAccountDownAutomationName));
+		OnPropertyChanged(nameof(NoticeText));
+		OnPropertyChanged(nameof(PrimaryText));
+		OnPropertyChanged(nameof(SecondaryText));
+		OnPropertyChanged(nameof(StatusToolTip));
+	}
 
 	public AccountUsageViewModel(
 		AccountProfile profile,
@@ -1704,6 +1745,9 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			!string.IsNullOrWhiteSpace(snapshot.Error)
 			? CreateStaleNoticeText(snapshot)
 			: string.Empty;
+		_staleNoticeSnapshot = snapshot.Status == SnapshotStatus.Stale
+			? snapshot
+			: null;
 		if (IsCopilot && (snapshot.Status == SnapshotStatus.Ready))
 		{
 			NoticeText = snapshot.Error ?? string.Empty;
@@ -1908,6 +1952,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 
 	private void ApplyMetrics(UsageSnapshot snapshot)
 	{
+		_usageSummarySnapshot = snapshot;
 		UsageMetric? primaryMetric = snapshot.Metrics.FirstOrDefault();
 
 		if (primaryMetric is null)
@@ -1968,7 +2013,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 	{
 		string dataAgeText = snapshot.ObservedAt is null
 			? "目前顯示上次成功讀取的資料（時間不明）。"
-			: $"目前顯示 {snapshot.ObservedAt.Value.ToLocalTime():yyyy/MM/dd HH:mm} 成功讀取的資料。";
+			: $"目前顯示 {snapshot.ObservedAt.Value.ToLocalTime().ToString("yyyy/MM/dd HH:mm", UiText.Culture)} 成功讀取的資料。";
 		return $"{dataAgeText}{snapshot.Error}";
 	}
 
@@ -1976,20 +2021,24 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 	{
 		if (snapshot?.Status != SnapshotStatus.Stale)
 		{
-			return "這次未取得新用量，稍後會自動再試，不需要手動操作。";
+			return UiText.Translate("這次未取得新用量，稍後會自動再試，不需要手動操作。");
 		}
 
 		string dataAgeText = snapshot.ObservedAt is null
-			? "目前顯示上次成功讀取的資料"
-			: $"目前顯示 {snapshot.ObservedAt.Value.ToLocalTime():yyyy/MM/dd HH:mm} 成功讀取的資料";
+			? UiText.Translate("目前顯示上次成功讀取的資料")
+			: UiText.Translate($"目前顯示 {snapshot.ObservedAt.Value.ToLocalTime().ToString("yyyy/MM/dd HH:mm", UiText.Culture)} 成功讀取的資料");
 		string? retryReason = GetAutomaticRetryReasonDetail(snapshot.Error);
+		if (retryReason is not null)
+		{
+			retryReason = UiText.Translate(retryReason);
+		}
 
 		if (retryReason is not null)
 		{
-			return $"{dataAgeText}。{retryReason} AI Usage 稍後會自動再試，不需要手動操作。";
+			return UiText.Translate($"{dataAgeText}。{retryReason} AI Usage 稍後會自動再試，不需要手動操作。");
 		}
 
-		return $"{dataAgeText}，稍後會自動再試，不需要手動操作。";
+		return UiText.Translate($"{dataAgeText}，稍後會自動再試，不需要手動操作。");
 	}
 
 	private static string? GetAutomaticRetryReasonDetail(string? error)
@@ -2341,12 +2390,12 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		if ((snapshot.ObservedAt is DateTimeOffset observedAt) &&
 			(observedAt != default))
 		{
-			return $"資料時間 {observedAt.ToLocalTime():yyyy/MM/dd HH:mm:ss}";
+			return $"資料時間 {observedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm:ss", UiText.Culture)}";
 		}
 
 		return snapshot.FetchedAt == default
 			? "資料時間不明"
-			: $"資料時間不明；讀取時間 {snapshot.FetchedAt.ToLocalTime():yyyy/MM/dd HH:mm:ss}";
+			: $"資料時間不明；讀取時間 {snapshot.FetchedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm:ss", UiText.Culture)}";
 	}
 
 	private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -2356,6 +2405,8 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 
 	private void ResetLocalState()
 	{
+		_staleNoticeSnapshot = null;
+		_usageSummarySnapshot = null;
 		CurrentSnapshot = null;
 		OnPropertyChanged(nameof(AccountHeaderText));
 		OnPropertyChanged(nameof(AccountHeaderSuffixText));
@@ -2428,6 +2479,49 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		OnPropertyChanged(nameof(ShowCopilotDefaultConnectionAction));
 		OnPropertyChanged(nameof(ShowGrokDefaultConnectionAction));
 		OnPropertyChanged(nameof(ShowAntigravityDefaultConnectionAction));
+	}
+
+	private string LocalizeNoticeText()
+	{
+		if ((_staleNoticeSnapshot is UsageSnapshot snapshot) &&
+			(_noticeText == CreateStaleNoticeText(snapshot)))
+		{
+			string age = snapshot.ObservedAt is null
+				? "目前顯示上次成功讀取的資料（時間不明）。"
+				: $"目前顯示 {snapshot.ObservedAt.Value.ToLocalTime().ToString("yyyy/MM/dd HH:mm", UiText.Culture)} 成功讀取的資料。";
+			return UiText.Translate(age) + UiText.Translate(snapshot.Error ?? string.Empty);
+		}
+		return UiText.Translate(_noticeText);
+	}
+
+	private string LocalizeSecondaryText()
+	{
+		if (UiText.CurrentLanguage == AppLanguage.TraditionalChinese)
+		{
+			return UiText.Translate(_secondaryText);
+		}
+
+		if ((_usageSummarySnapshot is not UsageSnapshot snapshot) ||
+			(snapshot.Metrics.FirstOrDefault() is not UsageMetric primary))
+		{
+			return UiText.Translate(_secondaryText);
+		}
+		List<string> rawParts = [primary.Label];
+		List<string> localizedParts = [UsageMetricPresentation.GetDisplayLabel(primary)];
+		if (primary.ResetsAt is DateTimeOffset reset)
+		{
+			string rawReset = $"重置 {reset.ToLocalTime():MM/dd HH:mm}";
+			rawParts.Add(rawReset);
+			localizedParts.Add(UiText.Translate(rawReset));
+		}
+		if (snapshot.Metrics.Skip(1).FirstOrDefault() is UsageMetric secondary)
+		{
+			rawParts.Add($"{secondary.Label} {secondary.DisplayValue}");
+			localizedParts.Add($"{UsageMetricPresentation.GetDisplayLabel(secondary)} {UiText.Translate(secondary.DisplayValue)}");
+		}
+		return _secondaryText == string.Join(" · ", rawParts)
+			? string.Join(" · ", localizedParts)
+			: UiText.Translate(_secondaryText);
 	}
 
 	private void SetProviderAccountChangeInProgress(bool value)
@@ -2508,14 +2602,14 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 	{
 		if (_isProviderAccountChangeInProgress)
 		{
-			return "連接中";
+			return UiText.Translate("連接中");
 		}
 
 		if (!HasProviderAccountIdentity)
 		{
 			return IsEnabled
-				? "尚未確認"
-				: "未檢查（已停止檢查）";
+				? UiText.Translate("尚未確認")
+				: UiText.Translate("未檢查（已停止檢查）");
 		}
 
 		string identity = GetProviderAccountCardDisplayText(
@@ -2538,7 +2632,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 					SubscriptionVerificationState.Verified and not
 					SubscriptionVerificationState.UsageUnavailable));
 		return isLastConfirmedIdentity
-			? $"{identity}（上次確認）"
+			? UiText.Translate($"{identity}（上次確認）")
 			: identity;
 	}
 
@@ -2560,12 +2654,12 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 
 		if (IsGrok && !string.IsNullOrWhiteSpace(identity))
 		{
-			return "已連接的 Grok 帳號";
+			return UiText.Translate("已連接的 Grok 帳號");
 		}
 
 		if (IsCopilot && !string.IsNullOrWhiteSpace(identity))
 		{
-			return "已連接的 GitHub 帳號";
+			return UiText.Translate("已連接的 GitHub 帳號");
 		}
 
 		if (IsClaude &&
@@ -2573,7 +2667,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				identity,
 				out _))
 		{
-			return "已連接的 Claude 訂閱範圍";
+			return UiText.Translate("已連接的 Claude 訂閱範圍");
 		}
 
 		if (IsCodex &&
@@ -2581,7 +2675,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				identity,
 				out _))
 		{
-			return "已連接的 Codex workspace";
+			return UiText.Translate("已連接的 Codex workspace");
 		}
 
 		return IsAntigravity &&
@@ -2589,7 +2683,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				identity,
 				AntigravityOfficialPrintUsageClient.LocalSessionIdentity,
 				StringComparison.OrdinalIgnoreCase)
-			? "目前登入的 Antigravity 帳號"
+			? UiText.Translate("目前登入的 Antigravity 帳號")
 			: identity ?? string.Empty;
 	}
 
@@ -2607,7 +2701,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				StringComparison.OrdinalIgnoreCase))
 		{
 			return _isAntigravityReportedAccountEmailStale
-				? $"{_antigravityReportedAccountEmail}（上次確認）"
+				? UiText.Translate($"{_antigravityReportedAccountEmail}（上次確認）")
 				: _antigravityReportedAccountEmail;
 		}
 
@@ -2663,7 +2757,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			{
 				string scopeDisplayName = string.IsNullOrWhiteSpace(
 					currentSnapshot.SubscriptionScopeDisplayName)
-					? $"範圍 {publicBindingIdentity[..8].ToUpperInvariant()}"
+					? UiText.Translate($"範圍 {publicBindingIdentity[..8].ToUpperInvariant()}")
 					: currentSnapshot.SubscriptionScopeDisplayName;
 				displayIdentity =
 					$"{displayIdentity}{subscriptionContextSeparator}{scopeDisplayName}";
@@ -2673,7 +2767,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				!string.IsNullOrWhiteSpace(currentSnapshot.PlanTier))
 			{
 				displayIdentity =
-					$"{displayIdentity} · 方案 {currentSnapshot.PlanTier}";
+					UiText.Translate($"{displayIdentity} · 方案 {currentSnapshot.PlanTier}");
 			}
 		}
 		else if (IsCodex &&
@@ -2685,14 +2779,14 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			if (includeSubscriptionContext)
 			{
 				displayIdentity =
-					$"{displayIdentity}{subscriptionContextSeparator}進階 workspace · 本機連接碼 {codexPublicBindingIdentity[..8].ToUpperInvariant()}";
+					UiText.Translate($"{displayIdentity}{subscriptionContextSeparator}進階 workspace · 本機連接碼 {codexPublicBindingIdentity[..8].ToUpperInvariant()}");
 			}
 
 			if (includePlanTier &&
 				!string.IsNullOrWhiteSpace(currentSnapshot.PlanTier))
 			{
 				displayIdentity =
-					$"{displayIdentity} · 方案 {currentSnapshot.PlanTier}";
+					UiText.Translate($"{displayIdentity} · 方案 {currentSnapshot.PlanTier}");
 			}
 		}
 		else if (IsCopilot &&
@@ -2702,7 +2796,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 				currentSnapshot.PlanTier) is string displayPlan)
 		{
 			displayIdentity =
-				$"{displayIdentity} · 方案 {displayPlan}";
+				UiText.Translate($"{displayIdentity} · 方案 {displayPlan}");
 		}
 
 		return true;

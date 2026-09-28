@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.IO;
 
+using AiUsageDashboard.Core.Localization;
+
 namespace AiUsageDashboard.App;
 
 internal enum LocalUserGuideOpenResult
@@ -76,9 +78,9 @@ internal static class LocalUserGuideLauncher
 		return result switch
 		{
 			LocalUserGuideOpenResult.Missing =>
-				"找不到使用說明。請重新解壓完整安裝包。",
+				UiText.Get("Shell.UserGuideMissing"),
 			LocalUserGuideOpenResult.Failed =>
-				"Windows 無法開啟使用說明。請到 app 資料夾手動開啟 README.md。",
+				UiText.Get("Shell.UserGuideOpenFailed"),
 			_ => throw new ArgumentOutOfRangeException(nameof(result))
 		};
 	}

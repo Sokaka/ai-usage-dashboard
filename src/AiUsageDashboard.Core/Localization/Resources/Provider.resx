@@ -1,0 +1,1674 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>2.0</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+	</resheader>
+	<data name="Message001" xml:space="preserve">
+		<value> The diagnostic log could not be written.</value>
+	</data>
+	<data name="Message002" xml:space="preserve">
+		<value>AI Usage will not retry automatically. Click "Check Claude usage again" to retry.</value>
+	</data>
+	<data name="Message003" xml:space="preserve">
+		<value>AI Usage could not resume the Antigravity usage check. Reconnect your Antigravity account; your existing sign-in is unaffected.</value>
+	</data>
+	<data name="Message004" xml:space="preserve">
+		<value>AI Usage could not verify the Antigravity usage check. Reconnect your Antigravity account; your existing sign-in is unaffected.</value>
+	</data>
+	<data name="Message005" xml:space="preserve">
+		<value>AI Usage could not verify that this Antigravity usage check still meets the safety requirements. It will check again automatically later; your existing sign-in is unaffected.</value>
+	</data>
+	<data name="Message006" xml:space="preserve">
+		<value>AI Usage cannot read the usage format returned by Antigravity. Update AI Usage; your existing sign-in is unaffected.</value>
+	</data>
+	<data name="Message007" xml:space="preserve">
+		<value>AI Usage cannot read usage through Codex right now. Update or repair Codex.</value>
+	</data>
+	<data name="Message008" xml:space="preserve">
+		<value>The Antigravity provider can only read Antigravity accounts.</value>
+	</data>
+	<data name="Message009" xml:space="preserve">
+		<value>The usage data returned by Antigravity could not be recognized</value>
+	</data>
+	<data name="Message010" xml:space="preserve">
+		<value>Antigravity reported a different account from the connected account, so this usage result was ignored. Reconnect the correct account.</value>
+	</data>
+	<data name="Message011" xml:space="preserve">
+		<value>The Antigravity runtime cleanup service is not configured.</value>
+	</data>
+	<data name="Message012" xml:space="preserve">
+		<value>The Antigravity account ID cannot be empty.</value>
+	</data>
+	<data name="Message013" xml:space="preserve">
+		<value>The Antigravity command did not finish normally after starting</value>
+	</data>
+	<data name="Message014" xml:space="preserve">
+		<value>The Antigravity command returned too much data to verify the result</value>
+	</data>
+	<data name="Message015" xml:space="preserve">
+		<value>The Antigravity command reported an error</value>
+	</data>
+	<data name="Message016" xml:space="preserve">
+		<value>The Antigravity command returned no data</value>
+	</data>
+	<data name="Message017" xml:space="preserve">
+		<value>The Antigravity usage safety state reset service is not configured.</value>
+	</data>
+	<data name="Message018" xml:space="preserve">
+		<value>The Antigravity usage check has not finished. AI Usage will retry automatically later and keep your existing account and usage data.</value>
+	</data>
+	<data name="Message019" xml:space="preserve">
+		<value>Antigravity usage checks are paused: {0}. AI Usage will not retry automatically. {1}</value>
+	</data>
+	<data name="Message020" xml:space="preserve">
+		<value>The Antigravity usage check did not finish. It will retry automatically later.</value>
+	</data>
+	<data name="Message021" xml:space="preserve">
+		<value>Claude CLI JSON contains a duplicate field: {0}.</value>
+	</data>
+	<data name="Message022" xml:space="preserve">
+		<value>The Claude CLI process stream configuration does not match the expected configuration.</value>
+	</data>
+	<data name="Message023" xml:space="preserve">
+		<value>The Claude CLI executable must use a local absolute path, and its settings directory must use an absolute path.</value>
+	</data>
+	<data name="Message024" xml:space="preserve">
+		<value>The Claude CLI version output did not confirm the product identity.</value>
+	</data>
+	<data name="Message025" xml:space="preserve">
+		<value>Claude CLI output exceeds the safe size limit.</value>
+	</data>
+	<data name="Message026" xml:space="preserve">
+		<value>Claude Code CLI execution timed out.</value>
+	</data>
+	<data name="Message027" xml:space="preserve">
+		<value>The Claude Code CLI failed official signature, path, or version verification. Reinstall or update it from an official Anthropic source.</value>
+	</data>
+	<data name="Message028" xml:space="preserve">
+		<value>Resolving the Claude Code CLI path timed out.</value>
+	</data>
+	<data name="Message029" xml:space="preserve">
+		<value>Claude Code `--version` failed.</value>
+	</data>
+	<data name="Message030" xml:space="preserve">
+		<value>Claude Code `/usage` was interrupted before it could be determined whether it consumed usage.</value>
+	</data>
+	<data name="Message031" xml:space="preserve">
+		<value>Claude Code `auth status` failed.</value>
+	</data>
+	<data name="Message032" xml:space="preserve">
+		<value>Claude Code {0} does not support the current usage checking method. Update to {1} or later.</value>
+	</data>
+	<data name="Message033" xml:space="preserve">
+		<value>The usage format returned by Claude Code {0} cannot be recognized right now.</value>
+	</data>
+	<data name="Message034" xml:space="preserve">
+		<value>Claude Code {0} `/usage` may have consumed usage, or its result needs manual verification.</value>
+	</data>
+	<data name="Message035" xml:space="preserve">
+		<value>Claude Code {0} `/usage` reported an error, but the usage result indicated success. This result cannot be verified right now.</value>
+	</data>
+	<data name="Message036" xml:space="preserve">
+		<value>Claude Code {0} `/usage` was canceled before it could be determined whether it consumed usage.</value>
+	</data>
+	<data name="Message037" xml:space="preserve">
+		<value>Claude Code is signed in with a valid subscription, but the signed-in account cannot be verified right now. AI Usage will retry automatically later.</value>
+	</data>
+	<data name="Message038" xml:space="preserve">
+		<value>Claude Code is signed in with a valid subscription, but the current organization cannot be verified right now. AI Usage will retry automatically later.</value>
+	</data>
+	<data name="Message039" xml:space="preserve">
+		<value>Claude Code is signed in with a valid subscription, but the current subscription scope cannot be verified right now. AI Usage will retry automatically later.</value>
+	</data>
+	<data name="Message040" xml:space="preserve">
+		<value>The Claude Code account is not signed in.</value>
+	</data>
+	<data name="Message041" xml:space="preserve">
+		<value>This Claude Code version does not support safe subscription scope verification. Update it and try again.</value>
+	</data>
+	<data name="Message042" xml:space="preserve">
+		<value>Claude Code is not signed in with a supported claude.ai subscription account.</value>
+	</data>
+	<data name="Message043" xml:space="preserve">
+		<value>Claude Code currently reports Free. AI Usage does not currently support displaying Claude Free usage. Check your signed-in account, subscription, and payment status in Claude's Settings &gt; Billing.</value>
+	</data>
+	<data name="Message044" xml:space="preserve">
+		<value>The current Claude Code account or organization differs from this card's subscription scope. Switch accounts or reconnect.</value>
+	</data>
+	<data name="Message045" xml:space="preserve">
+		<value>Invalid Claude Code subscription scope format.</value>
+	</data>
+	<data name="Message046" xml:space="preserve">
+		<value>Claude `--version` output cannot be empty.</value>
+	</data>
+	<data name="Message047" xml:space="preserve">
+		<value>Claude `/usage` JSON cannot be empty.</value>
+	</data>
+	<data name="Message048" xml:space="preserve">
+		<value>The Claude `/usage` envelope indicates nonzero turn or cost, or an invalid format.</value>
+	</data>
+	<data name="Message049" xml:space="preserve">
+		<value>Claude `/usage` model usage is not a strictly zero-usage object.</value>
+	</data>
+	<data name="Message050" xml:space="preserve">
+		<value>Claude `/usage` percentage is out of range.</value>
+	</data>
+	<data name="Message051" xml:space="preserve">
+		<value>The Claude `/usage` quota format has changed.</value>
+	</data>
+	<data name="Message052" xml:space="preserve">
+		<value>Claude `/usage` subagent stats is not a strictly zero-activity object.</value>
+	</data>
+	<data name="Message053" xml:space="preserve">
+		<value>Claude `/usage` token usage is not a strictly zero-usage result.</value>
+	</data>
+	<data name="Message054" xml:space="preserve">
+		<value>Claude `/usage` contains unsupported control characters.</value>
+	</data>
+	<data name="Message055" xml:space="preserve">
+		<value>Claude `/usage` contains conflicting duplicate quotas.</value>
+	</data>
+	<data name="Message056" xml:space="preserve">
+		<value>Claude `/usage` returned only a subscription notice, with no quota.</value>
+	</data>
+	<data name="Message057" xml:space="preserve">
+		<value>The content returned by Claude `/usage` is not claude.ai subscription usage.</value>
+	</data>
+	<data name="Message058" xml:space="preserve">
+		<value>Claude `/usage` reported a permission denial.</value>
+	</data>
+	<data name="Message059" xml:space="preserve">
+		<value>Claude `/usage` reported nonzero cost.</value>
+	</data>
+	<data name="Message060" xml:space="preserve">
+		<value>Claude `/usage` reported nonzero model usage.</value>
+	</data>
+	<data name="Message061" xml:space="preserve">
+		<value>Claude `/usage` reported nonzero queued turn.</value>
+	</data>
+	<data name="Message062" xml:space="preserve">
+		<value>Claude `/usage` reported nonzero subagent activity.</value>
+	</data>
+	<data name="Message063" xml:space="preserve">
+		<value>Claude `/usage` reported nonzero token usage.</value>
+	</data>
+	<data name="Message064" xml:space="preserve">
+		<value>Claude `/usage` reported nonzero turn.</value>
+	</data>
+	<data name="Message065" xml:space="preserve">
+		<value>The Claude `/usage` text result cannot be empty.</value>
+	</data>
+	<data name="Message066" xml:space="preserve">
+		<value>A permission denial occurred during Claude `/usage`.</value>
+	</data>
+	<data name="Message067" xml:space="preserve">
+		<value>Claude `/usage` is missing its text result.</value>
+	</data>
+	<data name="Message068" xml:space="preserve">
+		<value>Claude `/usage` is missing the core session/week quotas.</value>
+	</data>
+	<data name="Message069" xml:space="preserve">
+		<value>A nonzero Claude `/usage` quota is missing its reset time.</value>
+	</data>
+	<data name="Message070" xml:space="preserve">
+		<value>Claude `auth status` JSON cannot be empty.</value>
+	</data>
+	<data name="Message071" xml:space="preserve">
+		<value>The Claude `auth status` envelope does not match the expected format.</value>
+	</data>
+	<data name="Message072" xml:space="preserve">
+		<value>Claude `auth status` is temporarily missing verifiable subscription information. AI Usage will retry automatically later.</value>
+	</data>
+	<data name="Message073" xml:space="preserve">
+		<value>The Claude `auth status` exit code conflicts with its sign-in state.</value>
+	</data>
+	<data name="Message074" xml:space="preserve">
+		<value>The bound Claude usage check is missing its private binding store.</value>
+	</data>
+	<data name="Message075" xml:space="preserve">
+		<value>Invalid Claude fallback marker path.</value>
+	</data>
+	<data name="Message076" xml:space="preserve">
+		<value>The Claude fallback provider must be a Claude provider.</value>
+	</data>
+	<data name="Message077" xml:space="preserve">
+		<value>The Claude fallback provider could not safely disable the old capture.</value>
+	</data>
+	<data name="Message078" xml:space="preserve">
+		<value>Claude private binding cleanup failed read-back verification.</value>
+	</data>
+	<data name="Message079" xml:space="preserve">
+		<value>The Claude provider can only read Claude accounts.</value>
+	</data>
+	<data name="Message080" xml:space="preserve">
+		<value>Invalid Claude public binding identity format.</value>
+	</data>
+	<data name="Message081" xml:space="preserve">
+		<value>The Claude {0} subscription scope was verified, but this plan's /usage format has not been validated. AI Usage will not guess your usage.</value>
+	</data>
+	<data name="Message082" xml:space="preserve">
+		<value>Claude is signed in, but AI Usage could not complete the account connection. Try again.</value>
+	</data>
+	<data name="Message083" xml:space="preserve">
+		<value>The Claude account settings directory has not been created.</value>
+	</data>
+	<data name="Message084" xml:space="preserve">
+		<value>The Claude account ID cannot be empty.</value>
+	</data>
+	<data name="Message085" xml:space="preserve">
+		<value>Invalid Claude account identity format.</value>
+	</data>
+	<data name="Message086" xml:space="preserve">
+		<value>Claude has not returned a usage quota yet. AI Usage will retry automatically later; no action is needed.</value>
+	</data>
+	<data name="Message087" xml:space="preserve">
+		<value>Accessing the Claude usage safety state timed out.</value>
+	</data>
+	<data name="Message088" xml:space="preserve">
+		<value>Claude sign-in finished, but the signed-in account could not be verified.</value>
+	</data>
+	<data name="Message089" xml:space="preserve">
+		<value>Claude sign-in did not finish. Try again.</value>
+	</data>
+	<data name="Message090" xml:space="preserve">
+		<value>Claude sign-in timed out. Try again.</value>
+	</data>
+	<data name="Message091" xml:space="preserve">
+		<value>The Claude subscription scope is not connected.</value>
+	</data>
+	<data name="Message092" xml:space="preserve">
+		<value>The Claude subscription scope was verified, but this plan's usage format has not been validated.</value>
+	</data>
+	<data name="Message093" xml:space="preserve">
+		<value>Invalid Claude subscription scope format.</value>
+	</data>
+	<data name="Message094" xml:space="preserve">
+		<value>The Claude subscription scope differs from the account card's connection.</value>
+	</data>
+	<data name="Message095" xml:space="preserve">
+		<value>Invalid Claude subscription scope display name format.</value>
+	</data>
+	<data name="Message096" xml:space="preserve">
+		<value>The Claude subscription connection data is incomplete. Reconnect the original account and verify its subscription scope.</value>
+	</data>
+	<data name="Message098" xml:space="preserve">
+		<value>The Claude subscription connection data is invalid. Reconnect this account card.</value>
+	</data>
+	<data name="Message099" xml:space="preserve">
+		<value>The Codex CLI failed official signature, path, or version verification. Reinstall or update it from an official OpenAI source.</value>
+	</data>
+	<data name="Message100" xml:space="preserve">
+		<value>The Codex CLI version check did not provide usable diagnostic results.</value>
+	</data>
+	<data name="Message101" xml:space="preserve">
+		<value>The Codex account/read response is missing requiresOpenaiAuth.</value>
+	</data>
+	<data name="Message102" xml:space="preserve">
+		<value>Codex app-server JSON contains a duplicate field: {0}.</value>
+	</data>
+	<data name="Message103" xml:space="preserve">
+		<value>Codex app-server stderr exceeds the permitted size.</value>
+	</data>
+	<data name="Message104" xml:space="preserve">
+		<value>The Codex app-server {0} error is missing an integer code.</value>
+	</data>
+	<data name="Message105" xml:space="preserve">
+		<value>The Codex app-server {0} response is missing result.</value>
+	</data>
+	<data name="Message106" xml:space="preserve">
+		<value>Codex app-server {0} returned an error (code {1}): {2}</value>
+	</data>
+	<data name="Message107" xml:space="preserve">
+		<value>Codex app-server returned an unexpected response id.</value>
+	</data>
+	<data name="Message108" xml:space="preserve">
+		<value>The Codex app-server response exceeds the permitted size.</value>
+	</data>
+	<data name="Message109" xml:space="preserve">
+		<value>The Codex app-server response timed out.</value>
+	</data>
+	<data name="Message110" xml:space="preserve">
+		<value>Codex app-server exited before responding to {0}.</value>
+	</data>
+	<data name="Message111" xml:space="preserve">
+		<value>Codex app-server exited before sending {0}.</value>
+	</data>
+	<data name="Message112" xml:space="preserve">
+		<value>A Codex app-server message must be a JSON object.</value>
+	</data>
+	<data name="Message113" xml:space="preserve">
+		<value>The bound Codex usage check is missing its private binding store or commit gate.</value>
+	</data>
+	<data name="Message114" xml:space="preserve">
+		<value>The Codex executable must use a local absolute path, and its home directory must use an absolute path.</value>
+	</data>
+	<data name="Message115" xml:space="preserve">
+		<value>The Codex forced ChatGPT workspace must contain exactly one UUID.</value>
+	</data>
+	<data name="Message116" xml:space="preserve">
+		<value>The Codex forced ChatGPT workspace must be a UUID or a list of UUIDs.</value>
+	</data>
+	<data name="Message117" xml:space="preserve">
+		<value>The Codex forced ChatGPT workspace must be a single UUID.</value>
+	</data>
+	<data name="Message118" xml:space="preserve">
+		<value>A Codex notification is missing method.</value>
+	</data>
+	<data name="Message119" xml:space="preserve">
+		<value>Codex private binding cleanup failed read-back verification.</value>
+	</data>
+	<data name="Message120" xml:space="preserve">
+		<value>The Codex private home still has a forced ChatGPT workspace setting.</value>
+	</data>
+	<data name="Message121" xml:space="preserve">
+		<value>The workspace settings in the Codex private home could not be recognized.</value>
+	</data>
+	<data name="Message122" xml:space="preserve">
+		<value>The Codex private home is missing a valid forced ChatGPT workspace setting.</value>
+	</data>
+	<data name="Message123" xml:space="preserve">
+		<value>The Codex provider can only read Codex accounts.</value>
+	</data>
+	<data name="Message124" xml:space="preserve">
+		<value>Invalid Codex public binding identity format.</value>
+	</data>
+	<data name="Message125" xml:space="preserve">
+		<value>The Codex rate-limit bucket key does not match limitId.</value>
+	</data>
+	<data name="Message126" xml:space="preserve">
+		<value>Invalid Codex rate-limit bucket count or contents.</value>
+	</data>
+	<data name="Message127" xml:space="preserve">
+		<value>The Codex rate-limit response has no usable window.</value>
+	</data>
+	<data name="Message128" xml:space="preserve">
+		<value>The Codex rate-limit response is missing rateLimits.</value>
+	</data>
+	<data name="Message129" xml:space="preserve">
+		<value>Codex rate-limit entries cannot exceed {0}.</value>
+	</data>
+	<data name="Message130" xml:space="preserve">
+		<value>Codex rateLimitResetCredits.availableCount must be a nonnegative integer.</value>
+	</data>
+	<data name="Message131" xml:space="preserve">
+		<value>Codex rateLimitsByLimitId cannot exceed {0} buckets.</value>
+	</data>
+	<data name="Message132" xml:space="preserve">
+		<value>Codex resetsAt is outside the Unix timestamp range.</value>
+	</data>
+	<data name="Message133" xml:space="preserve">
+		<value>Codex usedPercent must be an integer between 0 and 100.</value>
+	</data>
+	<data name="Message134" xml:space="preserve">
+		<value>Codex windowDurationMins must be greater than 0.</value>
+	</data>
+	<data name="Message136" xml:space="preserve">
+		<value>Invalid Codex workspace binding format.</value>
+	</data>
+	<data name="Message137" xml:space="preserve">
+		<value>The Codex workspace is not bound.</value>
+	</data>
+	<data name="Message138" xml:space="preserve">
+		<value>The Codex workspace differs from the account card's binding.</value>
+	</data>
+	<data name="Message139" xml:space="preserve">
+		<value>The Codex workspace settings transaction can only be acquired once.</value>
+	</data>
+	<data name="Message140" xml:space="preserve">
+		<value>The Codex workspace settings transaction is no longer available.</value>
+	</data>
+	<data name="Message141" xml:space="preserve">
+		<value>The Codex workspace settings returned an invalid path.</value>
+	</data>
+	<data name="Message142" xml:space="preserve">
+		<value>The Codex workspace settings write result could not be recognized.</value>
+	</data>
+	<data name="Message143" xml:space="preserve">
+		<value>The restored Codex workspace settings do not match the original settings.</value>
+	</data>
+	<data name="Message144" xml:space="preserve">
+		<value>The Codex workspace settings were not written to the account card's private home.</value>
+	</data>
+	<data name="Message145" xml:space="preserve">
+		<value>The Codex workspace connection data is corrupt. Reconnect this account card.</value>
+	</data>
+	<data name="Message146" xml:space="preserve">
+		<value>The Codex {0} notification is missing params.</value>
+	</data>
+	<data name="Message147" xml:space="preserve">
+		<value>Codex {0} cannot contain control characters.</value>
+	</data>
+	<data name="Message148" xml:space="preserve">
+		<value>Codex {0} cannot exceed {1} characters.</value>
+	</data>
+	<data name="Message149" xml:space="preserve">
+		<value>Codex {0} must be a string or null.</value>
+	</data>
+	<data name="Message150" xml:space="preserve">
+		<value>Codex {0} must be an integer or null.</value>
+	</data>
+	<data name="Message151" xml:space="preserve">
+		<value>Codex {0} must be a nonempty string.</value>
+	</data>
+	<data name="Message152" xml:space="preserve">
+		<value>Codex returned an unrecognized error. AI Usage will retry automatically later; no action is needed.</value>
+	</data>
+	<data name="Message153" xml:space="preserve">
+		<value>The sign-in state returned by Codex does not match this operation. Reconnect.</value>
+	</data>
+	<data name="Message154" xml:space="preserve">
+		<value>The sign-in URL returned by Codex is invalid.</value>
+	</data>
+	<data name="Message155" xml:space="preserve">
+		<value>The sign-in data returned by Codex could not be recognized. Update the Codex CLI, then reconnect.</value>
+	</data>
+	<data name="Message156" xml:space="preserve">
+		<value>Codex reported account data, but AI Usage could not verify the signed-in account.</value>
+	</data>
+	<data name="Message157" xml:space="preserve">
+		<value>Codex is signed in to ChatGPT, but AI Usage could not verify the signed-in account. Reconnect using a different ChatGPT account.</value>
+	</data>
+	<data name="Message158" xml:space="preserve">
+		<value>Codex is signed in, but AI Usage cannot verify the signed-in account right now. Reconnect later.</value>
+	</data>
+	<data name="Message159" xml:space="preserve">
+		<value>The Codex account is not signed in to ChatGPT.</value>
+	</data>
+	<data name="Message160" xml:space="preserve">
+		<value>The Codex account is not connected. Complete ChatGPT sign-in for this account first.</value>
+	</data>
+	<data name="Message161" xml:space="preserve">
+		<value>Invalid Codex account or plan format.</value>
+	</data>
+	<data name="Message162" xml:space="preserve">
+		<value>The Codex account settings directory has not been created.</value>
+	</data>
+	<data name="Message163" xml:space="preserve">
+		<value>The Codex account ID cannot be empty.</value>
+	</data>
+	<data name="Message164" xml:space="preserve">
+		<value>The Codex account identity could not be read.</value>
+	</data>
+	<data name="Message165" xml:space="preserve">
+		<value>Codex did not return a rate-limit window that can be displayed.</value>
+	</data>
+	<data name="Message166" xml:space="preserve">
+		<value>Codex did not provide a usable ChatGPT sign-in method. Update the Codex CLI, then reconnect.</value>
+	</data>
+	<data name="Message167" xml:space="preserve">
+		<value>Codex usage entries cannot exceed {0}.</value>
+	</data>
+	<data name="Message168" xml:space="preserve">
+		<value>Invalid Codex usage entry format.</value>
+	</data>
+	<data name="Message169" xml:space="preserve">
+		<value>Starting Codex sign-in timed out. Try again.</value>
+	</data>
+	<data name="Message170" xml:space="preserve">
+		<value>Codex sign-in completion can only be awaited once.</value>
+	</data>
+	<data name="Message171" xml:space="preserve">
+		<value>Codex sign-in has not finished, so workspace settings cannot be committed.</value>
+	</data>
+	<data name="Message172" xml:space="preserve">
+		<value>Codex sign-in has expired. Reconnect this account.</value>
+	</data>
+	<data name="Message173" xml:space="preserve">
+		<value>Codex sign-in did not start, and this card's original workspace settings could not be restored. Reconnect.</value>
+	</data>
+	<data name="Message174" xml:space="preserve">
+		<value>Codex sign-in did not finish. Try again.</value>
+	</data>
+	<data name="Message175" xml:space="preserve">
+		<value>Codex sign-in process cleanup failed. Try again.</value>
+	</data>
+	<data name="Message176" xml:space="preserve">
+		<value>Codex sign-in timed out. Try again.</value>
+	</data>
+	<data name="Message177" xml:space="preserve">
+		<value>Codex is not currently signed in with a ChatGPT subscription account.</value>
+	</data>
+	<data name="Message178" xml:space="preserve">
+		<value>The account signed in to Codex differs from this card's account. Switch accounts or reconnect.</value>
+	</data>
+	<data name="Message179" xml:space="preserve">
+		<value>The current Codex account or workspace differs from this card's connection. Switch accounts or reconnect.</value>
+	</data>
+	<data name="Message180" xml:space="preserve">
+		<value>The current Codex sign-in method does not use a ChatGPT account, so ChatGPT subscription usage cannot be read. Switch Codex to ChatGPT sign-in, then reconnect the account.</value>
+	</data>
+	<data name="Message181" xml:space="preserve">
+		<value>The Codex connection did not finish, and this card's original workspace settings could not be restored. Reconnect.</value>
+	</data>
+	<data name="Message182" xml:space="preserve">
+		<value>The Copilot CLI candidate must use an absolute EXE path: {0}</value>
+	</data>
+	<data name="Message183" xml:space="preserve">
+		<value>Copilot CLI candidate paths exceed the safe limit of {0}.</value>
+	</data>
+	<data name="Message184" xml:space="preserve">
+		<value>The Copilot CLI has not acquired its protected executable lock: {0}</value>
+	</data>
+	<data name="Message185" xml:space="preserve">
+		<value>Copilot CLI search accepts only absolute paths on local fixed drives: {0}</value>
+	</data>
+	<data name="Message186" xml:space="preserve">
+		<value>The Copilot CLI did not use a protected credential store, so the connection was canceled.</value>
+	</data>
+	<data name="Message187" xml:space="preserve">
+		<value>Copilot CLI did not provide credentials that can be safely isolated. Try again.</value>
+	</data>
+	<data name="Message188" xml:space="preserve">
+		<value>The Copilot CLI did not provide a verifiable account credential.</value>
+	</data>
+	<data name="Message189" xml:space="preserve">
+		<value>The Copilot CLI product or version is incompatible: {0};</value>
+	</data>
+	<data name="Message190" xml:space="preserve">
+		<value>The Copilot CLI product or version is incompatible: {0}; ProductName={1}, FileVersion={2}, ProductVersion={3}.</value>
+	</data>
+	<data name="Message191" xml:space="preserve">
+		<value>The Copilot CLI product or version is incompatible: {0}; ProductName={1}, FileVersion={2}, ProductVersion={3}. GitHub Copilot CLI must have a stable three-part version of at least 1.0.79 and below 2.0.0.</value>
+	</data>
+	<data name="Message192" xml:space="preserve">
+		<value>Copilot CLI PATH directories exceed the safe limit of {0}.</value>
+	</data>
+	<data name="Message193" xml:space="preserve">
+		<value>Copilot WinGet package directories exceed the safe limit of {0}: {1}</value>
+	</data>
+	<data name="Message194" xml:space="preserve">
+		<value>Invalid Copilot access token format.</value>
+	</data>
+	<data name="Message195" xml:space="preserve">
+		<value>Invalid Copilot account directory.</value>
+	</data>
+	<data name="Message196" xml:space="preserve">
+		<value>The Copilot account.getCurrentAuth transport is not connected.</value>
+	</data>
+	<data name="Message197" xml:space="preserve">
+		<value>The Copilot account.getCurrentAuth SDK task contract is incompatible.</value>
+	</data>
+	<data name="Message198" xml:space="preserve">
+		<value>The Copilot account.getCurrentAuth SDK transport contract is incompatible.</value>
+	</data>
+	<data name="Message199" xml:space="preserve">
+		<value>The Copilot account.getCurrentAuth SDK invocation contract is incompatible.</value>
+	</data>
+	<data name="Message200" xml:space="preserve">
+		<value>The Copilot account.getCurrentAuth SDK return contract is incompatible.</value>
+	</data>
+	<data name="Message201" xml:space="preserve">
+		<value>The Copilot bootstrap attempt path could not be safely cleaned up.</value>
+	</data>
+	<data name="Message202" xml:space="preserve">
+		<value>The Copilot bootstrap credential exceeds the size limit for safe verification.</value>
+	</data>
+	<data name="Message203" xml:space="preserve">
+		<value>The Copilot bootstrap internet cache link could not be safely cleaned up.</value>
+	</data>
+	<data name="Message204" xml:space="preserve">
+		<value>The Copilot bootstrap root cannot be a reparse point.</value>
+	</data>
+	<data name="Message205" xml:space="preserve">
+		<value>The Copilot bootstrap root contains contents that could not be safely identified.</value>
+	</data>
+	<data name="Message206" xml:space="preserve">
+		<value>The Copilot bootstrap root exceeds the safe cleanup item count.</value>
+	</data>
+	<data name="Message207" xml:space="preserve">
+		<value>Copilot bootstrap runtime startup output exceeds the safe limit.</value>
+	</data>
+	<data name="Message208" xml:space="preserve">
+		<value>The Copilot bootstrap runtime is not connected.</value>
+	</data>
+	<data name="Message209" xml:space="preserve">
+		<value>The Copilot bootstrap runtime has already been started.</value>
+	</data>
+	<data name="Message210" xml:space="preserve">
+		<value>The Copilot bootstrap runtime did not provide a safe loopback endpoint before the deadline.</value>
+	</data>
+	<data name="Message211" xml:space="preserve">
+		<value>The Copilot bootstrap runtime did not provide a safe loopback endpoint.</value>
+	</data>
+	<data name="Message212" xml:space="preserve">
+		<value>The connection to the Copilot bootstrap runtime timed out.</value>
+	</data>
+	<data name="Message213" xml:space="preserve">
+		<value>Copilot bootstrap contents could not be safely verified.</value>
+	</data>
+	<data name="Message214" xml:space="preserve">
+		<value>Copilot bootstrap contents exceed the size limit for safe verification.</value>
+	</data>
+	<data name="Message215" xml:space="preserve">
+		<value>Invalid Copilot bootstrap content type.</value>
+	</data>
+	<data name="Message216" xml:space="preserve">
+		<value>The Copilot bootstrap file changed during safety verification.</value>
+	</data>
+	<data name="Message217" xml:space="preserve">
+		<value>The Copilot bootstrap file could not be safely cleaned up.</value>
+	</data>
+	<data name="Message218" xml:space="preserve">
+		<value>The Copilot bootstrap file could not be safely verified.</value>
+	</data>
+	<data name="Message219" xml:space="preserve">
+		<value>The Copilot bootstrap file exceeds the size limit for safe verification.</value>
+	</data>
+	<data name="Message220" xml:space="preserve">
+		<value>The Copilot bootstrap directory cannot be a reparse point.</value>
+	</data>
+	<data name="Message221" xml:space="preserve">
+		<value>The Copilot bootstrap directory could not be safely cleaned up.</value>
+	</data>
+	<data name="Message222" xml:space="preserve">
+		<value>The Copilot connection candidate is missing its account lease.</value>
+	</data>
+	<data name="Message223" xml:space="preserve">
+		<value>The Copilot connection candidate is missing its global login lease.</value>
+	</data>
+	<data name="Message224" xml:space="preserve">
+		<value>Invalid Copilot credential binding format.</value>
+	</data>
+	<data name="Message225" xml:space="preserve">
+		<value>Invalid Copilot credential format.</value>
+	</data>
+	<data name="Message226" xml:space="preserve">
+		<value>The Copilot credential format is invalid. Reconnect the account.</value>
+	</data>
+	<data name="Message227" xml:space="preserve">
+		<value>The Copilot credential does not match the card's identity.</value>
+	</data>
+	<data name="Message228" xml:space="preserve">
+		<value>Invalid Copilot data directory.</value>
+	</data>
+	<data name="Message229" xml:space="preserve">
+		<value>Invalid expected Copilot provider account identity format.</value>
+	</data>
+	<data name="Message230" xml:space="preserve">
+		<value>Copilot late cleanup is missing its required operation lease.</value>
+	</data>
+	<data name="Message231" xml:space="preserve">
+		<value>Invalid Copilot login lock path.</value>
+	</data>
+	<data name="Message232" xml:space="preserve">
+		<value>The Copilot login process has not exited yet.</value>
+	</data>
+	<data name="Message233" xml:space="preserve">
+		<value>The pending Copilot credential does not match the card's identity.</value>
+	</data>
+	<data name="Message234" xml:space="preserve">
+		<value>Invalid Copilot provider account identity format.</value>
+	</data>
+	<data name="Message235" xml:space="preserve">
+		<value>The Copilot provider can only read Copilot accounts.</value>
+	</data>
+	<data name="Message236" xml:space="preserve">
+		<value>The Copilot runtime connection token cannot contain whitespace or control characters.</value>
+	</data>
+	<data name="Message237" xml:space="preserve">
+		<value>The Copilot runtime cleanup service has not been configured.</value>
+	</data>
+	<data name="Message238" xml:space="preserve">
+		<value>Copilot is not signed in.</value>
+	</data>
+	<data name="Message239" xml:space="preserve">
+		<value>The Copilot account ID cannot be empty.</value>
+	</data>
+	<data name="Message240" xml:space="preserve">
+		<value>Copilot did not provide subscription information; usage is still available.</value>
+	</data>
+	<data name="Message241" xml:space="preserve">
+		<value>Copilot sign-in did not finish (exit code: {0}). Try again.</value>
+	</data>
+	<data name="Message242" xml:space="preserve">
+		<value>The safety state of the Copilot login process could not be verified. Restart AI Usage and try again.</value>
+	</data>
+	<data name="Message243" xml:space="preserve">
+		<value>The Copilot sign-in verification process has not exited safely yet. Try again later.</value>
+	</data>
+	<data name="Message244" xml:space="preserve">
+		<value>The Copilot subscription query interface is incompatible; usage is still available.</value>
+	</data>
+	<data name="Message245" xml:space="preserve">
+		<value>Copilot subscription information cannot be read right now; usage is still available.</value>
+	</data>
+	<data name="Message246" xml:space="preserve">
+		<value>The Copilot subscription query timed out. Usage data is still available.</value>
+	</data>
+	<data name="Message247" xml:space="preserve">
+		<value>The Copilot subscription information format or account could not be verified; usage is still available.</value>
+	</data>
+	<data name="Message248" xml:space="preserve">
+		<value>The GitHub Copilot CLI runtime is unavailable.</value>
+	</data>
+	<data name="Message249" xml:space="preserve">
+		<value>The GitHub Copilot bootstrap runtime did not start inside the verified Job Object.</value>
+	</data>
+	<data name="Message250" xml:space="preserve">
+		<value>The GitHub Copilot credential has expired or is invalid.</value>
+	</data>
+	<data name="Message251" xml:space="preserve">
+		<value>The GitHub Copilot credential is not authorized to read usage.</value>
+	</data>
+	<data name="Message252" xml:space="preserve">
+		<value>The GitHub Copilot quota snapshot could not be recognized.</value>
+	</data>
+	<data name="Message253" xml:space="preserve">
+		<value>The GitHub Copilot quota process has not exited safely yet. Try again later.</value>
+	</data>
+	<data name="Message254" xml:space="preserve">
+		<value>Invalid GitHub Copilot account identity format.</value>
+	</data>
+	<data name="Message255" xml:space="preserve">
+		<value>GitHub Copilot did not return quota snapshots.</value>
+	</data>
+	<data name="Message256" xml:space="preserve">
+		<value>GitHub Copilot did not return usage data.</value>
+	</data>
+	<data name="Message257" xml:space="preserve">
+		<value>The GitHub Copilot usage query was rate limited.</value>
+	</data>
+	<data name="Message258" xml:space="preserve">
+		<value>GitHub Copilot usage data could not be recognized.</value>
+	</data>
+	<data name="Message259" xml:space="preserve">
+		<value>The GitHub authenticated user query failed.</value>
+	</data>
+	<data name="Message260" xml:space="preserve">
+		<value>The GitHub credential has expired or is invalid.</value>
+	</data>
+	<data name="Message261" xml:space="preserve">
+		<value>The GitHub credential is not authorized to read the authenticated user.</value>
+	</data>
+	<data name="Message262" xml:space="preserve">
+		<value>Invalid GitHub host format.</value>
+	</data>
+	<data name="Message263" xml:space="preserve">
+		<value>The GitHub user response is missing required identity fields.</value>
+	</data>
+	<data name="Message264" xml:space="preserve">
+		<value>The GitHub user response exceeds the permitted size.</value>
+	</data>
+	<data name="Message265" xml:space="preserve">
+		<value>GitHub is temporarily rate limiting usage queries.</value>
+	</data>
+	<data name="Message266" xml:space="preserve">
+		<value>GitHub is temporarily rate limiting identity queries.</value>
+	</data>
+	<data name="Message267" xml:space="preserve">
+		<value>The Grok ACP JSON line exceeds the safe limit.</value>
+	</data>
+	<data name="Message268" xml:space="preserve">
+		<value>Grok ACP JSON contains duplicate fields.</value>
+	</data>
+	<data name="Message269" xml:space="preserve">
+		<value>Invalid Grok ACP principal format.</value>
+	</data>
+	<data name="Message270" xml:space="preserve">
+		<value>The Grok ACP response count exceeds the safe limit.</value>
+	</data>
+	<data name="Message271" xml:space="preserve">
+		<value>Grok ACP stderr exceeds the safe limit.</value>
+	</data>
+	<data name="Message272" xml:space="preserve">
+		<value>Grok ACP stdout exceeds the safe limit.</value>
+	</data>
+	<data name="Message273" xml:space="preserve">
+		<value>The Grok ACP {0} response is not valid bounded JSON: {1}.</value>
+	</data>
+	<data name="Message274" xml:space="preserve">
+		<value>Grok ACP {0} is missing result.</value>
+	</data>
+	<data name="Message275" xml:space="preserve">
+		<value>Invalid Grok ACP response envelope format.</value>
+	</data>
+	<data name="Message276" xml:space="preserve">
+		<value>The Grok ACP response id or protocol version does not match.</value>
+	</data>
+	<data name="Message277" xml:space="preserve">
+		<value>The Grok ACP response is not valid UTF-8.</value>
+	</data>
+	<data name="Message278" xml:space="preserve">
+		<value>The Grok ACP response contains an empty line or NUL.</value>
+	</data>
+	<data name="Message279" xml:space="preserve">
+		<value>The Grok ACP response must contain exactly one of result or error.</value>
+	</data>
+	<data name="Message280" xml:space="preserve">
+		<value>The Grok Build CLI must use an absolute EXE path on a local fixed drive.</value>
+	</data>
+	<data name="Message281" xml:space="preserve">
+		<value>The account data format provided by the Grok Build CLI is invalid.</value>
+	</data>
+	<data name="Message282" xml:space="preserve">
+		<value>The Grok Build CLI failed official X.AI LLC signature verification.</value>
+	</data>
+	<data name="Message283" xml:space="preserve">
+		<value>The Grok Build CLI did not provide data that can verify the account.</value>
+	</data>
+	<data name="Message284" xml:space="preserve">
+		<value>The account signed in to the Grok Build CLI differs from the connected account. Switch Grok accounts or reconnect.</value>
+	</data>
+	<data name="Message285" xml:space="preserve">
+		<value>The Grok Build CLI path, owner, or access permissions do not meet the requirements.</value>
+	</data>
+	<data name="Message286" xml:space="preserve">
+		<value>Invalid Grok Build CLI path format.</value>
+	</data>
+	<data name="Message287" xml:space="preserve">
+		<value>The Grok billing current period is not a valid weekly period.</value>
+	</data>
+	<data name="Message288" xml:space="preserve">
+		<value>The Grok billing current period did not provide a valid type.</value>
+	</data>
+	<data name="Message289" xml:space="preserve">
+		<value>Grok billing does not use a unified current-period structure.</value>
+	</data>
+	<data name="Message290" xml:space="preserve">
+		<value>Grok billing did not provide valid unified billing settings.</value>
+	</data>
+	<data name="Message292" xml:space="preserve">
+		<value>Invalid Grok principal format.</value>
+	</data>
+	<data name="Message293" xml:space="preserve">
+		<value>The Grok provider can only read Grok accounts.</value>
+	</data>
+	<data name="Message294" xml:space="preserve">
+		<value>The Grok usage and authentication states conflict.</value>
+	</data>
+	<data name="Message295" xml:space="preserve">
+		<value>The Grok weekly period time range is invalid or expired.</value>
+	</data>
+	<data name="Message296" xml:space="preserve">
+		<value>The Grok weekly usage percent is outside the valid range.</value>
+	</data>
+	<data name="Message297" xml:space="preserve">
+		<value>The Grok runtime cleanup service is not configured.</value>
+	</data>
+	<data name="Message298" xml:space="preserve">
+		<value>The Grok account did not provide unified billing usage.</value>
+	</data>
+	<data name="Message299" xml:space="preserve">
+		<value>The Grok account did not provide a weekly billing period.</value>
+	</data>
+	<data name="Message300" xml:space="preserve">
+		<value>The Grok account connection data is corrupt. Reconnect.</value>
+	</data>
+	<data name="Message301" xml:space="preserve">
+		<value>The Grok account ID cannot be empty.</value>
+	</data>
+	<data name="Message302" xml:space="preserve">
+		<value>Grok sign-in did not finish. Try again.</value>
+	</data>
+	<data name="Message303" xml:space="preserve">
+		<value>Grok sign-in timed out. Try again.</value>
+	</data>
+	<data name="Message304" xml:space="preserve">
+		<value>Provider {0} is not registered.</value>
+	</data>
+	<data name="Message305" xml:space="preserve">
+		<value>Provider {0} was registered more than once.</value>
+	</data>
+	<data name="Message306" xml:space="preserve">
+		<value>The provider list cannot contain null.</value>
+	</data>
+	<data name="Message307" xml:space="preserve">
+		<value>The provider list contains an invalid ProviderKind.</value>
+	</data>
+	<data name="Message308" xml:space="preserve">
+		<value>The provider's minimum refresh interval cannot be negative.</value>
+	</data>
+	<data name="Message309" xml:space="preserve">
+		<value>{0} / {1} used</value>
+	</data>
+	<data name="Message310" xml:space="preserve">
+		<value>{0} CLI version diagnostic: {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="Message311" xml:space="preserve">
+		<value>The {0} private account path contains an unsafe reparse point.</value>
+	</data>
+	<data name="Message312" xml:space="preserve">
+		<value>Invalid {0} private account path.</value>
+	</data>
+	<data name="Message315" xml:space="preserve">
+		<value>{0} must be a JSON object.</value>
+	</data>
+	<data name="Message316" xml:space="preserve">
+		<value>The previous check was canceled after Antigravity started</value>
+	</data>
+	<data name="Message317" xml:space="preserve">
+		<value>The previous check was interrupted before finishing</value>
+	</data>
+	<data name="Message318" xml:space="preserve">
+		<value>The previous check timed out</value>
+	</data>
+	<data name="Message319" xml:space="preserve">
+		<value>Detected {0} {1}</value>
+	</data>
+	<data name="Message320" xml:space="preserve">
+		<value>This check may have consumed usage</value>
+	</data>
+	<data name="Message321" xml:space="preserve">
+		<value>The GitHub account that just signed in differs from this card's account.</value>
+	</data>
+	<data name="Message322" xml:space="preserve">
+		<value>Your cards and sign-in data will be kept; you do not need to sign in again:</value>
+	</data>
+	<data name="Message323" xml:space="preserve">
+		<value>Only Claude or Antigravity accounts have a usage safety state that can be reset.</value>
+	</data>
+	<data name="Message325" xml:space="preserve">
+		<value>No Claude usage data has been received yet. Use "Connect Claude account" on the card.</value>
+	</data>
+	<data name="Message326" xml:space="preserve">
+		<value>This card's Claude subscription has not been verified. Use the original account and verify its organization and subscription plan.</value>
+	</data>
+	<data name="Message327" xml:space="preserve">
+		<value>The Antigravity account is not connected yet.</value>
+	</data>
+	<data name="Message328" xml:space="preserve">
+		<value>The Claude account is not connected yet. Use "Connect Claude account" on the card.</value>
+	</data>
+	<data name="Message329" xml:space="preserve">
+		<value>Copilot is not connected yet.</value>
+	</data>
+	<data name="Message330" xml:space="preserve">
+		<value>The Grok account is not connected yet.</value>
+	</data>
+	<data name="Message331" xml:space="preserve">
+		<value>This card's Codex account is not connected yet. Connect or reconnect it.</value>
+	</data>
+	<data name="Message332" xml:space="preserve">
+		<value>Used {0} requests ({1})</value>
+	</data>
+	<data name="Message333" xml:space="preserve">
+		<value>Used {0}%</value>
+	</data>
+	<data name="Message336" xml:space="preserve">
+		<value>Copilot sign-in canceled.</value>
+	</data>
+	<data name="Message337" xml:space="preserve">
+		<value>This card's Grok account was verified, but the current subscription did not provide verifiable weekly usage. AI Usage will not guess your usage.</value>
+	</data>
+	<data name="Message339" xml:space="preserve">
+		<value>Restoring Codex workspace settings timed out.</value>
+	</data>
+	<data name="Message341" xml:space="preserve">
+		<value>The Antigravity CLI or a required file was not found. Check that Antigravity is installed and can start normally; your existing sign-in is unaffected.</value>
+	</data>
+	<data name="Message342" xml:space="preserve">
+		<value>The Claude Code CLI was not found.</value>
+	</data>
+	<data name="Message343" xml:space="preserve">
+		<value>The Claude Code CLI was not found. Install or update Claude Code first.</value>
+	</data>
+	<data name="Message344" xml:space="preserve">
+		<value>The Claude Code CLI was not found. Install or update Claude Code first. AI Usage will retry automatically later.</value>
+	</data>
+	<data name="Message345" xml:space="preserve">
+		<value>The Codex CLI was not found.</value>
+	</data>
+	<data name="Message346" xml:space="preserve">
+		<value>The Codex CLI was not found. Install or update Codex first.</value>
+	</data>
+	<data name="Message347" xml:space="preserve">
+		<value>The Codex CLI was not found. Install or repair Codex, then retry.</value>
+	</data>
+	<data name="Message348" xml:space="preserve">
+		<value>A usable, supported Grok Build CLI was not found. Install, update, or repair the Grok Build CLI, then retry.</value>
+	</data>
+	<data name="Message349" xml:space="preserve">
+		<value>The official Grok Build CLI was not found.</value>
+	</data>
+	<data name="Message350" xml:space="preserve">
+		<value>The Copilot credential to be committed was not found.</value>
+	</data>
+	<data name="Message351" xml:space="preserve">
+		<value>GitHub Copilot CLI was not found on this computer. Install the official CLI and try again. Your existing account settings will be kept.</value>
+	</data>
+	<data name="Message352" xml:space="preserve">
+		<value>This card's Copilot credential was not found.</value>
+	</data>
+	<data name="Message353" xml:space="preserve">
+		<value>The Codex CLI version cannot be verified right now. It will retry automatically later.</value>
+	</data>
+	<data name="Message354" xml:space="preserve">
+		<value>The Codex CLI version cannot be verified right now. Try again later.</value>
+	</data>
+	<data name="Message355" xml:space="preserve">
+		<value>The Codex account and workspace cannot be verified right now. It will retry automatically later.</value>
+	</data>
+	<data name="Message356" xml:space="preserve">
+		<value>Antigravity usage cannot be read right now. It will retry automatically later.</value>
+	</data>
+	<data name="Message357" xml:space="preserve">
+		<value>Claude usage cannot be read right now. It will retry automatically later.</value>
+	</data>
+	<data name="Message358" xml:space="preserve">
+		<value>Codex usage cannot be read right now. It will retry automatically later.</value>
+	</data>
+	<data name="Message359" xml:space="preserve">
+		<value>Copilot usage cannot be read right now.</value>
+	</data>
+	<data name="Message360" xml:space="preserve">
+		<value>GitHub Copilot usage cannot be read right now.</value>
+	</data>
+	<data name="Message361" xml:space="preserve">
+		<value>Grok usage cannot be read right now. It will retry automatically later.</value>
+	</data>
+	<data name="Message366" xml:space="preserve">
+		<value>Unknown Antigravity connection dialog result.</value>
+	</data>
+	<data name="Message367" xml:space="preserve">
+		<value>GitHub Copilot CLI is unavailable on this computer. Install or update the official CLI and try again. Your existing account settings will be kept.</value>
+	</data>
+	<data name="Message368" xml:space="preserve">
+		<value>The local GitHub Copilot CLI path is invalid. Install or update the official CLI.</value>
+	</data>
+	<data name="Message369" xml:space="preserve">
+		<value>The official GitHub Copilot CLI is unavailable on this computer. Install or update it using GitHub's official instructions, then try again;</value>
+	</data>
+	<data name="Message370" xml:space="preserve">
+		<value>The official GitHub Copilot CLI is unavailable on this computer. Install or update it using GitHub's official instructions, then try again; your cards and sign-in data will be kept, and you do not need to sign in again:</value>
+	</data>
+	<data name="Message371" xml:space="preserve">
+		<value>The official GitHub Copilot CLI is unavailable on this computer. Install or update it using GitHub’s official instructions, then try again. Your cards and sign-in data will be kept; you do not need to sign in again: https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli</value>
+	</data>
+	<data name="Message372" xml:space="preserve">
+		<value>Preparing Claude usage data. Try again later.</value>
+	</data>
+	<data name="Message373" xml:space="preserve">
+		<value>Verifying the Claude account. Usage from the previously unconnected account is temporarily hidden.</value>
+	</data>
+	<data name="Message374" xml:space="preserve">
+		<value>This source did not provide a limit</value>
+	</data>
+	<data name="Message376" xml:space="preserve">
+		<value>This provider is not connected yet.</value>
+	</data>
+	<data name="Message377" xml:space="preserve">
+		<value>Usage display is not supported for this provider yet.</value>
+	</data>
+	<data name="Message378" xml:space="preserve">
+		<value>Preparing the Claude sign-in environment timed out. Try again.</value>
+	</data>
+	<data name="Message379" xml:space="preserve">
+		<value>The Copilot CLI candidate could not be used: {0}</value>
+	</data>
+	<data name="Message380" xml:space="preserve">
+		<value>The Copilot account that just signed in could not be uniquely identified. Try again.</value>
+	</data>
+	<data name="Message381" xml:space="preserve">
+		<value>The Claude Code CLI could not be started.</value>
+	</data>
+	<data name="Message382" xml:space="preserve">
+		<value>Claude sign-in could not be started. Try again.</value>
+	</data>
+	<data name="Message383" xml:space="preserve">
+		<value>Codex app-server could not be started.</value>
+	</data>
+	<data name="Message384" xml:space="preserve">
+		<value>Codex sign-in could not be started. Try again.</value>
+	</data>
+	<data name="Message385" xml:space="preserve">
+		<value>The previous Copilot sign-in data could not be safely cleaned up, so a new sign-in was not started. Restart AI Usage and try again.</value>
+	</data>
+	<data name="Message386" xml:space="preserve">
+		<value>The Copilot sign-in result could not be safely verified. Try again.</value>
+	</data>
+	<data name="Message387" xml:space="preserve">
+		<value>The Copilot credential could not be written to Windows Credential Manager.</value>
+	</data>
+	<data name="Message388" xml:space="preserve">
+		<value>A protected executable copy of the Claude Code CLI could not be created or verified.</value>
+	</data>
+	<data name="Message389" xml:space="preserve">
+		<value>A protected executable copy of the Codex CLI could not be created or verified.</value>
+	</data>
+	<data name="Message390" xml:space="preserve">
+		<value>A protected executable copy of the Grok Build CLI could not be created or verified.</value>
+	</data>
+	<data name="Message391" xml:space="preserve">
+		<value>The Grok private home could not be created or verified.</value>
+	</data>
+	<data name="Message392" xml:space="preserve">
+		<value>The Copilot credential could not be deleted from Windows Credential Manager.</value>
+	</data>
+	<data name="Message393" xml:space="preserve">
+		<value>The Copilot credential could not be read from Windows Credential Manager.</value>
+	</data>
+	<data name="Message394" xml:space="preserve">
+		<value>Codex workspace settings could not be restored.</value>
+	</data>
+	<data name="Message395" xml:space="preserve">
+		<value>A local Copilot CLI that can be used safely could not be found. A search location check or candidate source, signature, or version check failed.</value>
+	</data>
+	<data name="Message396" xml:space="preserve">
+		<value>The Copilot CLI search path could not be checked: {0}</value>
+	</data>
+	<data name="Message397" xml:space="preserve">
+		<value>The disposable Copilot login context could not be cleaned up.</value>
+	</data>
+	<data name="Message398" xml:space="preserve">
+		<value>The Grok connection continuation state could not be cleared.</value>
+	</data>
+	<data name="Message399" xml:space="preserve">
+		<value>The separate settings directory for the Claude account could not be prepared.</value>
+	</data>
+	<data name="Message400" xml:space="preserve">
+		<value>The content returned by Antigravity could not be verified</value>
+	</data>
+	<data name="Message401" xml:space="preserve">
+		<value>The Claude CLI process could not be confirmed to have fully exited. Restart AI Usage and try again.</value>
+	</data>
+	<data name="Message402" xml:space="preserve">
+		<value>The protected execution directory for the Claude Code CLI could not be verified.</value>
+	</data>
+	<data name="Message403" xml:space="preserve">
+		<value>Could not determine whether Claude Code {0} `/usage` consumed usage.</value>
+	</data>
+	<data name="Message404" xml:space="preserve">
+		<value>The Claude Code version could not be verified. Update it first, then try again.</value>
+	</data>
+	<data name="Message405" xml:space="preserve">
+		<value>The Claude Code version could not be verified. Try again.</value>
+	</data>
+	<data name="Message406" xml:space="preserve">
+		<value>The Claude sign-in state could not be verified. Try again.</value>
+	</data>
+	<data name="Message407" xml:space="preserve">
+		<value>Claude sign-in could not be verified. Check that you are using a claude.ai subscription account.</value>
+	</data>
+	<data name="Message408" xml:space="preserve">
+		<value>The protected execution directory for the Codex CLI could not be verified.</value>
+	</data>
+	<data name="Message409" xml:space="preserve">
+		<value>The Codex CLI version check process could not be confirmed to have fully exited. Restart AI Usage and try again.</value>
+	</data>
+	<data name="Message410" xml:space="preserve">
+		<value>The Codex CLI process could not be confirmed to have fully exited. Restart AI Usage and try again.</value>
+	</data>
+	<data name="Message411" xml:space="preserve">
+		<value>The protected execution directory and Windows user for the Copilot CLI could not be verified.</value>
+	</data>
+	<data name="Message412" xml:space="preserve">
+		<value>Copilot sign-in could not be confirmed to have closed safely. No other Copilot sign-in will start until cleanup finishes.</value>
+	</data>
+	<data name="Message413" xml:space="preserve">
+		<value>The Copilot login process state could not be verified. No other Copilot sign-in will start until cleanup finishes.</value>
+	</data>
+	<data name="Message414" xml:space="preserve">
+		<value>The Copilot sign-in directory could not be verified. Check that AI Usage has write access.</value>
+	</data>
+	<data name="Message415" xml:space="preserve">
+		<value>The Grok Build CLI could not be confirmed to have fully exited, so usage checks were stopped. Restart AI Usage.</value>
+	</data>
+	<data name="Message416" xml:space="preserve">
+		<value>The protected execution directory for the Grok Build CLI could not be verified.</value>
+	</data>
+	<data name="Message417" xml:space="preserve">
+		<value>The previous Claude usage check could not be confirmed to have finished.</value>
+	</data>
+	<data name="Message418" xml:space="preserve">
+		<value>The previous check could not be confirmed to have finished</value>
+	</data>
+	<data name="Message419" xml:space="preserve">
+		<value>The installation path of the official Grok Build CLI could not be verified.</value>
+	</data>
+	<data name="Message420" xml:space="preserve">
+		<value>The GitHub user response could not be parsed.</value>
+	</data>
+	<data name="Message421" xml:space="preserve">
+		<value>The previous Claude usage check state could not be read or saved.</value>
+	</data>
+	<data name="Message422" xml:space="preserve">
+		<value>The previous check state could not be read or saved</value>
+	</data>
+	<data name="Message423" xml:space="preserve">
+		<value>The Claude Code CLI version format could not be recognized.</value>
+	</data>
+	<data name="Message424" xml:space="preserve">
+		<value>Copilot usage data could not be recognized.</value>
+	</data>
+	<data name="Message425" xml:space="preserve">
+		<value>The {0} version number could not be recognized</value>
+	</data>
+	<data name="Message426" xml:space="preserve">
+		<value>Copilot sign-in could not be opened. Install or update the official GitHub Copilot CLI on this computer, then try again.</value>
+	</data>
+	<data name="Message427" xml:space="preserve">
+		<value>Grok sign-in could not be opened or completed. Try again.</value>
+	</data>
+	<data name="Message429" xml:space="preserve">
+		<value>Only github.com accounts are supported right now.</value>
+	</data>
+	<data name="Message430" xml:space="preserve">
+		<value>The current sign-in is not authorized to read Copilot usage.</value>
+	</data>
+	<data name="Message431" xml:space="preserve">
+		<value>The signed-in account did not provide claude.ai Pro/Max usage data.</value>
+	</data>
+	<data name="Message432" xml:space="preserve">
+		<value>This Antigravity or AI Usage version does not support usage checks yet. Update Antigravity or AI Usage; your existing sign-in is unaffected.</value>
+	</data>
+	<data name="Message433" xml:space="preserve">
+		<value>Showing the last successfully read Claude usage (time unknown).</value>
+	</data>
+	<data name="Message434" xml:space="preserve">
+		<value>Verifying the Claude Code version timed out. Try again.</value>
+	</data>
+	<data name="Message435" xml:space="preserve">
+		<value>Verifying the Claude sign-in state timed out. Try again.</value>
+	</data>
+	<data name="Message436" xml:space="preserve">
+		<value>An unexpected request/response was received while waiting for a Codex notification.</value>
+	</data>
+	<data name="Message437" xml:space="preserve">
+		<value>The Codex workspace binding operation timed out.</value>
+	</data>
+	<data name="Message438" xml:space="preserve">
+		<value>Waiting for the previous Claude account operation timed out.</value>
+	</data>
+	<data name="Message439" xml:space="preserve">
+		<value>Waiting for the previous Claude account operation timed out. Try again.</value>
+	</data>
+	<data name="Message440" xml:space="preserve">
+		<value>Waiting for the previous Claude subscription scope probe timed out.</value>
+	</data>
+	<data name="Message441" xml:space="preserve">
+		<value>Waiting for the previous Codex account operation timed out.</value>
+	</data>
+	<data name="Message442" xml:space="preserve">
+		<value>Waiting for the previous Codex account operation timed out. Try again.</value>
+	</data>
+	<data name="Message443" xml:space="preserve">
+		<value>Waiting to restore the Codex workspace settings timed out.</value>
+	</data>
+	<data name="Message444" xml:space="preserve">
+		<value>Confirm the risks of reading Claude usage first. After confirmation, usage will update automatically without signing in again.</value>
+	</data>
+	<data name="Message445" xml:space="preserve">
+		<value>Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="Message446" xml:space="preserve">
+		<value>Reconnect your Antigravity account.</value>
+	</data>
+	<data name="Message447" xml:space="preserve">
+		<value>This Claude Code version cannot provide usage data. Update to 2.1.80 or later.</value>
+	</data>
+	<data name="Message448" xml:space="preserve">
+		<value>This Copilot account has no usage data to display.</value>
+	</data>
+	<data name="Message449" xml:space="preserve">
+		<value>Weekly usage ({0})</value>
+	</data>
+	<data name="Message450" xml:space="preserve">
+		<value>Weekly usage (all models)</value>
+	</data>
+	<data name="Message451" xml:space="preserve">
+		<value>GitHub Copilot CLI must have a stable three-part version of at least 1.0.79 and below 2.0.0.</value>
+	</data>
+	<data name="Message452" xml:space="preserve">
+		<value>Showing the last verified Claude usage · Updated at {0}</value>
+	</data>
+	<data name="Message453" xml:space="preserve">
+		<value>, extra usage enabled</value>
+	</data>
+	<data name="Message454" xml:space="preserve">
+		<value>, usage remains available after the quota is exhausted</value>
+	</data>
+	<data name="AntigravitySafety01Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the previous check was interrupted before finishing. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety01Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the previous check was interrupted before finishing. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety02Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the previous check timed out. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety02Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the previous check timed out. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety03Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the previous check was canceled after Antigravity started. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety03Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the previous check was canceled after Antigravity started. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety04Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command did not finish normally after starting. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety04Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command did not finish normally after starting. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety05Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command reported an error. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety05Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command reported an error. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety06Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command returned no data. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety06Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command returned no data. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety07Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command returned too much data to verify the result. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety07Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command returned too much data to verify the result. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety08Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the content returned by Antigravity could not be verified. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety08Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the content returned by Antigravity could not be verified. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety09Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the usage data returned by Antigravity could not be recognized. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety09Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the usage data returned by Antigravity could not be recognized. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety10Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: this check may have consumed usage. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety10Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: this check may have consumed usage. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety11Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the previous check state could not be read or saved. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety11Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the previous check state could not be read or saved. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="AntigravitySafety12Recheck" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the previous check could not be confirmed to have finished. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry.</value>
+	</data>
+	<data name="AntigravitySafety12Reconnect" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the previous check could not be confirmed to have finished. AI Usage will not retry automatically. Reconnect your Antigravity account.</value>
+	</data>
+	<data name="ClaudeSafety01Automatic" xml:space="preserve">
+		<value>Claude Code `/usage` was interrupted before it could be determined whether it consumed usage. AI Usage will retry automatically and keep the last successfully read data.</value>
+	</data>
+	<data name="ClaudeSafety01Manual" xml:space="preserve">
+		<value>Claude Code `/usage` was interrupted before it could be determined whether it consumed usage. AI Usage will not retry automatically. Click "Check Claude usage again" to retry.</value>
+	</data>
+	<data name="ClaudeSafety02Automatic" xml:space="preserve">
+		<value>The previous Claude usage check state could not be read or saved. AI Usage will retry automatically and keep the last successfully read data.</value>
+	</data>
+	<data name="ClaudeSafety02Manual" xml:space="preserve">
+		<value>The previous Claude usage check state could not be read or saved. AI Usage will not retry automatically. Click "Check Claude usage again" to retry.</value>
+	</data>
+	<data name="ClaudeSafety03Automatic" xml:space="preserve">
+		<value>Claude Code {0} `/usage` was canceled before it could be determined whether it consumed usage. AI Usage will retry automatically and keep the last successfully read data.</value>
+	</data>
+	<data name="ClaudeSafety03Manual" xml:space="preserve">
+		<value>Claude Code {0} `/usage` was canceled before it could be determined whether it consumed usage. AI Usage will not retry automatically. Click "Check Claude usage again" to retry.</value>
+	</data>
+	<data name="ClaudeSafety04Automatic" xml:space="preserve">
+		<value>Could not determine whether Claude Code {0} `/usage` consumed usage. AI Usage will retry automatically and keep the last successfully read data.</value>
+	</data>
+	<data name="ClaudeSafety04Manual" xml:space="preserve">
+		<value>Could not determine whether Claude Code {0} `/usage` consumed usage. AI Usage will not retry automatically. Click "Check Claude usage again" to retry.</value>
+	</data>
+	<data name="ClaudeSafety05Automatic" xml:space="preserve">
+		<value>Claude Code {0} `/usage` may have consumed usage, or its result needs manual verification. AI Usage will retry automatically and keep the last successfully read data.</value>
+	</data>
+	<data name="ClaudeSafety05Manual" xml:space="preserve">
+		<value>Claude Code {0} `/usage` may have consumed usage, or its result needs manual verification. AI Usage will not retry automatically. Click "Check Claude usage again" to retry.</value>
+	</data>
+	<data name="ClaudeSafety06Automatic" xml:space="preserve">
+		<value>The usage format returned by Claude Code {0} cannot be recognized right now. AI Usage will retry automatically and keep the last successfully read data.</value>
+	</data>
+	<data name="ClaudeSafety06Manual" xml:space="preserve">
+		<value>The usage format returned by Claude Code {0} cannot be recognized right now. AI Usage will not retry automatically. Click "Check Claude usage again" to retry.</value>
+	</data>
+	<data name="ClaudeSafety07Automatic" xml:space="preserve">
+		<value>Claude Code {0} `/usage` reported an error, but the usage result indicated success. This result cannot be verified right now. AI Usage will retry automatically and keep the last successfully read data.</value>
+	</data>
+	<data name="ClaudeSafety07Manual" xml:space="preserve">
+		<value>Claude Code {0} `/usage` reported an error, but the usage result indicated success. This result cannot be verified right now. AI Usage will not retry automatically. Click "Check Claude usage again" to retry.</value>
+	</data>
+	<data name="ClaudeSafety08Automatic" xml:space="preserve">
+		<value>The previous Claude usage check could not be confirmed to have finished. AI Usage will retry automatically and keep the last successfully read data.</value>
+	</data>
+	<data name="ClaudeSafety08Manual" xml:space="preserve">
+		<value>The previous Claude usage check could not be confirmed to have finished. AI Usage will not retry automatically. Click "Check Claude usage again" to retry.</value>
+	</data>
+	<data name="CopilotUsage01ExtraUsage" xml:space="preserve">
+		<value>Used {0}; limit controlled by shared quota and budgets, extra usage enabled</value>
+	</data>
+	<data name="CopilotUsage01StillAllowed" xml:space="preserve">
+		<value>Used {0}; limit controlled by shared quota and budgets, usage remains available after the quota is exhausted</value>
+	</data>
+	<data name="CopilotUsage02ExtraUsage" xml:space="preserve">
+		<value>Used {0}; limit not provided by this source, extra usage enabled</value>
+	</data>
+	<data name="CopilotUsage02StillAllowed" xml:space="preserve">
+		<value>Used {0}; limit not provided by this source, usage remains available after the quota is exhausted</value>
+	</data>
+	<data name="CopilotUsage03ExtraUsage" xml:space="preserve">
+		<value>Not provided by this plan, extra usage enabled</value>
+	</data>
+	<data name="CopilotUsage03StillAllowed" xml:space="preserve">
+		<value>Not provided by this plan, usage remains available after the quota is exhausted</value>
+	</data>
+	<data name="CopilotUsage04ExtraUsage" xml:space="preserve">
+		<value>{0} used (no quota included in this plan), extra usage enabled</value>
+	</data>
+	<data name="CopilotUsage04StillAllowed" xml:space="preserve">
+		<value>{0} used (no quota included in this plan), usage remains available after the quota is exhausted</value>
+	</data>
+	<data name="CopilotUsage05ExtraUsage" xml:space="preserve">
+		<value>{0} / {1} used, extra usage enabled</value>
+	</data>
+	<data name="CopilotUsage05StillAllowed" xml:space="preserve">
+		<value>{0} / {1} used, usage remains available after the quota is exhausted</value>
+	</data>
+	<data name="CopilotUsage06ExtraUsage" xml:space="preserve">
+		<value>Used {0} requests (this source did not provide a limit), extra usage enabled</value>
+	</data>
+	<data name="CopilotUsage06StillAllowed" xml:space="preserve">
+		<value>Used {0} requests (this source did not provide a limit), usage remains available after the quota is exhausted</value>
+	</data>
+	<data name="CopilotUsage07ExtraUsage" xml:space="preserve">
+		<value>Used {0} requests (unlimited), extra usage enabled</value>
+	</data>
+	<data name="CopilotUsage07StillAllowed" xml:space="preserve">
+		<value>Used {0} requests (unlimited), usage remains available after the quota is exhausted</value>
+	</data>
+	<data name="CodexBucketDay" xml:space="preserve">
+		<value>{0} · {1}-day usage</value>
+	</data>
+	<data name="CodexBucketHour" xml:space="preserve">
+		<value>{0} · {1}-hour usage</value>
+	</data>
+	<data name="CodexBucketMinute" xml:space="preserve">
+		<value>{0} · {1}-minute usage</value>
+	</data>
+	<data name="CodexBucketPrimary" xml:space="preserve">
+		<value>{0} · Primary usage</value>
+	</data>
+	<data name="CodexBucketSecondary" xml:space="preserve">
+		<value>{0} · Secondary usage</value>
+	</data>
+	<data name="CliDiagnosticCodexWorkspaceDetected" xml:space="preserve">
+		<value>The Codex account and workspace cannot be verified right now. It will retry automatically later. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticCodexWorkspaceUnknown" xml:space="preserve">
+		<value>The Codex account and workspace cannot be verified right now. It will retry automatically later. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticCodexRetryDetected" xml:space="preserve">
+		<value>Codex usage cannot be read right now. It will retry automatically later. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticCodexRetryUnknown" xml:space="preserve">
+		<value>Codex usage cannot be read right now. It will retry automatically later. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticCodexRepairDetected" xml:space="preserve">
+		<value>AI Usage cannot read usage through Codex right now. Update or repair Codex. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticCodexRepairUnknown" xml:space="preserve">
+		<value>AI Usage cannot read usage through Codex right now. Update or repair Codex. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticCodexUnknownErrorDetected" xml:space="preserve">
+		<value>Codex returned an unrecognized error. AI Usage will retry automatically later; no action is needed. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticCodexUnknownErrorUnknown" xml:space="preserve">
+		<value>Codex returned an unrecognized error. AI Usage will retry automatically later; no action is needed. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticGrokRetryDetected" xml:space="preserve">
+		<value>Grok usage cannot be read right now. It will retry automatically later. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticGrokRetryUnknown" xml:space="preserve">
+		<value>Grok usage cannot be read right now. It will retry automatically later. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticGrokRepairDetected" xml:space="preserve">
+		<value>A usable, supported Grok Build CLI was not found. Install, update, or repair the Grok Build CLI, then retry. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticGrokRepairUnknown" xml:space="preserve">
+		<value>A usable, supported Grok Build CLI was not found. Install, update, or repair the Grok Build CLI, then retry. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeRetryDetected" xml:space="preserve">
+		<value>Claude usage cannot be read right now. It will retry automatically later. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeRetryUnknown" xml:space="preserve">
+		<value>Claude usage cannot be read right now. It will retry automatically later. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety01Detected" xml:space="preserve">
+		<value>Claude Code `/usage` was interrupted before it could be determined whether it consumed usage. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety01Unknown" xml:space="preserve">
+		<value>Claude Code `/usage` was interrupted before it could be determined whether it consumed usage. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety02Detected" xml:space="preserve">
+		<value>Claude Code `/usage` was interrupted before it could be determined whether it consumed usage. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety02Unknown" xml:space="preserve">
+		<value>Claude Code `/usage` was interrupted before it could be determined whether it consumed usage. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety03Detected" xml:space="preserve">
+		<value>The previous Claude usage check state could not be read or saved. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety03Unknown" xml:space="preserve">
+		<value>The previous Claude usage check state could not be read or saved. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety04Detected" xml:space="preserve">
+		<value>The previous Claude usage check state could not be read or saved. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety04Unknown" xml:space="preserve">
+		<value>The previous Claude usage check state could not be read or saved. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety05Detected" xml:space="preserve">
+		<value>Claude Code {0} `/usage` was canceled before it could be determined whether it consumed usage. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety05Unknown" xml:space="preserve">
+		<value>Claude Code {0} `/usage` was canceled before it could be determined whether it consumed usage. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety06Detected" xml:space="preserve">
+		<value>Claude Code {0} `/usage` was canceled before it could be determined whether it consumed usage. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety06Unknown" xml:space="preserve">
+		<value>Claude Code {0} `/usage` was canceled before it could be determined whether it consumed usage. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety07Detected" xml:space="preserve">
+		<value>Could not determine whether Claude Code {0} `/usage` consumed usage. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety07Unknown" xml:space="preserve">
+		<value>Could not determine whether Claude Code {0} `/usage` consumed usage. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety08Detected" xml:space="preserve">
+		<value>Could not determine whether Claude Code {0} `/usage` consumed usage. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety08Unknown" xml:space="preserve">
+		<value>Could not determine whether Claude Code {0} `/usage` consumed usage. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety09Detected" xml:space="preserve">
+		<value>Claude Code {0} `/usage` may have consumed usage, or its result needs manual verification. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety09Unknown" xml:space="preserve">
+		<value>Claude Code {0} `/usage` may have consumed usage, or its result needs manual verification. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety10Detected" xml:space="preserve">
+		<value>Claude Code {0} `/usage` may have consumed usage, or its result needs manual verification. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety10Unknown" xml:space="preserve">
+		<value>Claude Code {0} `/usage` may have consumed usage, or its result needs manual verification. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety11Detected" xml:space="preserve">
+		<value>The usage format returned by Claude Code {0} cannot be recognized right now. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety11Unknown" xml:space="preserve">
+		<value>The usage format returned by Claude Code {0} cannot be recognized right now. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety12Detected" xml:space="preserve">
+		<value>The usage format returned by Claude Code {0} cannot be recognized right now. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety12Unknown" xml:space="preserve">
+		<value>The usage format returned by Claude Code {0} cannot be recognized right now. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety13Detected" xml:space="preserve">
+		<value>Claude Code {0} `/usage` reported an error, but the usage result indicated success. This result cannot be verified right now. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety13Unknown" xml:space="preserve">
+		<value>Claude Code {0} `/usage` reported an error, but the usage result indicated success. This result cannot be verified right now. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety14Detected" xml:space="preserve">
+		<value>Claude Code {0} `/usage` reported an error, but the usage result indicated success. This result cannot be verified right now. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety14Unknown" xml:space="preserve">
+		<value>Claude Code {0} `/usage` reported an error, but the usage result indicated success. This result cannot be verified right now. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety15Detected" xml:space="preserve">
+		<value>The previous Claude usage check could not be confirmed to have finished. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety15Unknown" xml:space="preserve">
+		<value>The previous Claude usage check could not be confirmed to have finished. AI Usage will retry automatically and keep the last successfully read data. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety16Detected" xml:space="preserve">
+		<value>The previous Claude usage check could not be confirmed to have finished. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety16Unknown" xml:space="preserve">
+		<value>The previous Claude usage check could not be confirmed to have finished. AI Usage will not retry automatically. Click "Check Claude usage again" to retry. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety01Detected" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command reported an error. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety01Unknown" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command reported an error. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety02Detected" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command returned no data. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety02Unknown" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the Antigravity command returned no data. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety03Detected" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the content returned by Antigravity could not be verified. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety03Unknown" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the content returned by Antigravity could not be verified. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety04Detected" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the usage data returned by Antigravity could not be recognized. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety04Unknown" xml:space="preserve">
+		<value>Antigravity usage checks are paused: the usage data returned by Antigravity could not be recognized. AI Usage will not retry automatically. Click "Check Antigravity usage again" to retry. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticAntigravityAutomaticDetected" xml:space="preserve">
+		<value>The Antigravity usage check has not finished. AI Usage will retry automatically later and keep your existing account and usage data. CLI version diagnostic: Detected {0} {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticAntigravityAutomaticUnknown" xml:space="preserve">
+		<value>The Antigravity usage check has not finished. AI Usage will retry automatically later and keep your existing account and usage data. CLI version diagnostic: The {0} version could not be recognized; this version's compatibility baseline is {1}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+</root>

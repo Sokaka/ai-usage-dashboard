@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 
 using AiUsageDashboard.App;
+using AiUsageDashboard.Core.Localization;
 
 namespace AiUsageDashboard.Tests;
 
@@ -83,18 +84,23 @@ public sealed class WindowWorkAreaLayoutTests
 	}
 
 	[Theory]
-	[InlineData(640, 480, 2, 304, 224)]
-	[InlineData(1920, 1080, 3, 624, 344)]
-	[InlineData(832, 832, 2, 400, 400)]
+	[InlineData(640, 480, 2, 304, 224, AppLanguage.English)]
+	[InlineData(1920, 1080, 3, 624, 344, AppLanguage.English)]
+	[InlineData(832, 832, 2, 400, 400, AppLanguage.English)]
+	[InlineData(640, 480, 2, 304, 224, AppLanguage.TraditionalChinese)]
+	[InlineData(1920, 1080, 3, 624, 344, AppLanguage.TraditionalChinese)]
+	[InlineData(832, 832, 2, 400, 400, AppLanguage.TraditionalChinese)]
 	public async Task AutomaticSortRulesWindow_WithLimitedHighDpiWorkArea_KeepsRulesScrollableAndCloseVisible(
 		int physicalWidth,
 		int physicalHeight,
 		double dpiScale,
 		double expectedMaximumWidth,
-		double expectedMaximumHeight)
+		double expectedMaximumHeight,
+		AppLanguage language)
 	{
 		await RunOnStaThreadAsync(() =>
 		{
+			using IDisposable languageScope = UiText.UseLanguage(language);
 			AutomaticSortRulesWindow window = new(CreateWindowResources());
 			try
 			{
@@ -113,11 +119,33 @@ public sealed class WindowWorkAreaLayoutTests
 				ScrollViewer rules = Assert.IsType<ScrollViewer>(root.Children[0]);
 				Button close = Assert.IsType<Button>(root.Children[1]);
 				Point closePosition = close.TranslatePoint(new Point(), root);
+				StackPanel content = Assert.IsType<StackPanel>(rules.Content);
+				foreach (TextBlock label in content.Children.OfType<TextBlock>())
+				{
+					Assert.False(string.IsNullOrWhiteSpace(label.Text));
+					if (label.TextWrapping == TextWrapping.NoWrap)
+					{
+						FormattedText text = new(
+							label.Text,
+							UiText.Culture,
+							label.FlowDirection,
+							new Typeface(label.FontFamily, label.FontStyle, label.FontWeight, label.FontStretch),
+							label.FontSize,
+							label.Foreground,
+							VisualTreeHelper.GetDpi(label).PixelsPerDip);
+						Assert.True(
+							text.WidthIncludingTrailingWhitespace <= label.ActualWidth + 1,
+							$"Rule heading '{label.Text}' requires {text.WidthIncludingTrailingWhitespace:F2} DIP, but has {label.ActualWidth:F2} DIP.");
+					}
+				}
 
 				Assert.True(rules.ScrollableHeight > 0);
 				Assert.True(rules.ViewportHeight > 0);
 				Assert.Equal(Visibility.Visible, rules.ComputedVerticalScrollBarVisibility);
 				Assert.Equal(Visibility.Visible, close.Visibility);
+				Assert.Equal(UiText.Get("Windows.SortRules.GotIt"), close.Content);
+				Assert.True(close.ActualWidth > 0);
+				Assert.True(close.ActualHeight > 0);
 				Assert.True(closePosition.Y >= 0);
 				Assert.True(closePosition.Y + close.ActualHeight <= root.ActualHeight);
 			}
@@ -263,6 +291,10 @@ public sealed class WindowWorkAreaLayoutTests
 			(ResourceDictionary)Application.LoadComponent(new Uri(
 				"/AiUsageDashboard.App;component/Themes/Controls.xaml",
 				UriKind.Relative)));
+		foreach ((string key, string text) in UiText.GetResources())
+		{
+			resources[key] = text;
+		}
 		return resources;
 	}
 

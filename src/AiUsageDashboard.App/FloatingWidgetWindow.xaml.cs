@@ -12,6 +12,7 @@ using System.Windows.Threading;
 using AiUsageDashboard.App.ViewModels;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Updates;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Persistence;
 using AiUsageDashboard.Presentation;
@@ -52,8 +53,6 @@ public partial class FloatingWidgetWindow : Window
 		public int Bottom;
 	}
 
-	private const string PortableSettingsReconnectNotice =
-		"匯入檔不含登入憑證。匯入的 Claude、Codex、GitHub Copilot、Antigravity 與 Grok 卡片都必須重新連接；Codex 的 workspace 卡片需重新輸入 workspace ID。";
 	private const double CollapsedSize = 56;
 	private const double CornerMargin = 18;
 	private const double CornerToggleContentInset = 42;
@@ -83,6 +82,7 @@ public partial class FloatingWidgetWindow : Window
 	private DrawingPoint _collapsedDragStart;
 	private FloatingWidgetCorner _corner = FloatingWidgetCorner.BottomRight;
 	private string? _lastViewModelAnnouncement;
+	private string _inlineStatusSource = string.Empty;
 	private string? _updateAvailableVersion;
 	private PortableWidgetPreferences?
 		_portableWidgetPreferencesBeforeLastImport;
@@ -111,6 +111,7 @@ public partial class FloatingWidgetWindow : Window
 	private bool _isWorkAreaRefreshPending;
 	private bool _hasUpdateBadge;
 	private AppTheme _theme = AppTheme.ClassicBlue;
+	private AppLanguage _language = AppLanguage.English;
 	private HwndSource? _windowSource;
 
 	internal event EventHandler? PreferencesChanged;
@@ -126,6 +127,11 @@ public partial class FloatingWidgetWindow : Window
 	internal FloatingWidgetCorner Corner => _corner;
 
 	internal AppTheme Theme => _theme;
+
+	internal AppLanguage SelectedLanguage => _language;
+
+	private static string PortableSettingsReconnectNotice =>
+		UiText.Get("Shell.ReconnectNotice");
 
 	internal void ApplyUpdatePresentation(
 		UpdateUiPresentation presentation,
@@ -188,6 +194,7 @@ public partial class FloatingWidgetWindow : Window
 		_collapsedPositionXRatio = preferences.CollapsedPositionXRatio;
 		_collapsedPositionYRatio = preferences.CollapsedPositionYRatio;
 		_theme = preferences.Theme;
+		_language = preferences.Language;
 		_isHeightFollowingCardCount = preferences.IsHeightFollowingCardCount;
 		_hasPlacement = true;
 		_isCollapsed = !preferences.IsCollapsed;
@@ -197,6 +204,7 @@ public partial class FloatingWidgetWindow : Window
 		UpdateCornerDependentVisuals();
 		UpdateHeightFollowsCardCountMenuItem();
 		UpdateThemeMenuItems();
+		UpdateLanguageMenuItems();
 		DataContext = viewModel;
 		IsVisibleChanged += FloatingWidgetWindow_IsVisibleChanged;
 		_accountStatusAnnouncementBridge =
@@ -246,7 +254,8 @@ public partial class FloatingWidgetWindow : Window
 			_theme,
 			_isHeightFollowingCardCount,
 			_collapsedPositionXRatio,
-			_collapsedPositionYRatio);
+			_collapsedPositionYRatio,
+			_language);
 	}
 
 	internal static PortableWidgetPreferences CreatePortableWidgetPreferencesSnapshot(
@@ -255,7 +264,8 @@ public partial class FloatingWidgetWindow : Window
 		bool isTopmost,
 		FloatingWidgetCorner corner,
 		AppTheme theme,
-		bool isHeightFollowingCardCount = false)
+		bool isHeightFollowingCardCount = false,
+		AppLanguage language = AppLanguage.English)
 	{
 		return new PortableWidgetPreferences(
 			isWidgetVisible,
@@ -263,7 +273,8 @@ public partial class FloatingWidgetWindow : Window
 			isTopmost,
 			corner,
 			theme,
-			isHeightFollowingCardCount);
+			isHeightFollowingCardCount,
+			language);
 	}
 
 	private PortableWidgetPreferences CapturePortableWidgetPreferences()
@@ -274,7 +285,8 @@ public partial class FloatingWidgetWindow : Window
 			Topmost,
 			_corner,
 			_theme,
-			_isHeightFollowingCardCount);
+			_isHeightFollowingCardCount,
+			_language);
 	}
 
 	internal static PortableWidgetPreferences?
@@ -293,7 +305,8 @@ public partial class FloatingWidgetWindow : Window
 			IsHeightFollowingCardCount =
 				imported.IsHeightFollowingCardCount is null
 					? null
-					: current.IsHeightFollowingCardCount
+					: current.IsHeightFollowingCardCount,
+			Language = imported.Language is null ? null : current.Language
 		};
 	}
 
@@ -319,6 +332,7 @@ public partial class FloatingWidgetWindow : Window
 			_collapsedPositionXRatio = preferences.CollapsedPositionXRatio;
 			_collapsedPositionYRatio = preferences.CollapsedPositionYRatio;
 			_theme = preferences.Theme;
+			ApplyLanguage(preferences.Language);
 			SetHeightFollowingCardCount(
 				preferences.IsHeightFollowingCardCount,
 				notifyPreferences: false);
@@ -373,6 +387,11 @@ public partial class FloatingWidgetWindow : Window
 				UpdateThemeMenuItems();
 			}
 
+			if (preferences.Language is AppLanguage language)
+			{
+				ApplyLanguage(language);
+			}
+
 			if (preferences.IsHeightFollowingCardCount is bool
 				isHeightFollowingCardCount)
 			{
@@ -425,7 +444,7 @@ public partial class FloatingWidgetWindow : Window
 		string failureReason)
 	{
 		return
-			"無法儲存浮窗位置與顯示設定；" +
+			UiText.Get("Shell.Widget106") +
 			App.CreateShellPreferencesSaveFailureNotificationText(failureReason);
 	}
 
@@ -442,11 +461,11 @@ public partial class FloatingWidgetWindow : Window
 	{
 		if (_isShellPreferencesFailureInlineStatus)
 		{
-			ReportInlineStatus("浮窗位置與顯示設定已恢復儲存。");
+			ReportInlineStatus(UiText.Get("Shell.Widget107"));
 			return;
 		}
 
-		ReportAsyncStatus("浮窗位置與顯示設定已恢復儲存。");
+		ReportAsyncStatus(UiText.Get("Shell.Widget107"));
 	}
 
 	protected override void OnClosing(CancelEventArgs e)
@@ -640,16 +659,16 @@ public partial class FloatingWidgetWindow : Window
 
 		if (!_portableSettingsOperationGate.Wait(0))
 		{
-			ReportInlineStatus("已有設定匯入、匯出或還原正在進行。");
+			ReportInlineStatus(UiText.Get("Shell.Widget108"));
 			return;
 		}
 
 		try
 		{
 			MessageBoxResult confirmation = ShowPortableSettingsMessageBox(
-				"匯出檔是未加密的 JSON，包含帳號暱稱、連接後顯示的帳號（例如電子郵件）、帳號順序、用量顯示方式、浮窗設定與主題。\n\n" +
-				"檔案不包含密碼或登入憑證。請只存放在可信任的位置。\n\n要繼續匯出嗎？",
-				"匯出設定",
+				UiText.Get("Shell.Widget109") +
+				UiText.Get("Shell.Widget110"),
+				UiText.Get("Shell.Widget111"),
 				MessageBoxButton.YesNo,
 				MessageBoxImage.Information,
 				MessageBoxResult.No);
@@ -666,9 +685,9 @@ public partial class FloatingWidgetWindow : Window
 				FileName =
 					$"ai-usage-settings-{DateTimeOffset.Now:yyyyMMdd}.aiusage.json",
 				Filter =
-					"AI Usage 設定 (*.aiusage.json)|*.aiusage.json|JSON 檔案 (*.json)|*.json",
+					UiText.Get("Shell.Widget112"),
 				OverwritePrompt = true,
-				Title = "匯出 AI Usage 設定"
+				Title = UiText.Get("Shell.Widget113")
 			};
 
 			bool? dialogResult = IsVisible
@@ -691,7 +710,7 @@ public partial class FloatingWidgetWindow : Window
 					snapshot,
 					_portableSettingsLifetime.Token);
 				ReportInlineStatus(
-					$"已匯出 {snapshot.Accounts.Count} 個帳號與設定；檔案不含登入憑證。");
+					UiText.Format("Shell.Widget114", snapshot.Accounts.Count));
 			}
 			catch (OperationCanceledException)
 			{
@@ -699,7 +718,7 @@ public partial class FloatingWidgetWindow : Window
 			}
 			catch (Exception exception)
 			{
-				ReportPortableSettingsFailure("匯出", exception);
+				ReportPortableSettingsFailure("export", exception);
 			}
 		}
 		catch (OperationCanceledException)
@@ -708,7 +727,7 @@ public partial class FloatingWidgetWindow : Window
 		}
 		catch (Exception exception)
 		{
-			ReportPortableSettingsFailure("匯出", exception);
+			ReportPortableSettingsFailure("export", exception);
 		}
 		finally
 		{
@@ -738,7 +757,7 @@ public partial class FloatingWidgetWindow : Window
 
 		if (!_portableSettingsOperationGate.Wait(0))
 		{
-			ReportInlineStatus("已有設定匯入、匯出或還原正在進行。");
+			ReportInlineStatus(UiText.Get("Shell.Widget108"));
 			return;
 		}
 
@@ -749,9 +768,9 @@ public partial class FloatingWidgetWindow : Window
 				CheckFileExists = true,
 				DefaultExt = ".aiusage.json",
 				Filter =
-					"AI Usage 設定 (*.aiusage.json)|*.aiusage.json|JSON 檔案 (*.json)|*.json",
+					UiText.Get("Shell.Widget112"),
 				Multiselect = false,
-				Title = "匯入 AI Usage 設定"
+				Title = UiText.Get("Shell.Widget116")
 			};
 
 			if (dialog.ShowDialog(this) != true)
@@ -773,7 +792,7 @@ public partial class FloatingWidgetWindow : Window
 			}
 			catch (Exception exception)
 			{
-				ReportPortableSettingsFailure("匯入", exception);
+				ReportPortableSettingsFailure("import", exception);
 				return;
 			}
 
@@ -789,27 +808,15 @@ public partial class FloatingWidgetWindow : Window
 			string claudeQuotaRiskNotice =
 				CreateClaudeQuotaRiskReconfirmationNotice(
 					claudeQuotaRiskConfirmationCount);
-			string replacementDescription = snapshot.WidgetPreferences switch
-			{
-				null =>
-					"繼續會取代目前的帳號、手動順序、排序方式與用量顯示方式；這份舊版檔案沒有浮窗、主題與視窗高度設定，因此會保留目前設定。 ",
-				{ Theme: null, IsHeightFollowingCardCount: null } =>
-					"繼續會取代目前的帳號、手動順序、排序方式、用量顯示方式與浮窗設定；這份舊版檔案沒有主題與視窗高度設定，因此會保留目前主題與高度設定。 ",
-				{ Theme: null } =>
-					"繼續會取代目前的帳號、手動順序、排序方式、用量顯示方式與浮窗設定；這份舊版檔案沒有主題設定，因此會保留目前主題。 ",
-				{ IsHeightFollowingCardCount: null } =>
-					"繼續會取代目前的帳號、手動順序、排序方式、用量顯示方式、浮窗設定與主題；這份舊版檔案沒有視窗高度設定，因此會保留目前高度設定。 ",
-				_ =>
-					"繼續會取代目前的帳號、手動順序、排序方式、用量顯示方式、浮窗設定與主題。 "
-			};
+			string replacementDescription = UiText.Get("Shell.ImportReplaceDescription");
 
 			MessageBoxResult confirmation = WpfMessageBox.Show(
 				this,
 				$"{preview}\n\n" +
-				$"{replacementDescription}Claude、Codex、Antigravity 與 Grok Build CLI 的預設登入資料不會被刪除；AI Usage 為現有 Grok 帳號另存的登入資料會清除，目前 Copilot 卡片在 Windows Credential Manager 的登入資料也會清除。套用後可在關閉程式前選擇「還原匯入前設定」；若重新啟動後仍需還原，請先取消並匯出目前設定。\n\n" +
+				UiText.Format("Shell.Widget123", replacementDescription) +
 				$"{claudeQuotaRiskNotice}\n\n" +
-				$"{PortableSettingsReconnectNotice}\n\n要套用這份設定嗎？",
-				"取代目前設定",
+				UiText.Format("Shell.Widget124", PortableSettingsReconnectNotice),
+				UiText.Get("Shell.Widget125"),
 				MessageBoxButton.YesNo,
 				MessageBoxImage.Warning,
 				MessageBoxResult.No);
@@ -822,7 +829,7 @@ public partial class FloatingWidgetWindow : Window
 			try
 			{
 				ReportInlineStatus(
-					"正在匯入設定；如有進行中的用量檢查，會先等待它結束…",
+					UiText.Get("Shell.Widget126"),
 					autoDismiss: false,
 					preserveAgainstAsyncUpdates: true);
 				await viewModel.ReplacePortableSettingsAsync(
@@ -872,7 +879,7 @@ public partial class FloatingWidgetWindow : Window
 				WpfMessageBox.Show(
 					this,
 					message,
-					"設定已匯入，但備份更新失敗",
+					UiText.Get("Shell.Widget127"),
 					MessageBoxButton.OK,
 					MessageBoxImage.Warning);
 				_portableWidgetPreferencesBeforeLastImport =
@@ -893,7 +900,7 @@ public partial class FloatingWidgetWindow : Window
 			}
 			catch (Exception exception)
 			{
-				ReportPortableSettingsFailure("匯入", exception);
+				ReportPortableSettingsFailure("import", exception);
 			}
 		}
 		catch (OperationCanceledException)
@@ -902,7 +909,7 @@ public partial class FloatingWidgetWindow : Window
 		}
 		catch (Exception exception)
 		{
-			ReportPortableSettingsFailure("匯入", exception);
+			ReportPortableSettingsFailure("import", exception);
 		}
 		finally
 		{
@@ -974,14 +981,14 @@ public partial class FloatingWidgetWindow : Window
 
 		if (!_portableSettingsOperationGate.Wait(0))
 		{
-			ReportInlineStatus("已有設定匯入、匯出或還原正在進行。");
+			ReportInlineStatus(UiText.Get("Shell.Widget108"));
 			return;
 		}
 
 		try
 		{
 			ReportInlineStatus(
-				"正在還原匯入前設定；如有進行中的用量檢查，會先等待它結束…",
+				UiText.Get("Shell.Widget128"),
 				autoDismiss: false,
 				preserveAgainstAsyncUpdates: true);
 			PortableWidgetPreferences? widgetPreferencesToRestore =
@@ -1010,7 +1017,7 @@ public partial class FloatingWidgetWindow : Window
 			WpfMessageBox.Show(
 				this,
 				message,
-				"設定已還原，但備份更新失敗",
+				UiText.Get("Shell.Widget129"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Warning);
 			ApplyPortableWidgetPreferences(
@@ -1028,7 +1035,7 @@ public partial class FloatingWidgetWindow : Window
 		}
 		catch (Exception exception)
 		{
-			ReportPortableSettingsFailure("還原", exception);
+			ReportPortableSettingsFailure("undo", exception);
 		}
 		finally
 		{
@@ -1083,31 +1090,55 @@ public partial class FloatingWidgetWindow : Window
 			.SequenceEqual(imported.Accounts.Select(account =>
 				(account.Id, account.Provider)));
 		string providerCounts = string.Join(
-			"、",
+			UiText.Get("Shell.ListSeparator"),
 			imported.Accounts
 				.GroupBy(account => account.Provider)
 				.OrderBy(group => group.Key)
 				.Select(group => $"{GetProviderDisplayName(group.Key)} {group.Count()}")
-				.DefaultIfEmpty("無帳號"));
+				.DefaultIfEmpty(UiText.Get("Shell.Widget131")));
 
-		return "變更預覽：\n" +
-			$"• 帳號：{current.Accounts.Count} → {imported.Accounts.Count}" +
-			$"（新增 {addedCount}、移除 {removedCount}、更新 {updatedCount}）\n" +
-			$"• 順序：{(orderChanged ? "會變更" : "不變")}\n" +
-			$"• 排序方式：{GetUsageSortModeText(current.UsageSortMode)} → " +
+		return UiText.Get("Shell.Widget132") +
+			UiText.Format("Shell.Widget133", current.Accounts.Count, imported.Accounts.Count) +
+			UiText.Format("Shell.Widget134", addedCount, removedCount, updatedCount) +
+			UiText.Format("Shell.Widget137", (orderChanged ? UiText.Get("Shell.Widget135") : UiText.Get("Shell.Widget136"))) +
+			UiText.Format("Shell.Widget138", GetUsageSortModeText(current.UsageSortMode)) +
 			$"{GetUsageSortModeText(imported.UsageSortMode)}\n" +
-			$"• 顯示方式：{GetUsageDisplayModeText(current.UsageDisplayMode)} → " +
+			UiText.Format("Shell.Widget139", GetUsageDisplayModeText(current.UsageDisplayMode)) +
 			$"{GetUsageDisplayModeText(imported.UsageDisplayMode)}\n" +
-			$"• 浮窗設定：{GetPortableWidgetPreferencesPreview(current, imported)}\n" +
-			$"• 主題：{GetPortableThemePreview(current, imported)}\n" +
-			$"• 需重新確認 Claude 用量讀取：{claudeQuotaRiskConfirmationCount} 個帳號\n" +
-			$"• 帳號所屬服務：{providerCounts}";
+			UiText.Format("Shell.Widget140", GetPortableWidgetPreferencesPreview(current, imported)) +
+			UiText.Format("Shell.Widget141", GetPortableThemePreview(current, imported)) +
+			UiText.Format("Shell.LanguagePreview", GetPortableLanguagePreview(current, imported)) +
+			UiText.Format("Shell.Widget142", claudeQuotaRiskConfirmationCount) +
+			UiText.Format("Shell.Widget143", providerCounts);
 	}
 
 	private static string CreateClaudeQuotaRiskReconfirmationNotice(
 		int claudeAccountCount)
 	{
-		return $"匯入後有 {claudeAccountCount} 個 Claude 帳號需要重新確認用量讀取；確認前不會檢查這些帳號的用量。";
+		return UiText.Format("Shell.Widget144", claudeAccountCount);
+	}
+
+	internal static string GetPortableLanguagePreview(
+		PortableSettingsSnapshot current,
+		PortableSettingsSnapshot imported)
+	{
+		if (imported.WidgetPreferences?.Language is not AppLanguage importedLanguage)
+		{
+			return UiText.Get("Shell.KeepCurrentLanguage");
+		}
+
+		return $"{GetLanguageDisplayName(current.WidgetPreferences?.Language ?? UiText.CurrentLanguage)} → " +
+			GetLanguageDisplayName(importedLanguage);
+	}
+
+	private static string GetLanguageDisplayName(AppLanguage language)
+	{
+		return language switch
+		{
+			AppLanguage.English => UiText.Get("Shell.LanguageEnglish"),
+			AppLanguage.TraditionalChinese => UiText.Get("Shell.LanguageTraditionalChinese"),
+			_ => throw new ArgumentOutOfRangeException(nameof(language), language, "Unsupported App language.")
+		};
 	}
 
 	private static bool ArePortableAccountFieldsEqual(
@@ -1128,9 +1159,9 @@ public partial class FloatingWidgetWindow : Window
 	{
 		return mode switch
 		{
-			UsageSortMode.Manual => "手動",
-			UsageSortMode.Automatic => "自動",
-			_ => "未知"
+			UsageSortMode.Manual => UiText.Get("Shell.Widget145"),
+			UsageSortMode.Automatic => UiText.Get("Shell.Widget146"),
+			_ => UiText.Get("Shell.Widget147")
 		};
 	}
 
@@ -1143,7 +1174,7 @@ public partial class FloatingWidgetWindow : Window
 			ProviderKind.Copilot => "GitHub Copilot",
 			ProviderKind.Antigravity => "Antigravity",
 			ProviderKind.Grok => "Grok",
-			_ => "未知服務"
+			_ => UiText.Get("Shell.Widget148")
 		};
 	}
 
@@ -1151,9 +1182,9 @@ public partial class FloatingWidgetWindow : Window
 	{
 		return mode switch
 		{
-			UsageDisplayMode.Used => "已使用",
-			UsageDisplayMode.Remaining => "剩餘",
-			_ => "未知"
+			UsageDisplayMode.Used => UiText.Get("Shell.Widget149"),
+			UsageDisplayMode.Remaining => UiText.Get("Shell.Widget150"),
+			_ => UiText.Get("Shell.Widget147")
 		};
 	}
 
@@ -1163,7 +1194,7 @@ public partial class FloatingWidgetWindow : Window
 	{
 		if (imported.WidgetPreferences is null)
 		{
-			return "保留目前設定";
+			return UiText.Get("Shell.Widget151");
 		}
 
 		string importedText = GetPortableWidgetPreferencesText(
@@ -1178,24 +1209,24 @@ public partial class FloatingWidgetWindow : Window
 	private static string GetPortableWidgetPreferencesText(
 		PortableWidgetPreferences preferences)
 	{
-		string visibility = preferences.IsWidgetVisible ? "顯示" : "隱藏";
-		string collapsed = preferences.IsCollapsed ? "收合" : "展開";
-		string topmost = preferences.IsTopmost ? "置頂" : "不置頂";
+		string visibility = preferences.IsWidgetVisible ? UiText.Get("Shell.Widget152") : UiText.Get("Shell.Widget153");
+		string collapsed = preferences.IsCollapsed ? UiText.Get("Shell.Widget154") : UiText.Get("Shell.Widget155");
+		string topmost = preferences.IsTopmost ? UiText.Get("Shell.App096") : UiText.Get("Shell.Widget156");
 		string height = preferences.IsHeightFollowingCardCount switch
 		{
-			true => "高度隨卡片數量",
-			false => "固定可用高度",
-			null => "高度維持目前設定"
+			true => UiText.Get("Shell.Widget157"),
+			false => UiText.Get("Shell.Widget158"),
+			null => UiText.Get("Shell.Widget159")
 		};
 		string corner = preferences.Corner switch
 		{
-			FloatingWidgetCorner.TopLeft => "左上角",
-			FloatingWidgetCorner.TopRight => "右上角",
-			FloatingWidgetCorner.BottomLeft => "左下角",
-			FloatingWidgetCorner.BottomRight => "右下角",
-			_ => "未知角落"
+			FloatingWidgetCorner.TopLeft => UiText.Get("Shell.Widget160"),
+			FloatingWidgetCorner.TopRight => UiText.Get("Shell.Widget161"),
+			FloatingWidgetCorner.BottomLeft => UiText.Get("Shell.Widget162"),
+			FloatingWidgetCorner.BottomRight => UiText.Get("Shell.Widget163"),
+			_ => UiText.Get("Shell.Widget164")
 		};
-		return $"{visibility}、{collapsed}、{topmost}、{corner}、{height}";
+		return string.Join(UiText.Get("Shell.ListSeparator"), visibility, collapsed, topmost, corner, height);
 	}
 
 	private static string GetPortableThemePreview(
@@ -1206,7 +1237,7 @@ public partial class FloatingWidgetWindow : Window
 
 		if (importedTheme is null)
 		{
-			return "保留目前主題";
+			return UiText.Get("Shell.Widget165");
 		}
 
 		AppTheme? currentTheme = current.WidgetPreferences?.Theme;
@@ -1221,11 +1252,11 @@ public partial class FloatingWidgetWindow : Window
 	{
 		return theme switch
 		{
-			AppTheme.ClassicBlue => "經典藍",
-			AppTheme.Midnight => "曜石黑",
-			AppTheme.Light => "柔霧灰",
-			AppTheme.Sakura => "櫻花粉",
-			_ => "未知"
+			AppTheme.ClassicBlue => UiText.Get("Shell.Widget166"),
+			AppTheme.Midnight => UiText.Get("Shell.Widget167"),
+			AppTheme.Light => UiText.Get("Shell.Widget168"),
+			AppTheme.Sakura => UiText.Get("Shell.Widget169"),
+			_ => UiText.Get("Shell.Widget147")
 		};
 	}
 
@@ -1242,7 +1273,7 @@ public partial class FloatingWidgetWindow : Window
 		WpfMessageBox.Show(
 			this,
 			message,
-			"設定匯入完成",
+			UiText.Get("Shell.Widget170"),
 			MessageBoxButton.OK,
 			MessageBoxImage.Information);
 	}
@@ -1253,19 +1284,27 @@ public partial class FloatingWidgetWindow : Window
 		string accountSettingsMessage)
 	{
 		string appliedStatus = string.IsNullOrWhiteSpace(accountSettingsMessage)
-			? $"已匯入 {accountCount} 個帳號，排序、用量顯示、浮窗設定與主題已套用。"
+			? UiText.Format("Shell.Widget171", accountCount)
 			: accountSettingsMessage.Trim();
 
 		return $"{appliedStatus}\n\n" +
 			$"{CreateClaudeQuotaRiskReconfirmationNotice(claudeQuotaRiskConfirmationCount)}\n\n" +
 			$"{PortableSettingsReconnectNotice}\n\n" +
-			"如需還原，請在關閉程式前選擇「匯入或匯出設定」→「還原匯入前設定」；還原後部分用量可能需要重新檢查。";
+			UiText.Get("Shell.Widget172");
 	}
 
 	private void ReportPortableSettingsFailure(
-		string operation,
+		string diagnosticOperation,
 		Exception exception)
 	{
+		string operation = diagnosticOperation switch
+		{
+			"import" => UiText.Get("Shell.Widget117"),
+			"export" => UiText.Get("Shell.Widget115"),
+			"undo" => UiText.Get("Shell.Widget130"),
+			_ => throw new ArgumentOutOfRangeException(
+				nameof(diagnosticOperation), diagnosticOperation, "Unknown settings operation.")
+		};
 		string reason = exception switch
 		{
 			PortableSettingsException => exception.Message,
@@ -1274,27 +1313,21 @@ public partial class FloatingWidgetWindow : Window
 			InvalidOperationException => exception.Message,
 			_ => AppDiagnostics.GetUserFacingFailureReason(
 				exception,
-				$"{operation}設定時發生錯誤。")
-		};
-		string diagnosticOperation = operation switch
-		{
-			"匯入" => "import",
-			"匯出" => "export",
-			"還原" => "undo",
-			_ => "operation"
+				UiText.Format("Shell.Widget173", operation))
 		};
 		AppDiagnosticWriteResult diagnostic = AppDiagnostics.TryWrite(
 			$"portable-settings-{diagnosticOperation}",
 			reason,
 			exception);
 		string diagnosticHint = diagnostic.WasWritten
-			? $"\n\n診斷紀錄：{diagnostic.FilePath}"
+			? UiText.Format("Shell.Widget174", diagnostic.FilePath)
 			: string.Empty;
-		ReportInlineStatus($"無法{operation}設定：{reason}");
+		string displayReason = UiText.Translate(reason);
+		ReportInlineStatus(UiText.Format("Shell.Widget175", operation, displayReason));
 		WpfMessageBox.Show(
 			this,
-			$"無法{operation}設定。\n\n{reason}{diagnosticHint}",
-			$"設定{operation}失敗",
+			UiText.Format("Shell.Widget176", operation, displayReason, diagnosticHint),
+			UiText.Format("Shell.Widget177", operation),
 			MessageBoxButton.OK,
 			MessageBoxImage.Error);
 	}
@@ -1346,7 +1379,7 @@ public partial class FloatingWidgetWindow : Window
 			InvalidOperationException => exception.Message,
 			_ => AppDiagnostics.GetUserFacingFailureReason(
 				exception,
-				"更新帳號設定時發生錯誤。")
+				UiText.Get("Shell.Widget178"))
 		};
 	}
 
@@ -1387,7 +1420,7 @@ public partial class FloatingWidgetWindow : Window
 			if (_accountConnectionCoordinator.TryCancelAccountConnection(account.Id))
 			{
 				ReportInlineStatus(
-					$"正在取消「{account.AccountName}」的 Claude 帳號連接…",
+					UiText.Format("Shell.Widget179", account.AccountName),
 					autoDismiss: false);
 			}
 
@@ -1425,7 +1458,7 @@ public partial class FloatingWidgetWindow : Window
 			if (_accountConnectionCoordinator.TryCancelAccountConnection(account.Id))
 			{
 				ReportInlineStatus(
-					$"正在取消「{account.AccountName}」的 Codex 帳號連接…",
+					UiText.Format("Shell.Widget180", account.AccountName),
 					autoDismiss: false);
 			}
 
@@ -1463,7 +1496,7 @@ public partial class FloatingWidgetWindow : Window
 			if (_accountConnectionCoordinator.TryCancelAccountConnection(account.Id))
 			{
 				ReportInlineStatus(
-					$"正在取消「{account.AccountName}」的 Copilot 帳號連接…",
+					UiText.Format("Shell.Widget181", account.AccountName),
 					autoDismiss: false);
 			}
 
@@ -1502,7 +1535,7 @@ public partial class FloatingWidgetWindow : Window
 			if (_accountConnectionCoordinator.TryCancelAccountConnection(account.Id))
 			{
 				ReportInlineStatus(
-					$"正在取消「{account.AccountName}」的 Grok 帳號連接…",
+					UiText.Format("Shell.Widget182", account.AccountName),
 					autoDismiss: false);
 			}
 
@@ -1612,7 +1645,7 @@ public partial class FloatingWidgetWindow : Window
 		MessageBoxResult result = WpfMessageBox.Show(
 			this,
 			account.AccountDeletionConfirmationText,
-			"從 AI Usage 移除帳號",
+			UiText.Get("Shell.Widget183"),
 			MessageBoxButton.YesNo,
 			MessageBoxImage.Warning,
 			MessageBoxResult.No);
@@ -1640,11 +1673,11 @@ public partial class FloatingWidgetWindow : Window
 		ReportInlineStatus(string.Empty);
 		AccountEditorWindow editorWindow = new(
 			account.Profile,
-			currentProviderAccountDisplayText:
-				account.ProviderAccountDisplayText,
+			currentProviderAccountDisplayTextProvider:
+				() => account.ProviderAccountDisplayText,
 			hasCurrentProviderAccountIdentity:
 				account.HasProviderAccountIdentity,
-			currentProviderAccountActionText: account.Provider switch
+			currentProviderAccountActionTextProvider: () => account.Provider switch
 			{
 				ProviderKind.Claude => account.ClaudeAccountActionText,
 				ProviderKind.Codex => account.CodexAccountActionText,
@@ -1711,13 +1744,13 @@ public partial class FloatingWidgetWindow : Window
 					? viewModel.AccountSettingsMessage
 					: exception.Message;
 			string diagnosticHint = diagnostic.WasWritten
-				? $"\n\n診斷紀錄：{diagnostic.FilePath}"
+				? UiText.Format("Shell.Widget174", diagnostic.FilePath)
 				: string.Empty;
 			ReportInlineStatus(message);
 			WpfMessageBox.Show(
 				this,
 				$"{message}{diagnosticHint}",
-				"帳號備份更新失敗",
+				UiText.Get("Shell.Widget184"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Warning);
 			return true;
@@ -1730,13 +1763,13 @@ public partial class FloatingWidgetWindow : Window
 				"result=failed",
 				exception);
 			string diagnosticHint = diagnostic.WasWritten
-				? $"\n\n診斷紀錄：{diagnostic.FilePath}"
+				? UiText.Format("Shell.Widget174", diagnostic.FilePath)
 				: string.Empty;
-			ReportInlineStatus($"無法更新帳號設定：{reason}");
+			ReportInlineStatus(UiText.Format("Shell.Widget185", reason));
 			WpfMessageBox.Show(
 				this,
-				$"無法更新帳號設定；原設定未變更。\n\n{reason}{diagnosticHint}",
-				"帳號設定錯誤",
+				UiText.Format("Shell.Widget186", reason, diagnosticHint),
+				UiText.Get("Shell.Widget187"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Error);
 			return false;
@@ -1758,18 +1791,18 @@ public partial class FloatingWidgetWindow : Window
 		{
 			string reason = AppDiagnostics.GetUserFacingFailureReason(
 				exception,
-				"更新顯示設定時發生錯誤。");
+				UiText.Get("Shell.Widget188"));
 			AppDiagnosticWriteResult diagnostic = AppDiagnostics.TryWrite(
 				"floating-window-preference-change",
 				reason,
 				exception);
 			string diagnosticHint = diagnostic.WasWritten
-				? $"\n\n診斷紀錄：{diagnostic.FilePath}"
+				? UiText.Format("Shell.Widget174", diagnostic.FilePath)
 				: string.Empty;
 			WpfMessageBox.Show(
 				this,
-				$"無法更新顯示設定；原設定未變更。\n\n{reason}{diagnosticHint}",
-				"顯示設定錯誤",
+				UiText.Format("Shell.Widget189", reason, diagnosticHint),
+				UiText.Get("Shell.Widget190"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Error);
 		}
@@ -1795,7 +1828,7 @@ public partial class FloatingWidgetWindow : Window
 			if (_accountConnectionCoordinator.TryCancelAccountConnection(account.Id))
 			{
 				ReportInlineStatus(
-					$"正在取消「{account.AccountName}」的 {account.ProviderName} 帳號連接…",
+					UiText.Format("Shell.Widget191", account.AccountName, account.ProviderName),
 					autoDismiss: false);
 			}
 
@@ -1902,8 +1935,8 @@ public partial class FloatingWidgetWindow : Window
 
 		string guidance = CreateRecoveryGuidance(account);
 		ReportInlineStatus(TryCopyRecoveryGuidance(guidance)
-			? "處理步驟已複製到剪貼簿。"
-			: $"目前無法存取剪貼簿。處理步驟如下：{guidance}");
+			? UiText.Get("Shell.Widget192")
+			: UiText.Format("Shell.Widget193", guidance));
 	}
 
 	private async void RetryRecoveryButton_Click(
@@ -1929,12 +1962,12 @@ public partial class FloatingWidgetWindow : Window
 
 		if (result == LocalUserGuideOpenResult.Opened)
 		{
-			ReportInlineStatus("已開啟使用說明。");
+			ReportInlineStatus(UiText.Get("Shell.Widget194"));
 			return;
 		}
 
 		ReportInlineStatus(
-			$"{LocalUserGuideLauncher.GetFailureMessage(result)} 設定步驟：{guidance}",
+			UiText.Format("Shell.Widget195", LocalUserGuideLauncher.GetFailureMessage(result), guidance),
 			autoDismiss: false,
 			preserveAgainstAsyncUpdates: true);
 	}
@@ -1986,7 +2019,8 @@ public partial class FloatingWidgetWindow : Window
 		_isShellPreferencesFailureInlineStatus = false;
 		_hasPersistentInlineStatus =
 			!string.IsNullOrWhiteSpace(message) && preserveAgainstAsyncUpdates;
-		InlineStatusTextBlock.Text = message;
+		_inlineStatusSource = message;
+		InlineStatusTextBlock.Text = UiText.Translate(message);
 		InlineStatusTextBlock.Visibility = string.IsNullOrWhiteSpace(message)
 			? Visibility.Collapsed
 			: Visibility.Visible;
@@ -2048,9 +2082,9 @@ public partial class FloatingWidgetWindow : Window
 		if ((e.PropertyName == nameof(DashboardViewModel.IsRefreshing)) &&
 			viewModel.IsRefreshing)
 		{
-			_lastViewModelAnnouncement = "檢查中…";
+			_lastViewModelAnnouncement = UiText.Get("Shell.Widget196");
 			_lastViewModelAnnouncementAt = DateTimeOffset.UtcNow;
-			RaiseNotification("檢查中…", "RefreshStatusAnnouncement");
+			RaiseNotification(UiText.Get("Shell.Widget196"), "RefreshStatusAnnouncement");
 			return;
 		}
 
@@ -2176,36 +2210,36 @@ public partial class FloatingWidgetWindow : Window
 		if (account.IsAntigravity &&
 			(account.RecoveryAction == UsageRecoveryAction.UpdateApplication))
 		{
-			return "Antigravity：目前版本的 AI Usage 尚未支援這個用量格式。請更新 AI Usage；更新後會自動重新檢查。既有 Antigravity 連接通常可沿用；若卡片後續要求，請重新確認連接。";
+			return UiText.Get("Shell.Widget197");
 		}
 
 		if (account.IsAntigravity &&
 			(account.RecoveryAction == UsageRecoveryAction.InstallOrUpdate))
 		{
-			return "Antigravity：請確認 Antigravity CLI 已安裝且可正常啟動，並更新 Antigravity 或 AI Usage。完成後會自動重新檢查。既有 Antigravity 連接通常可沿用；若卡片後續要求，請重新確認連接。";
+			return UiText.Get("Shell.Widget198");
 		}
 
 		if (account.IsAntigravity &&
 			(account.RecoveryAction ==
 				UsageRecoveryAction.ReconfigureUsageSource))
 		{
-			return $"Antigravity：請按「{account.AntigravityAccountActionText}」，確認帳號與用量。完成後 AI Usage 會自動重新檢查。";
+			return UiText.Format("Shell.Widget199", account.AntigravityAccountActionText);
 		}
 
 		return account.Provider switch
 		{
 			ProviderKind.Claude =>
-				"Claude：請從官方來源安裝或更新 Claude Code。這不會刪除既有帳號設定或登入資料。完成後回到浮窗按「完成後再檢查」。",
+				UiText.Get("Shell.Widget200"),
 			ProviderKind.Codex =>
-				"Codex：請從官方來源安裝或更新 Codex CLI。這不會刪除既有帳號設定或登入資料。完成後回到浮窗按「完成後再檢查」。",
+				UiText.Get("Shell.Widget201"),
 			ProviderKind.Copilot =>
-				"Copilot：請安裝或更新本機官方 GitHub Copilot CLI（正式版 1.0.79 以上且低於 2.0.0）。安裝說明：https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli 。原有卡片 credential 會保留；完成後回到浮窗按「完成後再檢查」。",
+				UiText.Get("Shell.Widget202"),
 			ProviderKind.Grok =>
-				"Grok：請從 xAI 官方來源安裝或更新 Grok Build CLI。這不會影響 AI Usage 已儲存的帳號設定。完成後回到浮窗按「完成後再檢查」。",
+				UiText.Get("Shell.Widget203"),
 			ProviderKind.Antigravity =>
-				"Antigravity：請依卡片提示處理。完成後 AI Usage 會自動重新檢查。",
+				UiText.Get("Shell.Widget204"),
 			_ =>
-				"請從服務的官方來源安裝或更新 CLI。完成後回到浮窗按「完成後再檢查」。"
+				UiText.Get("Shell.Widget205")
 		};
 	}
 
@@ -2698,7 +2732,7 @@ public partial class FloatingWidgetWindow : Window
 
 		if (!TryGetWindowBounds(windowHandle, out DrawingRectangle windowBounds))
 		{
-			ReportCollapsedDragFailure(windowHandle, "取得拖曳中的浮窗範圍");
+			ReportCollapsedDragFailure(windowHandle, UiText.Get("Shell.Widget206"));
 			return;
 		}
 
@@ -2728,7 +2762,7 @@ public partial class FloatingWidgetWindow : Window
 			SetWindowPositionNoSize |
 			SetWindowPositionNoZOrder))
 		{
-			ReportCollapsedDragFailure(windowHandle, "移動拖曳中的浮窗");
+			ReportCollapsedDragFailure(windowHandle, UiText.Get("Shell.Widget207"));
 		}
 	}
 
@@ -2737,7 +2771,7 @@ public partial class FloatingWidgetWindow : Window
 		IntPtr windowHandle = new WindowInteropHelper(this).Handle;
 		if (!TryGetWindowBounds(windowHandle, out DrawingRectangle windowBounds))
 		{
-			ReportCollapsedDragFailure(windowHandle, "儲存浮窗位置時取得範圍");
+			ReportCollapsedDragFailure(windowHandle, UiText.Get("Shell.Widget208"));
 			return;
 		}
 
@@ -2764,7 +2798,7 @@ public partial class FloatingWidgetWindow : Window
 				SetWindowPositionNoSize |
 				SetWindowPositionNoZOrder))
 		{
-			ReportCollapsedDragFailure(windowHandle, "限制浮窗位置");
+			ReportCollapsedDragFailure(windowHandle, UiText.Get("Shell.Widget209"));
 			return;
 		}
 
@@ -2796,7 +2830,7 @@ public partial class FloatingWidgetWindow : Window
 		_hasCollapsedDragFailure = true;
 		AppDiagnostics.TryWrite(
 			"floating-icon-position",
-			$"{operation}失敗；windowHandle={windowHandle}。",
+			UiText.Format("Shell.Widget210", operation, windowHandle),
 			new Win32Exception(Marshal.GetLastWin32Error()));
 	}
 
@@ -2991,7 +3025,7 @@ public partial class FloatingWidgetWindow : Window
 
 		if (result == LocalUserGuideOpenResult.Opened)
 		{
-			ReportInlineStatus("已開啟使用說明。");
+			ReportInlineStatus(UiText.Get("Shell.Widget194"));
 			return;
 		}
 
@@ -3013,6 +3047,64 @@ public partial class FloatingWidgetWindow : Window
 		NotifyPreferencesChanged();
 	}
 
+	private void LanguageMenuItem_Click(object sender, RoutedEventArgs e)
+	{
+		if ((sender is not FrameworkElement element)
+			|| (element.Tag is not string languageName)
+			|| !Enum.TryParse(languageName, ignoreCase: false, out AppLanguage language)
+			|| !Enum.IsDefined(language))
+		{
+			return;
+		}
+
+		ChangeLanguage(language);
+	}
+
+	internal void ChangeLanguage(AppLanguage language)
+	{
+		if ((_language == language)
+			|| ((DataContext is DashboardViewModel viewModel) && !viewModel.CanChangeUsageDisplayMode))
+		{
+			UpdateLanguageMenuItems();
+			return;
+		}
+
+		ApplyLanguage(language);
+		NotifyPreferencesChanged();
+	}
+
+	private void ApplyLanguage(AppLanguage language)
+	{
+		_language = language;
+		if (System.Windows.Application.Current is App app)
+		{
+			app.ApplyLanguage(language);
+		}
+		else
+		{
+			UiText.SetLanguage(language);
+		}
+
+		RefreshLocalizedPresentation();
+	}
+
+	internal void RefreshLocalizedPresentation()
+	{
+		UpdateLanguageMenuItems();
+		UpdateCornerDependentVisuals();
+		InlineStatusTextBlock.Text = UiText.Translate(_inlineStatusSource);
+		if (DataContext is DashboardViewModel viewModel)
+		{
+			UpdateCompactRefreshStatus(viewModel);
+		}
+	}
+
+	private void UpdateLanguageMenuItems()
+	{
+		EnglishLanguageMenuItem.IsChecked = _language == AppLanguage.English;
+		TraditionalChineseLanguageMenuItem.IsChecked = _language == AppLanguage.TraditionalChinese;
+	}
+
 	private void UpdatePrimaryActionButton_Click(
 		object sender,
 		RoutedEventArgs e)
@@ -3032,7 +3124,7 @@ public partial class FloatingWidgetWindow : Window
 			exception is Win32Exception or InvalidOperationException)
 		{
 			ReportInlineStatus(
-				$"Windows 無法開啟下載與版本紀錄：{exception.Message}",
+				UiText.Format("Shell.Widget211", exception.Message),
 				autoDismiss: false,
 				preserveAgainstAsyncUpdates: true);
 		}
@@ -3145,8 +3237,8 @@ public partial class FloatingWidgetWindow : Window
 				progress =>
 				{
 					string message = progress == AccountRefreshProgress.Queued
-						? $"「{account.AccountName}」的用量檢查已排隊；目前的檢查完成後會自動開始。"
-						: $"正在檢查「{account.AccountName}」的用量…";
+						? UiText.Format("Shell.Widget212", account.AccountName)
+						: UiText.Format("Shell.Widget213", account.AccountName);
 					ReportInlineStatus(
 						message,
 						autoDismiss: false,
@@ -3162,7 +3254,7 @@ public partial class FloatingWidgetWindow : Window
 				exception);
 			viewModel.ReportRefreshFailure();
 			ReportInlineStatus(
-				$"目前無法檢查「{account.AccountName}」；已保留上次可用資料，稍後會自動再試。");
+				UiText.Format("Shell.Widget214", account.AccountName));
 		}
 	}
 
@@ -3174,20 +3266,20 @@ public partial class FloatingWidgetWindow : Window
 		{
 			string providerName = account.IsAntigravity ? "Antigravity" : "Claude";
 			ReportInlineStatus(
-				$"正在重新檢查「{account.AccountName}」的 {providerName} 用量…",
+				UiText.Format("Shell.Widget215", account.AccountName, providerName),
 				autoDismiss: false);
 			await viewModel.RevalidateUsageAsync(account.Id);
 
 			if (account.RecoveryAction == UsageRecoveryAction.RevalidateUsage)
 			{
 				ReportAsyncStatus(
-					$"「{account.AccountName}」這次仍未完成檢查；自動檢查維持暫停。",
+					UiText.Format("Shell.Widget216", account.AccountName),
 					autoDismiss: false);
 			}
 			else if (account.RecoveryAction == UsageRecoveryAction.Retry)
 			{
 				ReportAsyncStatus(
-					$"「{account.AccountName}」這次仍未完成；稍後會自動再試。",
+					UiText.Format("Shell.Widget217", account.AccountName),
 					autoDismiss: false);
 			}
 			else
@@ -3203,7 +3295,7 @@ public partial class FloatingWidgetWindow : Window
 				exception);
 			viewModel.ReportRefreshFailure();
 			ReportAsyncStatus(
-				$"目前無法重新檢查「{account.AccountName}」；其他帳號不受影響。",
+				UiText.Format("Shell.Widget218", account.AccountName),
 				autoDismiss: false);
 		}
 	}
@@ -3569,10 +3661,10 @@ public partial class FloatingWidgetWindow : Window
 			FloatingWidgetCorner.TopRight;
 		string cornerText = _corner switch
 		{
-			FloatingWidgetCorner.TopLeft => "左上角",
-			FloatingWidgetCorner.TopRight => "右上角",
-			FloatingWidgetCorner.BottomLeft => "左下角",
-			_ => "右下角"
+			FloatingWidgetCorner.TopLeft => UiText.Get("Shell.Widget160"),
+			FloatingWidgetCorner.TopRight => UiText.Get("Shell.Widget161"),
+			FloatingWidgetCorner.BottomLeft => UiText.Get("Shell.Widget162"),
+			_ => UiText.Get("Shell.Widget163")
 		};
 
 		AnchorToggleButton.HorizontalAlignment = isLeft
@@ -3590,8 +3682,8 @@ public partial class FloatingWidgetWindow : Window
 		};
 
 		string collapseText = _collapsedPositionXRatio.HasValue
-			? "收合 AI Usage 到自訂位置"
-			: $"收合 AI Usage 到{cornerText}";
+			? UiText.Get("Shell.Widget219")
+			: UiText.Format("Shell.Widget220", cornerText);
 		AutomationProperties.SetName(AnchorToggleButton, collapseText);
 		AnchorToggleButton.ToolTip = collapseText;
 		UpdateCollapsedButtonPresentation(cornerText);
@@ -3626,16 +3718,16 @@ public partial class FloatingWidgetWindow : Window
 		ArgumentException.ThrowIfNullOrWhiteSpace(cornerText);
 		string updateHint = _hasUpdateBadge &&
 			!string.IsNullOrWhiteSpace(_updateAvailableVersion)
-				? $"；有新版 {_updateAvailableVersion} 可用"
+				? UiText.Format("Shell.Widget221", _updateAvailableVersion)
 				: string.Empty;
 		string positionText = _collapsedPositionXRatio.HasValue
-			? "位於自訂位置"
-			: $"目前停靠在{cornerText}";
+			? UiText.Get("Shell.Widget222")
+			: UiText.Format("Shell.Widget223", cornerText);
 		AutomationProperties.SetName(
 			CollapsedButton,
-			$"展開 AI Usage 浮窗，{positionText}{updateHint}");
+			UiText.Format("Shell.Widget224", positionText, updateHint));
 		string expandHelpText =
-			$"按一下展開 AI Usage；拖曳可在螢幕可用範圍內移動。{positionText}{updateHint}。";
+			UiText.Format("Shell.Widget225", positionText, updateHint);
 		AutomationProperties.SetHelpText(CollapsedButton, expandHelpText);
 		CollapsedButton.ToolTip = expandHelpText;
 		CollapsedUpdateBadge.Visibility = _hasUpdateBadge
@@ -3764,7 +3856,7 @@ public partial class FloatingWidgetWindow : Window
 			int errorCode = Marshal.GetLastWin32Error();
 			AppDiagnostics.TryWrite(
 				"floating-window-layout-transition",
-				$"無法在切換版面前隱藏浮窗；windowHandle={windowHandle}。",
+				UiText.Format("Shell.Widget226", windowHandle),
 				new Win32Exception(errorCode));
 		}
 
@@ -3786,7 +3878,7 @@ public partial class FloatingWidgetWindow : Window
 			{
 				throw new Win32Exception(
 					Marshal.GetLastWin32Error(),
-					$"無法取得切換版面後的浮窗範圍；windowHandle={windowHandle}。");
+					UiText.Format("Shell.Widget227", windowHandle));
 			}
 
 			DrawingPoint topLeft = GetCurrentTopLeft(
@@ -3819,7 +3911,7 @@ public partial class FloatingWidgetWindow : Window
 			{
 				throw new Win32Exception(
 					Marshal.GetLastWin32Error(),
-					$"無法顯示切換版面後的浮窗；windowHandle={windowHandle}。");
+					UiText.Format("Shell.Widget228", windowHandle));
 			}
 		}
 		catch (Exception exception)
@@ -3827,7 +3919,7 @@ public partial class FloatingWidgetWindow : Window
 			_ = ShowWindow(windowHandle, ShowWindowWithoutActivation);
 			AppDiagnostics.TryWrite(
 				"floating-window-layout-transition",
-				$"完成切換版面後無法定位並顯示浮窗；windowHandle={windowHandle}。",
+				UiText.Format("Shell.Widget229", windowHandle),
 				exception);
 		}
 	}

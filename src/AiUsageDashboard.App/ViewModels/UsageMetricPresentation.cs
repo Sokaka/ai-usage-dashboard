@@ -1,3 +1,4 @@
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.App.ViewModels;
@@ -27,15 +28,20 @@ internal static class UsageMetricPresentation
 
 		if (IsFiveHour(metric))
 		{
-			return CreateDisplayLabel(metric, FiveHourUsageLabel);
+			return LocalizeWindowLabel(CreateDisplayLabel(metric, FiveHourUsageLabel), FiveHourUsageLabel);
 		}
 
 		if (IsWeekly(metric))
 		{
-			return CreateDisplayLabel(metric, WeeklyUsageLabel);
+			return LocalizeWindowLabel(CreateDisplayLabel(metric, WeeklyUsageLabel), WeeklyUsageLabel);
 		}
 
-		return metric.Label;
+		return UiText.Translate(metric.Label);
+	}
+
+	private static string LocalizeWindowLabel(string label, string windowLabel)
+	{
+		return UiText.Translate(windowLabel) + label[windowLabel.Length..];
 	}
 
 	internal static DateTimeOffset GetResetSortValue(
@@ -234,6 +240,7 @@ internal static class UsageMetricPresentation
 
 		return trimmed.ToLowerInvariant() switch
 		{
+			"所有模型" => UiText.Translate("所有模型"),
 			"claude" => "Claude",
 			"codex" => "Codex",
 			"default" => "Default",

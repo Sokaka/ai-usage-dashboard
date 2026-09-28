@@ -1,5 +1,4 @@
-using System.Globalization;
-
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.App.ViewModels;
@@ -19,6 +18,11 @@ public sealed class UsageMetricViewModel
 		"Business／Enterprise 的 organization AI Credits 與預算不包含在這個來源中，請以 GitHub Copilot settings 為準。";
 	private const string OverageEnabledStatusText = "額外用量已開啟";
 	private const string UsageAllowedAfterQuotaStatusText = "額度用完後仍可使用";
+	private readonly UsageMetric _metric;
+	private readonly UsageDisplayMode _usageDisplayMode;
+	private readonly TimeProvider _timeProvider;
+	private readonly bool _showResetText;
+	private readonly bool _usePercentageDisplayValue;
 
 	public double DisplayPercent { get; }
 
@@ -94,6 +98,11 @@ public sealed class UsageMetricViewModel
 	{
 		ArgumentNullException.ThrowIfNull(metric);
 		ArgumentNullException.ThrowIfNull(timeProvider);
+		_metric = metric;
+		_usageDisplayMode = usageDisplayMode;
+		_timeProvider = timeProvider;
+		_showResetText = showResetText;
+		_usePercentageDisplayValue = usePercentageDisplayValue;
 
 		if (!Enum.IsDefined(usageDisplayMode))
 		{
@@ -119,7 +128,7 @@ public sealed class UsageMetricViewModel
 			HasUsageBar
 			? 100 - UsedPercent
 			: UsedPercent;
-		DisplayValue = HasUsageBar &&
+		string displayValue = HasUsageBar &&
 			((usageDisplayMode == UsageDisplayMode.Remaining) ||
 				shouldUsePercentageDisplayValue)
 			? CreatePercentageDisplayValue(
@@ -128,17 +137,23 @@ public sealed class UsageMetricViewModel
 			: NormalizeUsedDisplayValue(
 				primaryDisplayValue,
 				HasUsageBar);
-		string defaultToolTipValue = usePercentageDisplayValue
-			? metric.DisplayValue
-			: DisplayValue;
+		DisplayValue = UiText.Translate(displayValue);
+		string defaultToolTipValue = usePercentageDisplayValue &&
+			!string.IsNullOrEmpty(extractedUsageStatusText)
+				? UiText.Translate(primaryDisplayValue) +
+					UiText.Get("Status.UsageStatusSeparator") +
+					UiText.Translate(extractedUsageStatusText)
+				: UiText.Translate(usePercentageDisplayValue
+					? metric.DisplayValue
+					: displayValue);
 		ToolTipValue = HasUnreportedOrganizationQuotaLimit(
 				metric,
 				primaryDisplayValue)
-			? $"{defaultToolTipValue}。{OrganizationQuotaScopeToolTipText}"
+			? $"{defaultToolTipValue}{UiText.Get("Status.SentenceSeparator")}{UiText.Translate(OrganizationQuotaScopeToolTipText)}"
 			: defaultToolTipValue;
-		ProgressAutomationName = usageDisplayMode == UsageDisplayMode.Remaining
+		ProgressAutomationName = UiText.Translate(usageDisplayMode == UsageDisplayMode.Remaining
 			? $"{Label}，剩餘"
-			: $"{Label}，已使用";
+			: $"{Label}，已使用");
 		Level = UsedPercent switch
 		{
 			>= 100 => UsageLevel.Critical,
@@ -149,16 +164,26 @@ public sealed class UsageMetricViewModel
 			? "到期"
 			: "重置";
 		ResetText = !string.IsNullOrWhiteSpace(metric.ResetDisplayValue)
-			? metric.ResetDisplayValue
+			? UiText.Translate(metric.ResetDisplayValue)
 			: metric.ResetsAt is null
-				? "未提供重置時間"
-				: $"{resetTimeLabel} · {metric.ResetsAt.Value.ToLocalTime():MM/dd HH:mm}";
+				? UiText.Translate("未提供重置時間")
+				: $"{UiText.Translate(resetTimeLabel)} · {metric.ResetsAt.Value.ToLocalTime().ToString("MM/dd HH:mm", UiText.Culture)}";
 		HasResetText = showResetText &&
 			(HasUsageBar || (metric.ResetsAt is not null)) &&
 			!string.IsNullOrWhiteSpace(ResetText);
 		IsResetImminent = HasResetText && UsageMetricPresentation.IsResetImminent(
 			metric,
 			timeProvider.GetUtcNow());
+	}
+
+	internal UsageMetricViewModel CreateLocalizedCopy()
+	{
+		return new UsageMetricViewModel(
+			_metric,
+			_usageDisplayMode,
+			_timeProvider,
+			_showResetText,
+			_usePercentageDisplayValue);
 	}
 
 	private static string CreatePercentageDisplayValue(
@@ -169,7 +194,7 @@ public sealed class UsageMetricViewModel
 			? "剩餘"
 			: "已使用";
 		return $"{prefix} " +
-			$"{displayPercent.ToString("0.##", CultureInfo.InvariantCulture)}%";
+			$"{displayPercent.ToString("0.##", UiText.Culture)}%";
 	}
 
 	private static string GetPrimaryDisplayValue(

@@ -4,6 +4,8 @@ using System.Security;
 using System.Text;
 using System.Text.Json;
 
+using AiUsageDashboard.Core.Localization;
+
 namespace AiUsageDashboard.App;
 
 internal readonly record struct AppDiagnosticWriteResult(
@@ -48,9 +50,10 @@ internal static class AppDiagnostics
 
 	internal static string GetUserFacingFailureReason(
 		Exception exception,
-		string unexpectedReason = "啟動程序發生錯誤。")
+		string? unexpectedReason = null)
 	{
 		ArgumentNullException.ThrowIfNull(exception);
+		unexpectedReason ??= UiText.Get("Shell.DiagnosticStartupFailed");
 		ArgumentException.ThrowIfNullOrWhiteSpace(unexpectedReason);
 
 		for (Exception? current = exception;
@@ -61,19 +64,19 @@ internal static class AppDiagnostics
 			{
 				case UnauthorizedAccessException:
 				case SecurityException:
-					return "Windows 不允許存取 AI Usage 的本機資料。";
+					return UiText.Get("Shell.DiagnosticAccessDenied");
 				case DirectoryNotFoundException:
-					return "AI Usage 的本機資料路徑不存在或無法使用。";
+					return UiText.Get("Shell.DiagnosticDirectoryMissing");
 				case DriveNotFoundException:
-					return "AI Usage 使用的磁碟目前無法使用。";
+					return UiText.Get("Shell.DiagnosticDriveUnavailable");
 				case JsonException:
 				case InvalidDataException:
 				case FormatException:
-					return "AI Usage 的本機設定資料格式無法讀取。";
+					return UiText.Get("Shell.DiagnosticInvalidFormat");
 				case IOException:
-					return "AI Usage 無法讀取或寫入本機資料；檔案可能正被占用，或磁碟目前無法使用。";
+					return UiText.Get("Shell.DiagnosticIoFailure");
 				case NotSupportedException:
-					return "AI Usage 無法使用目前的本機設定或資料路徑。";
+					return UiText.Get("Shell.DiagnosticUnsupportedPath");
 			}
 		}
 

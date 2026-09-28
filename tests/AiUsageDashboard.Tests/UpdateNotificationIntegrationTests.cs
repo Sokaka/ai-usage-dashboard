@@ -8,6 +8,7 @@ using AiUsageDashboard.Updater.Core;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class UpdateNotificationIntegrationTests :
 	IClassFixture<FeedSigningTestKeys>
 {

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -86,16 +87,40 @@ public sealed class LegalCatalog
 			text.AppendLine("此範圍涵蓋 Updater 與即將安裝的 App ZIP；部分元件由 App ZIP 提供，並非全部包含在這個 Updater EXE。\n");
 		}
 		text.AppendLine("自有程式碼依 MIT；下列第三方元件各依隨附原約。接受紀錄僅保存在目前 Windows 使用者的本機。\n");
+		AppendReadableDocuments(text, source => $"來源：{source}");
+		return text.ToString();
+	}
+
+	public string GetReadableText(LegalDisplayLabels displayLabels)
+	{
+		ArgumentNullException.ThrowIfNull(displayLabels);
+		StringBuilder text = new();
+		text.AppendLine(displayLabels.Title);
+		text.AppendLine("Copyright (c) 2026 Sokaka");
+		text.AppendLine(string.Format(CultureInfo.InvariantCulture, displayLabels.TermsVersionFormat, TermsVersion));
+		text.AppendLine(string.Format(CultureInfo.InvariantCulture, displayLabels.ScopeFormat, GetProfileName(Profile)));
+		text.AppendLine($"Acceptance digest: {Digest}");
+		if (Profile == LegalProfile.Installer)
+		{
+			text.AppendLine(displayLabels.InstallerScope);
+		}
+		text.AppendLine(displayLabels.CodeAndAcceptance);
+		AppendReadableDocuments(text, source =>
+			string.Format(CultureInfo.InvariantCulture, displayLabels.SourceFormat, source));
+		return text.ToString();
+	}
+
+	private void AppendReadableDocuments(StringBuilder text, Func<string, string> formatSource)
+	{
 		foreach (LegalComponent component in _components)
 		{
 			text.AppendLine($"{component.Name} {component.Version}");
 		}
 		foreach (LegalDocument document in _documents.Where(document => document.IsReadable))
 		{
-			text.AppendLine($"\n{document.Path}\n來源：{document.Source}\n");
+			text.AppendLine($"\n{document.Path}\n{formatSource(document.Source)}\n");
 			text.AppendLine(document.GetText());
 		}
-		return text.ToString();
 	}
 
 	public void Export(string directory)

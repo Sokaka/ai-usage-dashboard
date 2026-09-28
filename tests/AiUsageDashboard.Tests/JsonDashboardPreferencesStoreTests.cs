@@ -1,6 +1,7 @@
 using AiUsageDashboard.App;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 
 namespace AiUsageDashboard.Tests;
 
@@ -97,7 +98,8 @@ public sealed class JsonDashboardPreferencesStoreTests
 			IsTopmost: false,
 			MonitorDeviceName: @"\\.\DISPLAY2",
 			Corner: FloatingWidgetCorner.TopLeft,
-			StartupSurface: DashboardStartupSurface.Tray);
+			StartupSurface: DashboardStartupSurface.Tray,
+			Language: AppLanguage.TraditionalChinese);
 		await store.SaveDashboardShellPreferencesAsync(expectedShellPreferences);
 
 		await store.SaveUsagePreferencesAsync(
@@ -122,7 +124,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
 		const string FutureDocument =
-			"{\"schemaVersion\":8,\"usageSortMode\":\"Manual\"," +
+			"{\"schemaVersion\":9,\"usageSortMode\":\"Manual\"," +
 			"\"usageDisplayMode\":\"Used\",\"futureField\":true}";
 		await File.WriteAllTextAsync(filePath, FutureDocument);
 		JsonDashboardPreferencesStore store = new(filePath);
@@ -223,7 +225,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 	}
 
 	[Theory]
-	[InlineData("{\"schemaVersion\":8,\"usageSortMode\":\"Automatic\"}")]
+	[InlineData("{\"schemaVersion\":9,\"usageSortMode\":\"Automatic\"}")]
 	[InlineData("{\"schemaVersion\":1,\"usageSortMode\":\"Unknown\"}")]
 	[InlineData("not-json")]
 	public async Task LoadUsageSortModeAsync_WithUnsupportedOrInvalidDocument_ReturnsManual(
@@ -272,7 +274,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
 		const string FutureDocument =
-			"{\"schemaVersion\":8,\"usageSortMode\":\"Automatic\",\"futureField\":true}";
+			"{\"schemaVersion\":9,\"usageSortMode\":\"Automatic\",\"futureField\":true}";
 		await File.WriteAllTextAsync(filePath, FutureDocument);
 		JsonDashboardPreferencesStore store = new(filePath);
 
@@ -356,7 +358,8 @@ public sealed class JsonDashboardPreferencesStoreTests
 			Theme = AppTheme.Sakura,
 			IsHeightFollowingCardCount = true,
 			CollapsedPositionXRatio = 0.25,
-			CollapsedPositionYRatio = 0.75
+			CollapsedPositionYRatio = 0.75,
+			Language = AppLanguage.TraditionalChinese
 		};
 
 		await store.SaveDashboardShellPreferencesAsync(expected);
@@ -366,7 +369,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 			await new JsonDashboardPreferencesStore(filePath)
 				.LoadDashboardShellPreferencesAsync());
 		string json = await File.ReadAllTextAsync(filePath);
-		Assert.Contains("\"schemaVersion\": 7", json, StringComparison.Ordinal);
+		Assert.Contains("\"schemaVersion\": 8", json, StringComparison.Ordinal);
 		Assert.Contains("\"theme\": \"Sakura\"", json, StringComparison.Ordinal);
 		Assert.Contains(
 			"\"isHeightFollowingCardCount\": true",
@@ -381,6 +384,58 @@ public sealed class JsonDashboardPreferencesStoreTests
 			json,
 			StringComparison.Ordinal);
 		Assert.DoesNotContain("showClaudeOrganization", json, StringComparison.Ordinal);
+	}
+
+	[Theory]
+	[InlineData(AppLanguage.English)]
+	[InlineData(AppLanguage.TraditionalChinese)]
+	public async Task SaveLanguage_RoundTripsAndUsageChangesPreserveShellPreferences(
+		AppLanguage language)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
+		DashboardShellPreferences expected = DashboardShellPreferences.Default with
+		{
+			Language = language,
+			Theme = AppTheme.Midnight,
+			IsTopmost = false
+		};
+		await new JsonDashboardPreferencesStore(filePath)
+			.SaveDashboardShellPreferencesAsync(expected);
+		JsonDashboardPreferencesStore store = new(filePath);
+
+		Assert.Equal(expected, await store.LoadDashboardShellPreferencesAsync());
+		await store.SaveUsagePreferencesAsync(
+			UsageSortMode.Automatic,
+			UsageDisplayMode.Remaining);
+
+		Assert.Equal(
+			expected,
+			await new JsonDashboardPreferencesStore(filePath)
+				.LoadDashboardShellPreferencesAsync());
+	}
+
+	[Fact]
+	public async Task SaveLanguage_WhenUndefined_PreservesExistingPreferences()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
+		JsonDashboardPreferencesStore store = new(filePath);
+		DashboardShellPreferences existing = DashboardShellPreferences.Default with
+		{
+			Language = AppLanguage.TraditionalChinese
+		};
+		await store.SaveDashboardShellPreferencesAsync(existing);
+		byte[] originalBytes = await File.ReadAllBytesAsync(filePath);
+
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+			store.SaveDashboardShellPreferencesAsync(existing with
+			{
+				Language = (AppLanguage)int.MaxValue
+			}));
+
+		Assert.Equal(originalBytes, await File.ReadAllBytesAsync(filePath));
+		Assert.Equal(existing, await store.LoadDashboardShellPreferencesAsync());
 	}
 
 	[Fact]
@@ -525,7 +580,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 			shellPreferences,
 			await store.LoadDashboardShellPreferencesAsync());
 		Assert.Contains(
-			"\"schemaVersion\": 7",
+			"\"schemaVersion\": 8",
 			await File.ReadAllTextAsync(filePath),
 			StringComparison.Ordinal);
 	}
@@ -614,7 +669,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 			UsageDisplayMode.Remaining,
 			await store.LoadUsageDisplayModeAsync());
 		string savedJson = await File.ReadAllTextAsync(filePath);
-		Assert.Contains("\"schemaVersion\": 7", savedJson, StringComparison.Ordinal);
+		Assert.Contains("\"schemaVersion\": 8", savedJson, StringComparison.Ordinal);
 		Assert.Contains(
 			"\"isHeightFollowingCardCount\": false",
 			savedJson,
@@ -659,7 +714,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 			await new JsonDashboardPreferencesStore(filePath)
 				.LoadDashboardShellPreferencesAsync());
 		string savedJson = await File.ReadAllTextAsync(filePath);
-		Assert.Contains("\"schemaVersion\": 7", savedJson, StringComparison.Ordinal);
+		Assert.Contains("\"schemaVersion\": 8", savedJson, StringComparison.Ordinal);
 		Assert.Contains(
 			"\"collapsedPositionXRatio\": null",
 			savedJson,
@@ -668,6 +723,81 @@ public sealed class JsonDashboardPreferencesStoreTests
 			"\"collapsedPositionYRatio\": null",
 			savedJson,
 			StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task LoadSchemaSeven_DefaultsToEnglishAndPreservesExistingFieldsWhenUpgraded()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
+		const string LegacyDocument = """
+			{
+			  "schemaVersion": 7,
+			  "usageSortMode": "Automatic",
+			  "usageDisplayMode": "Remaining",
+			  "isWidgetVisible": false,
+			  "isCollapsed": true,
+			  "isTopmost": false,
+			  "monitorDeviceName": "DISPLAY2",
+			  "corner": "TopLeft",
+			  "startupSurface": "Tray",
+			  "theme": "Light",
+			  "isHeightFollowingCardCount": true,
+			  "collapsedPositionXRatio": 0.25,
+			  "collapsedPositionYRatio": 0.75
+			}
+			""";
+		await File.WriteAllTextAsync(filePath, LegacyDocument);
+		JsonDashboardPreferencesStore store = new(filePath);
+		DashboardShellPreferences expected = new(
+			IsWidgetVisible: false,
+			IsCollapsed: true,
+			IsTopmost: false,
+			MonitorDeviceName: "DISPLAY2",
+			Corner: FloatingWidgetCorner.TopLeft,
+			StartupSurface: DashboardStartupSurface.Tray,
+			Theme: AppTheme.Light,
+			IsHeightFollowingCardCount: true,
+			CollapsedPositionXRatio: 0.25,
+			CollapsedPositionYRatio: 0.75,
+			Language: AppLanguage.English);
+
+		Assert.Equal(expected, await store.LoadDashboardShellPreferencesAsync());
+		Assert.Equal(UsageSortMode.Automatic, await store.LoadUsageSortModeAsync());
+		Assert.Equal(
+			UsageDisplayMode.Remaining,
+			await store.LoadUsageDisplayModeAsync());
+		await store.SaveUsageSortModeAsync(UsageSortMode.Manual);
+
+		Assert.Equal(
+			expected,
+			await new JsonDashboardPreferencesStore(filePath)
+				.LoadDashboardShellPreferencesAsync());
+		Assert.Equal(
+			UsageDisplayMode.Remaining,
+			await new JsonDashboardPreferencesStore(filePath)
+				.LoadUsageDisplayModeAsync());
+	}
+
+	[Theory]
+	[InlineData("\"Unknown\"")]
+	[InlineData("99")]
+	public async Task LoadLanguage_WhenInvalid_ReturnsDefaultWithoutChangingFile(
+		string languageJson)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
+		string document = $$"""
+			{"schemaVersion":8,"theme":"Light","language":{{languageJson}}}
+			""";
+		await File.WriteAllTextAsync(filePath, document);
+
+		DashboardShellPreferences preferences = await
+			new JsonDashboardPreferencesStore(filePath)
+				.LoadDashboardShellPreferencesAsync();
+
+		Assert.Equal(DashboardShellPreferences.Default, preferences);
+		Assert.Equal(document, await File.ReadAllTextAsync(filePath));
 	}
 
 	[Fact]
@@ -706,7 +836,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
 		const string FutureDocument =
-			"{\"schemaVersion\":8,\"usageDisplayMode\":\"Remaining\",\"futureField\":true}";
+			"{\"schemaVersion\":9,\"usageDisplayMode\":\"Remaining\",\"futureField\":true}";
 		await File.WriteAllTextAsync(filePath, FutureDocument);
 		JsonDashboardPreferencesStore store = new(filePath);
 
@@ -815,7 +945,8 @@ public sealed class JsonDashboardPreferencesStoreTests
 			IsTopmost: false,
 			MonitorDeviceName: @"\\.\DISPLAY9",
 			Corner: FloatingWidgetCorner.TopLeft,
-			StartupSurface: DashboardStartupSurface.Tray);
+			StartupSurface: DashboardStartupSurface.Tray,
+			Language: AppLanguage.TraditionalChinese);
 		JsonDashboardPreferencesStore initialStore = new(filePath);
 		await initialStore.SavePortablePreferencesAsync(
 			UsageSortMode.Automatic,
@@ -869,7 +1000,8 @@ public sealed class JsonDashboardPreferencesStoreTests
 			IsTopmost: false,
 			MonitorDeviceName: @"\\.\DISPLAY9",
 			Corner: FloatingWidgetCorner.TopLeft,
-			StartupSurface: DashboardStartupSurface.Tray);
+			StartupSurface: DashboardStartupSurface.Tray,
+			Language: AppLanguage.TraditionalChinese);
 		await new JsonDashboardPreferencesStore(filePath)
 			.SaveDashboardShellPreferencesAsync(storedShellPreferences);
 		JsonDashboardPreferencesStore store = new(filePath);
@@ -1039,6 +1171,50 @@ public sealed class JsonDashboardPreferencesStoreTests
 
 		Assert.Equal(
 			storedPreferences with { Theme = AppTheme.Midnight },
+			await new JsonDashboardPreferencesStore(filePath)
+				.LoadDashboardShellPreferencesAsync());
+	}
+
+	[Fact]
+	public async Task LoadDashboardShellPreferencesAsync_RecoverySession_TracksLanguageChange()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
+		DashboardShellPreferences storedPreferences =
+			DashboardShellPreferences.Default with
+			{
+				IsTopmost = false,
+				Theme = AppTheme.Light
+			};
+		await new JsonDashboardPreferencesStore(filePath)
+			.SaveDashboardShellPreferencesAsync(storedPreferences);
+		JsonDashboardPreferencesStore store = new(filePath);
+		DashboardShellPreferences changedPreferences =
+			DashboardShellPreferences.Default with
+			{
+				Language = AppLanguage.TraditionalChinese
+			};
+
+		await using (FileStream exclusiveLease = new(
+			filePath,
+			FileMode.Open,
+			FileAccess.ReadWrite,
+			FileShare.None))
+		{
+			Assert.Equal(
+				DashboardShellPreferences.Default,
+				await store.LoadDashboardShellPreferencesAsync());
+			await Assert.ThrowsAsync<DashboardPreferencesSaveBlockedException>(() =>
+				store.SaveDashboardShellPreferencesAsync(
+					DashboardShellPreferences.Default));
+			await Assert.ThrowsAsync<DashboardPreferencesSaveBlockedException>(() =>
+				store.SaveDashboardShellPreferencesAsync(changedPreferences));
+		}
+
+		await store.SaveDashboardShellPreferencesAsync(changedPreferences);
+
+		Assert.Equal(
+			storedPreferences with { Language = AppLanguage.TraditionalChinese },
 			await new JsonDashboardPreferencesStore(filePath)
 				.LoadDashboardShellPreferencesAsync());
 	}
@@ -1479,7 +1655,8 @@ public sealed class JsonDashboardPreferencesStoreTests
 		DashboardShellPreferences externalPreferences = persistedPreferences with
 		{
 			IsTopmost = false,
-			Theme = AppTheme.Light
+			Theme = AppTheme.Light,
+			Language = AppLanguage.TraditionalChinese
 		};
 		JsonDashboardPreferencesStore store = new(filePath);
 		await store.SaveDashboardShellPreferencesAsync(persistedPreferences);
@@ -1724,7 +1901,8 @@ public sealed class JsonDashboardPreferencesStoreTests
 			IsTopmost: false,
 			MonitorDeviceName: @"\\.\DISPLAY9",
 			Corner: FloatingWidgetCorner.TopLeft,
-			StartupSurface: DashboardStartupSurface.Tray);
+			StartupSurface: DashboardStartupSurface.Tray,
+			Language: AppLanguage.TraditionalChinese);
 		await store.SavePortablePreferencesAsync(
 			UsageSortMode.Automatic,
 			UsageDisplayMode.Remaining,
@@ -1812,7 +1990,8 @@ public sealed class JsonDashboardPreferencesStoreTests
 				IsTopmost = false,
 				MonitorDeviceName = @"\\.\DISPLAY5",
 				Corner = FloatingWidgetCorner.BottomLeft,
-				StartupSurface = DashboardStartupSurface.Tray
+				StartupSurface = DashboardStartupSurface.Tray,
+				Language = AppLanguage.TraditionalChinese
 			};
 		await store.SavePortablePreferencesAsync(
 			UsageSortMode.Automatic,
@@ -2076,7 +2255,8 @@ public sealed class JsonDashboardPreferencesStoreTests
 			IsTopmost: false,
 			MonitorDeviceName: @"\\.\DISPLAY3",
 			Corner: FloatingWidgetCorner.TopRight,
-			StartupSurface: DashboardStartupSurface.Tray);
+			StartupSurface: DashboardStartupSurface.Tray,
+			Language: AppLanguage.TraditionalChinese);
 
 		await store.SavePortablePreferencesAsync(
 			UsageSortMode.Automatic,
@@ -2124,7 +2304,7 @@ public sealed class JsonDashboardPreferencesStoreTests
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "preferences.json");
 		const string FutureDocument =
-			"{\"schemaVersion\":8,\"usageSortMode\":\"Automatic\",\"futureField\":true}";
+			"{\"schemaVersion\":9,\"usageSortMode\":\"Automatic\",\"futureField\":true}";
 		await File.WriteAllTextAsync(filePath, FutureDocument);
 		JsonDashboardPreferencesStore store = new(filePath);
 

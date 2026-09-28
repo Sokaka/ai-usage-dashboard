@@ -1,11 +1,13 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Reflection;
 
 using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Persistence;
 using AiUsageDashboard.Core.Providers;
@@ -13,6 +15,7 @@ using AiUsageDashboard.Core.Refreshing;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class DashboardViewModelTests
 {
 	private sealed class ManualRefreshTimeProvider : TimeProvider
@@ -3694,6 +3697,172 @@ public sealed class DashboardViewModelTests
 			importedWidgetPreferences with { Theme = AppTheme.Light });
 
 		Assert.False(viewModel.CanUndoLastPortableSettingsImport);
+	}
+
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task PortableLanguage_ImportUndoAndManualSwitchRespectExplicitOrLegacyScope(bool hasImportedLanguage)
+	{
+		using IDisposable language = UiText.UseLanguage(AppLanguage.English);
+		AccountProfile account = new(Guid.NewGuid(), ProviderKind.Codex, "synthetic");
+		FakeDashboardPreferencesStore preferences = new();
+		using DashboardViewModel dashboard = new(new FakeAccountProfileStore(account),
+			new FakeUsageRefreshCoordinator(), dashboardPreferencesStore: preferences);
+		await dashboard.InitializeAsync();
+		DashboardShellPreferences previous = DashboardShellPreferences.Default with { Language = AppLanguage.TraditionalChinese };
+		PortableWidgetPreferences imported = new(true, false, true, FloatingWidgetCorner.BottomRight,
+			Language: hasImportedLanguage ? AppLanguage.English : null);
+		await dashboard.ReplacePortableSettingsAsync(new PortableSettingsSnapshot([account], UsageSortMode.Manual,
+			UsageDisplayMode.Used, imported), previous);
+		DashboardShellPreferences effective = preferences.SavedPortablePreferences[^1].ShellPreferences;
+		Assert.Equal(hasImportedLanguage ? AppLanguage.English : AppLanguage.TraditionalChinese, effective.Language);
+		Assert.True(dashboard.CanUndoLastPortableSettingsImport);
+		await dashboard.UndoLastPortableSettingsImportAsync(effective);
+		DashboardShellPreferences undo = preferences.SavedPortablePreferences[^1].ShellPreferences;
+		Assert.Equal(AppLanguage.TraditionalChinese, undo.Language);
+		await dashboard.ReplacePortableSettingsAsync(new PortableSettingsSnapshot([account], UsageSortMode.Manual,
+			UsageDisplayMode.Used, imported), previous);
+		AppLanguage changedLanguage = hasImportedLanguage
+			? AppLanguage.TraditionalChinese
+			: AppLanguage.English;
+		dashboard.NotifyPortableWidgetPreferencesChanged(imported with { Language = changedLanguage });
+		Assert.Equal(!hasImportedLanguage, dashboard.CanUndoLastPortableSettingsImport);
+		if (!hasImportedLanguage)
+		{
+			await dashboard.UndoLastPortableSettingsImportAsync(previous with { Language = changedLanguage });
+			Assert.Equal(AppLanguage.English, preferences.SavedPortablePreferences[^1].ShellPreferences.Language);
+		}
+	}
+
+	[Theory]
+	[InlineData(false, false)]
+	[InlineData(true, false)]
+	[InlineData(false, true)]
+	public async Task PortableSettingsMessages_ImportAndUndoPreserveRawTextAcrossLanguageChanges(
+		bool backupUpdateFails,
+		bool cleanupFails)
+	{
+		using IDisposable language = UiText.UseLanguage(AppLanguage.English);
+		AccountProfile previousCodex = new(
+			Guid.Parse("ed52b20e-62ca-4ce4-9481-0c348e0d2a31"), ProviderKind.Codex, "Original Codex");
+		AccountProfile previousCopilot = new(
+			Guid.Parse("c1d9a39e-7125-4dc2-88d8-2b753458a30a"), ProviderKind.Copilot, "Original Copilot");
+		FakeAccountProfileStore accountStore = new(previousCodex, previousCopilot)
+		{
+			ShouldFailAfterCommit = backupUpdateFails
+		};
+		FakeUsageSnapshotStore snapshotStore = new()
+		{
+			DeleteHandler = (accountId, _, _) =>
+				(cleanupFails && (accountId == previousCodex.Id))
+					? Task.FromException(new IOException("Synthetic Codex cache cleanup failed."))
+					: Task.CompletedTask
+		};
+		FakeAccountRuntimeStatePurger runtimeStatePurger = new()
+		{
+			PurgeHandler = (accountId, _, _) =>
+				(cleanupFails && (accountId == previousCopilot.Id))
+					? Task.FromException(new IOException("Synthetic Copilot runtime cleanup failed."))
+					: Task.CompletedTask
+		};
+		using DashboardViewModel dashboard = new(accountStore, new FakeUsageRefreshCoordinator(),
+			snapshotStore, new FakeDashboardPreferencesStore(), runtimeStatePurger);
+		await dashboard.InitializeAsync();
+		PortableSettingsSnapshot imported = new(
+			[
+				previousCodex with { DisplayName = "Imported Codex" },
+				previousCopilot with { DisplayName = "Imported Copilot" }
+			],
+			UsageSortMode.Manual,
+			UsageDisplayMode.Used,
+			new PortableWidgetPreferences(true, false, true, FloatingWidgetCorner.BottomRight,
+				AppTheme.ClassicBlue, Language: AppLanguage.English));
+
+		Task importTask = dashboard.ReplacePortableSettingsAsync(imported, DashboardShellPreferences.Default);
+		if (backupUpdateFails)
+		{
+			AccountProfileStoreException warning = await Assert.ThrowsAsync<AccountProfileStoreException>(() => importTask);
+			Assert.True(warning.HasCommittedChanges);
+		}
+		else
+		{
+			await importTask;
+		}
+
+		string rawImportMessage = "已匯入 2 個帳號、排序、用量顯示、浮窗設定與主題。" +
+			" Codex 連接不會隨設定匯入，已重設。請逐一重新連接 Codex 帳號。使用 workspace 連接時，要重新輸入 workspace ID。" +
+			" Copilot credential 不會隨設定匯入，卡片連接已重設；請逐一重新連接 Copilot 帳號。";
+		string englishImportMessage = "Imported 2 accounts, sorting, usage display, widget settings, and theme." +
+			" Codex connections are not included in settings imports and were reset. Reconnect each Codex account." +
+			" Workspace connections require entering the workspace ID again." +
+			" Copilot credentials are not included in settings imports and card connections were reset. Reconnect each Copilot account.";
+		if (cleanupFails)
+		{
+			rawImportMessage += " 部分帳號的上次用量無法清除；資料可能仍保留在這台電腦。" +
+				" 多次嘗試後仍無法清除部分帳號的舊資料；資料可能仍保留在這台電腦。";
+			englishImportMessage += " Previous usage for some accounts could not be cleared. The data may remain on this computer." +
+				" Previous data for some accounts could not be cleared after repeated attempts. The data may remain on this computer.";
+		}
+		if (backupUpdateFails)
+		{
+			rawImportMessage += " 帳號設定已套用，但備份更新失敗。";
+			englishImportMessage += " Account settings were applied, but the backup update failed.";
+		}
+		AssertAccountSettingsMessageLanguageSwitches(dashboard, englishImportMessage, rawImportMessage);
+		Assert.True(dashboard.CanUndoLastPortableSettingsImport);
+
+		Task undoTask = dashboard.UndoLastPortableSettingsImportAsync(DashboardShellPreferences.Default);
+		if (backupUpdateFails)
+		{
+			AccountProfileStoreException warning = await Assert.ThrowsAsync<AccountProfileStoreException>(() => undoTask);
+			Assert.True(warning.HasCommittedChanges);
+		}
+		else
+		{
+			await undoTask;
+		}
+
+		string rawUndoMessage = "已還原匯入前設定：帳號、順序、排序、用量顯示、浮窗設定與主題已還原。" +
+			" 為避免顯示匯入後的錯誤帳號資料，部分用量可能需要重新檢查。" +
+			" Codex 連接已在匯入時重設。請逐一重新連接需要使用的 Codex 帳號。使用 workspace 連接時，要重新輸入 workspace ID。" +
+			" Copilot 卡片連接已在匯入時重設；請逐一重新連接需要使用的 Copilot 帳號。";
+		string englishUndoMessage = "Restored the account, order, sorting, usage display, widget settings, and theme from before the import." +
+			" Some usage may need another check to avoid displaying data for the wrong imported account." +
+			" Codex connections were reset during import. Reconnect each Codex account you need." +
+			" Workspace connections require entering the workspace ID again." +
+			" Copilot card connections were reset during import. Reconnect each Copilot account you need.";
+		if (cleanupFails)
+		{
+			rawUndoMessage += " 部分匯入後的上次用量無法清除，建議重新啟動 AI Usage。" +
+				" 多次嘗試後仍無法清除部分匯入後的舊資料；資料可能仍保留在這台電腦。";
+			englishUndoMessage += " Some imported usage could not be cleared. Restart AI Usage." +
+				" Some imported usage could not be cleared after repeated attempts. The data may remain on this computer.";
+		}
+		if (backupUpdateFails)
+		{
+			rawUndoMessage += " 帳號設定已還原，但備份更新失敗。";
+			englishUndoMessage += " Account settings were restored, but the backup update failed.";
+		}
+		AssertAccountSettingsMessageLanguageSwitches(dashboard, englishUndoMessage, rawUndoMessage);
+		Assert.False(dashboard.CanUndoLastPortableSettingsImport);
+	}
+
+	[Fact]
+	public async Task PortableLanguage_InvalidImportIsRejectedBeforePreferencesAreSaved()
+	{
+		AccountProfile account = new(Guid.NewGuid(), ProviderKind.Codex, "synthetic");
+		FakeDashboardPreferencesStore preferences = new();
+		using DashboardViewModel dashboard = new(new FakeAccountProfileStore(account),
+			new FakeUsageRefreshCoordinator(), dashboardPreferencesStore: preferences);
+		await dashboard.InitializeAsync();
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => dashboard.ReplacePortableSettingsAsync(
+			new PortableSettingsSnapshot([account], UsageSortMode.Manual, UsageDisplayMode.Used,
+				new PortableWidgetPreferences(true, false, true, FloatingWidgetCorner.BottomRight, Language: (AppLanguage)99)),
+			DashboardShellPreferences.Default));
+		Assert.Empty(preferences.SavedPortablePreferences);
+		Assert.Equal(account, Assert.Single(dashboard.Accounts).Profile);
 	}
 
 	[Fact]
@@ -17609,6 +17778,27 @@ public sealed class DashboardViewModelTests
 		Assert.Equal(
 			ProviderKind.Antigravity,
 			refreshCoordinator.RefreshRequests.First().Provider);
+	}
+
+	private static void AssertAccountSettingsMessageLanguageSwitches(
+		DashboardViewModel dashboard,
+		string englishMessage,
+		string rawChineseMessage)
+	{
+		FieldInfo messageField = Assert.IsAssignableFrom<FieldInfo>(typeof(DashboardViewModel)
+			.GetField("_accountSettingsMessage", BindingFlags.Instance | BindingFlags.NonPublic));
+		Assert.Equal(rawChineseMessage, Assert.IsType<string>(messageField.GetValue(dashboard)));
+		Assert.Equal(englishMessage, dashboard.AccountSettingsMessage);
+		using (UiText.UseLanguage(AppLanguage.TraditionalChinese))
+		{
+			dashboard.RefreshLocalizedPresentation();
+			Assert.Equal(rawChineseMessage, dashboard.AccountSettingsMessage);
+			Assert.Equal(rawChineseMessage, Assert.IsType<string>(messageField.GetValue(dashboard)));
+		}
+
+		dashboard.RefreshLocalizedPresentation();
+		Assert.Equal(englishMessage, dashboard.AccountSettingsMessage);
+		Assert.Equal(rawChineseMessage, Assert.IsType<string>(messageField.GetValue(dashboard)));
 	}
 
 	private static void ApplyClaudeOrganizationSnapshot(

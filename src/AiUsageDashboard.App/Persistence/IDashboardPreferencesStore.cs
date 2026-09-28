@@ -1,4 +1,5 @@
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 
 namespace AiUsageDashboard.App.Persistence;
 
@@ -42,7 +43,8 @@ internal sealed record DashboardShellPreferences(
 	AppTheme Theme = AppTheme.ClassicBlue,
 	bool IsHeightFollowingCardCount = false,
 	double? CollapsedPositionXRatio = null,
-	double? CollapsedPositionYRatio = null)
+	double? CollapsedPositionYRatio = null,
+	AppLanguage Language = AppLanguage.English)
 {
 	internal static DashboardShellPreferences Default { get; } = new(
 		IsWidgetVisible: true,

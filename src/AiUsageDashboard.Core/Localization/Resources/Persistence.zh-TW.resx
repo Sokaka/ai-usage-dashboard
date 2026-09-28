@@ -1,0 +1,426 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>2.0</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+	</resheader>
+	<data name="PreferencesNewerSchema" xml:space="preserve">
+		<value>AI Usage 顯示設定檔由較新版本建立。為避免覆寫，目前無法變更顯示設定。</value>
+	</data>
+	<data name="PreferencesTooLarge" xml:space="preserve">
+		<value>AI Usage 顯示設定檔超過 64 KiB。為避免覆寫，目前無法變更顯示設定。</value>
+	</data>
+	<data name="PreferencesUnavailable" xml:space="preserve">
+		<value>目前仍無法讀取浮窗設定。為避免覆寫原設定，尚未儲存變更。</value>
+	</data>
+	<data name="PreferencesUnsafePath" xml:space="preserve">
+		<value>AI Usage 顯示設定檔路徑不安全。為保護本機資料，目前無法變更顯示設定。</value>
+	</data>
+	<data name="UnknownDisplayMode" xml:space="preserve">
+		<value>未知的用量顯示方式。</value>
+	</data>
+	<data name="UnknownSortMode" xml:space="preserve">
+		<value>未知的用量排序方式。</value>
+	</data>
+	<data name="UnknownWidgetCorner" xml:space="preserve">
+		<value>未知的浮窗停靠位置。</value>
+	</data>
+	<data name="UnknownStartupSurface" xml:space="preserve">
+		<value>未知的啟動介面。</value>
+	</data>
+	<data name="MonitorNameTooLong" xml:space="preserve">
+		<value>螢幕識別名稱過長。</value>
+	</data>
+	<data name="InvalidCollapsedPosition" xml:space="preserve">
+		<value>收合浮窗位置比例必須成對且介於 0 與 1 之間。</value>
+	</data>
+	<data name="UnknownTheme" xml:space="preserve">
+		<value>未知的應用程式主題。</value>
+	</data>
+	<data name="UnknownLanguage" xml:space="preserve">
+		<value>未知的應用程式語系。</value>
+	</data>
+	<data name="PreferencesParentMissing" xml:space="preserve">
+		<value>顯示設定檔缺少所在資料夾。</value>
+	</data>
+	<data name="ExportPathEmpty" xml:space="preserve">
+		<value>匯出檔案路徑不可為空。</value>
+	</data>
+	<data name="ExportSnapshotMissing" xml:space="preserve">
+		<value>沒有可匯出的設定。</value>
+	</data>
+	<data name="ExportParentMissing" xml:space="preserve">
+		<value>匯出檔案缺少有效的所在資料夾。</value>
+	</data>
+	<data name="ExportFailedDestinationChanged" xml:space="preserve">
+		<value>設定匯出失敗；目的檔案可能已變更。請先保留同一資料夾內的暫存檔或備份，以便還原。</value>
+	</data>
+	<data name="ExportDeviceNamespace" xml:space="preserve">
+		<value>不可使用 Windows 裝置命名空間匯出設定；請透過一般磁碟或網路路徑選擇目的檔案。</value>
+	</data>
+	<data name="ExportLinkedDirectory" xml:space="preserve">
+		<value>不可透過連結的資料夾匯出設定。請選擇一般資料夾，以免覆寫 AI Usage 管理的資料。</value>
+	</data>
+	<data name="ExportHardLinkedFile" xml:space="preserve">
+		<value>不可覆寫硬連結檔案來匯出設定；請選擇一般檔案，以免透過別名覆寫程式管理的資料。</value>
+	</data>
+	<data name="ExportManagedDirectory" xml:space="preserve">
+		<value>不可將設定匯出到 AI Usage 管理的資料夾。請選擇其他位置，以免覆寫目前設定或還原資料。</value>
+	</data>
+	<data name="ManagedDirectoryUnavailable" xml:space="preserve">
+		<value>無法取得 AI Usage 管理的資料夾。</value>
+	</data>
+	<data name="ImportPathEmpty" xml:space="preserve">
+		<value>匯入檔案路徑不可為空。</value>
+	</data>
+	<data name="ImportFailed" xml:space="preserve">
+		<value>設定匯入失敗；請確認檔案格式與存取權限。</value>
+	</data>
+	<data name="ExportReplacementIncomplete" xml:space="preserve">
+		<value>設定檔覆寫未完成；目的檔案可能已變更。請先保留同一資料夾內的暫存檔或備份，以便還原。</value>
+	</data>
+	<data name="InvalidSortMode" xml:space="preserve">
+		<value>用量排序方式無效。</value>
+	</data>
+	<data name="InvalidDisplayMode" xml:space="preserve">
+		<value>用量顯示方式無效。</value>
+	</data>
+	<data name="WidgetPreferencesMissing" xml:space="preserve">
+		<value>缺少浮窗設定。</value>
+	</data>
+	<data name="InvalidWidgetCorner" xml:space="preserve">
+		<value>浮窗停靠位置無效。</value>
+	</data>
+	<data name="InvalidTheme" xml:space="preserve">
+		<value>主題設定無效。</value>
+	</data>
+	<data name="HeightPreferenceMissing" xml:space="preserve">
+		<value>缺少視窗高度設定。</value>
+	</data>
+	<data name="InvalidLanguage" xml:space="preserve">
+		<value>語系設定無效。</value>
+	</data>
+	<data name="AccountListNull" xml:space="preserve">
+		<value>帳號清單不可為空值。</value>
+	</data>
+	<data name="AccountEntryNull" xml:space="preserve">
+		<value>帳號項目不可為空值。</value>
+	</data>
+	<data name="DuplicateProviderAccount" xml:space="preserve">
+		<value>同一服務的帳號不可重複。</value>
+	</data>
+	<data name="DisplayNameNull" xml:space="preserve">
+		<value>帳號顯示名稱不可為空值。</value>
+	</data>
+	<data name="DisplayNameControlCharacters" xml:space="preserve">
+		<value>帳號顯示名稱不可包含控制字元。</value>
+	</data>
+	<data name="InvalidAccountIdentity" xml:space="preserve">
+		<value>帳號資訊格式無效。</value>
+	</data>
+	<data name="ImportNewerSchema" xml:space="preserve">
+		<value>設定檔由較新版本建立，目前無法匯入。</value>
+	</data>
+	<data name="UnsupportedSchema" xml:space="preserve">
+		<value>設定檔版本不受支援。</value>
+	</data>
+	<data name="InvalidRoot" xml:space="preserve">
+		<value>設定檔根節點格式無效。</value>
+	</data>
+	<data name="InvalidJson" xml:space="preserve">
+		<value>設定檔不是有效且受支援的 JSON。</value>
+	</data>
+	<data name="UnknownOrDuplicateFields" xml:space="preserve">
+		<value>設定檔包含未知或重複的欄位。</value>
+	</data>
+	<data name="InvalidFormat" xml:space="preserve">
+		<value>設定檔格式識別無效。</value>
+	</data>
+	<data name="InvalidSchemaFormat" xml:space="preserve">
+		<value>設定檔版本格式無效。</value>
+	</data>
+	<data name="PortableFileTooLarge" xml:space="preserve">
+		<value>設定檔不可超過 1 MiB。</value>
+	</data>
+	<data name="InvalidAccountList" xml:space="preserve">
+		<value>帳號清單格式或數量無效。</value>
+	</data>
+	<data name="InvalidAccountEntry" xml:space="preserve">
+		<value>帳號項目格式無效。</value>
+	</data>
+	<data name="InvalidAccountEnabled" xml:space="preserve">
+		<value>帳號啟用狀態格式無效。</value>
+	</data>
+	<data name="InvalidCardPreferences" xml:space="preserve">
+		<value>卡片顯示設定格式無效。</value>
+	</data>
+	<data name="InvalidAccountData" xml:space="preserve">
+		<value>帳號資料格式無效。</value>
+	</data>
+	<data name="InvalidDisplayNameFormat" xml:space="preserve">
+		<value>帳號顯示名稱格式無效。</value>
+	</data>
+	<data name="InvalidPreferencesFormat" xml:space="preserve">
+		<value>顯示設定格式無效。</value>
+	</data>
+	<data name="InvalidWidgetVisibility" xml:space="preserve">
+		<value>浮窗顯示狀態格式無效。</value>
+	</data>
+	<data name="InvalidWidgetCollapsed" xml:space="preserve">
+		<value>浮窗收合狀態格式無效。</value>
+	</data>
+	<data name="InvalidWidgetTopmost" xml:space="preserve">
+		<value>浮窗置頂狀態格式無效。</value>
+	</data>
+	<data name="InvalidHeightPreference" xml:space="preserve">
+		<value>視窗高度設定格式無效。</value>
+	</data>
+	<data name="InvalidLanguageFormat" xml:space="preserve">
+		<value>語系設定格式無效。</value>
+	</data>
+	<data name="InvalidThemeFormat" xml:space="preserve">
+		<value>主題設定格式無效。</value>
+	</data>
+	<data name="InvalidWidgetCornerFormat" xml:space="preserve">
+		<value>浮窗停靠位置格式無效。</value>
+	</data>
+	<data name="InvalidProviderFormat" xml:space="preserve">
+		<value>帳號的服務格式無效。</value>
+	</data>
+	<data name="UnsupportedProvider" xml:space="preserve">
+		<value>帳號包含不支援的服務。</value>
+	</data>
+	<data name="InvalidDisplayModeFormat" xml:space="preserve">
+		<value>用量顯示方式格式無效。</value>
+	</data>
+	<data name="InvalidSortModeFormat" xml:space="preserve">
+		<value>用量排序方式格式無效。</value>
+	</data>
+	<data name="AccountIdEmpty" xml:space="preserve">
+		<value>帳號資料不可為空。</value>
+	</data>
+	<data name="DuplicateAccount" xml:space="preserve">
+		<value>帳號不可重複。</value>
+	</data>
+	<data name="TransactionTargetOutside" xml:space="preserve">
+		<value>指定的檔案不屬於這次設定匯入交易。</value>
+	</data>
+	<data name="TransactionTargetsMissing" xml:space="preserve">
+		<value>交易至少需要一個目標檔案。</value>
+	</data>
+	<data name="TransactionRestoreDuplicate" xml:space="preserve">
+		<value>設定匯入的還原方式重複。</value>
+	</data>
+	<data name="TransactionLimitsInvalid" xml:space="preserve">
+		<value>每個交易目標都必須有且只能有一個檔案大小上限。</value>
+	</data>
+	<data name="TransactionLimitNonpositive" xml:space="preserve">
+		<value>交易目標檔案大小上限必須大於零。</value>
+	</data>
+	<data name="TransactionDuplicateTargets" xml:space="preserve">
+		<value>交易目標檔案不可重複。</value>
+	</data>
+	<data name="TransactionParentMissing" xml:space="preserve">
+		<value>設定匯入交易缺少有效的父目錄。</value>
+	</data>
+	<data name="TransactionUnsafeLock" xml:space="preserve">
+		<value>設定匯入交易鎖定檔不可為連結或重新解析點。</value>
+	</data>
+	<data name="TransactionBusy" xml:space="preserve">
+		<value>另一個 AI Usage 正在匯入或還原設定；請稍後再試。</value>
+	</data>
+	<data name="ImportRollbackPending" xml:space="preserve">
+		<value>設定匯入未完成，也無法立即還原原本設定。重新啟動 AI Usage 後會自動再試。</value>
+	</data>
+	<data name="ImportCleanupAuthorizationPending" xml:space="preserve">
+		<value>設定匯入已提交，但無法記錄匯入後的帳號清理授權。重新啟動 AI Usage 後會自動再試。</value>
+	</data>
+	<data name="TransactionWriteOutside" xml:space="preserve">
+		<value>設定匯入嘗試寫入交易範圍以外的檔案。</value>
+	</data>
+	<data name="TransactionPreparedFileMissing" xml:space="preserve">
+		<value>設定匯入的待寫入檔案不存在。</value>
+	</data>
+	<data name="TransactionConflictingCommitRestore" xml:space="preserve">
+		<value>設定匯入交易同時包含互相衝突的 committed 與 restored 狀態。</value>
+	</data>
+	<data name="TransactionConflictingCallbackRestore" xml:space="preserve">
+		<value>設定匯入交易同時包含互相衝突的 commit callback 與 restored 狀態。</value>
+	</data>
+	<data name="TransactionRecoveryUnavailable" xml:space="preserve">
+		<value>設定匯入缺少可用的還原資料。</value>
+	</data>
+	<data name="TransactionRecoveryMissing" xml:space="preserve">
+		<value>設定匯入缺少還原資料。</value>
+	</data>
+	<data name="TransactionRecoveryConflicting" xml:space="preserve">
+		<value>設定匯入的還原資料互相衝突。</value>
+	</data>
+	<data name="RestoreParentMissing" xml:space="preserve">
+		<value>還原位置缺少有效的所在資料夾。</value>
+	</data>
+	<data name="TransactionUnsafeDirectory" xml:space="preserve">
+		<value>設定匯入交易目錄不可為連結或重新解析點。</value>
+	</data>
+	<data name="TransactionUnsafeFile" xml:space="preserve">
+		<value>設定匯入檔案不可為連結的檔案。</value>
+	</data>
+	<data name="AccountsFileTooLarge" xml:space="preserve">
+		<value>帳號設定檔不可超過 1 MB。</value>
+	</data>
+	<data name="AccountsNotWritable" xml:space="preserve">
+		<value>帳號設定目前不可寫入。</value>
+	</data>
+	<data name="AccountSaveFailed" xml:space="preserve">
+		<value>帳號設定無法儲存；原設定檔未變更。</value>
+	</data>
+	<data name="AccountRootNotObject" xml:space="preserve">
+		<value>帳號設定檔根節點必須是物件。</value>
+	</data>
+	<data name="SchemaVersionMissing" xml:space="preserve">
+		<value>設定檔缺少 schemaVersion。</value>
+	</data>
+	<data name="InvalidSchemaVersion" xml:space="preserve">
+		<value>設定檔版本無效。</value>
+	</data>
+	<data name="AccountsContentEmpty" xml:space="preserve">
+		<value>帳號設定檔內容不可為空。</value>
+	</data>
+	<data name="AccountEntryEmpty" xml:space="preserve">
+		<value>帳號項目不可為空。</value>
+	</data>
+	<data name="AccountProviderMissing" xml:space="preserve">
+		<value>帳號缺少服務，或服務不受支援。</value>
+	</data>
+	<data name="AccountUsageCheckingMissing" xml:space="preserve">
+		<value>帳號缺少用量檢查設定。</value>
+	</data>
+	<data name="ClaudeQuotaRiskMissing" xml:space="preserve">
+		<value>帳號缺少 hasAcceptedClaudeQuotaRisk。</value>
+	</data>
+	<data name="SubscriptionContextMissing" xml:space="preserve">
+		<value>帳號缺少 showSubscriptionContext。</value>
+	</data>
+	<data name="DisplayNameExplicitNull" xml:space="preserve">
+		<value>帳號顯示名稱不可為 null。</value>
+	</data>
+	<data name="DisplayNameTooLong" xml:space="preserve">
+		<value>帳號顯示名稱過長。</value>
+	</data>
+	<data name="DisplayNameContainsControls" xml:space="preserve">
+		<value>帳號顯示名稱包含控制字元。</value>
+	</data>
+	<data name="DuplicateConnectedAccount" xml:space="preserve">
+		<value>同一個登入帳號不可重複連接到多張帳號卡片。</value>
+	</data>
+	<data name="InvalidGrokBinding" xml:space="preserve">
+		<value>Grok 帳號連接資料格式無效。</value>
+	</data>
+	<data name="AccountsNewerSchema" xml:space="preserve">
+		<value>這份帳號設定由較新版本建立。為避免覆寫，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsLoadedBackupUnreadable" xml:space="preserve">
+		<value>帳號設定已載入，但無法讀取備份。為避免覆寫，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsLoadedBackupNewerSchema" xml:space="preserve">
+		<value>帳號設定已載入，但備份由較新版本建立。為避免覆寫，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsLoadedBackupTooLarge" xml:space="preserve">
+		<value>帳號設定已載入，但備份超過 1 MB。為避免覆寫，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsLoadedBackupRepairFailed" xml:space="preserve">
+		<value>帳號設定已載入，但無法建立或修復備份。目前仍可使用；請確認資料夾寫入權限。</value>
+	</data>
+	<data name="AccountsTooLargeEditingBlocked" xml:space="preserve">
+		<value>帳號設定檔超過 1 MB。為避免耗用過多記憶體或覆寫原檔，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsUnreadableEditingBlocked" xml:space="preserve">
+		<value>無法讀取帳號設定檔。為避免覆寫，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsMissingBackupUnreadable" xml:space="preserve">
+		<value>帳號設定檔遺失，也無法讀取備份。為避免覆寫，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsCorruptBackupUnreadable" xml:space="preserve">
+		<value>帳號設定檔已損壞，也無法讀取備份。為避免覆寫，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsInvalidPathEditingBlocked" xml:space="preserve">
+		<value>帳號設定檔路徑無效，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsChangedDuringRead" xml:space="preserve">
+		<value>其他程序在讀取期間修改了帳號設定檔。為避免移動新內容，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsBackupChangedDuringRead" xml:space="preserve">
+		<value>其他程序在讀取期間修改了帳號設定備份。為避免移動新內容，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsCorruptCopyUnavailable" xml:space="preserve">
+		<value>帳號設定檔已損壞，也無法保留副本。目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsInvalidPreservedEmpty" xml:space="preserve">
+		<value>帳號設定檔格式無效，已保留原檔並改用空白設定。</value>
+	</data>
+	<data name="AccountsBothInvalidPreservedEmpty" xml:space="preserve">
+		<value>帳號設定檔與備份格式都無效，已保留原檔並改用空白設定。</value>
+	</data>
+	<data name="AccountsMissingBackupUnverified" xml:space="preserve">
+		<value>帳號設定檔遺失，也無法確認備份內容。目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsBackupCorruptCopyUnavailable" xml:space="preserve">
+		<value>帳號設定備份已損壞，也無法保留副本。目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsMissingInvalidBackupPreserved" xml:space="preserve">
+		<value>帳號設定檔遺失且備份格式無效，已保留損壞備份並改用空白設定。</value>
+	</data>
+	<data name="AccountsBackupChangedDuringRestore" xml:space="preserve">
+		<value>帳號設定備份在還原期間已變更。</value>
+	</data>
+	<data name="AccountsCreatedDuringRestore" xml:space="preserve">
+		<value>帳號設定檔在還原期間已由其他程序建立。</value>
+	</data>
+	<data name="AccountsChangedDuringRestore" xml:space="preserve">
+		<value>帳號設定檔在還原期間已變更。</value>
+	</data>
+	<data name="AccountsBackupRestoreFailed" xml:space="preserve">
+		<value>無法從帳號設定備份還原。為避免覆寫，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsRestoredNewerBackup" xml:space="preserve">
+		<value>已從備份還原帳號設定，但這份備份由較新版本建立。為避免覆寫，目前無法編輯帳號。</value>
+	</data>
+	<data name="AccountsMissingRestored" xml:space="preserve">
+		<value>帳號設定檔遺失，已從驗證通過的備份自動還原。</value>
+	</data>
+	<data name="AccountsCorruptRestored" xml:space="preserve">
+		<value>帳號設定檔已從驗證通過的備份自動還原；原損壞檔已保留。</value>
+	</data>
+	<data name="AccountsInvalidPath" xml:space="preserve">
+		<value>帳號設定檔路徑無效。</value>
+	</data>
+	<data name="AccountsSaveTooLarge" xml:space="preserve">
+		<value>帳號設定檔超過可儲存的大小上限。</value>
+	</data>
+	<data name="AccountBackupUpdateFailedCommitted" xml:space="preserve">
+		<value>帳號設定已套用，但備份更新失敗。請確認 AI Usage 設定資料夾的寫入權限，然後再次儲存帳號設定。</value>
+	</data>
+	<data name="AccountsChangedRestartRequired" xml:space="preserve">
+		<value>帳號設定檔已由其他程序變更；請重新啟動應用程式後再操作。</value>
+	</data>
+	<data name="AccountsBackupNewerVersionRequired" xml:space="preserve">
+		<value>帳號設定備份由較新版本建立；為避免覆寫，請使用建立該備份的版本。</value>
+	</data>
+	<data name="AccountLimit" xml:space="preserve">
+		<value>帳號數量不可超過 {0} 個。</value>
+	</data>
+	<data name="DisplayNameLimit" xml:space="preserve">
+		<value>帳號顯示名稱不可超過 {0} 個字元。</value>
+	</data>
+	<data name="TransactionFileTooLarge" xml:space="preserve">
+		<value>設定匯入檔案 {0} 太大；上限為 {1} 位元組。</value>
+	</data>
+</root>

@@ -1,7 +1,9 @@
 using AiUsageDashboard.App.Updates;
+using AiUsageDashboard.Core.Localization;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class ManualUpdateCheckFeedbackPolicyTests
 {
 	private static readonly DateTimeOffset TestNow = new(
@@ -92,6 +94,47 @@ public sealed class ManualUpdateCheckFeedbackPolicyTests
 				result);
 
 		Assert.Null(feedback);
+	}
+
+	[Theory]
+	[InlineData("無法連線到更新服務，請稍後再試。", "Unable to connect to the update service. Try again later.")]
+	[InlineData("更新資訊未通過驗證，已停止本次檢查。", "Update information failed validation. This check has been stopped.")]
+	[InlineData("無法完成更新檢查，請稍後再試。", "The update check could not complete. Try again later.")]
+	[InlineData("Remote diagnostic: 請保留原文 [raw_834]", "Remote diagnostic: 請保留原文 [raw_834]")]
+	public void Create_WhenLanguageChanges_ProjectsTrayFailureWithoutChangingSource(
+		string sourceMessage,
+		string englishMessage)
+	{
+		UpdateCheckExecutionResult result = CreateResult(
+			UpdateCheckExecutionOutcome.Failed,
+			UpdatePresentationStatus.CheckFailed,
+			sourceMessage);
+
+		foreach (AppLanguage language in new[]
+		{
+			AppLanguage.English,
+			AppLanguage.TraditionalChinese,
+			AppLanguage.English
+		})
+		{
+			using IDisposable languageScope = UiText.UseLanguage(language);
+			ManualUpdateCheckFeedback? feedback = ManualUpdateCheckFeedbackPolicy.Create(
+				ManualUpdateCheckInvocationSurface.Tray,
+				isWindowVisible: false,
+				isWindowCollapsed: false,
+				result);
+			string expectedMessage = language == AppLanguage.English ? englishMessage : sourceMessage;
+			string expectedGuidance = language == AppLanguage.English
+				? "The last verified update action is still available from the tray."
+				: "上次確認的更新操作仍可從 tray 使用。";
+
+			Assert.NotNull(feedback);
+			Assert.True(feedback.IsWarning);
+			Assert.Equal(language == AppLanguage.English ? "Unable to check for updates" : "無法檢查更新",
+				feedback.Title);
+			Assert.Equal($"{expectedMessage}\n\n{expectedGuidance}", feedback.Message);
+			Assert.Equal(sourceMessage, result.State.FailureMessage);
+		}
 	}
 
 	private static UpdateCheckExecutionResult CreateResult(

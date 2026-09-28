@@ -6,12 +6,14 @@ using AiUsageDashboard.App;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Persistence;
 using AiUsageDashboard.Core.Refreshing;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class AccountConnectionCoordinatorTests
 {
 	private static readonly Guid CodexWorkspaceId =
@@ -8958,6 +8960,107 @@ public sealed class AccountConnectionCoordinatorTests
 		Assert.Contains(
 			statuses,
 			status => status.Contains("另建卡片", StringComparison.Ordinal));
+	}
+
+	[Theory]
+	[InlineData(ProviderKind.Claude, AppLanguage.English,
+		"Claude 登入逾時，請再試一次。", "Claude sign-in timed out. Try again.", "Claude sign-in failed")]
+	[InlineData(ProviderKind.Claude, AppLanguage.TraditionalChinese,
+		"Claude sign-in timed out. Try again.", "Claude 登入逾時，請再試一次。", "Claude 登入失敗")]
+	[InlineData(ProviderKind.Codex, AppLanguage.English,
+		"Codex 登入逾時，請再試一次。", "Codex sign-in timed out. Try again.", "Codex sign-in failed")]
+	[InlineData(ProviderKind.Codex, AppLanguage.TraditionalChinese,
+		"Codex sign-in timed out. Try again.", "Codex 登入逾時，請再試一次。", "Codex 登入失敗")]
+	[InlineData(ProviderKind.Copilot, AppLanguage.English,
+		"Copilot 登入未完成（exit code: 42），請再試一次。",
+		"Copilot sign-in did not finish (exit code: 42). Try again.", "Copilot sign-in failed")]
+	[InlineData(ProviderKind.Copilot, AppLanguage.TraditionalChinese,
+		"Copilot sign-in did not finish (exit code: 42). Try again.",
+		"Copilot 登入未完成（exit code: 42），請再試一次。", "Copilot 登入失敗")]
+	[InlineData(ProviderKind.Grok, AppLanguage.English,
+		"Grok 登入逾時，請再試一次。", "Grok sign-in timed out. Try again.", "Grok sign-in failed")]
+	[InlineData(ProviderKind.Grok, AppLanguage.TraditionalChinese,
+		"Grok sign-in timed out. Try again.", "Grok 登入逾時，請再試一次。", "Grok 登入失敗")]
+	public void TypedLoginFailureNotices_LocalizeKnownProviderReasonsBeforeAddingRecoveryContext(
+		ProviderKind provider,
+		AppLanguage language,
+		string sourceReason,
+		string expectedReason,
+		string expectedCaption)
+	{
+		using IDisposable languageScope = UiText.UseLanguage(language);
+		const string RawInnerMessage = "raw private process details must stay hidden";
+		InvalidOperationException cause = new(RawInnerMessage);
+		(string message, string caption, MessageBoxImage image) = provider switch
+		{
+			ProviderKind.Claude => AccountConnectionCoordinator.GetClaudeLoginFailureNotice(
+				new ClaudeAccountLoginException(sourceReason, cause)),
+			ProviderKind.Codex => AccountConnectionCoordinator.GetCodexLoginFailureNotice(
+				new CodexAccountLoginException(sourceReason, cause)),
+			ProviderKind.Copilot => AccountConnectionCoordinator.GetCopilotLoginFailureNotice(
+				new CopilotAccountLoginException(CopilotAccountLoginFailureKind.ProcessFailed,
+					sourceReason, exitCode: 42, innerException: cause)),
+			ProviderKind.Grok => AccountConnectionCoordinator.GetGrokLoginFailureNotice(
+				new GrokAccountLoginException(sourceReason, cause)),
+			_ => throw new ArgumentOutOfRangeException(nameof(provider), provider,
+				"Unsupported typed login failure provider.")
+		};
+		string recoveryContext = provider == ProviderKind.Copilot
+			? language == AppLanguage.English
+				? "The card's existing connection is unaffected."
+				: "原本的卡片連接不受影響。"
+			: language == AppLanguage.English
+				? "The previous usage is kept. Follow the instructions above, then reconnect."
+				: "原本顯示的用量不會被清除；依照上方說明處理後可重新連接。";
+
+		Assert.Equal($"{expectedReason}\n\n{recoveryContext}", message);
+		Assert.Equal(expectedCaption, caption);
+		Assert.Equal(MessageBoxImage.Warning, image);
+		Assert.DoesNotContain(RawInnerMessage, message, StringComparison.Ordinal);
+	}
+
+	[Theory]
+	[InlineData(ProviderKind.Claude, AppLanguage.English)]
+	[InlineData(ProviderKind.Claude, AppLanguage.TraditionalChinese)]
+	[InlineData(ProviderKind.Codex, AppLanguage.English)]
+	[InlineData(ProviderKind.Codex, AppLanguage.TraditionalChinese)]
+	[InlineData(ProviderKind.Copilot, AppLanguage.English)]
+	[InlineData(ProviderKind.Copilot, AppLanguage.TraditionalChinese)]
+	[InlineData(ProviderKind.Grok, AppLanguage.English)]
+	[InlineData(ProviderKind.Grok, AppLanguage.TraditionalChinese)]
+	public void TypedLoginFailureNotices_PreserveOpaqueReasonsInBothLanguages(
+		ProviderKind provider,
+		AppLanguage language)
+	{
+		using IDisposable languageScope = UiText.UseLanguage(language);
+		const string Reason =
+			"Opaque provider failure: nickname=檢查中…; path=C:/測試/診斷.log; code={0}\n未知來源診斷";
+		(string message, string caption, MessageBoxImage image) = provider switch
+		{
+			ProviderKind.Claude => AccountConnectionCoordinator.GetClaudeLoginFailureNotice(
+				new ClaudeAccountLoginException(Reason)),
+			ProviderKind.Codex => AccountConnectionCoordinator.GetCodexLoginFailureNotice(
+				new CodexAccountLoginException(Reason)),
+			ProviderKind.Copilot => AccountConnectionCoordinator.GetCopilotLoginFailureNotice(
+				new CopilotAccountLoginException(CopilotAccountLoginFailureKind.ProcessFailed, Reason)),
+			ProviderKind.Grok => AccountConnectionCoordinator.GetGrokLoginFailureNotice(
+				new GrokAccountLoginException(Reason)),
+			_ => throw new ArgumentOutOfRangeException(nameof(provider), provider,
+				"Unsupported typed login failure provider.")
+		};
+		string recoveryContext = provider == ProviderKind.Copilot
+			? language == AppLanguage.English
+				? "The card's existing connection is unaffected."
+				: "原本的卡片連接不受影響。"
+			: language == AppLanguage.English
+				? "The previous usage is kept. Follow the instructions above, then reconnect."
+				: "原本顯示的用量不會被清除；依照上方說明處理後可重新連接。";
+
+		Assert.Equal($"{Reason}\n\n{recoveryContext}", message);
+		Assert.Equal(language == AppLanguage.English
+			? $"{provider} sign-in failed"
+			: $"{provider} 登入失敗", caption);
+		Assert.Equal(MessageBoxImage.Warning, image);
 	}
 
 	[Fact]

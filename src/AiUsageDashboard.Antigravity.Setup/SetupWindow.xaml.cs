@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Automation.Peers;
@@ -10,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 
 using AiUsageDashboard.AntigravitySpike;
+using AiUsageDashboard.Core.Localization;
 namespace AiUsageDashboard.Antigravity.Setup;
 
 public partial class SetupWindow : Window
@@ -65,6 +65,8 @@ public partial class SetupWindow : Window
 	private HwndSource? _windowSource;
 	private AntigravityMachineSetupStage? _lastStage;
 	private string _failureDiagnosticInfo = string.Empty;
+	private Func<string>? _progressTextProvider;
+	private Func<string>? _footerTextProvider;
 	private Exception? _completionFailure;
 	private bool _allowClose;
 	private bool _isClosePending;
@@ -73,16 +75,21 @@ public partial class SetupWindow : Window
 
 	internal SetupWindow(
 		IAntigravityMachineSetupService setupService,
-		Guid setupAttemptId)
+		Guid setupAttemptId,
+		ResourceDictionary? windowResources = null)
 	{
 		if (setupAttemptId == Guid.Empty)
 		{
 			throw new ArgumentException(
-				"Antigravity setup attempt ID 不可為空。",
+				UiText.Get("Windows.Setup.TheAntigravitySetupAttemptIDCannotBeEmpty"),
 				nameof(setupAttemptId));
 		}
 
 		InitializeComponent();
+		if (windowResources is not null)
+		{
+			Resources.MergedDictionaries.Add(windowResources);
+		}
 		SetupAttemptPersistence persistence =
 			CreateSetupAttemptPersistence(setupAttemptId);
 		_workflow = new AntigravitySetupWorkflow(
@@ -93,6 +100,7 @@ public partial class SetupWindow : Window
 				persistence.AfterApprovalCommittedAsync);
 		_preferredMinHeight = MinHeight;
 		_preferredMinWidth = MinWidth;
+		UiText.LanguageChanged += LanguageChanged;
 		Loaded += SetupWindow_Loaded;
 	}
 
@@ -139,6 +147,7 @@ public partial class SetupWindow : Window
 
 	protected override void OnClosed(EventArgs e)
 	{
+		UiText.LanguageChanged -= LanguageChanged;
 		LocationChanged -= SetupWindow_LocationChanged;
 		_windowSource?.RemoveHook(WindowMessageHook);
 		_windowSource = null;
@@ -146,6 +155,50 @@ public partial class SetupWindow : Window
 		_completionSource.TrySetResult(new AntigravitySetupDialogResult(
 			_workflow.DialogOutcome,
 			_completionFailure));
+	}
+
+	private void LanguageChanged(object? sender, EventArgs e)
+	{
+		if (!Dispatcher.CheckAccess())
+		{
+			Dispatcher.Invoke(RefreshLocalizedPresentation);
+			return;
+		}
+
+		RefreshLocalizedPresentation();
+	}
+
+	internal void RefreshLocalizedPresentation()
+	{
+		if (_progressTextProvider is not null)
+		{
+			ProgressTextBlock.Text = _progressTextProvider();
+		}
+		if (_footerTextProvider is not null)
+		{
+			FooterStatusTextBlock.Text = _footerTextProvider();
+		}
+		if (ReferenceEquals(_visiblePanel, ReviewPanel) &&
+			(_workflow.Candidate is AntigravityMachineSetupCandidate candidate))
+		{
+			RefreshReviewPresentation(candidate);
+		}
+		else if (ReferenceEquals(_visiblePanel, FailurePanel))
+		{
+			RefreshFailurePresentation();
+		}
+	}
+
+	private void SetProgressText(Func<string> textProvider)
+	{
+		_progressTextProvider = textProvider;
+		ProgressTextBlock.Text = textProvider();
+	}
+
+	private void SetFooterText(Func<string> textProvider)
+	{
+		_footerTextProvider = textProvider;
+		FooterStatusTextBlock.Text = textProvider();
 	}
 
 	internal static double CalculateMaximumWindowHeight(
@@ -224,14 +277,14 @@ public partial class SetupWindow : Window
 	{
 		if (duration <= TimeSpan.Zero)
 		{
-			return "即將";
+			return UiText.Get("Windows.Setup.Soon");
 		}
 
 		if (duration.TotalDays >= 1)
 		{
 			return string.Format(
-				CultureInfo.CurrentCulture,
-				"{0} 天 {1} 小時後",
+				UiText.Culture,
+				UiText.Get("Windows.Setup.In0DaysAnd1Hours"),
 				(int)duration.TotalDays,
 				duration.Hours);
 		}
@@ -239,15 +292,15 @@ public partial class SetupWindow : Window
 		if (duration.TotalHours >= 1)
 		{
 			return string.Format(
-				CultureInfo.CurrentCulture,
-				"{0} 小時 {1} 分後",
+				UiText.Culture,
+				UiText.Get("Windows.Setup.In0HoursAnd1Minutes"),
 				(int)duration.TotalHours,
 				duration.Minutes);
 		}
 
 		return string.Format(
-			CultureInfo.CurrentCulture,
-			"{0} 分後",
+			UiText.Culture,
+			UiText.Get("Windows.Setup.In0Minutes"),
 			Math.Max(1, (int)Math.Ceiling(duration.TotalMinutes)));
 	}
 
@@ -257,22 +310,22 @@ public partial class SetupWindow : Window
 		return stage switch
 		{
 			AntigravityMachineSetupStage.LoadingReviewedContract =>
-				"正在檢查支援的 Antigravity 版本…",
+				UiText.Get("Windows.Setup.CheckingSupportedAntigravityVersions"),
 			AntigravityMachineSetupStage.DiscoveringExecutable =>
-				"正在尋找這台電腦上的 Antigravity…",
+				UiText.Get("Windows.Setup.LookingForAntigravityOnThisComputer"),
 			AntigravityMachineSetupStage.PreparingPrivateStorage =>
-				"正在準備這台電腦…",
+				UiText.Get("Windows.Setup.PreparingThisComputer"),
 			AntigravityMachineSetupStage.CalibratingPrompt =>
-				"正在確認 Antigravity 可以正常使用…",
+				UiText.Get("Windows.Setup.CheckingThatAntigravityIsReady"),
 			AntigravityMachineSetupStage.MaterializingProfile =>
-				"正在準備本機連接設定…",
+				UiText.Get("Windows.Setup.PreparingLocalConnectionSettings"),
 			AntigravityMachineSetupStage.ValidatingUsage =>
-				"正在讀取 Antigravity 的四項用量…",
+				UiText.Get("Windows.Setup.ReadingAntigravitySFourUsageValues"),
 			AntigravityMachineSetupStage.ReadyForApproval =>
-				"正在準備帳號確認畫面…",
+				UiText.Get("Windows.Setup.PreparingAccountReview"),
 			AntigravityMachineSetupStage.Approving =>
-				"正在完成 Antigravity 連接…",
-			_ => "正在連接 Antigravity…"
+				UiText.Get("Windows.Setup.FinishingAntigravityConnection"),
+			_ => UiText.Get("Windows.Setup.ConnectingAntigravity233")
 		};
 	}
 
@@ -283,11 +336,11 @@ public partial class SetupWindow : Window
 	{
 		return string.Join(
 			Environment.NewLine,
-			"Antigravity 連接技術資訊",
-			$"應用程式版本：{appVersion}",
-			$"失敗類型：{GetFailureKindDisplayText(failureKind)}",
-			$"最後階段：{GetStageDisplayText(lastStage)}",
-			$"建議處理方式：{GetDiagnosticNextStep(failureKind, lastStage)}");
+			UiText.Get("Windows.Setup.AntigravityConnectionTechnicalInformation"),
+			UiText.Format("Windows.Setup.AppVersion0", appVersion),
+			UiText.Format("Windows.Setup.FailureType0", GetFailureKindDisplayText(failureKind)),
+			UiText.Format("Windows.Setup.LastStage0", GetStageDisplayText(lastStage)),
+			UiText.Format("Windows.Setup.SuggestedNextSteps0", GetDiagnosticNextStep(failureKind, lastStage)));
 	}
 
 	internal static string GetFailureKindDisplayText(
@@ -295,32 +348,32 @@ public partial class SetupWindow : Window
 	{
 		return failureKind switch
 		{
-			AntigravityMachineSetupFailureKind.None => "無（None）",
+			AntigravityMachineSetupFailureKind.None => UiText.Get("Windows.Setup.NoneNone"),
 			AntigravityMachineSetupFailureKind.ConsentRequired =>
-				"需要確認讀取說明（ConsentRequired）",
+				UiText.Get("Windows.Setup.UsageDisclosureConfirmationRequiredConsentRequired"),
 			AntigravityMachineSetupFailureKind.UnsupportedBuild =>
-				"找不到支援的 Antigravity CLI（UnsupportedBuild）",
+				UiText.Get("Windows.Setup.SupportedAntigravityCLINotFoundUnsupportedBuild"),
 			AntigravityMachineSetupFailureKind.AmbiguousExecutable =>
-				"找到多個 Antigravity CLI（AmbiguousExecutable）",
+				UiText.Get("Windows.Setup.MultipleAntigravityCLIsFoundAmbiguousExecutable"),
 			AntigravityMachineSetupFailureKind.ExistingProcessDetected =>
-				"其他 Antigravity 視窗仍在執行（ExistingProcessDetected）",
+				UiText.Get("Windows.Setup.OtherAntigravityWindowsAreRunningExistingProcessDetected"),
 			AntigravityMachineSetupFailureKind.PrivateStorageRejected =>
-				"無法準備連接資料（PrivateStorageRejected）",
+				UiText.Get("Windows.Setup.CannotPrepareConnectionDataPrivateStorageRejected"),
 			AntigravityMachineSetupFailureKind.SettingsRejected =>
-				"Antigravity 設定不符（SettingsRejected）",
+				UiText.Get("Windows.Setup.AntigravitySettingsRejectedSettingsRejected"),
 			AntigravityMachineSetupFailureKind.PromptRejected =>
-				"Antigravity 尚未完成登入或設定（PromptRejected）",
+				UiText.Get("Windows.Setup.AntigravitySignInOrSetupIsIncompletePromptRejected"),
 			AntigravityMachineSetupFailureKind.UsageRejected =>
-				"無法確認用量（UsageRejected）",
+				UiText.Get("Windows.Setup.CannotVerifyUsageUsageRejected"),
 			AntigravityMachineSetupFailureKind.ApprovalRejected =>
-				"無法儲存連接（ApprovalRejected）",
+				UiText.Get("Windows.Setup.CannotSaveConnectionApprovalRejected"),
 			AntigravityMachineSetupFailureKind.UnexpectedFailure =>
-				"無法完成連接（UnexpectedFailure）",
+				UiText.Get("Windows.Setup.CannotFinishConnectionUnexpectedFailure"),
 			AntigravityMachineSetupFailureKind.ExecutionBusy =>
-				"另一項用量檢查仍在進行（ExecutionBusy）",
+				UiText.Get("Windows.Setup.AnotherUsageCheckIsRunningExecutionBusy"),
 			AntigravityMachineSetupFailureKind.SafetyRevalidationRequired =>
-				"需要確認後再檢查用量（SafetyRevalidationRequired）",
-			_ => $"無法判斷（{failureKind}）"
+				UiText.Get("Windows.Setup.ConfirmationRequiredBeforeCheckingUsageAgainSafetyRevalidationRequired"),
+			_ => UiText.Format("Windows.Setup.Unknown0", failureKind)
 		};
 	}
 
@@ -329,24 +382,24 @@ public partial class SetupWindow : Window
 	{
 		return stage switch
 		{
-			null => "尚未開始",
+			null => UiText.Get("Windows.Setup.NotStarted"),
 			AntigravityMachineSetupStage.LoadingReviewedContract =>
-				"載入支援資料（LoadingReviewedContract）",
+				UiText.Get("Windows.Setup.LoadingCompatibilityDataLoadingReviewedContract"),
 			AntigravityMachineSetupStage.DiscoveringExecutable =>
-				"尋找 Antigravity CLI（DiscoveringExecutable）",
+				UiText.Get("Windows.Setup.FindingAntigravityCLIDiscoveringExecutable"),
 			AntigravityMachineSetupStage.PreparingPrivateStorage =>
-				"準備連接資料（PreparingPrivateStorage）",
+				UiText.Get("Windows.Setup.PreparingConnectionDataPreparingPrivateStorage"),
 			AntigravityMachineSetupStage.CalibratingPrompt =>
-				"確認 Antigravity 可用（CalibratingPrompt）",
+				UiText.Get("Windows.Setup.CheckingAntigravityReadinessCalibratingPrompt"),
 			AntigravityMachineSetupStage.MaterializingProfile =>
-				"準備本機連接設定（MaterializingProfile）",
+				UiText.Get("Windows.Setup.PreparingLocalConnectionSettingsMaterializingProfile"),
 			AntigravityMachineSetupStage.ValidatingUsage =>
-				"讀取 Antigravity 用量（ValidatingUsage）",
+				UiText.Get("Windows.Setup.ReadingAntigravityUsageValidatingUsage"),
 			AntigravityMachineSetupStage.ReadyForApproval =>
-				"準備帳號確認（ReadyForApproval）",
+				UiText.Get("Windows.Setup.PreparingAccountReviewReadyForApproval"),
 			AntigravityMachineSetupStage.Approving =>
-				"儲存 Antigravity 連接（Approving）",
-			_ => $"無法判斷（{stage}）"
+				UiText.Get("Windows.Setup.SavingAntigravityConnectionApproving"),
+			_ => UiText.Format("Windows.Setup.Unknown0", stage)
 		};
 	}
 
@@ -357,35 +410,35 @@ public partial class SetupWindow : Window
 		return (failureKind, lastStage) switch
 		{
 			(AntigravityMachineSetupFailureKind.ExecutionBusy, _) =>
-				"請稍候目前的 Antigravity 用量檢查完成後再試，不需要重新安裝 Antigravity 或重新登入。",
+				UiText.Get("Windows.Setup.WaitForTheCurrentAntigravityUsageCheckTo"),
 			(AntigravityMachineSetupFailureKind.SafetyRevalidationRequired, _) =>
-				"請確認目前可以執行一次唯讀 /usage，再按「重新檢查 Antigravity 用量」；不需要重新登入。",
+				UiText.Get("Windows.Setup.ConfirmThatOneReadOnlyUsageCheckCan"),
 			(
 				AntigravityMachineSetupFailureKind.UnsupportedBuild,
 				AntigravityMachineSetupStage.DiscoveringExecutable) =>
-				"請執行 agy --version。若無法執行或顯示的版本不受支援，請更新或重新安裝官方 Antigravity CLI；若更新後仍無法連接，請提供版本與技術資訊給維護者。",
+				UiText.Get("Windows.Setup.RunAgyVersionIfItFailsOrReports"),
 			(
 				AntigravityMachineSetupFailureKind.AmbiguousExecutable,
 				AntigravityMachineSetupStage.DiscoveringExecutable) =>
-				"請只保留要使用的一個 Antigravity CLI，移除其他安裝或 PATH 路徑後再試。",
+				UiText.Get("Windows.Setup.KeepOnlyTheAntigravityCLIYouWantTo"),
 			(
 				AntigravityMachineSetupFailureKind.UsageRejected,
 				AntigravityMachineSetupStage.ValidatingUsage) =>
-				"請確認 Antigravity 已登入且能顯示用量；若仍失敗，請更新 AI Usage 或 Antigravity，並提供技術資訊給維護者。",
+				UiText.Get("Windows.Setup.CheckThatAntigravityIsSignedInAndCan"),
 			(AntigravityMachineSetupFailureKind.ConsentRequired, _) =>
-				"請回到 AI Usage，重新選擇連接並確認讀取說明。",
+				UiText.Get("Windows.Setup.ReturnToAIUsageChooseToConnectAgain"),
 			(AntigravityMachineSetupFailureKind.ExistingProcessDetected, _) =>
-				"請關閉其他 Antigravity 視窗後再試。",
+				UiText.Get("Windows.Setup.CloseOtherAntigravityWindowsThenTryAgain"),
 			(AntigravityMachineSetupFailureKind.PrivateStorageRejected, _) =>
-				"請再試一次；若仍失敗，請提供完整技術資訊給維護者。",
+				UiText.Get("Windows.Setup.TryAgainIfItStillFailsShareThe"),
 			(AntigravityMachineSetupFailureKind.SettingsRejected, _) =>
-				"請確認 Antigravity 已登入且可正常使用；若仍失敗，請更新 AI Usage 或 Antigravity，並提供技術資訊給維護者。",
+				UiText.Get("Windows.Setup.CheckThatAntigravityIsSignedInAndWorking"),
 			(AntigravityMachineSetupFailureKind.PromptRejected, _) =>
-				"請開啟 Antigravity，確認已登入且可正常使用後再試。",
+				UiText.Get("Windows.Setup.OpenAntigravityCheckThatItIsSignedIn"),
 			(AntigravityMachineSetupFailureKind.ApprovalRejected, _) =>
-				"請再試一次；若仍失敗，請提供完整技術資訊給維護者。",
+				UiText.Get("Windows.Setup.TryAgainIfItStillFailsShareThe"),
 			_ =>
-				"請再試一次；若仍失敗，請提供完整技術資訊給維護者。"
+				UiText.Get("Windows.Setup.TryAgainIfItStillFailsShareThe")
 		};
 	}
 
@@ -409,7 +462,7 @@ public partial class SetupWindow : Window
 			// File metadata is diagnostic-only. Fall back to the assembly version.
 		}
 
-		return assemblyVersion?.ToString() ?? "未知";
+		return assemblyVersion?.ToString() ?? UiText.Get("Windows.Setup.Unknown");
 	}
 
 	private static string? ReadCurrentExecutableProductVersion()
@@ -440,11 +493,11 @@ public partial class SetupWindow : Window
 	{
 		return stableWindowId switch
 		{
-			"agy.gemini.weekly" => "週用量 · Gemini",
-			"agy.gemini.rolling-5h" => "5小時用量 · Gemini",
-			"agy.claude.weekly" => "週用量 · Claude + GPT",
-			"agy.claude.rolling-5h" => "5小時用量 · Claude + GPT",
-			_ => "Antigravity 用量區間"
+			"agy.gemini.weekly" => UiText.Get("Windows.Setup.WeeklyUsageGemini"),
+			"agy.gemini.rolling-5h" => UiText.Get("Windows.Setup.5HourUsageGemini"),
+			"agy.claude.weekly" => UiText.Get("Windows.Setup.WeeklyUsageClaudeGPT"),
+			"agy.claude.rolling-5h" => UiText.Get("Windows.Setup.5HourUsageClaudeGPT"),
+			_ => UiText.Get("Windows.Setup.AntigravityUsageWindow")
 		};
 	}
 
@@ -456,7 +509,7 @@ public partial class SetupWindow : Window
 			accountIdentity,
 			AntigravityOfficialPrintUsageClient.LocalSessionIdentity,
 			StringComparison.OrdinalIgnoreCase)
-			? "目前登入的 Antigravity 帳號（未取得電子郵件）"
+			? UiText.Get("Windows.Setup.CurrentAntigravitySignInEmailUnavailable")
 			: accountIdentity;
 	}
 
@@ -464,13 +517,13 @@ public partial class SetupWindow : Window
 		AntigravityProductionUsageWindow window)
 	{
 		string resetText = window.IsAvailable
-			? "目前可用"
+			? UiText.Get("Windows.Setup.AvailableNow")
 			: window.ResetsIn.HasValue
-				? $"{FormatDuration(window.ResetsIn.Value)}重置"
-				: "未提供重置時間";
+				? UiText.Format("Windows.Setup.Resets0", FormatDuration(window.ResetsIn.Value))
+				: UiText.Get("Windows.Setup.ResetTimeNotProvided");
 		return new UsageWindowPresentation(
 			GetUsageWindowDisplayName(window.StableWindowId),
-			$"剩餘 {window.RemainingPercent:0.##}%",
+			UiText.Format("Windows.Setup.00Remaining", window.RemainingPercent),
 			resetText);
 	}
 
@@ -485,7 +538,7 @@ public partial class SetupWindow : Window
 	private async Task ApproveAsync()
 	{
 		_lastStage = AntigravityMachineSetupStage.Approving;
-		SetBusyView("正在完成 Antigravity 連接…");
+		SetBusyView(() => UiText.Get("Windows.Setup.FinishingAntigravityConnection"));
 		CancelButton.IsEnabled = false;
 		_activeOperation = _workflow.ApproveAsync(
 			isReviewConfirmed: true);
@@ -543,13 +596,13 @@ public partial class SetupWindow : Window
 		}
 
 		_isClosePending = true;
-		string closingStatus =
+		string closingStatusKey =
 			(_workflow.State == AntigravitySetupWorkflowState.Approving) ||
 			(_workflow.HasApprovalStarted)
-				? "正在完成連接，完成後會關閉視窗…"
-				: "正在取消並清理這次連接…";
-		ProgressTextBlock.Text = closingStatus;
-		FooterStatusTextBlock.Text = closingStatus;
+				? "Windows.Setup.FinishingTheConnectionTheWindowWillCloseWhen"
+				: "Windows.Setup.CancellingAndCleaningUpThisConnection";
+		SetProgressText(() => UiText.Get(closingStatusKey));
+		SetFooterText(() => UiText.Get(closingStatusKey));
 		CancelButton.IsEnabled = false;
 		FocusProgressIndicator();
 		QueueLiveRegionAnnouncement(FooterStatusTextBlock);
@@ -628,7 +681,7 @@ public partial class SetupWindow : Window
 		}
 
 		_lastStage = AntigravityMachineSetupStage.ValidatingUsage;
-		SetBusyView("正在重新檢查 Antigravity 用量…");
+		SetBusyView(() => UiText.Get("Windows.Setup.CheckingAntigravityUsageAgain"));
 		CancelButton.IsEnabled = false;
 		_activeOperation = _workflow.RevalidateSafetyAsync();
 
@@ -664,12 +717,11 @@ public partial class SetupWindow : Window
 		try
 		{
 			Clipboard.SetText(_failureDiagnosticInfo);
-			FooterStatusTextBlock.Text = "技術資訊已複製";
+			SetFooterText(() => UiText.Get("Windows.Setup.TechnicalInformationCopied"));
 		}
 		catch (ExternalException)
 		{
-			FooterStatusTextBlock.Text =
-				"目前無法存取剪貼簿，請稍後再試。";
+			SetFooterText(() => UiText.Get("Windows.Setup.TheClipboardIsUnavailableTryAgainLater"));
 		}
 
 		QueueLiveRegionAnnouncement(FooterStatusTextBlock);
@@ -684,17 +736,17 @@ public partial class SetupWindow : Window
 		FailureDiagnosticDetailsPanel.Visibility = showDetails
 			? Visibility.Visible
 			: Visibility.Collapsed;
-		FailureDiagnosticDisclosureButton.Content = showDetails
-			? "隱藏技術資訊"
-			: "顯示技術資訊";
+		FailureDiagnosticDisclosureButton.SetResourceReference(
+			System.Windows.Controls.ContentControl.ContentProperty,
+			showDetails ? "Windows.Setup.HideTechnicalInformation" : "Windows.Setup.ShowTechnicalInformation");
 		QueueLiveRegionAnnouncement(FailureDiagnosticDisclosureButton);
 	}
 
-	private void SetBusyView(string status)
+	private void SetBusyView(Func<string> statusTextProvider)
 	{
-		ProgressTextBlock.Text = status;
-		FooterStatusTextBlock.Text = "處理中";
-		CancelButton.Content = "取消";
+		SetProgressText(statusTextProvider);
+		SetFooterText(() => UiText.Get("Windows.Setup.Working"));
+		CancelButton.SetResourceReference(System.Windows.Controls.ContentControl.ContentProperty, "Windows.Common.Cancel");
 		ShowOnly(ProgressPanel);
 	}
 
@@ -711,8 +763,8 @@ public partial class SetupWindow : Window
 
 	private void ShowCompleted()
 	{
-		FooterStatusTextBlock.Text = "連接完成";
-		CancelButton.Content = "關閉";
+		SetFooterText(() => UiText.Get("Windows.Setup.ConnectionComplete"));
+		CancelButton.SetResourceReference(System.Windows.Controls.ContentControl.ContentProperty, "Windows.Common.Close");
 		CancelButton.IsEnabled = true;
 		ShowOnly(CompletedPanel);
 	}
@@ -720,24 +772,32 @@ public partial class SetupWindow : Window
 	private void ShowFailure()
 	{
 		bool hasCommittedSetting = _workflow.HasCommittedSetting;
+		RefreshFailurePresentation();
+		FailureDiagnosticDetailsPanel.Visibility = Visibility.Collapsed;
+		FailureDiagnosticDisclosureButton.SetResourceReference(
+			System.Windows.Controls.ContentControl.ContentProperty,
+			"Windows.Setup.ShowTechnicalInformation");
+		SetFooterText(() => UiText.Get(hasCommittedSetting
+			? "Windows.Setup.ConnectionSettingsSavedCompletionNotConfirmed"
+			: "Windows.Setup.AntigravityConnectionIncomplete"));
+		CancelButton.SetResourceReference(System.Windows.Controls.ContentControl.ContentProperty, "Windows.Common.Close");
+		CancelButton.IsEnabled = true;
+		ShowOnly(FailurePanel);
+	}
+
+	private void RefreshFailurePresentation()
+	{
+		bool hasCommittedSetting = _workflow.HasCommittedSetting;
 		FailureKindTextBlock.Text = GetFailureTitle(_workflow.FailureKind);
 		FailureGuidanceTextBlock.Text = hasCommittedSetting
-			? "連接設定已儲存，但收尾時發生問題，因此無法確認是否完成。請再試一次；若仍失敗，請提供技術資訊給維護者。"
+			? UiText.Get("Windows.Setup.ConnectionSettingsWereSavedButCleanupEncounteredA")
 			: GetFailureGuidance(_workflow.FailureKind);
 		_failureDiagnosticInfo = CreateSafeDiagnosticInfo(
 			AppVersion,
 			_workflow.FailureKind,
 			_lastStage);
 		FailureDiagnosticTextBlock.Text = _failureDiagnosticInfo;
-		FailureDiagnosticDetailsPanel.Visibility = Visibility.Collapsed;
-		FailureDiagnosticDisclosureButton.Content = "顯示技術資訊";
-		FooterStatusTextBlock.Text = hasCommittedSetting
-			? "連接設定已儲存，但完成狀態待確認"
-			: "Antigravity 連接未完成";
-		CancelButton.Content = "關閉";
-		CancelButton.IsEnabled = true;
 		RetryButton.Content = GetFailureActionText(_workflow.FailureKind);
-		ShowOnly(FailurePanel);
 	}
 
 	internal static string GetFailureActionText(
@@ -745,8 +805,8 @@ public partial class SetupWindow : Window
 	{
 		return failureKind ==
 			AntigravityMachineSetupFailureKind.SafetyRevalidationRequired
-			? "重新檢查 Antigravity 用量"
-			: "再試一次";
+			? UiText.Get("Windows.Setup.CheckAntigravityUsageAgain")
+			: UiText.Get("Windows.Setup.TryAgain");
 	}
 
 	internal static string GetFailureGuidance(
@@ -755,29 +815,29 @@ public partial class SetupWindow : Window
 		return failureKind switch
 		{
 			AntigravityMachineSetupFailureKind.ConsentRequired =>
-				"請回到 AI Usage，重新選擇連接並確認讀取說明。",
+				UiText.Get("Windows.Setup.ReturnToAIUsageChooseToConnectAgain"),
 			AntigravityMachineSetupFailureKind.ExecutionBusy =>
-				"AI Usage 正在進行另一項 Antigravity 用量檢查。請稍候片刻再試，不需要重新安裝 Antigravity 或重新登入。",
+				UiText.Get("Windows.Setup.AIUsageIsRunningAnotherAntigravityUsageCheck"),
 			AntigravityMachineSetupFailureKind.SafetyRevalidationRequired =>
-				"目前需要你確認後才能再次讀取 Antigravity 用量。AI Usage 不會自動再試，以免重複執行。請確認目前可以執行一次唯讀 /usage，再按「重新檢查 Antigravity 用量」；這不會重新登入 Antigravity。",
+				UiText.Get("Windows.Setup.YourConfirmationIsRequiredBeforeCheckingAntigravityUsage"),
 			AntigravityMachineSetupFailureKind.UnsupportedBuild =>
-				"找不到支援的 Antigravity CLI。請執行 agy --version。若無法執行或顯示的版本不受支援，請更新或重新安裝官方 Antigravity CLI；若更新後仍無法連接，請提供版本與技術資訊給維護者。",
+				UiText.Get("Windows.Setup.ASupportedAntigravityCLICouldNotBeFound"),
 			AntigravityMachineSetupFailureKind.AmbiguousExecutable =>
-				"這台電腦上找到多個 Antigravity CLI。請只保留要使用的一個，移除其他安裝或 PATH 路徑後再試。",
+				UiText.Get("Windows.Setup.MultipleAntigravityCLIsWereFoundOnThisComputer"),
 			AntigravityMachineSetupFailureKind.ExistingProcessDetected =>
-				"目前使用的 Antigravity 版本需要暫時關閉其他 Antigravity 視窗。請關閉後再試。",
+				UiText.Get("Windows.Setup.ThisAntigravityVersionRequiresOtherAntigravityWindowsTo"),
 			AntigravityMachineSetupFailureKind.PrivateStorageRejected =>
-				"目前無法儲存 Antigravity 連接設定。請再試一次；若仍失敗，請提供技術資訊給維護者。",
+				UiText.Get("Windows.Setup.AntigravityConnectionSettingsCannotBeSavedRightNow"),
 			AntigravityMachineSetupFailureKind.SettingsRejected =>
-				"無法使用目前的 Antigravity 設定。請確認 Antigravity 已登入且可正常使用；若仍失敗，請更新 AI Usage 或 Antigravity。",
+				UiText.Get("Windows.Setup.TheCurrentAntigravitySettingsCannotBeUsedCheck"),
 			AntigravityMachineSetupFailureKind.PromptRejected =>
-				"無法確認 Antigravity 是否可用。請開啟 Antigravity，確認已登入且可正常使用後再試。",
+				UiText.Get("Windows.Setup.AntigravityReadinessCouldNotBeVerifiedOpenAntigravity"),
 			AntigravityMachineSetupFailureKind.UsageRejected =>
-				"AI Usage 無法辨識 Antigravity 回傳的四項用量。請確認 Antigravity 已登入且能顯示用量；若仍失敗，請更新 AI Usage 或 Antigravity，並提供技術資訊給維護者。",
+				UiText.Get("Windows.Setup.AIUsageCouldNotRecognizeTheFourUsage"),
 			AntigravityMachineSetupFailureKind.ApprovalRejected =>
-				"完成連接時發生問題。請再試一次；若仍失敗，請提供技術資訊給維護者。",
+				UiText.Get("Windows.Setup.AProblemOccurredWhileFinishingTheConnectionTry"),
 			_ =>
-				"Antigravity 連接未完成。請再試一次；若問題持續，請提供技術資訊給維護者。"
+				UiText.Get("Windows.Setup.AntigravityConnectionIsIncompleteTryAgainIfThe")
 		};
 	}
 
@@ -787,22 +847,22 @@ public partial class SetupWindow : Window
 		return failureKind switch
 		{
 			AntigravityMachineSetupFailureKind.ExecutionBusy =>
-				"Antigravity 用量檢查仍在進行",
+				UiText.Get("Windows.Setup.AntigravityUsageCheckIsStillRunning"),
 			AntigravityMachineSetupFailureKind.SafetyRevalidationRequired =>
-				"需要確認後再檢查 Antigravity 用量",
+				UiText.Get("Windows.Setup.ConfirmationRequiredBeforeCheckingAntigravityUsageAgain"),
 			AntigravityMachineSetupFailureKind.UnsupportedBuild =>
-				"找不到支援的 Antigravity CLI",
+				UiText.Get("Windows.Setup.SupportedAntigravityCLINotFound"),
 			AntigravityMachineSetupFailureKind.AmbiguousExecutable =>
-				"找到多個 Antigravity 安裝",
+				UiText.Get("Windows.Setup.MultipleAntigravityInstallationsFound"),
 			AntigravityMachineSetupFailureKind.ExistingProcessDetected =>
-				"請先關閉其他 Antigravity 視窗",
+				UiText.Get("Windows.Setup.CloseOtherAntigravityWindowsFirst"),
 			AntigravityMachineSetupFailureKind.SettingsRejected =>
-				"無法使用目前的 Antigravity 設定",
+				UiText.Get("Windows.Setup.CannotUseCurrentAntigravitySettings"),
 			AntigravityMachineSetupFailureKind.PromptRejected =>
-				"無法確認 Antigravity 狀態",
+				UiText.Get("Windows.Setup.CannotVerifyAntigravityStatus"),
 			AntigravityMachineSetupFailureKind.UsageRejected =>
-				"無法確認 Antigravity 用量",
-			_ => "Antigravity 連接未完成"
+				UiText.Get("Windows.Setup.CannotVerifyAntigravityUsage"),
+			_ => UiText.Get("Windows.Setup.AntigravityConnectionIncomplete")
 		};
 	}
 
@@ -932,13 +992,18 @@ public partial class SetupWindow : Window
 
 	private void ShowReview(AntigravityMachineSetupCandidate candidate)
 	{
+		RefreshReviewPresentation(candidate);
+		ShowOnly(ReviewPanel);
+		SetFooterText(() => UiText.Get("Windows.Setup.ReviewTheAccount"));
+		CancelButton.SetResourceReference(System.Windows.Controls.ContentControl.ContentProperty, "Windows.Common.Cancel");
+	}
+
+	private void RefreshReviewPresentation(AntigravityMachineSetupCandidate candidate)
+	{
 		AccountIdentityTextBlock.Text = GetAccountIdentityDisplayText(
 			candidate.AccountIdentity);
 		UsageWindowsItemsControl.ItemsSource =
 			candidate.Windows.Select(CreatePresentation).ToArray();
-		ShowOnly(ReviewPanel);
-		FooterStatusTextBlock.Text = "請確認帳號";
-		CancelButton.Content = "取消";
 	}
 
 	private void ShowWorkflowResult()
@@ -974,12 +1039,12 @@ public partial class SetupWindow : Window
 			return;
 		}
 
-		SetBusyView("正在準備這台電腦…");
+		SetBusyView(() => UiText.Get("Windows.Setup.PreparingThisComputer"));
 		Progress<AntigravityMachineSetupProgress> progress = new(
 			value =>
 			{
 				_lastStage = value.Stage;
-				ProgressTextBlock.Text = GetProgressText(value.Stage);
+				SetProgressText(() => GetProgressText(value.Stage));
 				QueueLiveRegionAnnouncement(ProgressTextBlock);
 			});
 		_activeOperation = _workflow.PrepareAsync(
@@ -1004,7 +1069,7 @@ public partial class SetupWindow : Window
 
 	private async Task CompleteSetupAsync()
 	{
-		FooterStatusTextBlock.Text = "連接完成";
+		SetFooterText(() => UiText.Get("Windows.Setup.ConnectionComplete"));
 		await CloseAfterWorkflowDisposalAsync();
 	}
 
@@ -1225,7 +1290,7 @@ public partial class SetupWindow : Window
 			catch (Exception recoveryFailure)
 			{
 				Exception combinedFailure = new AggregateException(
-					"Antigravity 連接與視窗收尾都失敗。",
+					UiText.Get("Windows.Setup.AntigravityConnectionAndWindowCleanupBothFailed"),
 					exception,
 					recoveryFailure);
 				RecordCompletionFailure(combinedFailure);
@@ -1251,7 +1316,7 @@ public partial class SetupWindow : Window
 		catch (Exception cleanupFailure)
 		{
 			completionFailure = new AggregateException(
-				"Antigravity 連接失敗，且清理未完整完成。",
+				UiText.Get("Windows.Setup.AntigravityConnectionFailedAndCleanupDidNotFinish"),
 				failure,
 				cleanupFailure);
 		}

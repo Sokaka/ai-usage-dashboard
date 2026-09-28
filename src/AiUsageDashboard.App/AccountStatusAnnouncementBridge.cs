@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows.Threading;
 
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.App;
@@ -15,7 +16,7 @@ internal static class AccountStatusAnnouncementPolicy
 
 		if (account.IsProviderAccountChangeInProgress)
 		{
-			return $"帳號「{account.AccountName}」：{account.DisplayStatusText}。";
+			return UiText.Format("Shell.AccountStatusAnnouncement", account.AccountName, account.DisplayStatusText);
 		}
 
 		bool hasInlineAutomaticRetryStatus =
@@ -59,7 +60,7 @@ internal static class AccountStatusAnnouncementPolicy
 		}
 
 		string announcement =
-			$"帳號「{account.AccountName}」：{account.DisplayStatusText}。";
+			UiText.Format("Shell.AccountStatusAnnouncement", account.AccountName, account.DisplayStatusText);
 
 		if (details.Count > 0)
 		{
@@ -185,12 +186,12 @@ internal sealed class AccountStatusAnnouncementBridge : IDisposable
 			0,
 			announcements.Count - MaximumAnnouncementsPerBatch);
 		string message = string.Join(
-			"；",
+			UiText.Get("Shell.AnnouncementSeparator"),
 			announcements.Take(MaximumAnnouncementsPerBatch));
 
 		if (remainingCount > 0)
 		{
-			message += $"；另有 {remainingCount} 個帳號狀態已更新。";
+			message += UiText.Format("Shell.MoreAccountStatusUpdates", remainingCount);
 		}
 
 		_announce(message);

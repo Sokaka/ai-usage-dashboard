@@ -3,6 +3,7 @@ using System.Windows.Automation.Peers;
 using System.Windows.Interop;
 using System.Windows.Media;
 
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 using FormsScreen = System.Windows.Forms.Screen;
@@ -21,8 +22,6 @@ public partial class AccountEditorWindow : Window
 		public string SearchText => IsEnabled ? DisplayName : string.Empty;
 	}
 
-	private const string ExistingAntigravityCardMessage =
-		"這個 Windows 帳號已有 Antigravity 卡片，不能再新增。";
 	private static readonly IReadOnlyList<ProviderOption> ProviderOptions =
 		new ProviderOption[]
 		{
@@ -33,9 +32,12 @@ public partial class AccountEditorWindow : Window
 			new(ProviderKind.Copilot, "GitHub Copilot")
 		};
 	private readonly Guid _accountId;
+	private readonly bool _canAddAntigravity;
 	private readonly bool _canConnectCurrentProviderAccount;
 	private readonly string? _currentProviderAccountActionText;
+	private readonly Func<string>? _currentProviderAccountActionTextProvider;
 	private readonly string? _currentProviderAccountDisplayText;
+	private readonly Func<string>? _currentProviderAccountDisplayTextProvider;
 	private readonly bool _hasCurrentProviderAccountIdentity;
 	private readonly bool _hasAcceptedClaudeQuotaRisk;
 	private readonly bool _isEditing;
@@ -50,26 +52,39 @@ public partial class AccountEditorWindow : Window
 
 	public AccountProfile? EditedProfile { get; private set; }
 
+	private static string ExistingAntigravityCardMessage =>
+		UiText.Get("Windows.Editor.ThisWindowsUserAlreadyHasAnAntigravityCard");
+
 	public AccountEditorWindow(
 		AccountProfile? profile = null,
 		bool canAddAntigravity = true,
 		string? currentProviderAccountDisplayText = null,
 		bool? hasCurrentProviderAccountIdentity = null,
 		string? currentProviderAccountActionText = null,
-		bool canConnectCurrentProviderAccount = true)
+		bool canConnectCurrentProviderAccount = true,
+		Func<string>? currentProviderAccountActionTextProvider = null,
+		Func<string>? currentProviderAccountDisplayTextProvider = null,
+		ResourceDictionary? windowResources = null)
 	{
+		if (windowResources is not null)
+		{
+			Resources = windowResources;
+		}
 		InitializeComponent();
 		_preferredMinHeight = MinHeight;
 		_preferredMinWidth = MinWidth;
 
 		_isEditing = profile is not null;
 		_accountId = profile?.Id ?? Guid.NewGuid();
+		_canAddAntigravity = canAddAntigravity;
 		_canConnectCurrentProviderAccount =
 			canConnectCurrentProviderAccount;
 		_currentProviderAccountActionText =
 			currentProviderAccountActionText;
+		_currentProviderAccountActionTextProvider = currentProviderAccountActionTextProvider;
 		_currentProviderAccountDisplayText =
 			currentProviderAccountDisplayText;
+		_currentProviderAccountDisplayTextProvider = currentProviderAccountDisplayTextProvider;
 		_hasCurrentProviderAccountIdentity =
 			hasCurrentProviderAccountIdentity ??
 			!string.IsNullOrWhiteSpace(profile?.ProviderAccountIdentity);
@@ -85,22 +100,8 @@ public partial class AccountEditorWindow : Window
 		DisplayNameTextBox.Text = profile?.DisplayName ?? string.Empty;
 		EnabledCheckBox.IsChecked = profile?.IsEnabled ?? true;
 
-		if (_isEditing)
-		{
-			Title = "帳號設定";
-			TitleTextBlock.Text = "帳號設定";
-			SubtitleTextBlock.Text =
-				"可以改暱稱、開關用量檢查，或重新連接帳號。";
-			ProviderHintTextBlock.Text =
-				"建立後不能更改服務。若要更換，請先移除這個帳號，再重新新增。";
-			DisplayNameHintTextBlock.Visibility = Visibility.Collapsed;
-		}
-		else
-		{
-			SubtitleTextBlock.Text = "選擇服務並設定帳號。";
-		}
-
-		UpdateProviderPresentation();
+		RefreshLocalizedPresentation();
+		UiText.LanguageChanged += LanguageChanged;
 
 		Loaded += (_, _) =>
 		{
@@ -131,10 +132,47 @@ public partial class AccountEditorWindow : Window
 
 	protected override void OnClosed(EventArgs e)
 	{
+		UiText.LanguageChanged -= LanguageChanged;
 		LocationChanged -= AccountEditorWindow_LocationChanged;
 		_windowSource?.RemoveHook(WindowMessageHook);
 		_windowSource = null;
 		base.OnClosed(e);
+	}
+
+	private void LanguageChanged(object? sender, EventArgs e)
+	{
+		if (!Dispatcher.CheckAccess())
+		{
+			Dispatcher.Invoke(RefreshLocalizedPresentation);
+			return;
+		}
+
+		RefreshLocalizedPresentation();
+	}
+
+	internal void RefreshLocalizedPresentation()
+	{
+		if (!_isEditing)
+		{
+			object? selectedProvider = ProviderComboBox.SelectedValue;
+			ProviderComboBox.ItemsSource = GetProviderOptionsForNewAccount(_canAddAntigravity);
+			ProviderComboBox.SelectedValue = selectedProvider;
+		}
+
+		Title = UiText.Get("Windows.Editor.AccountSettings");
+		TitleTextBlock.Text = UiText.Get(_isEditing
+			? "Windows.Editor.AccountSettings"
+			: "Windows.Editor.AddAccount");
+		SubtitleTextBlock.Text = UiText.Get(_isEditing
+			? "Windows.Editor.ChangeTheNicknameTurnUsageChecksOnOr"
+			: "Windows.Editor.ChooseAServiceAndSetUpTheAccount");
+		if (_isEditing)
+		{
+			ProviderHintTextBlock.Text = UiText.Get("Windows.Editor.TheServiceCannotBeChangedAfterCreationRemove");
+			DisplayNameHintTextBlock.Visibility = Visibility.Collapsed;
+		}
+
+		UpdateProviderPresentation();
 	}
 
 	private void UpdateWorkAreaConstraints(bool preferOwner = false)
@@ -341,12 +379,12 @@ public partial class AccountEditorWindow : Window
 			out ProviderKind provider))
 		{
 			string message = ProviderComboBox.SelectedItem is ProviderOption option
-				? option.UnavailableReason ?? "這個服務目前不能新增。"
-				: "請選擇服務。";
+				? option.UnavailableReason ?? UiText.Get("Windows.Editor.ThisServiceCannotBeAddedRightNow")
+				: UiText.Get("Windows.Editor.ChooseAService");
 			WpfMessageBox.Show(
 				this,
 				message,
-				"帳號設定",
+				UiText.Get("Windows.Editor.AccountSettings"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Information);
 			ProviderComboBox.Focus();
@@ -359,8 +397,8 @@ public partial class AccountEditorWindow : Window
 		{
 			WpfMessageBox.Show(
 				this,
-				"暱稱不可包含換行、Tab 或其他控制字元。",
-				"帳號設定",
+				UiText.Get("Windows.Editor.TheNicknameCannotContainLineBreaksTabsOr"),
+				UiText.Get("Windows.Editor.AccountSettings"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Information);
 			DisplayNameTextBox.Focus();
@@ -427,10 +465,10 @@ public partial class AccountEditorWindow : Window
 	{
 		if (!isEnabled || !SupportsPostSaveAction(provider))
 		{
-			return "儲存";
+			return UiText.Get("Windows.Common.Save");
 		}
 
-		return "儲存並連接";
+		return UiText.Get("Windows.Common.SaveAndConnect");
 	}
 
 	internal static string GetConnectionActionText(
@@ -448,13 +486,13 @@ public partial class AccountEditorWindow : Window
 		};
 		string action = hasProviderAccountIdentity
 			? provider == ProviderKind.Antigravity
-				? "重新連接"
-				: "切換"
-			: "連接";
+				? UiText.Get("Windows.Editor.Reconnect")
+				: UiText.Get("Windows.Editor.Switch")
+			: UiText.Get("Windows.Editor.Connect");
 
 		return string.IsNullOrWhiteSpace(providerName)
-			? "連接帳號"
-			: $"{action} {providerName} 帳號";
+			? UiText.Get("Windows.Editor.ConnectAccount")
+			: UiText.Format("Windows.Editor.01Account", action, providerName);
 	}
 
 	internal static string GetConnectionHintText(
@@ -465,33 +503,33 @@ public partial class AccountEditorWindow : Window
 	{
 		if (!isEnabled)
 		{
-			return "請先勾選「開始檢查用量」，才能連接帳號。";
+			return UiText.Get("Windows.Editor.SelectStartUsageChecksBeforeConnectingTheAccount");
 		}
 
 		if (!canConnectProviderAccount)
 		{
-			return "目前無法連接。請先處理卡片上的提示。";
+			return UiText.Get("Windows.Editor.ConnectionIsUnavailableFollowTheNoticeOnThe");
 		}
 
 		if ((provider == ProviderKind.Claude) &&
 			requiresClaudeQuotaRiskConsent)
 		{
-			return "儲存後會先確認是否讀取 Claude 用量。需要登入時才會開啟 Claude Code CLI。";
+			return UiText.Get("Windows.Editor.AfterSavingYouWillBeAskedToConfirm");
 		}
 
 		return provider switch
 		{
 			ProviderKind.Claude =>
-				"儲存後會開啟 Claude Code CLI，讓你登入或切換帳號。",
+				UiText.Get("Windows.Editor.AfterSavingClaudeCodeCLIOpensSoYou"),
 			ProviderKind.Codex =>
-				"儲存後先選「一般帳號連接」或「用 workspace ID 連接」，再用 Codex CLI 登入。",
+				UiText.Get("Windows.Editor.AfterSavingChooseStandardAccountConnectionOrConnect"),
 			ProviderKind.Copilot =>
-				"儲存後會開啟 GitHub 官方授權頁面，讓你登入或切換 Copilot 帳號。",
+				UiText.Get("Windows.Editor.AfterSavingTheOfficialGitHubAuthorizationPageOpens"),
 			ProviderKind.Antigravity => JoinParagraphs(
-				"儲存後會沿用這台電腦目前登入的 Antigravity 帳號，不會另開登入畫面。",
-				"使用企業帳號時，AI Usage 無法確認或指定專案。"),
+				UiText.Get("Windows.Editor.AfterSavingTheCurrentAntigravitySignInOn"),
+				UiText.Get("Windows.Editor.ForEnterpriseAccountsAIUsageCannotVerifyOr")),
 			ProviderKind.Grok =>
-				"儲存後會開啟 Grok Build CLI，讓你登入或切換帳號。",
+				UiText.Get("Windows.Editor.AfterSavingGrokBuildCLIOpensSoYou"),
 			_ => string.Empty
 		};
 	}
@@ -500,12 +538,12 @@ public partial class AccountEditorWindow : Window
 	{
 		return provider switch
 		{
-			ProviderKind.Claude => "連接 Claude 前",
-			ProviderKind.Codex => "連接 Codex 前",
-			ProviderKind.Copilot => "連接 Copilot 前",
-			ProviderKind.Antigravity => "連接 Antigravity 前",
-			ProviderKind.Grok => "連接 Grok 前",
-			_ => "連接前注意事項"
+			ProviderKind.Claude => UiText.Get("Windows.Editor.BeforeConnectingClaude"),
+			ProviderKind.Codex => UiText.Get("Windows.Editor.BeforeConnectingCodex"),
+			ProviderKind.Copilot => UiText.Get("Windows.Editor.BeforeConnectingCopilot"),
+			ProviderKind.Antigravity => UiText.Get("Windows.Editor.BeforeConnectingAntigravity"),
+			ProviderKind.Grok => UiText.Get("Windows.Editor.BeforeConnectingGrok"),
+			_ => UiText.Get("Windows.Editor.BeforeConnecting")
 		};
 	}
 
@@ -514,23 +552,23 @@ public partial class AccountEditorWindow : Window
 		return provider switch
 		{
 			ProviderKind.Claude => JoinParagraphs(
-				"第一次讀取會執行 Claude /usage，可能產生少量用量。",
-				"AI Usage 只能在執行後確認是否產生模型請求、token 或費用，已產生的用量或費用不能取消。",
-				"按「儲存並連接」即表示接受以上風險；若要稍後決定，請按「儲存」。"),
+				UiText.Get("Windows.Editor.TheFirstCheckRunsClaudeUsageAndMay"),
+				UiText.Get("Windows.Editor.AIUsageCanOnlyDetermineAfterExecutionWhether"),
+				UiText.Get("Windows.Editor.ByChoosingSaveAndConnectYouAcceptThese")),
 			ProviderKind.Codex => JoinParagraphs(
-				"一般帳號連接不需要 workspace ID。",
-				"同一個 ChatGPT 帳號若要顯示多個 workspace，每張卡片都要填入對應的 workspace ID，原本的第一張也一樣。"),
+				UiText.Get("Windows.Editor.AStandardAccountConnectionDoesNotNeedA"),
+				UiText.Get("Windows.Editor.ToDisplayMultipleWorkspacesFromOneChatGPTAccount")),
 			ProviderKind.Copilot => JoinParagraphs(
-				"請在 GitHub 官方頁面完成授權。連接後，每張卡片的 credential 會獨立儲存在 Windows Credential Manager。",
-				"同一個 GitHub 帳號不能重複連接到多張卡片。organization 或 subscription 不會拆成多張額度卡。"),
+				UiText.Get("Windows.Editor.CompleteAuthorizationOnTheOfficialGitHubPageEach"),
+				UiText.Get("Windows.Editor.AGitHubAccountCannotBeConnectedToMore")),
 			ProviderKind.Antigravity => JoinParagraphs(
-				"請先在這台電腦登入 Antigravity。AI Usage 不會另開登入畫面。",
-				"請使用支援官方唯讀 /usage 的 Antigravity 版本。",
-				"使用企業帳號時，AI Usage 無法確認或指定專案。"),
+				UiText.Get("Windows.Editor.SignInToAntigravityOnThisComputerFirst"),
+				UiText.Get("Windows.Editor.UseAnAntigravityVersionThatSupportsTheOfficial"),
+				UiText.Get("Windows.Editor.ForEnterpriseAccountsAIUsageCannotVerifyOr")),
 			ProviderKind.Grok => JoinParagraphs(
-				"登入會在終端機中完成。",
-				"登入時若網頁顯示授權碼或完整回呼網址，請貼回終端機。",
-				"帳號沒有電子郵件時，可以用暱稱區分卡片。"),
+				UiText.Get("Windows.Editor.SignInTakesPlaceInTheTerminal"),
+				UiText.Get("Windows.Editor.IfTheSignInPageShowsAnAuthorization"),
+				UiText.Get("Windows.Editor.IfTheAccountHasNoEmailAddressUse")),
 			_ => null
 		};
 	}
@@ -540,23 +578,23 @@ public partial class AccountEditorWindow : Window
 		return provider switch
 		{
 			ProviderKind.Claude => JoinParagraphs(
-				"Claude Code CLI 負責登入。AI Usage 會確認目前的帳號與 Claude organization 是否和這張卡片原本的一樣。",
-				"這台電腦的上次用量資料會保留電子郵件、方案和 organization 名稱，但不會跟著設定匯出。",
-				"organization ID 本身不會直接儲存。這張卡片也會記住你是否同意讀取 Claude 用量。"),
+				UiText.Get("Windows.Editor.ClaudeCodeCLIHandlesSignInAIUsage"),
+				UiText.Get("Windows.Editor.TheLastUsageResultOnThisComputerRetains"),
+				UiText.Get("Windows.Editor.TheOrganizationIDItselfIsNotStoredDirectly")),
 			ProviderKind.Codex => JoinParagraphs(
-				"Codex CLI 負責登入。AI Usage 會確認目前的 ChatGPT 帳號與 workspace 是否和這張卡片原本的一樣。",
-				"這台電腦的上次用量資料會保留電子郵件和方案，但不會跟著設定匯出。",
-				"workspace ID 只會寫進這張卡片的 Codex 設定；重新連接時要再輸入。"),
+				UiText.Get("Windows.Editor.CodexCLIHandlesSignInAIUsageChecks"),
+				UiText.Get("Windows.Editor.TheLastUsageResultOnThisComputerRetains182"),
+				UiText.Get("Windows.Editor.TheWorkspaceIDIsWrittenOnlyToThis")),
 			ProviderKind.Antigravity => JoinParagraphs(
-				"Antigravity CLI 負責登入。AI Usage 不會讀取密碼或其他登入憑證。",
-				"這台電腦會保留核准的 CLI 來源、四項用量和讀取時間。官方 /usage 不提供電子郵件或方案，AI Usage 不會為此安裝 status-line helper。"),
+				UiText.Get("Windows.Editor.AntigravityCLIHandlesSignInAIUsageDoes"),
+				UiText.Get("Windows.Editor.ThisComputerRetainsTheApprovedCLISourceFour")),
 			ProviderKind.Grok => JoinParagraphs(
-				"Grok Build CLI 會把每張卡片的登入資料分開儲存。",
-				"移除卡片或匯入設定時，相關登入資料也會刪除。"),
+				UiText.Get("Windows.Editor.GrokBuildCLIStoresEachCardSSign"),
+				UiText.Get("Windows.Editor.TheAssociatedSignInDataIsDeletedWhen")),
 			ProviderKind.Copilot => JoinParagraphs(
-				"AI Usage 會把每張卡片的 GitHub credential 分開儲存在 Windows Credential Manager。",
-				"credential 不會寫入帳號設定、上次用量、診斷紀錄或匯出的設定；移除卡片時也會刪除。"),
-			_ => "AI Usage 只會儲存卡片設定和上次用量。"
+				UiText.Get("Windows.Editor.AIUsageStoresEachCardSGitHubCredential"),
+				UiText.Get("Windows.Editor.CredentialsAreNotWrittenToAccountSettingsUsage")),
+			_ => UiText.Get("Windows.Editor.AIUsageStoresOnlyCardSettingsAndThe")
 		};
 	}
 
@@ -589,14 +627,16 @@ public partial class AccountEditorWindow : Window
 		if ((provider == ProviderKind.Claude) &&
 			!_hasAcceptedClaudeQuotaRisk)
 		{
-			return "確認 Claude 用量讀取";
+			return UiText.Get("Windows.Editor.ConfirmClaudeUsageCheck");
 		}
 
-		return string.IsNullOrWhiteSpace(_currentProviderAccountActionText)
+		string? actionText = _currentProviderAccountActionTextProvider?.Invoke()
+			?? _currentProviderAccountActionText;
+		return string.IsNullOrWhiteSpace(actionText)
 			? GetConnectionActionText(
 				provider,
 				_hasCurrentProviderAccountIdentity)
-			: _currentProviderAccountActionText;
+			: actionText;
 	}
 
 	private void EnabledCheckBox_CheckStateChanged(
@@ -654,11 +694,13 @@ public partial class AccountEditorWindow : Window
 			AccountConnectionPanel.Visibility = supportsConnection
 				? Visibility.Visible
 				: Visibility.Collapsed;
+			string? accountDisplayText = _currentProviderAccountDisplayTextProvider?.Invoke()
+				?? _currentProviderAccountDisplayText;
 			AccountTextBlock.Text = _hasCurrentProviderAccountIdentity
-				? string.IsNullOrWhiteSpace(_currentProviderAccountDisplayText)
-					? "帳號：已連接"
-					: $"帳號：{_currentProviderAccountDisplayText}"
-				: "帳號：尚未連接";
+				? string.IsNullOrWhiteSpace(accountDisplayText)
+					? UiText.Get("Windows.Editor.AccountConnected")
+					: UiText.Format("Windows.Editor.Account0", accountDisplayText)
+				: UiText.Get("Windows.Editor.AccountNotConnected");
 			AccountConnectionHintTextBlock.Text =
 				GetConnectionHintText(
 					provider,
@@ -674,7 +716,7 @@ public partial class AccountEditorWindow : Window
 				isUsageCheckEnabled &&
 				_canConnectCurrentProviderAccount;
 			SaveOnlyButton.Visibility = Visibility.Collapsed;
-			SaveAndConnectButton.Content = "儲存";
+			SaveAndConnectButton.Content = UiText.Get("Windows.Common.Save");
 			SaveAndConnectButton.IsEnabled = true;
 			return;
 		}
@@ -683,16 +725,16 @@ public partial class AccountEditorWindow : Window
 		ProviderHintTextBlock.Text = provider switch
 		{
 			ProviderKind.Claude =>
-				"使用 Claude Code CLI 登入或切換帳號。",
+				UiText.Get("Windows.Editor.SignInOrSwitchAccountsWithClaudeCode"),
 			ProviderKind.Codex =>
-				"使用 Codex CLI 登入。",
+				UiText.Get("Windows.Editor.SignInWithCodexCLI"),
 			ProviderKind.Copilot =>
-				"使用 GitHub 官方授權連接不同的 Copilot 帳號。",
+				UiText.Get("Windows.Editor.UseOfficialGitHubAuthorizationToConnectDifferentCopilot"),
 			ProviderKind.Antigravity =>
-				"使用這台電腦目前登入的 Antigravity 帳號。",
+				UiText.Get("Windows.Editor.UseTheCurrentAntigravitySignInOnThis"),
 			ProviderKind.Grok =>
-				"使用 Grok Build CLI 登入或切換帳號。",
-			_ => "目前不支援用 CLI 連接或讀取用量。"
+				UiText.Get("Windows.Editor.SignInOrSwitchAccountsWithGrokBuild"),
+			_ => UiText.Get("Windows.Editor.CLIConnectionAndUsageChecksAreNotCurrently")
 		};
 
 		bool isEnabled = EnabledCheckBox.IsChecked == true;

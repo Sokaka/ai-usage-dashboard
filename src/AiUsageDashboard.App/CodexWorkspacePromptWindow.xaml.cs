@@ -2,6 +2,8 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 
+using AiUsageDashboard.Core.Localization;
+
 using FormsScreen = System.Windows.Forms.Screen;
 using WpfMessageBox = System.Windows.MessageBox;
 
@@ -10,6 +12,7 @@ namespace AiUsageDashboard.App;
 public sealed partial class CodexWorkspacePromptWindow : Window
 {
 	private const double PreferredMinimumWidth = 380;
+	private readonly bool _prefersWorkspaceConnection;
 
 	public Guid? WorkspaceId { get; private set; }
 
@@ -28,17 +31,12 @@ public sealed partial class CodexWorkspacePromptWindow : Window
 		}
 
 		InitializeComponent();
+		_prefersWorkspaceConnection = prefersWorkspaceConnection;
 		DefaultConnectionButton.IsDefault = !prefersWorkspaceConnection;
 		WorkspaceConnectionButton.IsDefault = prefersWorkspaceConnection;
 
-		if (prefersWorkspaceConnection)
-		{
-			HeadingTextBlock.Text = "用 workspace ID 連接";
-			ConnectionHintTextBlock.Text =
-				"這張卡片原本使用 workspace ID。重新連接時請輸入原本的 ID；要切換 workspace，請輸入新的 ID。";
-			DefaultConnectionButton.Content = "改為一般帳號連接";
-			WorkspaceScopeChangeTextBlock.Visibility = Visibility.Visible;
-		}
+		RefreshLocalizedPresentation();
+		UiText.LanguageChanged += LanguageChanged;
 
 		Loaded += (_, _) =>
 		{
@@ -68,6 +66,34 @@ public sealed partial class CodexWorkspacePromptWindow : Window
 	{
 		base.OnSourceInitialized(e);
 		UpdateWorkAreaConstraints(preferOwner: true);
+	}
+
+	protected override void OnClosed(EventArgs e)
+	{
+		UiText.LanguageChanged -= LanguageChanged;
+		base.OnClosed(e);
+	}
+
+	private void LanguageChanged(object? sender, EventArgs e)
+	{
+		if (!Dispatcher.CheckAccess())
+		{
+			Dispatcher.Invoke(RefreshLocalizedPresentation);
+			return;
+		}
+
+		RefreshLocalizedPresentation();
+	}
+
+	internal void RefreshLocalizedPresentation()
+	{
+		if (_prefersWorkspaceConnection)
+		{
+			HeadingTextBlock.Text = UiText.Get("Windows.Workspace.ConnectWithWorkspaceID");
+			ConnectionHintTextBlock.Text = UiText.Get("Windows.Workspace.ThisCardUsedAWorkspaceIDEnterThe");
+			DefaultConnectionButton.Content = UiText.Get("Windows.Workspace.SwitchToStandardAccountConnection");
+			WorkspaceScopeChangeTextBlock.Visibility = Visibility.Visible;
+		}
 	}
 
 	private void UpdateWorkAreaConstraints(bool preferOwner = false)
@@ -144,8 +170,8 @@ public sealed partial class CodexWorkspacePromptWindow : Window
 		{
 			WpfMessageBox.Show(
 				this,
-				"請輸入有效的 ChatGPT workspace ID（UUID 格式）。",
-				"連接 Codex",
+				UiText.Get("Windows.Workspace.EnterAValidChatGPTWorkspaceIDUUIDFormat"),
+				UiText.Get("Windows.Workspace.ConnectCodex"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Information);
 			WorkspaceIdTextBox.Focus();

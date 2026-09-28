@@ -1,0 +1,1018 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="About.AboutAIUsage">
+    <value>About AI Usage</value>
+  </data>
+  <data xml:space="preserve" name="About.CheckForUpdates">
+    <value>Check for updates</value>
+  </data>
+  <data xml:space="preserve" name="About.CopyVersion">
+    <value>Copy version</value>
+  </data>
+  <data xml:space="preserve" name="About.CouldNotCopyTheAIUsageVersionAnother">
+    <value>Could not copy the AI Usage version. Another app may be using the clipboard. Try again later, or select the version text and copy it manually.
+
+{0}</value>
+  </data>
+  <data xml:space="preserve" name="About.CouldNotCopyVersion">
+    <value>Could not copy version</value>
+  </data>
+  <data xml:space="preserve" name="About.CouldNotOpenSupportPage">
+    <value>Could not open support page</value>
+  </data>
+  <data xml:space="preserve" name="About.CouldNotOpenUserGuide">
+    <value>Could not open user guide</value>
+  </data>
+  <data xml:space="preserve" name="About.DownloadsAndReleaseNotes">
+    <value>Downloads and release notes</value>
+  </data>
+  <data xml:space="preserve" name="About.ReportAnIssue">
+    <value>Report an issue</value>
+  </data>
+  <data xml:space="preserve" name="About.TheFullRunningVersionSelectItToCopy">
+    <value>The full running version. Select it to copy.</value>
+  </data>
+  <data xml:space="preserve" name="About.Updates">
+    <value>Updates</value>
+  </data>
+  <data xml:space="preserve" name="About.UpdatesHaveNotBeenCheckedYet">
+    <value>Updates have not been checked yet.</value>
+  </data>
+  <data xml:space="preserve" name="About.UserGuide">
+    <value>User guide</value>
+  </data>
+  <data xml:space="preserve" name="About.Version">
+    <value>Version</value>
+  </data>
+  <data xml:space="preserve" name="About.VersionCopied">
+    <value>Version copied.</value>
+  </data>
+  <data xml:space="preserve" name="About.ViewYourAISubscriptionUsageOnTheDesktop">
+    <value>View your AI subscription usage on the desktop</value>
+  </data>
+  <data xml:space="preserve" name="About.WindowsCouldNotOpenTheSupportPageOpen">
+    <value>Windows could not open the support page. Open this URL in your browser:
+{0}
+
+{1}</value>
+  </data>
+  <data xml:space="preserve" name="Card.ActionsAutomation">
+    <value>{0} account actions</value>
+  </data>
+  <data xml:space="preserve" name="Card.MoveDownAutomation">
+    <value>Move account “{0}” down</value>
+  </data>
+  <data xml:space="preserve" name="Card.MoveUpAutomation">
+    <value>Move account “{0}” up</value>
+  </data>
+  <data xml:space="preserve" name="Common.Cancel">
+    <value>Cancel</value>
+  </data>
+  <data xml:space="preserve" name="Common.Checking">
+    <value>Checking…</value>
+  </data>
+  <data xml:space="preserve" name="Common.Close">
+    <value>Close</value>
+  </data>
+  <data xml:space="preserve" name="Common.Save">
+    <value>Save</value>
+  </data>
+  <data xml:space="preserve" name="Common.SaveAndConnect">
+    <value>Save and connect</value>
+  </data>
+  <data xml:space="preserve" name="Credits.0CreditsAvailable">
+    <value>{0} credits available</value>
+  </data>
+  <data xml:space="preserve" name="Credits.Available0">
+    <value>Available: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Credits.AvailableCountNotYetRetrieved">
+    <value>Available count not yet retrieved</value>
+  </data>
+  <data xml:space="preserve" name="Credits.CodexResetCredits">
+    <value>Codex reset credits</value>
+  </data>
+  <data xml:space="preserve" name="Credits.CreditDetailsDoNotMatchTheAvailableCount">
+    <value>Credit details do not match the available count. Check usage for this account.</value>
+  </data>
+  <data xml:space="preserve" name="Credits.DetailsAreIncompleteShowingThe0AvailableCredits">
+    <value>Details are incomplete. Showing the {0} available credits retrieved.</value>
+  </data>
+  <data xml:space="preserve" name="Credits.DoesNotExpire">
+    <value>Does not expire</value>
+  </data>
+  <data xml:space="preserve" name="Credits.Expires0G">
+    <value>Expires {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Credits.ExpiryTimeNotProvided">
+    <value>Expiry time not provided</value>
+  </data>
+  <data xml:space="preserve" name="Credits.Fetched0G">
+    <value>Data time {0:yyyy/MM/dd HH:mm}</value>
+  </data>
+  <data xml:space="preserve" name="Credits.LastResult0CreditsAvailable">
+    <value>Last result: {0} credits available</value>
+  </data>
+  <data xml:space="preserve" name="Credits.NoDataYetCheckUsageForThisAccount">
+    <value>No data yet. Check usage for this account.</value>
+  </data>
+  <data xml:space="preserve" name="Credits.NoResetCreditsAreCurrentlyAvailable">
+    <value>No reset credits are currently available.</value>
+  </data>
+  <data xml:space="preserve" name="Credits.OnlyTheAvailableCountIsProvidedIndividualCredit">
+    <value>Only the available count is provided. Individual credit details are unavailable.</value>
+  </data>
+  <data xml:space="preserve" name="Credits.ResetCredit0">
+    <value>Reset credit {0}</value>
+  </data>
+  <data xml:space="preserve" name="Credits.SomeCreditsHaveExpiredCheckUsageForThis">
+    <value>Some credits have expired. Check usage for this account.</value>
+  </data>
+  <data xml:space="preserve" name="Credits.TheResetCreditsWindowRequiresACodexAccount">
+    <value>The reset credits window requires a Codex account in the current list.</value>
+  </data>
+  <data xml:space="preserve" name="Credits.ThisDataIsOldCheckUsageForThis">
+    <value>This data is old. Check usage for this account.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.01Account">
+    <value>{0} {1} account</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AGitHubAccountCannotBeConnectedToMore">
+    <value>A GitHub account cannot be connected to more than one card. Organizations and subscriptions are not split into separate quota cards.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AIUsageCanOnlyDetermineAfterExecutionWhether">
+    <value>AI Usage can only determine after execution whether model requests, tokens, or charges occurred. Usage or charges already incurred cannot be undone.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AIUsageStoresCardSettingsAccountDetailsAnd">
+    <value>AI Usage stores card settings, account details, and the last usage result. It does not store passwords.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AIUsageStoresEachCardSGitHubCredential">
+    <value>AI Usage stores each card’s GitHub credential separately in Windows Credential Manager.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AIUsageStoresOnlyCardSettingsAndThe">
+    <value>AI Usage stores only card settings and the last usage result.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AStandardAccountConnectionDoesNotNeedA">
+    <value>A standard account connection does not need a workspace ID.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.Account0">
+    <value>Account: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AccountConnected">
+    <value>Account: connected</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AccountConnection">
+    <value>Account connection</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AccountNotConnected">
+    <value>Account: not connected</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AccountSettings">
+    <value>Account settings</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AddAccount">
+    <value>Add account</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingChooseStandardAccountConnectionOrConnect">
+    <value>After saving, choose “Standard account connection” or “Connect with workspace ID”, then sign in with Codex CLI.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingClaudeCodeCLIOpensSoYou">
+    <value>After saving, Claude Code CLI opens so you can sign in or switch accounts.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingGrokBuildCLIOpensSoYou">
+    <value>After saving, Grok Build CLI opens so you can sign in or switch accounts.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingTheCurrentAntigravitySignInOn">
+    <value>After saving, the current Antigravity sign-in on this computer is used. No separate sign-in screen opens.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingTheOfficialGitHubAuthorizationPageOpens">
+    <value>After saving, the official GitHub authorization page opens so you can sign in or switch Copilot accounts.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingYouWillBeAskedToConfirm">
+    <value>After saving, you will be asked to confirm the Claude usage check. Claude Code CLI opens only if sign-in is needed.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AntigravityCLIHandlesSignInAIUsageDoes">
+    <value>Antigravity CLI handles sign-in. AI Usage does not read passwords or other sign-in credentials.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnecting">
+    <value>Before connecting</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnectingAntigravity">
+    <value>Before connecting Antigravity</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnectingClaude">
+    <value>Before connecting Claude</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnectingCodex">
+    <value>Before connecting Codex</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnectingCopilot">
+    <value>Before connecting Copilot</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnectingGrok">
+    <value>Before connecting Grok</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ByChoosingSaveAndConnectYouAcceptThese">
+    <value>By choosing “Save and connect”, you accept these risks. Choose “Save” to decide later.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.CLIConnectionAndUsageChecksAreNotCurrently">
+    <value>CLI connection and usage checks are not currently supported.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ChangeTheNicknameTurnUsageChecksOnOr">
+    <value>Change the nickname, turn usage checks on or off, or reconnect the account.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ChooseAService">
+    <value>Choose a service.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ChooseAServiceAndSetUpTheAccount">
+    <value>Choose a service and set up the account.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ChooseTheServiceWhoseUsageYouWantTo">
+    <value>Choose the service whose usage you want to display</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ClaudeCodeCLIHandlesSignInAIUsage">
+    <value>Claude Code CLI handles sign-in. AI Usage checks that the account and Claude organization match the card’s original connection.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.CodexCLIHandlesSignInAIUsageChecks">
+    <value>Codex CLI handles sign-in. AI Usage checks that the ChatGPT account and workspace match the card’s original connection.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.CompleteAuthorizationOnTheOfficialGitHubPageEach">
+    <value>Complete authorization on the official GitHub page. Each card’s credential is then stored separately in Windows Credential Manager.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ConfirmClaudeUsageCheck">
+    <value>Confirm Claude usage check</value>
+  </data>
+  <data xml:space="preserve" name="Editor.Connect">
+    <value>Connect</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ConnectAccount">
+    <value>Connect account</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ConnectionIsUnavailableFollowTheNoticeOnThe">
+    <value>Connection is unavailable. Follow the notice on the card first.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.CredentialsAreNotWrittenToAccountSettingsUsage">
+    <value>Credentials are not written to account settings, usage results, diagnostic logs, or exported settings. They are deleted when removing the card.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ForEnterpriseAccountsAIUsageCannotVerifyOr">
+    <value>For enterprise accounts, AI Usage cannot verify or select a project.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.GrokBuildCLIStoresEachCardSSign">
+    <value>Grok Build CLI stores each card’s sign-in data separately.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.IfTheAccountHasNoEmailAddressUse">
+    <value>If the account has no email address, use a nickname to tell cards apart.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.IfTheSignInPageShowsAnAuthorization">
+    <value>If the sign-in page shows an authorization code or full callback URL, paste it into the terminal.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.LeaveBlankToHideTheNickname">
+    <value>Leave blank to hide the nickname</value>
+  </data>
+  <data xml:space="preserve" name="Editor.LeaveBlankToHideTheNickname76">
+    <value>Leave blank to hide the nickname.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.NicknameOptional">
+    <value>Nickname (optional)</value>
+  </data>
+  <data xml:space="preserve" name="Editor.Reconnect">
+    <value>Reconnect</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SelectStartUsageChecksBeforeConnectingTheAccount">
+    <value>Select “Start usage checks” before connecting the account.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.Service">
+    <value>Service</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SignInOrSwitchAccountsWithClaudeCode">
+    <value>Sign in or switch accounts with Claude Code CLI.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SignInOrSwitchAccountsWithGrokBuild">
+    <value>Sign in or switch accounts with Grok Build CLI.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SignInTakesPlaceInTheTerminal">
+    <value>Sign-in takes place in the terminal.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SignInToAntigravityOnThisComputerFirst">
+    <value>Sign in to Antigravity on this computer first. AI Usage does not open a separate sign-in screen.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SignInWithCodexCLI">
+    <value>Sign in with Codex CLI.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.StartUsageChecks">
+    <value>Start usage checks</value>
+  </data>
+  <data xml:space="preserve" name="Editor.StoredData">
+    <value>Stored data</value>
+  </data>
+  <data xml:space="preserve" name="Editor.Switch">
+    <value>Switch</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheAssociatedSignInDataIsDeletedWhen">
+    <value>The associated sign-in data is deleted when removing the card or importing settings.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheFirstCheckRunsClaudeUsageAndMay">
+    <value>The first check runs Claude /usage and may consume a small amount of usage.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheLastUsageResultOnThisComputerRetains">
+    <value>The last usage result on this computer retains the email address, plan, and organization name. These are not included in exported settings.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheLastUsageResultOnThisComputerRetains182">
+    <value>The last usage result on this computer retains the email address and plan. These are not included in exported settings.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheNicknameCannotContainLineBreaksTabsOr">
+    <value>The nickname cannot contain line breaks, tabs, or other control characters.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheOrganizationIDItselfIsNotStoredDirectly">
+    <value>The organization ID itself is not stored directly. The card also remembers whether you consented to Claude usage checks.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheServiceCannotBeChangedAfterCreationRemove">
+    <value>The service cannot be changed after creation. Remove this account and add a new one to use another service.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheWorkspaceIDIsWrittenOnlyToThis">
+    <value>The workspace ID is written only to this card’s Codex settings. Enter it again when reconnecting.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ThisComputerRetainsTheApprovedCLISourceFour">
+    <value>This computer retains the approved CLI source, four usage values, and fetch time. Official /usage does not provide an email address or plan; AI Usage does not install a status-line helper to obtain them.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ThisServiceCannotBeAddedRightNow">
+    <value>This service cannot be added right now.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ThisWindowsUserAlreadyHasAnAntigravityCard">
+    <value>This Windows user already has an Antigravity card. You cannot add another.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ToDisplayMultipleWorkspacesFromOneChatGPTAccount">
+    <value>To display multiple workspaces from one ChatGPT account, enter the matching workspace ID for every card, including the original first card.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.UseAnAntigravityVersionThatSupportsTheOfficial">
+    <value>Use an Antigravity version that supports the official read-only /usage command.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.UseOfficialGitHubAuthorizationToConnectDifferentCopilot">
+    <value>Use official GitHub authorization to connect different Copilot accounts.</value>
+  </data>
+  <data xml:space="preserve" name="Editor.UseTheCurrentAntigravitySignInOnThis">
+    <value>Use the current Antigravity sign-in on this computer.</value>
+  </data>
+  <data xml:space="preserve" name="Language.English">
+    <value>English</value>
+  </data>
+  <data xml:space="preserve" name="Language.Menu">
+    <value>Language</value>
+  </data>
+  <data xml:space="preserve" name="Language.TraditionalChinese">
+    <value>繁體中文</value>
+  </data>
+  <data xml:space="preserve" name="Legal.Accept">
+    <value>Accept and continue</value>
+  </data>
+  <data xml:space="preserve" name="Legal.AcceptanceExplanation">
+    <value>Before first use, read the applicable third-party terms. Acceptance stores the version and scope locally for this Windows user; background checks will not ask again.</value>
+  </data>
+  <data xml:space="preserve" name="Legal.CodeAndAcceptance">
+    <value>Project code is licensed under MIT. The third-party components below are governed by their included original terms. Acceptance is stored only locally for the current Windows user. The original license and terms texts below are shown without translation.
+</value>
+  </data>
+  <data xml:space="preserve" name="Legal.Decline">
+    <value>Decline and exit</value>
+  </data>
+  <data xml:space="preserve" name="Legal.InstallerScope">
+    <value>This scope covers the Updater and the App ZIP to be installed. Some components are supplied by the App ZIP, rather than all being included in this Updater EXE.
+</value>
+  </data>
+  <data xml:space="preserve" name="Legal.Scope">
+    <value>Scope: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Legal.Source">
+    <value>Source: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Legal.TermsVersion">
+    <value>Terms version: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Legal.Title">
+    <value>AI Usage Dashboard licenses and third-party terms</value>
+  </data>
+  <data xml:space="preserve" name="Legal.ViewExplanation">
+    <value>These are the licenses and third-party terms applicable to this app. Viewing the terms does not record acceptance.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.00Remaining">
+    <value>{0:0.##}% remaining</value>
+  </data>
+  <data xml:space="preserve" name="Setup.5HourUsageClaudeGPT">
+    <value>5-hour usage · Claude + GPT</value>
+  </data>
+  <data xml:space="preserve" name="Setup.5HourUsageGemini">
+    <value>5-hour usage · Gemini</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AIUsageCouldNotRecognizeTheFourUsage">
+    <value>AI Usage could not recognize the four usage values returned by Antigravity. Check that Antigravity is signed in and can show usage. If it still fails, update AI Usage or Antigravity and share the technical information with a maintainer.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AIUsageDirectlyRunsOnlyOfficialReadOnly">
+    <value>AI Usage directly runs only official read-only /usage. It does not read sign-in credentials, capture terminal screens, or use a status-line helper.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AIUsageIsRunningAnotherAntigravityUsageCheck">
+    <value>AI Usage is running another Antigravity usage check. Wait a moment and try again. Reinstalling or signing in again is unnecessary.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AIUsageStoresOnlyTheFourUsageValues">
+    <value>AI Usage stores only the four usage values returned by the official usage flow, the fetch time, and the approved Antigravity CLI source on this computer. It does not store full CLI output, status-line content, or sign-in credentials, and does not install a status-line helper. Official /usage provides no email address or plan, so the card is shown as “Current Antigravity sign-in”. This card follows the current local sign-in; AI Usage cannot verify or pin an enterprise project scope. Connection fails if a supported version or the four usage values cannot be read.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AIUsageWillCheckThisAccountSUsage">
+    <value>AI Usage will check this account’s usage again.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AProblemOccurredWhileFinishingTheConnectionTry">
+    <value>A problem occurred while finishing the connection. Try again. If it still fails, share the technical information with a maintainer.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ASupportedAntigravityCLICouldNotBeFound">
+    <value>A supported Antigravity CLI could not be found. Run agy --version. If it fails or reports an unsupported version, update or reinstall the official Antigravity CLI. If connection still fails after updating, share the version and technical information with a maintainer.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Account">
+    <value>Account</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AnotherUsageCheckIsRunningExecutionBusy">
+    <value>Another usage check is running (ExecutionBusy)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityAccountConnected">
+    <value>Antigravity account connected</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityCannotBeConnectedRightNow">
+    <value>Antigravity cannot be connected right now</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionAndWindowCleanupBothFailed">
+    <value>Antigravity connection and window cleanup both failed.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionFailedAndCleanupDidNotFinish">
+    <value>Antigravity connection failed and cleanup did not finish.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionIncomplete">
+    <value>Antigravity connection incomplete</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionIsIncompleteTryAgainIfThe">
+    <value>Antigravity connection is incomplete. Try again. If the problem persists, share the technical information with a maintainer.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionSettingsCannotBeSavedRightNow">
+    <value>Antigravity connection settings cannot be saved right now. Try again. If it still fails, share the technical information with a maintainer.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionTechnicalInformation">
+    <value>Antigravity connection technical information</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityReadinessCouldNotBeVerifiedOpenAntigravity">
+    <value>Antigravity readiness could not be verified. Open Antigravity, check that it is signed in and working, then try again.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravitySettingsRejectedSettingsRejected">
+    <value>Antigravity settings rejected (SettingsRejected)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravitySignInOrSetupIsIncompletePromptRejected">
+    <value>Antigravity sign-in or setup is incomplete (PromptRejected)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityUsageCheckIsStillRunning">
+    <value>Antigravity usage check is still running</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityUsageWindow">
+    <value>Antigravity usage window</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AppVersion0">
+    <value>App version: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AvailableNow">
+    <value>Available now</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CancellingAndCleaningUpThisConnection">
+    <value>Cancelling and cleaning up this connection…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotFinishConnectionUnexpectedFailure">
+    <value>Cannot finish connection (UnexpectedFailure)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotPrepareConnectionDataPrivateStorageRejected">
+    <value>Cannot prepare connection data (PrivateStorageRejected)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotSaveConnectionApprovalRejected">
+    <value>Cannot save connection (ApprovalRejected)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotUseCurrentAntigravitySettings">
+    <value>Cannot use current Antigravity settings</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotVerifyAntigravityStatus">
+    <value>Cannot verify Antigravity status</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotVerifyAntigravityUsage">
+    <value>Cannot verify Antigravity usage</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotVerifyUsageUsageRejected">
+    <value>Cannot verify usage (UsageRejected)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckAntigravityUsageAgain">
+    <value>Check Antigravity usage again</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckThatAntigravityIsSignedInAndCan">
+    <value>Check that Antigravity is signed in and can show usage. If it still fails, update AI Usage or Antigravity and share the technical information with a maintainer.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckThatAntigravityIsSignedInAndWorking">
+    <value>Check that Antigravity is signed in and working. If it still fails, update AI Usage or Antigravity and share the technical information with a maintainer.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckThatTheFollowingIsTheCurrentAntigravity">
+    <value>Check that the following is the current Antigravity sign-in on this computer. This card follows the local sign-in; AI Usage cannot verify or pin an enterprise project scope.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckingAntigravityReadinessCalibratingPrompt">
+    <value>Checking Antigravity readiness (CalibratingPrompt)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckingAntigravityUsageAgain">
+    <value>Checking Antigravity usage again…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckingSupportedAntigravityVersions">
+    <value>Checking supported Antigravity versions…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckingThatAntigravityIsReady">
+    <value>Checking that Antigravity is ready…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CloseOtherAntigravityWindowsFirst">
+    <value>Close other Antigravity windows first</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CloseOtherAntigravityWindowsThenTryAgain">
+    <value>Close other Antigravity windows, then try again.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConfirmThatOneReadOnlyUsageCheckCan">
+    <value>Confirm that one read-only /usage check can run now, then choose “Check Antigravity usage again”. You do not need to sign in again.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConfirmationRequiredBeforeCheckingAntigravityUsageAgain">
+    <value>Confirmation required before checking Antigravity usage again</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConfirmationRequiredBeforeCheckingUsageAgainSafetyRevalidationRequired">
+    <value>Confirmation required before checking usage again (SafetyRevalidationRequired)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectAntigravityAccount">
+    <value>Connect Antigravity account</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectingAntigravity">
+    <value>Connecting Antigravity</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectingAntigravity233">
+    <value>Connecting Antigravity…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectionComplete">
+    <value>Connection complete</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectionSettingsSavedCompletionNotConfirmed">
+    <value>Connection settings saved; completion not confirmed</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectionSettingsWereSavedButCleanupEncounteredA">
+    <value>Connection settings were saved, but cleanup encountered a problem, so completion cannot be confirmed. Try again. If it still fails, share the technical information with a maintainer.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CopiesOnlyTheVersionFailureTypeLastStage">
+    <value>Copies only the version, failure type, last stage, and suggested next steps. No account details or private paths are included.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CopyTechnicalInformation">
+    <value>Copy technical information</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CurrentAntigravitySignInEmailUnavailable">
+    <value>Current Antigravity sign-in (email unavailable)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.EachWindowsUserUsuallyNeedsToSetThis">
+    <value>Each Windows user usually needs to set this up once per computer. This setup is needed only for Antigravity connections.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FailureType0">
+    <value>Failure type: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FindingAntigravityCLIDiscoveringExecutable">
+    <value>Finding Antigravity CLI (DiscoveringExecutable)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FinishConnecting">
+    <value>Finish connecting</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FinishingAntigravityConnection">
+    <value>Finishing Antigravity connection…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FinishingTheConnectionTheWindowWillCloseWhen">
+    <value>Finishing the connection. The window will close when done…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FollowTheInstructionsBelowThenTryAgain">
+    <value>Follow the instructions below, then try again.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.HideTechnicalInformation">
+    <value>Hide technical information</value>
+  </data>
+  <data xml:space="preserve" name="Setup.In0DaysAnd1Hours">
+    <value>{0}d {1}h from now</value>
+  </data>
+  <data xml:space="preserve" name="Setup.In0HoursAnd1Minutes">
+    <value>{0}h {1}m from now</value>
+  </data>
+  <data xml:space="preserve" name="Setup.In0Minutes">
+    <value>{0} min from now</value>
+  </data>
+  <data xml:space="preserve" name="Setup.KeepOnlyTheAntigravityCLIYouWantTo">
+    <value>Keep only the Antigravity CLI you want to use. Remove other installations or PATH entries, then try again.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.LastStage0">
+    <value>Last stage: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Setup.LoadingCompatibilityDataLoadingReviewedContract">
+    <value>Loading compatibility data (LoadingReviewedContract)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.LookingForAntigravityOnThisComputer">
+    <value>Looking for Antigravity on this computer…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.MultipleAntigravityCLIsFoundAmbiguousExecutable">
+    <value>Multiple Antigravity CLIs found (AmbiguousExecutable)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.MultipleAntigravityCLIsWereFoundOnThisComputer">
+    <value>Multiple Antigravity CLIs were found on this computer. Keep only the one you want to use. Remove other installations or PATH entries, then try again.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.MultipleAntigravityInstallationsFound">
+    <value>Multiple Antigravity installations found</value>
+  </data>
+  <data xml:space="preserve" name="Setup.NoneNone">
+    <value>None (None)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.NotStarted">
+    <value>Not started</value>
+  </data>
+  <data xml:space="preserve" name="Setup.OpenAIUsage">
+    <value>Open AI Usage</value>
+  </data>
+  <data xml:space="preserve" name="Setup.OpenAntigravityCheckThatItIsSignedIn">
+    <value>Open Antigravity, check that it is signed in and working, then try again.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.OtherAntigravityWindowsAreRunningExistingProcessDetected">
+    <value>Other Antigravity windows are running (ExistingProcessDetected)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PrepareToConnect">
+    <value>Prepare to connect</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingAccountReview">
+    <value>Preparing account review…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingAccountReviewReadyForApproval">
+    <value>Preparing account review (ReadyForApproval)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingConnectionDataPreparingPrivateStorage">
+    <value>Preparing connection data (PreparingPrivateStorage)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingLocalConnectionSettings">
+    <value>Preparing local connection settings…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingLocalConnectionSettingsMaterializingProfile">
+    <value>Preparing local connection settings (MaterializingProfile)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingThisComputer">
+    <value>Preparing this computer…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ReadingAntigravitySFourUsageValues">
+    <value>Reading Antigravity’s four usage values…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ReadingAntigravityUsageValidatingUsage">
+    <value>Reading Antigravity usage (ValidatingUsage)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ResetTimeNotProvided">
+    <value>Reset time not provided</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Resets0">
+    <value>Resets: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ReturnToAIUsageChooseToConnectAgain">
+    <value>Return to AI Usage, choose to connect again, and confirm the usage disclosure.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ReviewAccountAndUsage">
+    <value>Review account and usage</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ReviewTheAccount">
+    <value>Review the account</value>
+  </data>
+  <data xml:space="preserve" name="Setup.RunAgyVersionIfItFailsOrReports">
+    <value>Run agy --version. If it fails or reports an unsupported version, update or reinstall the official Antigravity CLI. If connection still fails after updating, share the version and technical information with a maintainer.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.SavingAntigravityConnectionApproving">
+    <value>Saving Antigravity connection (Approving)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ShowOrHideTechnicalInformationForMaintainersIt">
+    <value>Show or hide technical information for maintainers. It contains no account details or private paths.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ShowTechnicalInformation">
+    <value>Show technical information</value>
+  </data>
+  <data xml:space="preserve" name="Setup.SignInToAntigravityFirstAIUsageAccepts">
+    <value>Sign in to Antigravity first. AI Usage accepts only versions supporting official read-only /usage. It checks the official Antigravity CLI on this computer, then reads the current account’s four usage values for your review. This card follows the current local Antigravity sign-in. AI Usage cannot verify or pin an enterprise project scope. This operation does not read sign-in credentials.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Soon">
+    <value>Soon</value>
+  </data>
+  <data xml:space="preserve" name="Setup.SuggestedNextSteps0">
+    <value>Suggested next steps: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Setup.SupportedAntigravityCLINotFound">
+    <value>Supported Antigravity CLI not found</value>
+  </data>
+  <data xml:space="preserve" name="Setup.SupportedAntigravityCLINotFoundUnsupportedBuild">
+    <value>Supported Antigravity CLI not found (UnsupportedBuild)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TechnicalInformationCopied">
+    <value>Technical information copied</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TheAntigravitySetupAttemptIDCannotBeEmpty">
+    <value>The Antigravity setup attempt ID cannot be empty.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TheClipboardIsUnavailableTryAgainLater">
+    <value>The clipboard is unavailable. Try again later.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TheCurrentAntigravitySettingsCannotBeUsedCheck">
+    <value>The current Antigravity settings cannot be used. Check that Antigravity is signed in and working. If it still fails, update AI Usage or Antigravity.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TheFollowingContainsOnlyTheVersionFailureType">
+    <value>The following contains only the version, failure type, last stage, and suggested next steps. Share it with a maintainer if you need help.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ThisAntigravityVersionRequiresOtherAntigravityWindowsTo">
+    <value>This Antigravity version requires other Antigravity windows to be temporarily closed. Close them, then try again.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TryAgain">
+    <value>Try again</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TryAgainIfItStillFailsShareThe">
+    <value>Try again. If it still fails, share the complete technical information with a maintainer.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Unknown">
+    <value>Unknown</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Unknown0">
+    <value>Unknown ({0})</value>
+  </data>
+  <data xml:space="preserve" name="Setup.UsageDisclosureConfirmationRequiredConsentRequired">
+    <value>Usage disclosure confirmation required (ConsentRequired)</value>
+  </data>
+  <data xml:space="preserve" name="Setup.WaitForTheCurrentAntigravityUsageCheckTo">
+    <value>Wait for the current Antigravity usage check to finish, then try again. Reinstalling or signing in again is unnecessary.</value>
+  </data>
+  <data xml:space="preserve" name="Setup.WeeklyUsageClaudeGPT">
+    <value>Weekly usage · Claude + GPT</value>
+  </data>
+  <data xml:space="preserve" name="Setup.WeeklyUsageGemini">
+    <value>Weekly usage · Gemini</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Working">
+    <value>Working</value>
+  </data>
+  <data xml:space="preserve" name="Setup.YourConfirmationIsRequiredBeforeCheckingAntigravityUsage">
+    <value>Your confirmation is required before checking Antigravity usage again. AI Usage will not retry automatically, to avoid duplicate execution. Confirm that one read-only /usage check can run now, then choose “Check Antigravity usage again”. This does not sign in to Antigravity again.</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.1ServiceOrder">
+    <value>1  Service order</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.2CardsFromTheSameService">
+    <value>2  Cards from the same service</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.3OtherCases">
+    <value>3  Other cases</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.AutomaticSortRules">
+    <value>Automatic sort rules</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.AutomaticSortingChangesOnlyTheOrderOfCards">
+    <value>Automatic sorting changes only the order of cards on screen.</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.CloseAutomaticSortRules">
+    <value>Close automatic sort rules</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.GotIt">
+    <value>Got it</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.HowAreCardsSorted">
+    <value>How are cards sorted?</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.MissingOrPastResetTimesComeLastFor">
+    <value>Missing or past reset times come last for that item. Cards without usage items come last within their service. Ties keep the manual order.</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.ResetTimesAreComparedInOrder5Hour">
+    <value>Reset times are compared in order: 5-hour, weekly, then other usage. The next item is compared only when the previous one matches. Cards with earlier future reset times come first.</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.UsagePercentagesDoNotAffectSortingSwitchingBack">
+    <value>Usage percentages do not affect sorting. Switching back to manual restores your custom order.</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AboutAIUsage">
+    <value>About AI Usage</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AccountActions">
+    <value>Account actions</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AccountSettings">
+    <value>Account settings</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AccountUsage">
+    <value>Account usage</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AddAccount">
+    <value>Add account</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AdjustWindowHeightToFitCards">
+    <value>Adjust window height to fit cards</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AutomaticSortRules">
+    <value>Automatic sort rules</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AutomaticallyShortenTheWindowToFitCardsAnd">
+    <value>Automatically shorten the window to fit cards and notices. Scroll when there are more cards.</value>
+  </data>
+  <data xml:space="preserve" name="Widget.BottomLeft">
+    <value>Bottom left</value>
+  </data>
+  <data xml:space="preserve" name="Widget.BottomRight">
+    <value>Bottom right</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CheckAgainWhenDone">
+    <value>Check again when done</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CheckForUpdates">
+    <value>Check for updates</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CheckTheLatestUsageForEachService">
+    <value>Check the latest usage for each service</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CheckUsageForAllAccounts">
+    <value>Check usage for all accounts</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CheckUsageForThisAccount">
+    <value>Check usage for this account</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ClassicBlue">
+    <value>Classic Blue</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ClassicBlueTheme">
+    <value>Classic Blue theme</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ClickToExpandAIUsageDragToChoose">
+    <value>Click to expand AI Usage; drag to choose a dock corner.</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CollapseAIUsageToTheBottomRight">
+    <value>Collapse AI Usage to the bottom right</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CopyRecoverySteps">
+    <value>Copy recovery steps</value>
+  </data>
+  <data xml:space="preserve" name="Widget.DockPosition">
+    <value>Dock position</value>
+  </data>
+  <data xml:space="preserve" name="Widget.DragThisAreaToMoveTheWidgetOr">
+    <value>Drag this area to move the widget, or choose a corner from More actions.</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ExpandAIUsage">
+    <value>Expand AI Usage</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ExpandAIUsageWidget">
+    <value>Expand AI Usage widget</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ExportSettings">
+    <value>Export settings…</value>
+  </data>
+  <data xml:space="preserve" name="Widget.FitHeightToCards">
+    <value>Fit height to cards</value>
+  </data>
+  <data xml:space="preserve" name="Widget.HideWidget">
+    <value>Hide widget</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ImportOrExportSettings">
+    <value>Import or export settings</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ImportSettings">
+    <value>Import settings…</value>
+  </data>
+  <data xml:space="preserve" name="Widget.KeepWindowOnTop">
+    <value>Keep window on top</value>
+  </data>
+  <data xml:space="preserve" name="Widget.Light">
+    <value>Light</value>
+  </data>
+  <data xml:space="preserve" name="Widget.LightTheme">
+    <value>Light theme</value>
+  </data>
+  <data xml:space="preserve" name="Widget.Midnight">
+    <value>Midnight</value>
+  </data>
+  <data xml:space="preserve" name="Widget.MidnightTheme">
+    <value>Midnight theme</value>
+  </data>
+  <data xml:space="preserve" name="Widget.MoreActions">
+    <value>More actions</value>
+  </data>
+  <data xml:space="preserve" name="Widget.MoveDown">
+    <value>Move down</value>
+  </data>
+  <data xml:space="preserve" name="Widget.MoveUp">
+    <value>Move up</value>
+  </data>
+  <data xml:space="preserve" name="Widget.OnTop">
+    <value>On top</value>
+  </data>
+  <data xml:space="preserve" name="Widget.OpenMoreActions">
+    <value>Open More actions</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ReleaseNotes">
+    <value>Release notes</value>
+  </data>
+  <data xml:space="preserve" name="Widget.RemindMeLater">
+    <value>Remind me later</value>
+  </data>
+  <data xml:space="preserve" name="Widget.RemoveAccountFromAIUsage">
+    <value>Remove account from AI Usage</value>
+  </data>
+  <data xml:space="preserve" name="Widget.RestoreSettingsFromBeforeImport">
+    <value>Restore settings from before import</value>
+  </data>
+  <data xml:space="preserve" name="Widget.RestoreTheAccountsOrderAndSettingsReplacedBy">
+    <value>Restore the accounts, order, and settings replaced by this import. Available until you close the app.</value>
+  </data>
+  <data xml:space="preserve" name="Widget.Sakura">
+    <value>Sakura</value>
+  </data>
+  <data xml:space="preserve" name="Widget.SakuraTheme">
+    <value>Sakura theme</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ScrollWithTheMouseWheelScrollbarOrBy">
+    <value>Scroll with the mouse wheel, scrollbar, or by dragging an account card up or down.</value>
+  </data>
+  <data xml:space="preserve" name="Widget.StartUsageChecks">
+    <value>Start usage checks</value>
+  </data>
+  <data xml:space="preserve" name="Widget.StopUsageChecks">
+    <value>Stop usage checks</value>
+  </data>
+  <data xml:space="preserve" name="Widget.Theme">
+    <value>Theme</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ToggleAlwaysOnTop">
+    <value>Toggle always on top</value>
+  </data>
+  <data xml:space="preserve" name="Widget.TopLeft">
+    <value>Top left</value>
+  </data>
+  <data xml:space="preserve" name="Widget.TopRight">
+    <value>Top right</value>
+  </data>
+  <data xml:space="preserve" name="Widget.TurnOffAutomaticChecks">
+    <value>Turn off automatic checks</value>
+  </data>
+  <data xml:space="preserve" name="Widget.UserGuide">
+    <value>User guide</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ViewResetCredits">
+    <value>View reset credits</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.AWorkspaceIDIsNeededOnlyWhenDisplaying">
+    <value>A workspace ID is needed only when displaying different workspaces from one ChatGPT account on multiple cards.</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.AWorkspaceIsASpaceWithinChatGPTRather">
+    <value>A workspace is a space within ChatGPT, rather than a folder on your computer or a subscription plan.</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.AskYourChatGPTWorkspaceAdministratorForTheID">
+    <value>Ask your ChatGPT workspace administrator for the ID. AI Usage cannot find it from an email address, ChatGPT account, or plan.</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.ChooseAConnectionMethod">
+    <value>Choose a connection method</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.ChooseStandardAccountConnectionIfYouOnlyNeed">
+    <value>Choose “Standard account connection” if you only need one Codex card.</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.ConnectCodex">
+    <value>Connect Codex</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.ConnectWithWorkspaceID">
+    <value>Connect with workspace ID</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.EnterAValidChatGPTWorkspaceIDUUIDFormat">
+    <value>Enter a valid ChatGPT workspace ID (UUID format).</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.EnterTheIDProvidedByYourChatGPTWorkspace">
+    <value>Enter the ID provided by your ChatGPT workspace administrator (UUID format)</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.EnterTheMatchingWorkspaceIDForEveryCard">
+    <value>Enter the matching workspace ID for every card, including the original first card.</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.OneCardPerWorkspace">
+    <value>One card per workspace</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.StandardAccountConnection">
+    <value>Standard account connection</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.SwitchToStandardAccountConnection">
+    <value>Switch to standard account connection</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.SwitchingToAStandardAccountConnectionRemovesThis">
+    <value>Switching to a standard account connection removes this card’s workspace restriction. Connection may fail if the account already has other workspace cards.</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.TheIDIsNotIncludedInExportedSettings">
+    <value>The ID is not included in exported settings. Enter it again when reconnecting.</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.TheIDIsWrittenToThisCardS">
+    <value>The ID is written to this card’s Codex settings. ChatGPT sign-in to Codex is restricted to the specified workspace.</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.ThisCardUsedAWorkspaceIDEnterThe">
+    <value>This card used a workspace ID. Enter the original ID to reconnect, or a new ID to switch workspaces.</value>
+  </data>
+</root>

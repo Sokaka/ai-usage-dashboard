@@ -1,0 +1,426 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>2.0</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+	</resheader>
+	<data name="PreferencesNewerSchema" xml:space="preserve">
+		<value>The AI Usage display settings were created by a newer version. Display settings cannot be changed to prevent overwriting them.</value>
+	</data>
+	<data name="PreferencesTooLarge" xml:space="preserve">
+		<value>The AI Usage display settings file exceeds 64 KiB. Display settings cannot be changed to prevent overwriting it.</value>
+	</data>
+	<data name="PreferencesUnavailable" xml:space="preserve">
+		<value>Widget settings still cannot be read. Changes have not been saved to prevent overwriting your original settings.</value>
+	</data>
+	<data name="PreferencesUnsafePath" xml:space="preserve">
+		<value>The AI Usage display settings path is unsafe. Display settings cannot be changed to protect local data.</value>
+	</data>
+	<data name="UnknownDisplayMode" xml:space="preserve">
+		<value>Unknown usage display mode.</value>
+	</data>
+	<data name="UnknownSortMode" xml:space="preserve">
+		<value>Unknown usage sort mode.</value>
+	</data>
+	<data name="UnknownWidgetCorner" xml:space="preserve">
+		<value>Unknown widget dock position.</value>
+	</data>
+	<data name="UnknownStartupSurface" xml:space="preserve">
+		<value>Unknown startup view.</value>
+	</data>
+	<data name="MonitorNameTooLong" xml:space="preserve">
+		<value>The monitor identifier is too long.</value>
+	</data>
+	<data name="InvalidCollapsedPosition" xml:space="preserve">
+		<value>If provided, collapsed widget position ratios must be a pair of values between 0 and 1.</value>
+	</data>
+	<data name="UnknownTheme" xml:space="preserve">
+		<value>Unknown App theme.</value>
+	</data>
+	<data name="UnknownLanguage" xml:space="preserve">
+		<value>Unknown App language.</value>
+	</data>
+	<data name="PreferencesParentMissing" xml:space="preserve">
+		<value>The display settings file has no parent folder.</value>
+	</data>
+	<data name="ExportPathEmpty" xml:space="preserve">
+		<value>The export file path cannot be empty.</value>
+	</data>
+	<data name="ExportSnapshotMissing" xml:space="preserve">
+		<value>There are no settings to export.</value>
+	</data>
+	<data name="ExportParentMissing" xml:space="preserve">
+		<value>The export file has no valid parent folder.</value>
+	</data>
+	<data name="ExportFailedDestinationChanged" xml:space="preserve">
+		<value>Settings export failed; the destination file may have changed. Keep any temporary files or backups in the same folder so you can restore them.</value>
+	</data>
+	<data name="ExportDeviceNamespace" xml:space="preserve">
+		<value>Settings cannot be exported through a Windows device namespace. Choose a destination using a normal drive or network path.</value>
+	</data>
+	<data name="ExportLinkedDirectory" xml:space="preserve">
+		<value>Settings cannot be exported through a linked folder. Choose a normal folder to avoid overwriting data managed by AI Usage.</value>
+	</data>
+	<data name="ExportHardLinkedFile" xml:space="preserve">
+		<value>Settings cannot be exported over a hard-linked file. Choose a normal file to avoid overwriting App-managed data through an alias.</value>
+	</data>
+	<data name="ExportManagedDirectory" xml:space="preserve">
+		<value>Settings cannot be exported to a folder managed by AI Usage. Choose another location to avoid overwriting your current settings or recovery data.</value>
+	</data>
+	<data name="ManagedDirectoryUnavailable" xml:space="preserve">
+		<value>The folder managed by AI Usage could not be located.</value>
+	</data>
+	<data name="ImportPathEmpty" xml:space="preserve">
+		<value>The import file path cannot be empty.</value>
+	</data>
+	<data name="ImportFailed" xml:space="preserve">
+		<value>Settings import failed. Check the file format and access permissions.</value>
+	</data>
+	<data name="ExportReplacementIncomplete" xml:space="preserve">
+		<value>The settings file could not be fully replaced; the destination file may have changed. Keep any temporary files or backups in the same folder so you can restore them.</value>
+	</data>
+	<data name="InvalidSortMode" xml:space="preserve">
+		<value>Invalid usage sort mode.</value>
+	</data>
+	<data name="InvalidDisplayMode" xml:space="preserve">
+		<value>Invalid usage display mode.</value>
+	</data>
+	<data name="WidgetPreferencesMissing" xml:space="preserve">
+		<value>Widget settings are missing.</value>
+	</data>
+	<data name="InvalidWidgetCorner" xml:space="preserve">
+		<value>Invalid widget dock position.</value>
+	</data>
+	<data name="InvalidTheme" xml:space="preserve">
+		<value>Invalid theme setting.</value>
+	</data>
+	<data name="HeightPreferenceMissing" xml:space="preserve">
+		<value>The window height setting is missing.</value>
+	</data>
+	<data name="InvalidLanguage" xml:space="preserve">
+		<value>Invalid language setting.</value>
+	</data>
+	<data name="AccountListNull" xml:space="preserve">
+		<value>The account list cannot be null.</value>
+	</data>
+	<data name="AccountEntryNull" xml:space="preserve">
+		<value>An account entry cannot be null.</value>
+	</data>
+	<data name="DuplicateProviderAccount" xml:space="preserve">
+		<value>An account cannot be duplicated for the same provider.</value>
+	</data>
+	<data name="DisplayNameNull" xml:space="preserve">
+		<value>The account display name cannot be null.</value>
+	</data>
+	<data name="DisplayNameControlCharacters" xml:space="preserve">
+		<value>The account display name cannot contain control characters.</value>
+	</data>
+	<data name="InvalidAccountIdentity" xml:space="preserve">
+		<value>Invalid account identity format.</value>
+	</data>
+	<data name="ImportNewerSchema" xml:space="preserve">
+		<value>The settings file was created by a newer version and cannot be imported by this version.</value>
+	</data>
+	<data name="UnsupportedSchema" xml:space="preserve">
+		<value>This settings file version is not supported.</value>
+	</data>
+	<data name="InvalidRoot" xml:space="preserve">
+		<value>Invalid settings file root format.</value>
+	</data>
+	<data name="InvalidJson" xml:space="preserve">
+		<value>The settings file is not valid, supported JSON.</value>
+	</data>
+	<data name="UnknownOrDuplicateFields" xml:space="preserve">
+		<value>The settings file contains unknown or duplicate fields.</value>
+	</data>
+	<data name="InvalidFormat" xml:space="preserve">
+		<value>Invalid settings file format identifier.</value>
+	</data>
+	<data name="InvalidSchemaFormat" xml:space="preserve">
+		<value>Invalid settings file version format.</value>
+	</data>
+	<data name="PortableFileTooLarge" xml:space="preserve">
+		<value>The settings file cannot exceed 1 MiB.</value>
+	</data>
+	<data name="InvalidAccountList" xml:space="preserve">
+		<value>The account list format or count is invalid.</value>
+	</data>
+	<data name="InvalidAccountEntry" xml:space="preserve">
+		<value>Invalid account entry format.</value>
+	</data>
+	<data name="InvalidAccountEnabled" xml:space="preserve">
+		<value>Invalid account enabled state format.</value>
+	</data>
+	<data name="InvalidCardPreferences" xml:space="preserve">
+		<value>Invalid card display settings format.</value>
+	</data>
+	<data name="InvalidAccountData" xml:space="preserve">
+		<value>Invalid account data format.</value>
+	</data>
+	<data name="InvalidDisplayNameFormat" xml:space="preserve">
+		<value>Invalid account display name format.</value>
+	</data>
+	<data name="InvalidPreferencesFormat" xml:space="preserve">
+		<value>Invalid display settings format.</value>
+	</data>
+	<data name="InvalidWidgetVisibility" xml:space="preserve">
+		<value>Invalid widget visibility state format.</value>
+	</data>
+	<data name="InvalidWidgetCollapsed" xml:space="preserve">
+		<value>Invalid widget collapsed state format.</value>
+	</data>
+	<data name="InvalidWidgetTopmost" xml:space="preserve">
+		<value>Invalid widget always-on-top state format.</value>
+	</data>
+	<data name="InvalidHeightPreference" xml:space="preserve">
+		<value>Invalid window height setting format.</value>
+	</data>
+	<data name="InvalidLanguageFormat" xml:space="preserve">
+		<value>Invalid language setting format.</value>
+	</data>
+	<data name="InvalidThemeFormat" xml:space="preserve">
+		<value>Invalid theme setting format.</value>
+	</data>
+	<data name="InvalidWidgetCornerFormat" xml:space="preserve">
+		<value>Invalid widget dock position format.</value>
+	</data>
+	<data name="InvalidProviderFormat" xml:space="preserve">
+		<value>Invalid account provider format.</value>
+	</data>
+	<data name="UnsupportedProvider" xml:space="preserve">
+		<value>The account uses an unsupported provider.</value>
+	</data>
+	<data name="InvalidDisplayModeFormat" xml:space="preserve">
+		<value>Invalid usage display mode format.</value>
+	</data>
+	<data name="InvalidSortModeFormat" xml:space="preserve">
+		<value>Invalid usage sort mode format.</value>
+	</data>
+	<data name="AccountIdEmpty" xml:space="preserve">
+		<value>The account ID cannot be empty.</value>
+	</data>
+	<data name="DuplicateAccount" xml:space="preserve">
+		<value>Accounts cannot be duplicated.</value>
+	</data>
+	<data name="TransactionTargetOutside" xml:space="preserve">
+		<value>The specified file is outside this settings import transaction.</value>
+	</data>
+	<data name="TransactionTargetsMissing" xml:space="preserve">
+		<value>The transaction requires at least one target file.</value>
+	</data>
+	<data name="TransactionRestoreDuplicate" xml:space="preserve">
+		<value>Duplicate settings import restore handlers.</value>
+	</data>
+	<data name="TransactionLimitsInvalid" xml:space="preserve">
+		<value>Each transaction target must have exactly one file size limit.</value>
+	</data>
+	<data name="TransactionLimitNonpositive" xml:space="preserve">
+		<value>The transaction target file size limit must be greater than zero.</value>
+	</data>
+	<data name="TransactionDuplicateTargets" xml:space="preserve">
+		<value>Transaction target files cannot be duplicated.</value>
+	</data>
+	<data name="TransactionParentMissing" xml:space="preserve">
+		<value>The settings import transaction has no valid parent directory.</value>
+	</data>
+	<data name="TransactionUnsafeLock" xml:space="preserve">
+		<value>The settings import transaction lock file cannot be a link or reparse point.</value>
+	</data>
+	<data name="TransactionBusy" xml:space="preserve">
+		<value>Another AI Usage instance is importing or restoring settings. Try again later.</value>
+	</data>
+	<data name="ImportRollbackPending" xml:space="preserve">
+		<value>Settings import did not complete, and your original settings could not be restored immediately. AI Usage will retry automatically when restarted.</value>
+	</data>
+	<data name="ImportCleanupAuthorizationPending" xml:space="preserve">
+		<value>Settings import was committed, but the account cleanup authorization could not be recorded. AI Usage will retry automatically when restarted.</value>
+	</data>
+	<data name="TransactionWriteOutside" xml:space="preserve">
+		<value>Settings import attempted to write a file outside the transaction.</value>
+	</data>
+	<data name="TransactionPreparedFileMissing" xml:space="preserve">
+		<value>The file prepared for settings import does not exist.</value>
+	</data>
+	<data name="TransactionConflictingCommitRestore" xml:space="preserve">
+		<value>The settings import transaction has conflicting committed and restored states.</value>
+	</data>
+	<data name="TransactionConflictingCallbackRestore" xml:space="preserve">
+		<value>The settings import transaction has conflicting commit callback and restored states.</value>
+	</data>
+	<data name="TransactionRecoveryUnavailable" xml:space="preserve">
+		<value>Usable settings import recovery data is missing.</value>
+	</data>
+	<data name="TransactionRecoveryMissing" xml:space="preserve">
+		<value>Settings import recovery data is missing.</value>
+	</data>
+	<data name="TransactionRecoveryConflicting" xml:space="preserve">
+		<value>The settings import recovery data is conflicting.</value>
+	</data>
+	<data name="RestoreParentMissing" xml:space="preserve">
+		<value>The restore location has no valid parent folder.</value>
+	</data>
+	<data name="TransactionUnsafeDirectory" xml:space="preserve">
+		<value>The settings import transaction directory cannot be a link or reparse point.</value>
+	</data>
+	<data name="TransactionUnsafeFile" xml:space="preserve">
+		<value>A settings import file cannot be a linked file.</value>
+	</data>
+	<data name="AccountsFileTooLarge" xml:space="preserve">
+		<value>The account settings file cannot exceed 1 MB.</value>
+	</data>
+	<data name="AccountsNotWritable" xml:space="preserve">
+		<value>Account settings cannot be written right now.</value>
+	</data>
+	<data name="AccountSaveFailed" xml:space="preserve">
+		<value>Account settings could not be saved; the original settings file was not changed.</value>
+	</data>
+	<data name="AccountRootNotObject" xml:space="preserve">
+		<value>The account settings file root must be an object.</value>
+	</data>
+	<data name="SchemaVersionMissing" xml:space="preserve">
+		<value>The settings file is missing schemaVersion.</value>
+	</data>
+	<data name="InvalidSchemaVersion" xml:space="preserve">
+		<value>Invalid settings file version.</value>
+	</data>
+	<data name="AccountsContentEmpty" xml:space="preserve">
+		<value>The account settings file contents cannot be empty.</value>
+	</data>
+	<data name="AccountEntryEmpty" xml:space="preserve">
+		<value>An account entry cannot be null.</value>
+	</data>
+	<data name="AccountProviderMissing" xml:space="preserve">
+		<value>The account provider is missing or unsupported.</value>
+	</data>
+	<data name="AccountUsageCheckingMissing" xml:space="preserve">
+		<value>The account is missing its usage checking setting.</value>
+	</data>
+	<data name="ClaudeQuotaRiskMissing" xml:space="preserve">
+		<value>The account is missing hasAcceptedClaudeQuotaRisk.</value>
+	</data>
+	<data name="SubscriptionContextMissing" xml:space="preserve">
+		<value>The account is missing showSubscriptionContext.</value>
+	</data>
+	<data name="DisplayNameExplicitNull" xml:space="preserve">
+		<value>The account display name cannot be null.</value>
+	</data>
+	<data name="DisplayNameTooLong" xml:space="preserve">
+		<value>The account display name is too long.</value>
+	</data>
+	<data name="DisplayNameContainsControls" xml:space="preserve">
+		<value>The account display name contains control characters.</value>
+	</data>
+	<data name="DuplicateConnectedAccount" xml:space="preserve">
+		<value>The same signed-in account cannot be connected to multiple account cards.</value>
+	</data>
+	<data name="InvalidGrokBinding" xml:space="preserve">
+		<value>Invalid Grok account connection data format.</value>
+	</data>
+	<data name="AccountsNewerSchema" xml:space="preserve">
+		<value>These account settings were created by a newer version. Account editing is unavailable to prevent overwriting them.</value>
+	</data>
+	<data name="AccountsLoadedBackupUnreadable" xml:space="preserve">
+		<value>Account settings were loaded, but the backup could not be read. Account editing is unavailable to prevent overwriting it.</value>
+	</data>
+	<data name="AccountsLoadedBackupNewerSchema" xml:space="preserve">
+		<value>Account settings were loaded, but the backup was created by a newer version. Account editing is unavailable to prevent overwriting it.</value>
+	</data>
+	<data name="AccountsLoadedBackupTooLarge" xml:space="preserve">
+		<value>Account settings were loaded, but the backup exceeds 1 MB. Account editing is unavailable to prevent overwriting it.</value>
+	</data>
+	<data name="AccountsLoadedBackupRepairFailed" xml:space="preserve">
+		<value>Account settings were loaded, but the backup could not be created or repaired. You can continue using the App. Check the folder write permissions.</value>
+	</data>
+	<data name="AccountsTooLargeEditingBlocked" xml:space="preserve">
+		<value>The account settings file exceeds 1 MB. Account editing is unavailable to prevent excessive memory use or overwriting the original file.</value>
+	</data>
+	<data name="AccountsUnreadableEditingBlocked" xml:space="preserve">
+		<value>The account settings file could not be read. Account editing is unavailable to prevent overwriting it.</value>
+	</data>
+	<data name="AccountsMissingBackupUnreadable" xml:space="preserve">
+		<value>The account settings file is missing, and its backup could not be read. Account editing is unavailable to prevent overwriting it.</value>
+	</data>
+	<data name="AccountsCorruptBackupUnreadable" xml:space="preserve">
+		<value>The account settings file is corrupt, and its backup could not be read. Account editing is unavailable to prevent overwriting it.</value>
+	</data>
+	<data name="AccountsInvalidPathEditingBlocked" xml:space="preserve">
+		<value>The account settings file path is invalid. Account editing is unavailable.</value>
+	</data>
+	<data name="AccountsChangedDuringRead" xml:space="preserve">
+		<value>Another process changed the account settings file while it was being read. Account editing is unavailable to avoid moving the new contents.</value>
+	</data>
+	<data name="AccountsBackupChangedDuringRead" xml:space="preserve">
+		<value>Another process changed the account settings backup while it was being read. Account editing is unavailable to avoid moving the new contents.</value>
+	</data>
+	<data name="AccountsCorruptCopyUnavailable" xml:space="preserve">
+		<value>The account settings file is corrupt, and a copy could not be preserved. Account editing is unavailable.</value>
+	</data>
+	<data name="AccountsInvalidPreservedEmpty" xml:space="preserve">
+		<value>The account settings file format is invalid. The original file was preserved, and empty settings are now in use.</value>
+	</data>
+	<data name="AccountsBothInvalidPreservedEmpty" xml:space="preserve">
+		<value>The account settings file and backup formats are both invalid. The original files were preserved, and empty settings are now in use.</value>
+	</data>
+	<data name="AccountsMissingBackupUnverified" xml:space="preserve">
+		<value>The account settings file is missing, and the backup contents could not be verified. Account editing is unavailable.</value>
+	</data>
+	<data name="AccountsBackupCorruptCopyUnavailable" xml:space="preserve">
+		<value>The account settings backup is corrupt, and a copy could not be preserved. Account editing is unavailable.</value>
+	</data>
+	<data name="AccountsMissingInvalidBackupPreserved" xml:space="preserve">
+		<value>The account settings file is missing, and its backup format is invalid. The corrupt backup was preserved, and empty settings are now in use.</value>
+	</data>
+	<data name="AccountsBackupChangedDuringRestore" xml:space="preserve">
+		<value>The account settings backup changed during restoration.</value>
+	</data>
+	<data name="AccountsCreatedDuringRestore" xml:space="preserve">
+		<value>Another process created the account settings file during restoration.</value>
+	</data>
+	<data name="AccountsChangedDuringRestore" xml:space="preserve">
+		<value>The account settings file changed during restoration.</value>
+	</data>
+	<data name="AccountsBackupRestoreFailed" xml:space="preserve">
+		<value>Account settings could not be restored from the backup. Account editing is unavailable to prevent overwriting it.</value>
+	</data>
+	<data name="AccountsRestoredNewerBackup" xml:space="preserve">
+		<value>Account settings were restored from the backup, but it was created by a newer version. Account editing is unavailable to prevent overwriting it.</value>
+	</data>
+	<data name="AccountsMissingRestored" xml:space="preserve">
+		<value>The missing account settings file was automatically restored from a verified backup.</value>
+	</data>
+	<data name="AccountsCorruptRestored" xml:space="preserve">
+		<value>The account settings file was automatically restored from a verified backup. The original corrupt file was preserved.</value>
+	</data>
+	<data name="AccountsInvalidPath" xml:space="preserve">
+		<value>Invalid account settings file path.</value>
+	</data>
+	<data name="AccountsSaveTooLarge" xml:space="preserve">
+		<value>The account settings file exceeds the size limit for saving.</value>
+	</data>
+	<data name="AccountBackupUpdateFailedCommitted" xml:space="preserve">
+		<value>Account settings were applied, but the backup update failed. Check the write permissions for the AI Usage settings folder, then save the account settings again.</value>
+	</data>
+	<data name="AccountsChangedRestartRequired" xml:space="preserve">
+		<value>Another process changed the account settings file. Restart the App before trying again.</value>
+	</data>
+	<data name="AccountsBackupNewerVersionRequired" xml:space="preserve">
+		<value>The account settings backup was created by a newer version. Use the version that created it to avoid overwriting it.</value>
+	</data>
+	<data name="AccountLimit" xml:space="preserve">
+		<value>The account list cannot contain more than {0} accounts.</value>
+	</data>
+	<data name="DisplayNameLimit" xml:space="preserve">
+		<value>The account display name cannot exceed {0} characters.</value>
+	</data>
+	<data name="TransactionFileTooLarge" xml:space="preserve">
+		<value>The settings import file {0} is too large; the limit is {1} bytes.</value>
+	</data>
+</root>

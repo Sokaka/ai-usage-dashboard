@@ -1,116 +1,152 @@
 <h1 align="center">AI Usage Dashboard</h1>
 
 <p align="center">
-  AI Usage 是 Windows 桌面工具，可在同一個浮窗查看多個 AI 服務的訂閱用量。
+  AI Usage is a Windows desktop app that shows subscription usage across AI services in a single floating widget.
 </p>
 
 <p align="center">
-  <strong>繁體中文</strong> | <a href="README.en.md">English</a>
+  <strong>English</strong> | <a href="README.zh-TW.md">繁體中文</a>
 </p>
 
 <p align="center">
-  <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.15-0078D4" alt="目前正式版本 1.0.15"></a>
+  <a href="#requirements"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="Project code licensed under MIT"></a>
+  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.15-0078D4" alt="Current stable version 1.0.15"></a>
 </p>
 
 <p align="center">
   <a href="docs/images/dashboard-compact.png">
-    <img src="docs/images/dashboard-compact.png" alt="AI Usage 經典藍浮窗預覽，展示五種服務的合成帳號與用量卡片" width="410">
+    <img src="docs/images/dashboard-compact.png" alt="AI Usage in Classic Blue, showing example accounts and usage cards for five services" width="410">
   </a>
 </p>
 
 <details>
-<summary>查看四種主題的完整預覽</summary>
+<summary>Preview all four themes</summary>
 
 <p align="center">
   <a href="docs/images/dashboard-preview.png">
-    <img src="docs/images/dashboard-preview.png" alt="AI Usage 四種主題配色，每種皆展示五種服務的合成帳號與用量卡片" width="820">
+    <img src="docs/images/dashboard-preview.png" alt="AI Usage in four color themes, each showing example accounts and usage cards for five services" width="820">
   </a>
 </p>
 
 </details>
 
-## 目前版本
+The stable v1.0.15 download uses a Traditional Chinese interface. The current source adds
+English (default) and Traditional Chinese, switchable from **⋯ → Language** or the tray menu;
+the language setting is included in settings exports. Detailed guides and release notes remain
+in Traditional Chinese. The instructions below include Chinese menu labels for the stable download.
 
-目前正式版本為 **`1.0.15`**。[下載最新版](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.15) · [版本說明](docs/releases/1.0.15.md)
+<a name="目前版本"></a>
 
-本版改善浮窗展開與卡片檢查回饋，並讓帳號連接、設定匯入與用量提示更清楚。
+## Current release
 
-標準安裝版可從系統匣選擇 **檢查更新** 升級；第一次使用請見[安裝與第一次使用](#安裝與第一次使用)。相容性與注意事項見[使用限制](#使用限制)。
+The current stable version is **`1.0.15`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.15) · [Release notes](docs/releases/1.0.15.md)
 
-## 支援平台
+This release improves widget expansion and feedback when checking an account's usage,
+with clearer account connection, settings import, and usage messages.
 
-| 平台 | 使用前準備 | 帳號卡片 |
+For a standard installation, choose **Check for updates** (`檢查更新`) from the system tray menu,
+then follow the update prompt. New users can start with [Installation and first use](#installation-and-first-use).
+See [Limitations and cautions](#limitations-and-cautions) for compatibility and safety notes.
+
+## Supported services
+
+Install the official CLI for each service you use:
+
+| Service | Required official CLI | Account cards |
 | --- | --- | --- |
-| Claude | 安裝官方 Claude Code | 多帳號；同帳號依不同組織分卡 |
-| Codex | 安裝官方 Codex CLI | 多帳號；同帳號依不同工作區分卡 |
-| GitHub Copilot | 安裝本機官方 Copilot CLI | 多帳號；同帳號限一張卡片 |
-| Grok | 從 xAI 官方來源安裝 Grok Build CLI 至預設位置 | 多帳號；同帳號限一張卡片 |
-| Antigravity | 安裝官方 Antigravity CLI | 限一個帳號 |
+| Claude | Claude Code | Multiple; split by organization |
+| Codex | Codex CLI | Multiple; split by workspace |
+| GitHub Copilot | Copilot CLI | Multiple; one card per account |
+| Grok | Grok Build CLI | Multiple; one card per account |
+| Antigravity | Antigravity CLI | One account |
 
-版本要求與實測狀態見 [CLI 相容性](docs/CLI_COMPATIBILITY.md)；帳號需求、官方工具安裝與登入步驟見[使用說明](使用說明.md)。
+Claude and Codex support separate cards for different organizations or workspaces under the same account.
+Install Grok Build CLI from an official xAI source, in its default location.
 
-## 主要功能
+See [CLI compatibility](docs/CLI_COMPATIBILITY.md) for version requirements and verification status.
+Account requirements, official CLI installation, and sign-in steps are covered in the [User guide](使用說明.md).
 
-| 日常需求 | 可以怎麼用 |
-| --- | --- |
-| 查看還能用多少 | 集中查看各帳號用量，切換已使用／剩餘顯示，並查看來源提供的重置時間。 |
-| 更新剛用過的帳號 | 自動更新之外，也能手動檢查全部或單一帳號；暫時失敗時可保留上次資料並標示狀態。 |
-| 分清不同帳號 | 為卡片設定暱稱；Claude 可顯示組織，Codex 可顯示工作區。暫時不用的卡片可停止檢查。 |
-| 排列常用卡片 | 手動調整順序，或依服務、5 小時及週用量的重置時間自動排序。 |
-| 邊工作邊看用量 | 浮窗可置頂、移動、停靠角落及收合；隱藏後仍在背景更新，可從系統匣叫回。 |
-| 調整閱讀方式 | 四種主題配色，可讓高度隨卡片數量調整；卡片較多時可捲動，也支援 Windows 高對比模式。 |
-| 下次開機接著用 | 保留排序、主題與浮窗偏好；標準安裝版可選擇隨 Windows 登入啟動。 |
-| 備份設定或換機 | 匯出卡片與顯示設定，匯入前可預覽；匯入後須重新連接帳號，符合條件時可還原匯入前設定。 |
+## Main features
 
-操作位置見[日常用量與浮窗管理](使用說明.md#查看與管理用量)；備份與還原條件見[匯入與匯出設定](使用說明.md#匯入與匯出設定)。
+- **See what remains.** View usage across accounts, switch between used and remaining amounts,
+  and see reset times provided by each service.
+- **Refresh an account.** Alongside automatic updates, check all accounts or just one.
+  If a check temporarily fails, the app can show the last reading with a status message.
+- **Tell accounts apart.** Give cards nicknames, show Claude organizations or Codex workspaces,
+  and pause usage checks for cards you are not using.
+- **Keep your usual cards in order.** Arrange cards manually, or sort by service,
+  5-hour reset time, or weekly reset time.
+- **Watch usage while you work.** Keep the widget on top, move it, dock it in a corner,
+  or collapse it. Usage updates continue while it is hidden; bring it back from the system tray.
+- **Adjust the display.** Choose from four themes, let the widget adjust its height to fit your cards,
+  and scroll through longer lists. Windows High Contrast mode is supported.
+- **Pick up where you left off.** Keep your sorting, theme, and widget preferences.
+  Standard installations can optionally start when you sign in to Windows.
+- **Back up settings or move to another PC.** Export cards and display settings, preview imports,
+  and reconnect accounts after importing. Previous settings can be restored while the restore option is available.
 
-## 環境需求
+See [Usage and widget controls](使用說明.md#查看與管理用量) for operation details,
+and [Importing and exporting settings](使用說明.md#匯入與匯出設定) for backup and restore conditions.
 
-- 仍在 Microsoft 支援範圍內的 Windows x64 電腦，以及網路連線。
-- 安裝包包含所需的 .NET 執行環境，不必另外安裝；各服務的官方 CLI 由使用者另行安裝。
+## Requirements
 
-## 安裝與第一次使用
+- A Windows x64 PC running a version still supported by Microsoft, with an internet connection.
+- The package includes the required .NET runtime. Install each service's official CLI separately.
 
-從目前版本的 GitHub Release 選擇：
+## Installation and first use
 
-| 使用方式 | 下載檔案 | 啟動方式 |
-| --- | --- | --- |
-| **一般安裝：Updater** | `AiUsageDashboard-Updater-<version>-win-x64.exe` | Updater 也能首次安裝。以一般使用者權限執行，安裝後從開始選單搜尋 **AI Usage**；保留 Updater 供日後更新。 |
-| **免安裝：完整 ZIP** | `AiUsageDashboard-<version>-win-x64.zip` | 完整解壓到新資料夾後，執行其中的 App；不要下載 GitHub 自動產生的 Source code ZIP。 |
+Choose a download from the current version's GitHub Release:
 
-`1.0.15` 沿用的 Updater 檔名是 `AiUsageDashboard-Updater-1.0.12-win-x64.exe`；請依 Release 上的實際檔名下載。
+1. **Standard installation: Updater.** Download `AiUsageDashboard-Updater-<version>-win-x64.exe`.
+   The Updater also handles first-time installation. Run it as a regular user, then search for
+   **AI Usage** in the Windows Start menu. Keep the Updater for future updates.
+2. **Portable: full ZIP.** Download `AiUsageDashboard-<version>-win-x64.zip`, extract the entire
+   archive into a new folder. Open the extracted `AiUsageDashboard` folder, then run
+   `app\AiUsageDashboard.App.exe`.
+   Do not download GitHub's automatically generated **Source code** ZIP.
 
-依[安裝與第一次啟動](使用說明.md#安裝與第一次啟動)操作、閱讀並接受適用條款，再新增帳號，透過服務的官方登入流程完成連接。
+For App `1.0.15`, the Updater file is `AiUsageDashboard-Updater-1.0.12-win-x64.exe`.
+Use the actual filename listed on the Release page; the Updater version can differ from the app version.
 
-## 使用限制
+Follow [Installation and first launch](使用說明.md#安裝與第一次啟動), read and accept the applicable terms,
+then choose **Add account** (`新增帳號`) and connect through the service's official sign-in flow.
 
-使用前請留意：
+<a name="使用限制"></a>
 
-- **相容性**：AI Usage 透過各服務的官方 CLI 或 SDK 取得用量。上游工具更新可能改變登入流程、通訊協定或回傳格式；若無法讀取，請核對 [CLI 相容性](docs/CLI_COMPATIBILITY.md)與支援版本。
-- **Claude 查詢**：AI Usage 會透過 Claude Code 的 `/usage` 讀取額度。這類狀態檢查可能消耗少量 token；若已啟用 usage credits，也可能產生額外費用。連接前請閱讀[Claude 注意事項](使用說明.md#連接-claude-前必讀)。
-- **本機資料**：帳號設定與上次用量保存在目前 Windows 使用者的電腦中。
-- **匯出隱私**：匯出檔不含密碼或 token，但可能含電子郵件及暱稱，請存放在可信任位置。
-- **Windows 安全**：自有 EXE 尚無 Authenticode 簽章，可能提示或受系統政策阻擋；更新清單的簽章不提供 Windows 已驗證發布者身分。不要關閉 SmartScreen 或安全防護。
-- **服務條款**：各服務仍受供應商條款約束；Claude／Antigravity 的整合適用性尚未確認，詳見[發布限制](RELEASING.md#最後公開決策)。
-- **舊版升級**：舊內部版本需手動升級一次，請使用原 Windows 使用者與原安裝位置，依[舊版升級說明](使用說明.md#從舊內部版升級)操作。
+## Limitations and cautions
 
-## 相關文件
+- **Compatibility.** AI Usage reads usage through official CLIs or SDKs. Upstream updates can
+  change sign-in flows, protocols, or response formats. If usage cannot be read, check
+  [CLI compatibility](docs/CLI_COMPATIBILITY.md) and the supported versions.
+- **Claude usage checks.** AI Usage reads quotas through Claude Code's `/usage`.
+  These checks may consume a small number of tokens and may incur additional charges if usage credits
+  are enabled. Read the [Claude cautions](使用說明.md#連接-claude-前必讀) before connecting.
+- **Local data.** Account settings and the last usage readings are stored on the current Windows user's PC.
+- **Export privacy.** Exported settings exclude passwords and tokens, but may include email addresses
+  and nicknames. Store them in a trusted location.
+- **Windows security.** AI Usage's EXE files are not Authenticode-signed and may trigger warnings
+  or be blocked by system policies. The update feed signature does not establish a Windows-verified
+  publisher identity. Do not disable SmartScreen or other security protections.
+- **Provider terms.** Each service's provider terms still apply. Compliance of the Claude and Antigravity
+  integrations with those terms has not been confirmed; see [Release restrictions](RELEASING.md#最後公開決策).
+- **Upgrading old internal builds.** These builds require a one-time manual upgrade. Use the original
+  Windows user and installation location, and follow the [Upgrade instructions](使用說明.md#從舊內部版升級).
 
-| 需求 | 文件 |
-| --- | --- |
-| 一般使用、設定與問題排除 | [使用說明](使用說明.md) |
-| 回報問題或提出功能建議 | [支援與問題回報](SUPPORT.md) |
-| 私密回報安全問題 | [安全問題回報](SECURITY.md) |
-| 架構、資料保存與服務串接 | [技術總覽](docs/TECHNICAL_OVERVIEW.md) |
-| 開發規範與升級相容性要求 | [AGENTS.md](AGENTS.md) |
-| 功能與驗收狀態 | [實作檢查清單](IMPLEMENTATION_CHECKLIST.md) |
-| 安裝、更新、復原與解除安裝 | [Windows 分發與支援手冊](INTERNAL_DISTRIBUTION.md) |
-| 版本發布與維護要求 | [發布流程](RELEASING.md) |
+## Related documentation
 
-## 專案與授權
+- [User guide](使用說明.md): everyday use, settings, and troubleshooting.
+- [Support and issue reporting](SUPPORT.md): report problems or suggest features.
+- [Security reporting](SECURITY.md): report security issues privately.
+- [Technical overview](docs/TECHNICAL_OVERVIEW.md): architecture, storage, and service integrations.
+- [Development guidelines](AGENTS.md): coding rules and upgrade compatibility requirements.
+- [Implementation checklist](IMPLEMENTATION_CHECKLIST.md): feature and verification status.
+- [Windows distribution and support](INTERNAL_DISTRIBUTION.md): installation, updates, recovery, and removal.
+- [Release process](RELEASING.md): publishing and maintaining releases.
 
-- **性質**：個人作品，與公司或各服務供應商無隸屬關係。
-- **授權**：自有程式碼採 [MIT](LICENSE)，第三方元件沿用[各自的授權與 notices](third-party-notices/component-manifest.json)。
-- **服務名稱**：僅用於說明相容性。
+## Project and license
+
+- **Independent project.** A personal project, unaffiliated with any company or service provider.
+- **License.** Project code is licensed under [MIT](LICENSE). Third-party components retain
+  their [own licenses and notices](third-party-notices/component-manifest.json).
+- **Service names.** Used only to describe compatibility.

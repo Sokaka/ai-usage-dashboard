@@ -1,7 +1,7 @@
 <Window x:Class="AiUsageDashboard.App.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="關於 AI Usage"
+        Title="{DynamicResource Windows.About.AboutAIUsage}"
         Icon="{DynamicResource ThemeWindowIcon}"
         Width="470"
         MinWidth="320"
@@ -26,7 +26,7 @@
                                Text="AI Usage" />
                     <TextBlock Margin="0,4,0,0"
                                Foreground="{DynamicResource SecondaryTextBrush}"
-                               Text="在桌面查看 AI 服務訂閱用量"
+                               Text="{DynamicResource Windows.About.ViewYourAISubscriptionUsageOnTheDesktop}"
                                TextWrapping="Wrap" />
                 </StackPanel>
             </DockPanel>
@@ -34,18 +34,18 @@
             <Label Margin="0,22,0,6"
                    Padding="0"
                    Foreground="{DynamicResource PrimaryTextBrush}"
-                   Content="版本"
+                   Content="{DynamicResource Windows.About.Version}"
                    Target="{Binding ElementName=VersionTextBox}" />
             <TextBox x:Name="VersionTextBox"
                      AutomationProperties.AutomationId="AboutVersion"
-                     AutomationProperties.HelpText="目前執行的完整版本，可選取並複製。"
+                     AutomationProperties.HelpText="{DynamicResource Windows.About.TheFullRunningVersionSelectItToCopy}"
                      IsReadOnly="True"
                      TextWrapping="Wrap" />
             <WrapPanel Margin="0,10,0,0">
                 <Button x:Name="CopyVersionButton"
                         AutomationProperties.AutomationId="CopyAboutVersion"
                         Click="CopyVersionButton_Click"
-                        Content="複製版本"
+                        Content="{DynamicResource Windows.About.CopyVersion}"
                         Style="{StaticResource SecondaryButtonStyle}" />
                 <TextBlock x:Name="CopyStatusTextBlock"
                            Margin="12,8,0,0"
@@ -57,40 +57,40 @@
             <Label Margin="0,18,0,6"
                    Padding="0"
                    Foreground="{DynamicResource PrimaryTextBrush}"
-                   Content="更新" />
+                   Content="{DynamicResource Windows.About.Updates}" />
             <TextBlock x:Name="UpdateStatusTextBlock"
                        AutomationProperties.AutomationId="AboutUpdateStatus"
                        AutomationProperties.LiveSetting="Polite"
                        Foreground="{DynamicResource SecondaryTextBrush}"
-                       Text="尚未檢查更新。"
+                       Text="{DynamicResource Windows.About.UpdatesHaveNotBeenCheckedYet}"
                        TextWrapping="Wrap" />
             <Button x:Name="CheckForUpdatesButton"
                     Margin="0,10,0,0"
                     HorizontalAlignment="Left"
                     AutomationProperties.AutomationId="CheckForUpdates"
                     Click="CheckForUpdatesButton_Click"
-                    Content="檢查更新"
+                    Content="{DynamicResource Windows.About.CheckForUpdates}"
                     Style="{StaticResource SecondaryButtonStyle}" />
 
             <WrapPanel Margin="0,22,0,0">
                 <Button Margin="0,0,8,8"
                         Click="UserGuideButton_Click"
-                        Content="使用說明"
+                        Content="{DynamicResource Windows.About.UserGuide}"
                         Style="{StaticResource SecondaryButtonStyle}" />
                 <Button Margin="0,0,8,8"
                         Click="ReleasesButton_Click"
-                        Content="下載與版本紀錄"
+                        Content="{DynamicResource Windows.About.DownloadsAndReleaseNotes}"
                         Style="{StaticResource SecondaryButtonStyle}" />
                 <Button Margin="0,0,0,8"
                         Click="ReportIssueButton_Click"
-                        Content="回報問題"
+                        Content="{DynamicResource Windows.About.ReportAnIssue}"
                         Style="{StaticResource SecondaryButtonStyle}" />
             </WrapPanel>
 
             <Button Margin="0,16,0,0"
                     HorizontalAlignment="Right"
                     Click="CloseButton_Click"
-                    Content="關閉"
+                    Content="{DynamicResource Windows.Common.Close}"
                     IsCancel="True"
                     Style="{StaticResource GhostButtonStyle}" />
         </StackPanel>

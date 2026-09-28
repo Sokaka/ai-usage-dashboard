@@ -1,7 +1,7 @@
 <Window x:Class="AiUsageDashboard.App.CodexResetCreditsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Codex 重置券"
+        Title="{DynamicResource Windows.Credits.CodexResetCredits}"
         Icon="{DynamicResource ThemeWindowIcon}"
         Width="410"
         MinWidth="320"
@@ -81,7 +81,7 @@
                 HorizontalAlignment="Right"
                 AutomationProperties.AutomationId="CloseCodexResetCredits"
                 Click="CloseButton_Click"
-                Content="關閉"
+                Content="{DynamicResource Windows.Common.Close}"
                 IsCancel="True"
                 Style="{StaticResource GhostButtonStyle}" />
     </Grid>

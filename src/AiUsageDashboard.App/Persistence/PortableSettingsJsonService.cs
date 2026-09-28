@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Win32.SafeHandles;
 
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.App.Persistence;
@@ -24,7 +25,8 @@ internal sealed record PortableWidgetPreferences(
 	bool IsTopmost,
 	FloatingWidgetCorner Corner,
 	AppTheme? Theme = null,
-	bool? IsHeightFollowingCardCount = false);
+	bool? IsHeightFollowingCardCount = false,
+	AppLanguage? Language = null);
 
 internal sealed class PortableSettingsException : Exception
 {
@@ -449,7 +451,8 @@ internal sealed class PortableSettingsJsonService
 		bool IsTopmost,
 		FloatingWidgetCorner Corner,
 		AppTheme Theme,
-		bool IsHeightFollowingCardCount);
+		bool IsHeightFollowingCardCount,
+		AppLanguage Language);
 
 	private sealed record SettingsDocument(
 		string Format,
@@ -457,13 +460,15 @@ internal sealed class PortableSettingsJsonService
 		IReadOnlyList<AccountDocument> Accounts,
 		PreferencesDocument Preferences);
 
-	private const int CurrentSchemaVersion = 6;
+	private const int CurrentSchemaVersion = 7;
+	private const int LanguageSchemaVersion = 7;
 	private const int HeightFollowingCardCountSchemaVersion = 6;
 	private const int LegacySchemaVersionOne = 1;
 	private const int LegacySchemaVersionTwo = 2;
 	private const int LegacySchemaVersionThree = 3;
 	private const int LegacySchemaVersionFour = 4;
 	private const int LegacySchemaVersionFive = 5;
+	private const int LegacySchemaVersionSix = 6;
 	private const int MaximumAccountCount = 256;
 	private const int MaximumDepth = 16;
 	private const int MaximumDisplayNameLength = 80;
@@ -489,6 +494,18 @@ internal sealed class PortableSettingsJsonService
 		"providerAccountIdentity"
 	];
 	private static readonly string[] CurrentPreferencesPropertyNames =
+	[
+		"usageSortMode",
+		"usageDisplayMode",
+		"isWidgetVisible",
+		"isCollapsed",
+		"isTopmost",
+		"corner",
+		"theme",
+		"isHeightFollowingCardCount",
+		"language"
+	];
+	private static readonly string[] SchemaSixPreferencesPropertyNames =
 	[
 		"usageSortMode",
 		"usageDisplayMode",
@@ -566,12 +583,12 @@ internal sealed class PortableSettingsJsonService
 	{
 		if (string.IsNullOrWhiteSpace(filePath))
 		{
-			throw new PortableSettingsException("匯出檔案路徑不可為空。");
+			throw new PortableSettingsException(UiText.Get("Persistence.ExportPathEmpty"));
 		}
 
 		if (snapshot is null)
 		{
-			throw new PortableSettingsException("沒有可匯出的設定。");
+			throw new PortableSettingsException(UiText.Get("Persistence.ExportSnapshotMissing"));
 		}
 
 		SettingsDocument document = CreateDocument(snapshot);
@@ -599,7 +616,7 @@ internal sealed class PortableSettingsJsonService
 
 			if (string.IsNullOrWhiteSpace(directoryPath))
 			{
-				throw new PortableSettingsException("匯出檔案缺少有效的所在資料夾。");
+				throw new PortableSettingsException(UiText.Get("Persistence.ExportParentMissing"));
 			}
 
 			Directory.CreateDirectory(directoryPath);
@@ -654,7 +671,7 @@ internal sealed class PortableSettingsJsonService
 			(exception is ArgumentException))
 		{
 			throw new PortableSettingsException(
-				"設定匯出失敗；目的檔案可能已變更。請先保留同一資料夾內的暫存檔或備份，以便還原。",
+				UiText.Get("Persistence.ExportFailedDestinationChanged"),
 				exception);
 		}
 		finally
@@ -685,7 +702,7 @@ internal sealed class PortableSettingsJsonService
 		if (hasDevicePrefix)
 		{
 			throw new PortableSettingsException(
-				"不可使用 Windows 裝置命名空間匯出設定；請透過一般磁碟或網路路徑選擇目的檔案。");
+				UiText.Get("Persistence.ExportDeviceNamespace"));
 		}
 	}
 
@@ -709,7 +726,7 @@ internal sealed class PortableSettingsJsonService
 				if ((attributes & FileAttributes.ReparsePoint) != 0)
 				{
 					throw new PortableSettingsException(
-						"不可透過連結的資料夾匯出設定。請選擇一般資料夾，以免覆寫 AI Usage 管理的資料。");
+						UiText.Get("Persistence.ExportLinkedDirectory"));
 				}
 			}
 			catch (FileNotFoundException)
@@ -747,7 +764,7 @@ internal sealed class PortableSettingsJsonService
 		}
 
 		throw new PortableSettingsException(
-			"不可覆寫硬連結檔案來匯出設定；請選擇一般檔案，以免透過別名覆寫程式管理的資料。");
+			UiText.Get("Persistence.ExportHardLinkedFile"));
 	}
 
 	private void EnsureDestinationIsOutsideAppManagedDataDirectory(
@@ -775,7 +792,7 @@ internal sealed class PortableSettingsJsonService
 		}
 
 		throw new PortableSettingsException(
-			"不可將設定匯出到 AI Usage 管理的資料夾。請選擇其他位置，以免覆寫目前設定或還原資料。");
+			UiText.Get("Persistence.ExportManagedDirectory"));
 	}
 
 	private static bool IsSamePathOrDescendant(
@@ -831,7 +848,7 @@ internal sealed class PortableSettingsJsonService
 		if (string.IsNullOrWhiteSpace(directoryPath))
 		{
 			throw new InvalidOperationException(
-				"無法取得 AI Usage 管理的資料夾。");
+				UiText.Get("Persistence.ManagedDirectoryUnavailable"));
 		}
 
 		return directoryPath;
@@ -843,7 +860,7 @@ internal sealed class PortableSettingsJsonService
 	{
 		if (string.IsNullOrWhiteSpace(filePath))
 		{
-			throw new PortableSettingsException("匯入檔案路徑不可為空。");
+			throw new PortableSettingsException(UiText.Get("Persistence.ImportPathEmpty"));
 		}
 
 		try
@@ -875,7 +892,7 @@ internal sealed class PortableSettingsJsonService
 			(exception is OverflowException))
 		{
 			throw new PortableSettingsException(
-				"設定匯入失敗；請確認檔案格式與存取權限。",
+				UiText.Get("Persistence.ImportFailed"),
 				exception);
 		}
 	}
@@ -907,7 +924,7 @@ internal sealed class PortableSettingsJsonService
 				destinationPath,
 				backupFilePath);
 			throw new PortableSettingsException(
-				"設定檔覆寫未完成；目的檔案可能已變更。請先保留同一資料夾內的暫存檔或備份，以便還原。",
+				UiText.Get("Persistence.ExportReplacementIncomplete"),
 				exception);
 		}
 
@@ -921,7 +938,7 @@ internal sealed class PortableSettingsJsonService
 
 		if (string.IsNullOrWhiteSpace(directoryPath))
 		{
-			throw new PortableSettingsException("匯出檔案缺少有效的所在資料夾。");
+			throw new PortableSettingsException(UiText.Get("Persistence.ExportParentMissing"));
 		}
 
 		while (true)
@@ -991,44 +1008,50 @@ internal sealed class PortableSettingsJsonService
 	{
 		if (!Enum.IsDefined(snapshot.UsageSortMode))
 		{
-			throw new PortableSettingsException("用量排序方式無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidSortMode"));
 		}
 
 		if (!Enum.IsDefined(snapshot.UsageDisplayMode))
 		{
-			throw new PortableSettingsException("用量顯示方式無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidDisplayMode"));
 		}
 
 		if (snapshot.WidgetPreferences is null)
 		{
-			throw new PortableSettingsException("缺少浮窗設定。");
+			throw new PortableSettingsException(UiText.Get("Persistence.WidgetPreferencesMissing"));
 		}
 
 		if (!Enum.IsDefined(snapshot.WidgetPreferences.Corner))
 		{
-			throw new PortableSettingsException("浮窗停靠位置無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidWidgetCorner"));
 		}
 
 		if ((snapshot.WidgetPreferences.Theme is not AppTheme theme) ||
 			!Enum.IsDefined(theme))
 		{
-			throw new PortableSettingsException("主題設定無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidTheme"));
 		}
 
 		if (snapshot.WidgetPreferences.IsHeightFollowingCardCount is null)
 		{
-			throw new PortableSettingsException("缺少視窗高度設定。");
+			throw new PortableSettingsException(UiText.Get("Persistence.HeightPreferenceMissing"));
+		}
+
+		if ((snapshot.WidgetPreferences.Language is not AppLanguage language) ||
+			!Enum.IsDefined(language))
+		{
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidLanguage"));
 		}
 
 		if (snapshot.Accounts is null)
 		{
-			throw new PortableSettingsException("帳號清單不可為空值。");
+			throw new PortableSettingsException(UiText.Get("Persistence.AccountListNull"));
 		}
 
 		if (snapshot.Accounts.Count > MaximumAccountCount)
 		{
 			throw new PortableSettingsException(
-				$"帳號數量不可超過 {MaximumAccountCount} 個。");
+				UiText.Format("Persistence.AccountLimit", MaximumAccountCount));
 		}
 
 		HashSet<Guid> accountIds = [];
@@ -1039,7 +1062,7 @@ internal sealed class PortableSettingsJsonService
 		{
 			if (account is null)
 			{
-				throw new PortableSettingsException("帳號項目不可為空值。");
+				throw new PortableSettingsException(UiText.Get("Persistence.AccountEntryNull"));
 			}
 
 			ValidateAccountId(account.Id, accountIds);
@@ -1076,7 +1099,8 @@ internal sealed class PortableSettingsJsonService
 				snapshot.WidgetPreferences.IsTopmost,
 				snapshot.WidgetPreferences.Corner,
 				theme,
-				snapshot.WidgetPreferences.IsHeightFollowingCardCount.Value));
+				snapshot.WidgetPreferences.IsHeightFollowingCardCount.Value,
+				language));
 	}
 
 	private static JsonSerializerOptions CreateSerializerOptions()
@@ -1145,7 +1169,7 @@ internal sealed class PortableSettingsJsonService
 		if (!identities.Add(providerIdentity))
 		{
 			throw new PortableSettingsException(
-				"同一服務的帳號不可重複。");
+				UiText.Get("Persistence.DuplicateProviderAccount"));
 		}
 	}
 
@@ -1153,7 +1177,7 @@ internal sealed class PortableSettingsJsonService
 	{
 		if (displayName is null)
 		{
-			throw new PortableSettingsException("帳號顯示名稱不可為空值。");
+			throw new PortableSettingsException(UiText.Get("Persistence.DisplayNameNull"));
 		}
 
 		string normalizedDisplayName = displayName.Trim();
@@ -1161,13 +1185,13 @@ internal sealed class PortableSettingsJsonService
 		if (normalizedDisplayName.Length > MaximumDisplayNameLength)
 		{
 			throw new PortableSettingsException(
-				$"帳號顯示名稱不可超過 {MaximumDisplayNameLength} 個字元。");
+				UiText.Format("Persistence.DisplayNameLimit", MaximumDisplayNameLength));
 		}
 
 		if (normalizedDisplayName.Any(char.IsControl))
 		{
 			throw new PortableSettingsException(
-				"帳號顯示名稱不可包含控制字元。");
+				UiText.Get("Persistence.DisplayNameControlCharacters"));
 		}
 
 		return normalizedDisplayName;
@@ -1182,7 +1206,7 @@ internal sealed class PortableSettingsJsonService
 			return normalizedIdentity;
 		}
 
-		throw new PortableSettingsException("帳號資訊格式無效。");
+		throw new PortableSettingsException(UiText.Get("Persistence.InvalidAccountIdentity"));
 	}
 
 	private static PortableSettingsSnapshot ParseDocument(byte[] contents)
@@ -1203,7 +1227,7 @@ internal sealed class PortableSettingsJsonService
 			if (schemaVersion > CurrentSchemaVersion)
 			{
 				throw new PortableSettingsException(
-					"設定檔由較新版本建立，目前無法匯入。");
+					UiText.Get("Persistence.ImportNewerSchema"));
 			}
 
 			if (schemaVersion is not CurrentSchemaVersion and
@@ -1211,12 +1235,13 @@ internal sealed class PortableSettingsJsonService
 				not LegacySchemaVersionTwo and
 				not LegacySchemaVersionThree and
 				not LegacySchemaVersionFour and
-				not LegacySchemaVersionFive)
+				not LegacySchemaVersionFive and
+				not LegacySchemaVersionSix)
 			{
-				throw new PortableSettingsException("設定檔版本不受支援。");
+				throw new PortableSettingsException(UiText.Get("Persistence.UnsupportedSchema"));
 			}
 
-			ValidateObject(root, RootPropertyNames, "設定檔根節點格式無效。");
+			ValidateObject(root, RootPropertyNames, UiText.Get("Persistence.InvalidRoot"));
 
 			IReadOnlyList<AccountProfile> accounts = ReadAccounts(
 				root.GetProperty("accounts"),
@@ -1236,7 +1261,7 @@ internal sealed class PortableSettingsJsonService
 		catch (JsonException exception)
 		{
 			throw new PortableSettingsException(
-				"設定檔不是有效且受支援的 JSON。",
+				UiText.Get("Persistence.InvalidJson"),
 				exception);
 		}
 	}
@@ -1245,7 +1270,7 @@ internal sealed class PortableSettingsJsonService
 	{
 		if (root.ValueKind != JsonValueKind.Object)
 		{
-			throw new PortableSettingsException("設定檔根節點格式無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidRoot"));
 		}
 
 		JsonElement formatElement = default;
@@ -1260,7 +1285,7 @@ internal sealed class PortableSettingsJsonService
 				if (hasFormat)
 				{
 					throw new PortableSettingsException(
-						"設定檔包含未知或重複的欄位。");
+						UiText.Get("Persistence.UnknownOrDuplicateFields"));
 				}
 
 				hasFormat = true;
@@ -1274,7 +1299,7 @@ internal sealed class PortableSettingsJsonService
 				if (hasSchemaVersion)
 				{
 					throw new PortableSettingsException(
-						"設定檔包含未知或重複的欄位。");
+						UiText.Get("Persistence.UnknownOrDuplicateFields"));
 				}
 
 				hasSchemaVersion = true;
@@ -1289,14 +1314,14 @@ internal sealed class PortableSettingsJsonService
 				PortableFormat,
 				StringComparison.Ordinal))
 		{
-			throw new PortableSettingsException("設定檔格式識別無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidFormat"));
 		}
 
 		if (!hasSchemaVersion ||
 			(schemaVersionElement.ValueKind != JsonValueKind.Number) ||
 			!schemaVersionElement.TryGetInt32(out int schemaVersion))
 		{
-			throw new PortableSettingsException("設定檔版本格式無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidSchemaFormat"));
 		}
 
 		return schemaVersion;
@@ -1317,7 +1342,7 @@ internal sealed class PortableSettingsJsonService
 		if (stream.Length > MaximumDocumentSizeBytes)
 		{
 			throw new PortableSettingsException(
-				"設定檔不可超過 1 MiB。");
+				UiText.Get("Persistence.PortableFileTooLarge"));
 		}
 
 		using MemoryStream contents = new(
@@ -1338,7 +1363,7 @@ internal sealed class PortableSettingsJsonService
 			if ((contents.Length + bytesRead) > MaximumDocumentSizeBytes)
 			{
 				throw new PortableSettingsException(
-					"設定檔不可超過 1 MiB。");
+					UiText.Get("Persistence.PortableFileTooLarge"));
 			}
 
 			contents.Write(buffer, 0, bytesRead);
@@ -1354,7 +1379,7 @@ internal sealed class PortableSettingsJsonService
 		if ((accountsElement.ValueKind != JsonValueKind.Array) ||
 			(accountsElement.GetArrayLength() > MaximumAccountCount))
 		{
-			throw new PortableSettingsException("帳號清單格式或數量無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidAccountList"));
 		}
 
 		HashSet<Guid> accountIds = [];
@@ -1368,7 +1393,7 @@ internal sealed class PortableSettingsJsonService
 				schemaVersion >= SubscriptionContextSchemaVersion
 					? CurrentAccountPropertyNames
 					: LegacyAccountPropertyNames,
-				"帳號項目格式無效。");
+				UiText.Get("Persistence.InvalidAccountEntry"));
 			Guid id = ReadAccountId(accountElement.GetProperty("id"));
 			ValidateAccountId(id, accountIds);
 			ProviderKind provider = ReadProvider(
@@ -1377,12 +1402,12 @@ internal sealed class PortableSettingsJsonService
 				accountElement.GetProperty("displayName"));
 			bool isEnabled = ReadBoolean(
 				accountElement.GetProperty("isEnabled"),
-				"帳號啟用狀態格式無效。");
+				UiText.Get("Persistence.InvalidAccountEnabled"));
 			bool showSubscriptionContext =
 				schemaVersion >= SubscriptionContextSchemaVersion &&
 				ReadBoolean(
 					accountElement.GetProperty("showSubscriptionContext"),
-					"卡片顯示設定格式無效。");
+					UiText.Get("Persistence.InvalidCardPreferences"));
 			string? serializedProviderIdentity = ReadProviderIdentity(
 				accountElement.GetProperty("providerAccountIdentity"));
 			string? providerIdentity = IsMachineLocalIdentityProvider(provider)
@@ -1410,7 +1435,7 @@ internal sealed class PortableSettingsJsonService
 		if ((idElement.ValueKind != JsonValueKind.String) ||
 			!Guid.TryParse(idElement.GetString(), out Guid id))
 		{
-			throw new PortableSettingsException("帳號資料格式無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidAccountData"));
 		}
 
 		return id;
@@ -1434,7 +1459,7 @@ internal sealed class PortableSettingsJsonService
 		if (displayNameElement.ValueKind != JsonValueKind.String)
 		{
 			throw new PortableSettingsException(
-				"帳號顯示名稱格式無效。");
+				UiText.Get("Persistence.InvalidDisplayNameFormat"));
 		}
 
 		return NormalizeDisplayName(displayNameElement.GetString());
@@ -1449,8 +1474,10 @@ internal sealed class PortableSettingsJsonService
 	{
 		IReadOnlyList<string> propertyNames = schemaVersion switch
 		{
-			>= HeightFollowingCardCountSchemaVersion =>
+			>= LanguageSchemaVersion =>
 				CurrentPreferencesPropertyNames,
+			>= HeightFollowingCardCountSchemaVersion =>
+				SchemaSixPreferencesPropertyNames,
 			>= ThemeSchemaVersion => SchemaFourAndFivePreferencesPropertyNames,
 			LegacySchemaVersionThree => SchemaThreePreferencesPropertyNames,
 			_ => LegacyPreferencesPropertyNames
@@ -1458,7 +1485,7 @@ internal sealed class PortableSettingsJsonService
 		ValidateObject(
 			preferencesElement,
 			propertyNames,
-			"顯示設定格式無效。");
+			UiText.Get("Persistence.InvalidPreferencesFormat"));
 		UsageSortMode sortMode = ReadUsageSortMode(
 			preferencesElement.GetProperty("usageSortMode"));
 		UsageDisplayMode displayMode = ReadUsageDisplayMode(
@@ -1472,13 +1499,13 @@ internal sealed class PortableSettingsJsonService
 		PortableWidgetPreferences widgetPreferences = new(
 			ReadBoolean(
 				preferencesElement.GetProperty("isWidgetVisible"),
-				"浮窗顯示狀態格式無效。"),
+				UiText.Get("Persistence.InvalidWidgetVisibility")),
 			ReadBoolean(
 				preferencesElement.GetProperty("isCollapsed"),
-				"浮窗收合狀態格式無效。"),
+				UiText.Get("Persistence.InvalidWidgetCollapsed")),
 			ReadBoolean(
 				preferencesElement.GetProperty("isTopmost"),
-				"浮窗置頂狀態格式無效。"),
+				UiText.Get("Persistence.InvalidWidgetTopmost")),
 			ReadFloatingWidgetCorner(
 				preferencesElement.GetProperty("corner")),
 			schemaVersion >= ThemeSchemaVersion
@@ -1488,16 +1515,34 @@ internal sealed class PortableSettingsJsonService
 				? ReadBoolean(
 					preferencesElement.GetProperty(
 						"isHeightFollowingCardCount"),
-					"視窗高度設定格式無效。")
+					UiText.Get("Persistence.InvalidHeightPreference"))
+				: null,
+			schemaVersion >= LanguageSchemaVersion
+				? ReadAppLanguage(preferencesElement.GetProperty("language"))
 				: null);
 		return (sortMode, displayMode, widgetPreferences);
+	}
+
+	private static AppLanguage ReadAppLanguage(JsonElement element)
+	{
+		if (element.ValueKind != JsonValueKind.String)
+		{
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidLanguageFormat"));
+		}
+
+		return element.GetString() switch
+		{
+			nameof(AppLanguage.English) => AppLanguage.English,
+			nameof(AppLanguage.TraditionalChinese) => AppLanguage.TraditionalChinese,
+			_ => throw new PortableSettingsException(UiText.Get("Persistence.InvalidLanguage"))
+		};
 	}
 
 	private static AppTheme ReadAppTheme(JsonElement element)
 	{
 		if (element.ValueKind != JsonValueKind.String)
 		{
-			throw new PortableSettingsException("主題設定格式無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidThemeFormat"));
 		}
 
 		return element.GetString() switch
@@ -1506,7 +1551,7 @@ internal sealed class PortableSettingsJsonService
 			nameof(AppTheme.Midnight) => AppTheme.Midnight,
 			nameof(AppTheme.Light) => AppTheme.Light,
 			nameof(AppTheme.Sakura) => AppTheme.Sakura,
-			_ => throw new PortableSettingsException("主題設定無效。")
+			_ => throw new PortableSettingsException(UiText.Get("Persistence.InvalidTheme"))
 		};
 	}
 
@@ -1515,7 +1560,7 @@ internal sealed class PortableSettingsJsonService
 	{
 		if (element.ValueKind != JsonValueKind.String)
 		{
-			throw new PortableSettingsException("浮窗停靠位置格式無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidWidgetCornerFormat"));
 		}
 
 		return element.GetString() switch
@@ -1526,7 +1571,7 @@ internal sealed class PortableSettingsJsonService
 				FloatingWidgetCorner.BottomRight,
 			nameof(FloatingWidgetCorner.BottomLeft) =>
 				FloatingWidgetCorner.BottomLeft,
-			_ => throw new PortableSettingsException("浮窗停靠位置無效。")
+			_ => throw new PortableSettingsException(UiText.Get("Persistence.InvalidWidgetCorner"))
 		};
 	}
 
@@ -1534,7 +1579,7 @@ internal sealed class PortableSettingsJsonService
 	{
 		if (providerElement.ValueKind != JsonValueKind.String)
 		{
-			throw new PortableSettingsException("帳號的服務格式無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidProviderFormat"));
 		}
 
 		ProviderKind provider = providerElement.GetString() switch
@@ -1545,7 +1590,7 @@ internal sealed class PortableSettingsJsonService
 			nameof(ProviderKind.Antigravity) => ProviderKind.Antigravity,
 			nameof(ProviderKind.Grok) => ProviderKind.Grok,
 			_ => throw new PortableSettingsException(
-				"帳號包含不支援的服務。")
+				UiText.Get("Persistence.UnsupportedProvider"))
 		};
 		ValidateProvider(provider);
 		return provider;
@@ -1561,7 +1606,7 @@ internal sealed class PortableSettingsJsonService
 		if (identityElement.ValueKind != JsonValueKind.String)
 		{
 			throw new PortableSettingsException(
-				"帳號資訊格式無效。");
+				UiText.Get("Persistence.InvalidAccountIdentity"));
 		}
 
 		return NormalizeProviderIdentity(identityElement.GetString());
@@ -1571,14 +1616,14 @@ internal sealed class PortableSettingsJsonService
 	{
 		if (element.ValueKind != JsonValueKind.String)
 		{
-			throw new PortableSettingsException("用量顯示方式格式無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidDisplayModeFormat"));
 		}
 
 		return element.GetString() switch
 		{
 			nameof(UsageDisplayMode.Used) => UsageDisplayMode.Used,
 			nameof(UsageDisplayMode.Remaining) => UsageDisplayMode.Remaining,
-			_ => throw new PortableSettingsException("用量顯示方式無效。")
+			_ => throw new PortableSettingsException(UiText.Get("Persistence.InvalidDisplayMode"))
 		};
 	}
 
@@ -1586,14 +1631,14 @@ internal sealed class PortableSettingsJsonService
 	{
 		if (element.ValueKind != JsonValueKind.String)
 		{
-			throw new PortableSettingsException("用量排序方式格式無效。");
+			throw new PortableSettingsException(UiText.Get("Persistence.InvalidSortModeFormat"));
 		}
 
 		return element.GetString() switch
 		{
 			nameof(UsageSortMode.Manual) => UsageSortMode.Manual,
 			nameof(UsageSortMode.Automatic) => UsageSortMode.Automatic,
-			_ => throw new PortableSettingsException("用量排序方式無效。")
+			_ => throw new PortableSettingsException(UiText.Get("Persistence.InvalidSortMode"))
 		};
 	}
 
@@ -1601,12 +1646,12 @@ internal sealed class PortableSettingsJsonService
 	{
 		if (id == Guid.Empty)
 		{
-			throw new PortableSettingsException("帳號資料不可為空。");
+			throw new PortableSettingsException(UiText.Get("Persistence.AccountIdEmpty"));
 		}
 
 		if (!accountIds.Add(id))
 		{
-			throw new PortableSettingsException("帳號不可重複。");
+			throw new PortableSettingsException(UiText.Get("Persistence.DuplicateAccount"));
 		}
 	}
 
@@ -1631,7 +1676,7 @@ internal sealed class PortableSettingsJsonService
 				!seenNames.Add(property.Name))
 			{
 				throw new PortableSettingsException(
-					"設定檔包含未知或重複的欄位。");
+					UiText.Get("Persistence.UnknownOrDuplicateFields"));
 			}
 		}
 
@@ -1647,7 +1692,7 @@ internal sealed class PortableSettingsJsonService
 		if (!Enum.IsDefined(provider))
 		{
 			throw new PortableSettingsException(
-				"帳號包含不支援的服務。");
+				UiText.Get("Persistence.UnsupportedProvider"));
 		}
 	}
 

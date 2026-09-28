@@ -11,6 +11,7 @@ using AiUsageDashboard.Updater.Core;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class AppActivationTests
 {
 	[Theory]
