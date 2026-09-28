@@ -29,13 +29,11 @@
 
 ## 目前版本
 
-目前正式版本為 **`1.0.15`**。本版減少收合浮窗展開時的重複排版，並改善連接、匯入、用量與檢查回饋，以及捲軸和排序規則視窗。背景更新沿用 `1.0.14` 的每卡週期與服務排隊。本版沿用 `v1.0.14` 正式版中的 `1.0.12` Updater 原始 bytes。從 [v1.0.15 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.15) 下載；成品資訊見 [1.0.15 版本說明](docs/releases/1.0.15.md)。
+目前正式版本為 **`1.0.15`**。[下載最新版](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.15) · [版本說明](docs/releases/1.0.15.md)
 
-[同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36414232487)：Release 建置與完整測試（4,393 passed／0 failed／0 skipped）通過，production line coverage 74.36%（48,895／65,755，門檻 70%）。[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36415082312/attempts/1) attempt 1：Release 建置與完整測試（4,393 passed／0 failed／0 skipped）通過，production line coverage 74.36%（48,895／65,755，門檻 70%），並在同一 attempt 簽署及凍結六件成品。
+本版改善浮窗展開與卡片檢查回饋，並讓帳號連接、設定匯入與用量提示更清楚。
 
-正式公開後已匿名下載六件原凍結成品，前後核對同一 Release／latest／tag target、asset ID／名稱／大小／SHA256、三份 sidecar 與 latest stable feed `1963` bytes／SHA256 `ef339f3e8a9a6dc9412e84366cc89b23b1c226e16989228b16a387f4458ba09b`；production public trust 對 RSA-PSS-SHA256 驗簽通過，六件合計 `106808780` bytes。
-
-乾淨 Windows 初裝與條款接受／拒絕、既有標準安裝從 `1.0.14` 的 App 一鍵線上更新、適用的 Updater 交接、五個平台官方 CLI 的真人登入與用量，以及完整 UI／無障礙驗收，尚未以本版完成。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#1015)。
+標準安裝版可從系統匣選擇 **檢查更新** 升級；第一次使用請見[安裝與第一次使用](#安裝與第一次使用)。相容性與注意事項見[使用限制](#使用限制)。
 
 ## 支援平台
 
@@ -55,7 +53,6 @@
 | --- | --- |
 | 查看還能用多少 | 集中查看各帳號用量，切換已使用／剩餘顯示，並查看來源提供的重置時間。 |
 | 更新剛用過的帳號 | 自動更新之外，也能手動檢查全部或單一帳號；暫時失敗時可保留上次資料並標示狀態。 |
-| 檢查 App 新版本 | 啟動後自動檢查已簽署的更新清單，也可從系統匣手動檢查；標準安裝版符合條件時可選擇更新並重新啟動。 |
 | 分清不同帳號 | 為卡片設定暱稱；Claude 可顯示組織，Codex 可顯示工作區。暫時不用的卡片可停止檢查。 |
 | 排列常用卡片 | 手動調整順序，或依服務、5 小時及週用量的重置時間自動排序。 |
 | 邊工作邊看用量 | 浮窗可置頂、移動、停靠角落及收合；隱藏後仍在背景更新，可從系統匣叫回。 |
