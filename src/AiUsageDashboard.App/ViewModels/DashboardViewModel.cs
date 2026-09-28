@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 using AiUsageDashboard.AntigravitySpike;
+using AiUsageDashboard.App.Infrastructure;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
 using AiUsageDashboard.Core.Models;
@@ -169,8 +170,13 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	private const string NoRefreshTargetsMessage = "沒有可檢查用量的帳號";
 	private readonly Dictionary<Guid, AccountRefreshActivity>
 		_accountRefreshActivities = new();
+	private readonly Dictionary<Guid, long> _accountRefreshRevisions = new();
+	private readonly Dictionary<Guid, Task> _periodicRefreshTasks = new();
+	private readonly Dictionary<ProviderKind, Task> _periodicIdentityRefreshTasks = new();
+	private readonly CancellationTokenSource _periodicMaintenanceCancellationSource = new();
 	private readonly List<AccountProfile> _accountProfiles = new();
 	private readonly SemaphoreSlim _accountMutationGate = new(1, 1);
+	private readonly SemaphoreSlim _antigravityReportedAccountRemovalGate = new(1, 1);
 	private readonly HashSet<Guid>
 		_providerAccountCacheCleanupFailureAccountIds = new();
 	private readonly object _providerAccountCacheCleanupWarningSync = new();
@@ -200,6 +206,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	private readonly IPortableSettingsImportTransaction?
 		_portableSettingsImportTransaction;
 	private readonly IUsageSnapshotStore? _usageSnapshotStore;
+	private readonly KeyedAsyncGate<Guid> _usageSnapshotPersistenceGate = new();
 	private readonly IUsageRefreshCoordinator _usageRefreshCoordinator;
 	private readonly Action<string, string, Exception?> _reportDiagnostic;
 	private readonly TimeSpan _accountRefreshQuiesceTimeout;
@@ -221,6 +228,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	private long _activeRefreshLifecycleRevision = -1;
 	private RefreshRequestScope _activeRefreshScope;
 	private Task? _activeRefreshTask;
+	private Task<bool>? _periodicMaintenanceTask;
 	private int _activeRefreshOperationCount;
 	private bool _canManageAccounts = true;
 	private bool _blockAllAccountsForCleanup;
@@ -249,6 +257,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	private bool _shouldClearAccountSettingsHealthAfterSuccessfulSave;
 	private long _portableSettingsRevision;
 	private long _nextUsageSafetyRevalidationOperationId;
+	private long _nextAccountRefreshRevision;
 	private PortableSettingsImportUndoState? _lastPortableSettingsImportUndoState;
 	private string _accountSettingsHealthMessage = string.Empty;
 	private string _accountSettingsMessage = "正在載入帳號設定…";
@@ -269,6 +278,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		}
 
 		_isDisposed = true;
+		_periodicMaintenanceCancellationSource.Cancel();
+		_periodicMaintenanceCancellationSource.Dispose();
 		(_antigravityReportedAccountSource as IDisposable)?.Dispose();
 	}
 
@@ -2061,16 +2072,12 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				account.Id,
 				account.Provider))
 			.ToDictionary(account => account.Id, account => account.CurrentSnapshot);
-		Task<bool> antigravityConnectionTask =
-			RetryPendingAntigravityConnectionsNowAsync(cancellationToken);
-		Task<bool> cleanupTask =
-			RetryPendingAccountCleanupsNowAsync(cancellationToken);
+		Task<bool> maintenanceTask = GetOrSchedulePeriodicMaintenance();
 		Task refreshTask = QueueRefreshUsageAsync(cancellationToken);
 		await Task.WhenAll(
-			antigravityConnectionTask,
-			cleanupTask,
-			refreshTask);
-		bool cleanupCompleted = await cleanupTask;
+			maintenanceTask,
+			refreshTask).WaitAsync(cancellationToken);
+		bool cleanupCompleted = await maintenanceTask;
 
 		if (!cleanupCompleted)
 		{
@@ -2088,6 +2095,215 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			{
 				await RefreshAccountUsageAsync(account.Id, cancellationToken);
 			}
+		}
+	}
+
+	internal void ScheduleUsageRefreshInBackground()
+	{
+		lock (_refreshSync)
+		{
+			if (_isRefreshStopped || _isUpdateShutdownReserved || _isDisposed)
+			{
+				return;
+			}
+
+			AccountUsageViewModel[] eligibleAccounts = Accounts
+				.Where(account =>
+					account.IsEnabled &&
+					account.CanQueryUsage &&
+					!account.IsProviderAccountChangeInProgress &&
+					!IsAccountCleanupBlocked(account.Id, account.Provider) &&
+					!_accountRefreshActivities.ContainsKey(account.Id) &&
+					!_periodicRefreshTasks.ContainsKey(account.Id))
+				.ToArray();
+			foreach (AccountUsageViewModel account in eligibleAccounts.Where(account =>
+				!account.IsAntigravity &&
+				!string.IsNullOrWhiteSpace(account.Profile.ProviderAccountIdentity) &&
+				ShouldSchedulePeriodicAccount(account)))
+			{
+				SchedulePeriodicAccountRefresh(new HashSet<Guid> { account.Id });
+			}
+
+			foreach (IGrouping<ProviderKind, AccountUsageViewModel> providerAccounts in
+				eligibleAccounts
+					.Where(account => account.IsAntigravity ||
+						string.IsNullOrWhiteSpace(account.Profile.ProviderAccountIdentity))
+					.GroupBy(account => account.Provider))
+			{
+				if (_periodicIdentityRefreshTasks.TryGetValue(providerAccounts.Key,
+						out Task? previousRefresh) && !previousRefresh.IsCompleted)
+				{
+					continue;
+				}
+				if (!providerAccounts.Any(ShouldSchedulePeriodicAccount))
+				{
+					continue;
+				}
+				if (Accounts.Any(account => (account.Provider == providerAccounts.Key) &&
+					(account.IsAntigravity ||
+						string.IsNullOrWhiteSpace(account.Profile.ProviderAccountIdentity)) &&
+					_accountRefreshActivities.ContainsKey(account.Id)))
+				{
+					continue;
+				}
+				HashSet<Guid> identityReviewAccountIds = providerAccounts
+					.Select(account => account.Id)
+					.ToHashSet();
+				// 同平台未綁定卡片仍依原順序仲裁身分，AGY 保留顯示關聯。
+				_periodicIdentityRefreshTasks[providerAccounts.Key] =
+					SchedulePeriodicAccountRefresh(identityReviewAccountIds);
+			}
+
+			_ = GetOrSchedulePeriodicMaintenance();
+		}
+	}
+
+	private bool ShouldSchedulePeriodicAccount(AccountUsageViewModel account)
+	{
+		TimeSpan? cooldown = GetRemainingRefreshCooldown(account.Profile);
+		DateTimeOffset now = _timeProvider.GetUtcNow();
+		return (cooldown is null) || (cooldown.Value <= TimeSpan.Zero) ||
+			(account.CurrentSnapshot is not UsageSnapshot snapshot) ||
+			((snapshot.Status != SnapshotStatus.Stale) && snapshot.IsStaleAt(now)) ||
+			// 已過 reset 的卡片仍走 Core cached projection，移除過期 metrics。
+			snapshot.Metrics.Any(metric => (metric.ResetsAt is not null) &&
+				(metric.ResetsAt.Value <= now));
+	}
+
+	private Task SchedulePeriodicAccountRefresh(IReadOnlySet<Guid> accountIds)
+	{
+		foreach (Guid accountId in accountIds)
+		{
+			BeginAccountRefresh(accountId);
+		}
+		Task refreshTask = RunPeriodicAccountRefreshAsync(accountIds);
+		foreach (Guid accountId in accountIds)
+		{
+			_periodicRefreshTasks[accountId] = refreshTask;
+		}
+		_ = CompletePeriodicAccountRefreshAsync(accountIds, refreshTask);
+		return refreshTask;
+	}
+
+	private async Task RunPeriodicAccountRefreshAsync(IReadOnlySet<Guid> accountIds)
+	{
+		await Task.Yield();
+		bool wasReservationTransferred = false;
+		void TransferReservation()
+		{
+			foreach (Guid accountId in accountIds)
+			{
+				EndAccountRefresh(accountId);
+			}
+			wasReservationTransferred = true;
+		}
+
+		try
+		{
+			if (IsRefreshStopped() || _isDisposed)
+			{
+				return;
+			}
+			await RefreshUsageCoreAsync(
+				onlyAccountId: accountIds.Count == 1 ? accountIds.First() : null,
+				includedAccountIds: accountIds,
+				refreshTargetsReserved: TransferReservation);
+		}
+		finally
+		{
+			if (!wasReservationTransferred)
+			{
+				TransferReservation();
+			}
+		}
+	}
+
+	private async Task CompletePeriodicAccountRefreshAsync(
+		IReadOnlySet<Guid> accountIds,
+		Task refreshTask)
+	{
+		try
+		{
+			try
+			{
+				await refreshTask;
+			}
+			finally
+			{
+				lock (_refreshSync)
+				{
+					foreach (Guid accountId in accountIds)
+					{
+						if (_periodicRefreshTasks.TryGetValue(accountId, out Task? trackedTask) &&
+							ReferenceEquals(trackedTask, refreshTask))
+						{
+							_periodicRefreshTasks.Remove(accountId);
+						}
+					}
+				}
+			}
+		}
+		catch (Exception exception)
+		{
+			ReportDiagnostic(
+				"periodic-usage-refresh",
+				"stage=account-worker;result=failed",
+				exception);
+			ReportRefreshFailure();
+		}
+	}
+
+	private Task<bool> GetOrSchedulePeriodicMaintenance()
+	{
+		lock (_refreshSync)
+		{
+			if (_isRefreshStopped || _isUpdateShutdownReserved || _isDisposed)
+			{
+				return Task.FromResult(false);
+			}
+			if ((_periodicMaintenanceTask is null) || _periodicMaintenanceTask.IsCompleted)
+			{
+				_periodicMaintenanceTask = RunPeriodicMaintenanceAsync(
+					_periodicMaintenanceCancellationSource.Token);
+				_ = CompletePeriodicMaintenanceAsync(_periodicMaintenanceTask);
+			}
+			return _periodicMaintenanceTask;
+		}
+	}
+
+	private async Task<bool> RunPeriodicMaintenanceAsync(CancellationToken cancellationToken)
+	{
+		await Task.Yield();
+		cancellationToken.ThrowIfCancellationRequested();
+		Task<bool> antigravityConnectionTask =
+			RetryPendingAntigravityConnectionsNowAsync(cancellationToken);
+		Task<bool> cleanupTask = RetryPendingAccountCleanupsNowAsync(cancellationToken);
+		await Task.WhenAll(antigravityConnectionTask, cleanupTask);
+		if (!IsRefreshStopped() && !_isDisposed && !HasConnectedEnabledAntigravityAccount())
+		{
+			await RefreshAntigravityReportedAccountDisplayAsync(cancellationToken);
+		}
+		return await cleanupTask;
+	}
+
+	private async Task CompletePeriodicMaintenanceAsync(Task maintenanceTask)
+	{
+		try
+		{
+			await maintenanceTask;
+		}
+		catch (OperationCanceledException) when (
+			_periodicMaintenanceCancellationSource.IsCancellationRequested)
+		{
+			// 關閉時取消維護，drain 仍追蹤其完成。
+		}
+		catch (Exception exception)
+		{
+			ReportDiagnostic(
+				"periodic-usage-refresh",
+				"stage=maintenance;result=failed",
+				exception);
+			ReportRefreshFailure();
 		}
 	}
 
@@ -2139,7 +2355,9 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			}
 			else
 			{
-				Task previousRefresh = _activeRefreshTask ?? Task.CompletedTask;
+				Task previousRefresh = IncludePeriodicAccountRefresh(
+					accountId,
+					_activeRefreshTask ?? Task.CompletedTask);
 				refreshTask = RefreshAccountUsageCoreAsync(
 					previousRefresh,
 					accountId,
@@ -2203,7 +2421,9 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			}
 			else
 			{
-				Task previousRefresh = _activeRefreshTask ?? Task.CompletedTask;
+				Task previousRefresh = IncludePeriodicAccountRefresh(
+					accountId,
+					_activeRefreshTask ?? Task.CompletedTask);
 				AccountUsageViewModel? account = Accounts.FirstOrDefault(
 					candidate => candidate.Id == accountId);
 				operationId = Interlocked.Increment(
@@ -2363,6 +2583,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		while (true)
 		{
 			Task activeRefreshTask;
+			Task[] periodicRefreshTasks;
+			Task periodicMaintenanceTask;
 			Task[] accountRefreshIdleTasks;
 			bool isDrained;
 
@@ -2370,9 +2592,14 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			{
 				isDrained = ((_activeRefreshTask is null) ||
 						_activeRefreshTask.IsCompleted) &&
+					_periodicRefreshTasks.Values.All(task => task.IsCompleted) &&
+					((_periodicMaintenanceTask is null) ||
+						_periodicMaintenanceTask.IsCompleted) &&
 					(_accountRefreshActivities.Count == 0);
 
 				activeRefreshTask = _activeRefreshTask ?? Task.CompletedTask;
+				periodicRefreshTasks = _periodicRefreshTasks.Values.Distinct().ToArray();
+				periodicMaintenanceTask = _periodicMaintenanceTask ?? Task.CompletedTask;
 				accountRefreshIdleTasks = _accountRefreshActivities.Values
 					.Select(activity => activity.IdleCompletion.Task)
 					.ToArray();
@@ -2386,6 +2613,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 			Task[] drainTasks = accountRefreshIdleTasks
 				.Append(ObserveRefreshCompletionAsync(activeRefreshTask))
+				.Concat(periodicRefreshTasks.Select(ObserveRefreshCompletionAsync))
+				.Append(ObserveRefreshCompletionAsync(periodicMaintenanceTask))
 				.ToArray();
 
 			try
@@ -2415,6 +2644,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 		if (didStop)
 		{
+			_periodicMaintenanceCancellationSource.Cancel();
 			OnPropertyChanged(nameof(CanRefresh));
 		}
 
@@ -2459,7 +2689,9 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				return Task.CompletedTask;
 			}
 
-			Task previousRefresh = _activeRefreshTask ?? Task.CompletedTask;
+			Task previousRefresh = IncludePeriodicAccountRefresh(
+				accountId,
+				_activeRefreshTask ?? Task.CompletedTask);
 			_activeRefreshTask = RefreshUsageAfterInvalidationCoreAsync(
 				previousRefresh,
 				accountId,
@@ -2494,7 +2726,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 			Task previousRefresh = _activeRefreshTask ?? Task.CompletedTask;
 			refreshTask = RefreshUsageAfterInvalidationCoreAsync(
-				Task.CompletedTask,
+				IncludePeriodicAccountRefresh(accountId, Task.CompletedTask),
 				accountId,
 				tryBeginProviderAccountCommit,
 				onlyAccountId: accountId);
@@ -2824,11 +3056,13 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	private async Task RefreshUsageCoreAsync(
 		Guid? providerAccountChangeId = null,
 		Func<bool>? tryBeginProviderAccountCommit = null,
-		Guid? onlyAccountId = null)
+		Guid? onlyAccountId = null,
+		IReadOnlySet<Guid>? includedAccountIds = null,
+		Action? refreshTargetsReserved = null)
 	{
 		BeginRefreshOperation();
-		(AccountUsageViewModel Account, long LifecycleRevision)[] refreshTargets =
-			Array.Empty<(AccountUsageViewModel, long)>();
+		(AccountUsageViewModel Account, long LifecycleRevision, long RefreshRevision)[]
+			refreshTargets = Array.Empty<(AccountUsageViewModel, long, long)>();
 		bool[] refreshReservationsTransferred = Array.Empty<bool>();
 
 		try
@@ -2849,6 +3083,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 								(account.Id == providerAccountChangeId);
 							return ((onlyAccountId is null) ||
 									(account.Id == onlyAccountId)) &&
+								((includedAccountIds is null) ||
+									includedAccountIds.Contains(account.Id)) &&
 								account.IsEnabled &&
 								!IsAccountCleanupBlocked(account.Id, account.Provider) &&
 								(isExplicitProviderAccountChange ||
@@ -2859,16 +3095,21 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 						.OrderByDescending(account =>
 							account.IsAntigravity &&
 							!IsInactiveAntigravityAccount(account))
-						.Select(account => (account, account.LifecycleRevision))
+						.Select(account => (account, account.LifecycleRevision, 0L))
 					.ToArray();
 				// Reserve every captured target before setup can mark the account as
 				// changing or the AGY metadata prelude can yield.
 				refreshReservationsTransferred = new bool[refreshTargets.Length];
-				foreach ((AccountUsageViewModel account, _) in refreshTargets)
+				for (int index = 0; index < refreshTargets.Length; index++)
 				{
-					BeginAccountRefresh(account.Id);
+					(AccountUsageViewModel account, long lifecycleRevision, _) = refreshTargets[index];
+					refreshTargets[index] = (
+						account,
+						lifecycleRevision,
+						BeginAccountRefreshRequest(account.Id));
 				}
 			}
+			refreshTargetsReserved?.Invoke();
 
 			int coolingDownCount = refreshTargets.Count(target =>
 				GetRemainingRefreshCooldown(
@@ -2891,7 +3132,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 						? await BeginAntigravityReportedAccountRefreshAssociationAsync()
 						: null;
 
-			foreach ((AccountUsageViewModel account, _) in refreshTargets)
+			foreach ((AccountUsageViewModel account, _, _) in refreshTargets)
 			{
 				account.MarkRefreshing();
 			}
@@ -2937,22 +3178,28 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				return;
 			}
 
+			int[] currentTargetIndices = Enumerable.Range(0, refreshTargets.Length)
+				.Where(index => IsCurrentAccountRefresh(
+					refreshTargets[index].Account.Id,
+					refreshTargets[index].RefreshRevision))
+				.ToArray();
 			Dictionary<Guid, string> identityConflicts =
 				FindProviderAccountIdentityConflicts(
-					refreshTargets.Select(target => target.Account).ToArray(),
-					snapshots,
-					refreshTargets
-						.Select(target => target.LifecycleRevision)
+					currentTargetIndices.Select(index => refreshTargets[index].Account).ToArray(),
+					currentTargetIndices.Select(index => snapshots[index]).ToArray(),
+					currentTargetIndices
+						.Select(index => refreshTargets[index].LifecycleRevision)
 						.ToArray());
 
 			for (int index = 0; index < refreshTargets.Length; index++)
 			{
-				(AccountUsageViewModel account, long lifecycleRevision) =
+				(AccountUsageViewModel account, long lifecycleRevision, long refreshRevision) =
 					refreshTargets[index];
 
 				if (!account.IsEnabled ||
 					!Accounts.Contains(account) ||
-					(account.LifecycleRevision != lifecycleRevision))
+					(account.LifecycleRevision != lifecycleRevision) ||
+					!IsCurrentAccountRefresh(account.Id, refreshRevision))
 				{
 					continue;
 				}
@@ -2977,28 +3224,41 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				await DeleteDefiniteScopeMismatchCacheAsync(account);
 			}
 
-			await PersistProviderAccountIdentityBindingsAsync();
+			await PersistProviderAccountIdentityBindingsAsync(
+				includedAccountIds ?? (onlyAccountId is Guid targetAccountId
+					? new HashSet<Guid> { targetAccountId }
+					: null));
 
 			if (hasLiveAntigravityRefreshTarget)
 			{
+				Guid[] currentAntigravityTargetIds = refreshTargets
+					.Where(target => liveAntigravityRefreshTargetIds.Contains(target.Account.Id) &&
+						(target.Account.LifecycleRevision == target.LifecycleRevision) &&
+						IsCurrentAccountRefresh(target.Account.Id, target.RefreshRevision))
+					.Select(target => target.Account.Id)
+					.ToArray();
 				AccountUsageViewModel[] successfulAntigravityTargets = Accounts
 					.Where(account =>
-						liveAntigravityRefreshTargetIds.Contains(account.Id) &&
+						currentAntigravityTargetIds.Contains(account.Id) &&
 						IsSuccessfulAntigravityQuotaSnapshot(
 							account.CurrentSnapshot))
 					.ToArray();
 				MarkAntigravityReportedAccountsStale(
-					liveAntigravityRefreshTargetIds,
+					currentAntigravityTargetIds,
 					successfulAntigravityTargets);
 
 				if (successfulAntigravityTargets.Length > 0)
 				{
 					await RefreshAntigravityReportedAccountDisplayAsync(
 						antigravityReportedAccountAssociation,
-						successfulAntigravityTargets);
+						successfulAntigravityTargets,
+						isCurrentRefresh: account => refreshTargets.Any(target =>
+							(target.Account.Id == account.Id) &&
+							(target.Account.LifecycleRevision == target.LifecycleRevision) &&
+							IsCurrentAccountRefresh(account.Id, target.RefreshRevision)));
 				}
 			}
-			else if (!HasConnectedEnabledAntigravityAccount())
+			else if ((includedAccountIds is null) && !HasConnectedEnabledAntigravityAccount())
 			{
 				// Keep retrying cleanup for disconnected AGY cards without
 				// treating a connected account's normal cooldown as new identity
@@ -3008,12 +3268,13 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			List<UsageSnapshot> appliedSnapshots = new(refreshTargets.Length);
 			List<UsageSnapshot> applicableSnapshots = new(refreshTargets.Length);
 
-			foreach ((AccountUsageViewModel account, long lifecycleRevision) in
+			foreach ((AccountUsageViewModel account, long lifecycleRevision, long refreshRevision) in
 				refreshTargets)
 			{
 				if (!account.IsEnabled ||
 					!Accounts.Contains(account) ||
-					(account.LifecycleRevision != lifecycleRevision))
+					(account.LifecycleRevision != lifecycleRevision) ||
+					!IsCurrentAccountRefresh(account.Id, refreshRevision))
 				{
 					continue;
 				}
@@ -3062,7 +3323,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	}
 
 	private async Task ApplyCompletedBoundRefreshesAsync(
-		IReadOnlyList<(AccountUsageViewModel Account, long LifecycleRevision)>
+		IReadOnlyList<(AccountUsageViewModel Account, long LifecycleRevision, long RefreshRevision)>
 			refreshTargets,
 		IReadOnlyList<Task<UsageSnapshot>> refreshTasks)
 	{
@@ -3090,13 +3351,14 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				continue;
 			}
 
-			(AccountUsageViewModel account, long lifecycleRevision) =
+			(AccountUsageViewModel account, long lifecycleRevision, long refreshRevision) =
 				refreshTargets[targetIndex];
 			UsageSnapshot snapshot = await completedTask;
 			if (CanApplyCompletedBoundSnapshotEarly(
 					account,
 					lifecycleRevision,
-					snapshot))
+					snapshot,
+					refreshRevision))
 			{
 				account.ApplyLiveSnapshot(snapshot);
 			}
@@ -3106,7 +3368,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	private bool CanApplyCompletedBoundSnapshotEarly(
 		AccountUsageViewModel account,
 		long lifecycleRevision,
-		UsageSnapshot snapshot)
+		UsageSnapshot snapshot,
+		long refreshRevision)
 	{
 		if ((IsRefreshStopped()) ||
 			(!account.IsEnabled) ||
@@ -3115,6 +3378,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			(IsAccountCleanupBlocked(account.Id, account.Provider)) ||
 			(!Accounts.Contains(account)) ||
 			(account.LifecycleRevision != lifecycleRevision) ||
+			(!IsCurrentAccountRefresh(account.Id, refreshRevision)) ||
 			(snapshot.Account.Id != account.Id) ||
 			(snapshot.Account.Provider != account.Provider) ||
 			(snapshot.SubscriptionVerificationState ==
@@ -3225,6 +3489,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			return;
 		}
 
+		long refreshRevision;
 		// Recheck and reserve atomically with provider-account setup. This keeps a
 		// setup quiesce from observing idle before the provider call is registered.
 		lock (_refreshSync)
@@ -3242,7 +3507,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				return;
 			}
 
-			BeginAccountRefresh(account.Id);
+			refreshRevision = BeginAccountRefreshRequest(account.Id);
 		}
 
 		// Manual AGY refresh has the same metadata prelude as refresh-all.
@@ -3277,7 +3542,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				!account.IsEnabled ||
 				account.IsProviderAccountChangeInProgress ||
 				!Accounts.Contains(account) ||
-				(account.LifecycleRevision != lifecycleRevision))
+				(account.LifecycleRevision != lifecycleRevision) ||
+				!IsCurrentAccountRefresh(account.Id, refreshRevision))
 			{
 				return;
 			}
@@ -3326,14 +3592,17 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 			await DeleteDefiniteScopeMismatchCacheAsync(account);
 
-			await PersistProviderAccountIdentityBindingsAsync();
+			await PersistProviderAccountIdentityBindingsAsync(new HashSet<Guid> { account.Id });
 
 			if (account.IsAntigravity &&
 				IsSuccessfulAntigravityQuotaSnapshot(account.CurrentSnapshot))
 			{
 				await RefreshAntigravityReportedAccountDisplayAsync(
 					antigravityReportedAccountAssociation,
-					new[] { account });
+					new[] { account },
+					isCurrentRefresh: candidate =>
+						(candidate.LifecycleRevision == lifecycleRevision) &&
+						IsCurrentAccountRefresh(candidate.Id, refreshRevision));
 			}
 			else if (account.IsAntigravity)
 			{
@@ -3711,14 +3980,16 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	private async ValueTask RefreshAntigravityReportedAccountDisplayAsync(
 		AntigravityReportedAccountRefreshAssociation? association,
 		IReadOnlyCollection<AccountUsageViewModel> reconciliationTargets,
-		CancellationToken cancellationToken = default)
+		CancellationToken cancellationToken = default,
+		Func<AccountUsageViewModel, bool>? isCurrentRefresh = null)
 	{
 		ArgumentNullException.ThrowIfNull(reconciliationTargets);
 		await RefreshAntigravityReportedAccountDisplayAsync(
 			association,
 			requireFreshAssociation: true,
 			cancellationToken,
-			reconciliationTargets);
+			reconciliationTargets,
+			isCurrentRefresh: isCurrentRefresh);
 	}
 
 	private async ValueTask RefreshAntigravityReportedAccountDisplayAsync(
@@ -3726,7 +3997,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		bool requireFreshAssociation,
 		CancellationToken cancellationToken,
 		IReadOnlyCollection<AccountUsageViewModel>? reconciliationTargets = null,
-		bool allowCachedAssociation = false)
+		bool allowCachedAssociation = false,
+		Func<AccountUsageViewModel, bool>? isCurrentRefresh = null)
 	{
 		if (requireFreshAssociation && allowCachedAssociation)
 		{
@@ -3803,7 +4075,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			if (requireFreshAssociation)
 			{
 				MarkAntigravityReportedAccountDisplayStale(
-					reconciliationTargets);
+					isCurrentRefresh is null ? reconciliationTargets :
+						reconciliationTargets!.Where(isCurrentRefresh).ToArray());
 			}
 			else
 			{
@@ -3815,6 +4088,15 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 			// Display-only metadata must never make usage refresh fail.
 			return;
+		}
+
+		if (requireFreshAssociation && (isCurrentRefresh is not null))
+		{
+			reconciliationTargets = reconciliationTargets!.Where(isCurrentRefresh).ToArray();
+			if (reconciliationTargets.Count == 0)
+			{
+				return;
+			}
 		}
 
 		if (observation.Status ==
@@ -4235,6 +4517,20 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	}
 
 	private async ValueTask TryRemoveAntigravityReportedAccountArtifactsAsync(
+		CancellationToken cancellationToken)
+	{
+		await _antigravityReportedAccountRemovalGate.WaitAsync(cancellationToken);
+		try
+		{
+			await TryRemoveAntigravityReportedAccountArtifactsCoreAsync(cancellationToken);
+		}
+		finally
+		{
+			_antigravityReportedAccountRemovalGate.Release();
+		}
+	}
+
+	private async ValueTask TryRemoveAntigravityReportedAccountArtifactsCoreAsync(
 		CancellationToken cancellationToken)
 	{
 		DateTimeOffset now = _timeProvider.GetUtcNow();
@@ -4808,6 +5104,38 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		await AuthorizeRetainedPrivateStateDeletionSafelyAsync(
 			accountKeys,
 			cancellationToken);
+	}
+
+	private long BeginAccountRefreshRequest(Guid accountId)
+	{
+		lock (_refreshSync)
+		{
+			long revision = checked(++_nextAccountRefreshRevision);
+			BeginAccountRefresh(accountId);
+			_accountRefreshRevisions[accountId] = revision;
+			return revision;
+		}
+	}
+
+	private bool IsCurrentAccountRefresh(Guid accountId, long refreshRevision)
+	{
+		lock (_refreshSync)
+		{
+			return _accountRefreshRevisions.TryGetValue(accountId, out long currentRevision) &&
+				(currentRevision == refreshRevision);
+		}
+	}
+
+	private Task IncludePeriodicAccountRefresh(Guid accountId, Task previousRefresh)
+	{
+		if (_periodicRefreshTasks.TryGetValue(accountId, out Task? periodicRefresh) &&
+			!periodicRefresh.IsCompleted)
+		{
+			return Task.WhenAll(
+				ObserveRefreshCompletionAsync(previousRefresh),
+				ObserveRefreshCompletionAsync(periodicRefresh));
+		}
+		return previousRefresh;
 	}
 
 	private async Task<bool> AuthorizeRetainedPrivateStateDeletionSafelyAsync(
@@ -6157,6 +6485,16 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 			try
 			{
+				using IDisposable persistenceLease = await _usageSnapshotPersistenceGate.EnterAsync(
+					snapshot.Account.Id,
+					CancellationToken.None,
+					evictWhenIdle: true);
+				AccountUsageViewModel? account = Accounts.FirstOrDefault(
+					candidate => candidate.Id == snapshot.Account.Id);
+				if ((account is null) || !ReferenceEquals(account.CurrentSnapshot, snapshot))
+				{
+					continue;
+				}
 				await _usageSnapshotStore.SaveAsync(snapshot);
 
 				if (!_accountProfiles.Any(profile =>
@@ -6949,11 +7287,15 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		return conflicts;
 	}
 
-	private async Task PersistProviderAccountIdentityBindingsAsync()
+	private async Task PersistProviderAccountIdentityBindingsAsync(
+		IReadOnlySet<Guid>? accountIds = null)
 	{
-		if (!HasPendingProviderAccountIdentityBindings())
+		if (!HasPendingProviderAccountIdentityBindings(accountIds))
 		{
-			ResetProviderIdentityPersistenceRetryBackoff();
+			if (accountIds is null)
+			{
+				ResetProviderIdentityPersistenceRetryBackoff();
+			}
 			return;
 		}
 
@@ -6963,6 +7305,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		{
 			List<(AccountUsageViewModel Account, UsageSnapshot Snapshot, string Identity)>
 				bindings = Accounts
+					.Where(account => (accountIds is null) || accountIds.Contains(account.Id))
 					.Select(account =>
 					{
 						UsageSnapshot? snapshot = account.CurrentSnapshot;
@@ -6995,7 +7338,10 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 			if (bindings.Count == 0)
 			{
-				ResetProviderIdentityPersistenceRetryBackoff();
+				if (accountIds is null)
+				{
+					ResetProviderIdentityPersistenceRetryBackoff();
+				}
 				return;
 			}
 
@@ -9282,10 +9628,15 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		}
 	}
 
-	private bool HasPendingProviderAccountIdentityBindings()
+	private bool HasPendingProviderAccountIdentityBindings(
+		IReadOnlySet<Guid>? accountIds = null)
 	{
 		foreach (AccountUsageViewModel account in Accounts)
 		{
+			if ((accountIds is not null) && !accountIds.Contains(account.Id))
+			{
+				continue;
+			}
 			UsageSnapshot? snapshot = account.CurrentSnapshot;
 
 			if ((snapshot is null) ||
@@ -9705,6 +10056,11 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		{
 			_runtimeOnlyCachedProviderAccountIdentityAccountIds.RemoveWhere(
 				accountId => !enabledAccountIds.Contains(accountId));
+			foreach (Guid accountId in _accountRefreshRevisions.Keys
+				.Where(accountId => !enabledAccountIds.Contains(accountId)).ToArray())
+			{
+				_accountRefreshRevisions.Remove(accountId);
+			}
 		}
 
 		foreach (Guid existingAccountId in existingAccounts.Keys)

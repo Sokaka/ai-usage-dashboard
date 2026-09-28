@@ -423,7 +423,7 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 		bool didStart = false;
 		bool startWasInvoked = false;
 		List<Task> lifecycleTasks = new();
-		using CancellationTokenSource timeoutSource = new(_operationTimeout);
+		using CancellationTokenSource timeoutSource = new();
 		using CancellationTokenSource operationSource =
 			CancellationTokenSource.CreateLinkedTokenSource(
 				cancellationToken,
@@ -436,6 +436,8 @@ internal sealed class CopilotSdkQuotaClient : ICopilotQuotaClient
 				ResolveExecutableLease,
 				operationSource.Token);
 			operationSource.Token.ThrowIfCancellationRequested();
+			// staging 排隊不消耗 SDK 查詢期限。
+			timeoutSource.CancelAfter(_operationTimeout);
 			client = _clientFactory(
 				homeDirectory,
 				accessToken,

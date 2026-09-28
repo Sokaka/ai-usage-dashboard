@@ -1,6 +1,6 @@
 # 實作與驗證清單
 
-更新日期：2026-09-26
+更新日期：2026-09-28
 
 讀者：負責 AI Usage Dashboard 開發、測試與交付的人員。本文只列現況、驗證界線與尚待工作。
 
@@ -87,6 +87,25 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 後續捲動條提交 `8a564747` 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/34764614043) 完整測試為 3,985 passed／0 failed／0 skipped，production line coverage 75.77%；這是另一份遠端驗證，沒有改寫上述本機失敗或其未知原因。對應本機 `0.0.0-verify-scrollbar.20260913.4` 已完成 90 案定向回歸、封裝與安裝，尚非正式凍結候選；這些結果也不代替本次新增功能的驗證。
 
 上述公開入口及 Copilot 相容性修正已在 `1.0.3` 凍結，真人 CLI 登入／用量驗收仍暫緩；歷史候選的成品與驗收只適用於各自 source，不代替目前正式版本的結果。
+
+## 1.0.14 候選版
+
+`1.0.14` 為背景用量更新修正版候選，尚未正式公開；目前正式版本仍為 `1.0.13`。功能範圍見 [1.0.14 候選版本說明](docs/releases/1.0.14.md)。
+
+- [x] Source 已實作各卡片背景排程、同卡片工作合併，以及停止與關機時的工作追蹤。
+- [x] Source 已調整服務排隊及查詢期限起算，保留身分、帳號隔離與用量安全檢查。
+- [x] Source 已加入較舊結果、帳號異動、晚到快取寫入及 reset／stale 邊界的回歸案例。
+
+以下為候選 source 提交時的待驗項目；後續結果按同一 source、run／attempt 與成品登錄在候選 Release 驗證紀錄中。
+
+- [ ] 同 source Windows CI：歷史隱私、restore、Release 建置、完整測試、coverage 與封裝 gates。
+- [ ] 候選 workflow：同一 attempt 完成建置、簽署、驗簽與六件成品凍結。
+- [ ] 獨立核對 freeze receipt、Release／asset 身分、大小、SHA256、三份 sidecar 與 feed 簽章。
+- [ ] 乾淨 Windows 初裝與條款接受／拒絕、`1.0.13` → `1.0.14` App 一鍵更新及適用的 Updater 交接。
+- [ ] 五平台真人登入、手動／背景用量、基準與最新正式 CLI、帳號隔離、取消與失敗處理；見 [1.0.14 CLI 表](docs/CLI_COMPATIBILITY.md#1014)。
+- [ ] 完整 UI／無障礙驗收，以及正式公開後的匿名下載與簽章 smoke。
+
+歷史版本與其他 source 的驗證結果保持原紀錄，不改列為本候選通過。
 
 ## 目前正式版本
 

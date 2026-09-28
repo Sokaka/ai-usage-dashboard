@@ -408,30 +408,25 @@ internal sealed class ClaudeCliUsagePoller :
 			throw new ArgumentException("Claude 帳號識別碼不可為空。", nameof(accountId));
 		}
 
-		using CancellationTokenSource gateTimeoutSource = new(_commandTimeout);
+		// 其他帳號的完整查詢可能超過單一指令期限；排隊只受呼叫端取消控制。
+		using IDisposable? bindingLease = _bindingCommitGate is null
+			? null
+			: await _bindingCommitGate.EnterAsync(cancellationToken);
+		using CancellationTokenSource gateTimeoutSource = new(_commandTimeout, _timeProvider);
 		using CancellationTokenSource gateLinkedSource =
 			CancellationTokenSource.CreateLinkedTokenSource(
 				cancellationToken,
 				gateTimeoutSource.Token);
-		IDisposable? bindingLease = null;
 		IDisposable rawLease;
 
 		try
 		{
-			if (_bindingCommitGate is not null)
-			{
-				bindingLease = await _bindingCommitGate.EnterAsync(
-					gateLinkedSource.Token);
-			}
-
 			rawLease = await _operationGate.EnterAsync(
 				accountId,
 				gateLinkedSource.Token);
 		}
-		catch (OperationCanceledException) when (gateLinkedSource.IsCancellationRequested)
+		catch (OperationCanceledException exception) when (gateLinkedSource.IsCancellationRequested)
 		{
-			bindingLease?.Dispose();
-
 			if (cancellationToken.IsCancellationRequested)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
@@ -439,22 +434,14 @@ internal sealed class ClaudeCliUsagePoller :
 
 			_operationGate.ThrowIfContainmentCompromised(accountId);
 
-			throw new TimeoutException("等待前一個 Claude 帳號作業逾時。");
-		}
-		catch
-		{
-			bindingLease?.Dispose();
-			throw;
+			throw new TimeoutException("等待前一個 Claude 帳號作業逾時。", exception);
 		}
 
-		using (bindingLease)
-		{
-			return await PollWithAccountLeaseAsync(
-				accountId,
-				expectedPublicBindingIdentity,
-				rawLease,
-				cancellationToken);
-		}
+		return await PollWithAccountLeaseAsync(
+			accountId,
+			expectedPublicBindingIdentity,
+			rawLease,
+			cancellationToken);
 	}
 
 	public async Task<ClaudeSubscriptionObservation> ProbeAsync(

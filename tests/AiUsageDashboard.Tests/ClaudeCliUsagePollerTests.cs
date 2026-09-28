@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -14,6 +15,40 @@ namespace AiUsageDashboard.Tests;
 
 public sealed class ClaudeCliUsagePollerTests
 {
+	private sealed class ControlledDeadlineTimeProvider : TimeProvider
+	{
+		private readonly ConcurrentDictionary<TimeSpan, ITimer> _latestTimers = new();
+		private readonly TaskCompletionSource _timerCreated = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		private int _createdTimerCount;
+
+		internal int CreatedTimerCount => Volatile.Read(ref _createdTimerCount);
+
+		internal Task TimerCreated => _timerCreated.Task;
+
+		public override ITimer CreateTimer(
+			TimerCallback callback,
+			object? state,
+			TimeSpan dueTime,
+			TimeSpan period)
+		{
+			Assert.Equal(Timeout.InfiniteTimeSpan, period);
+			ITimer timer = TimeProvider.System.CreateTimer(
+				callback, state, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+			_latestTimers[dueTime] = timer;
+			Interlocked.Increment(ref _createdTimerCount);
+			_timerCreated.TrySetResult();
+			return timer;
+		}
+
+		internal void ExpireDeadline(TimeSpan timeout)
+		{
+			Assert.True(_latestTimers.TryGetValue(timeout, out ITimer? timer));
+			Assert.NotNull(timer);
+			Assert.True(timer.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan));
+		}
+	}
+
 	private sealed class FakeTimeProvider : TimeProvider
 	{
 		private DateTimeOffset _utcNow;
@@ -3686,6 +3721,221 @@ public sealed class ClaudeCliUsagePollerTests
 			new ClaudeAccountOperationGate(),
 			TimeSpan.FromSeconds(5),
 			accountBindingStore: new EmptyClaudeAccountBindingStore()));
+	}
+
+	[Fact]
+	public async Task PollBoundAsync_WhenRealBindingWaitExceedsCommandDeadline_SerializesAccountsAndSucceeds()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = Path.Combine(temporaryDirectory.Path, "claude.exe");
+		string firstConfigDirectory = Path.Combine(temporaryDirectory.Path, "first-config");
+		string secondConfigDirectory = Path.Combine(temporaryDirectory.Path, "second-config");
+		await File.WriteAllTextAsync(executablePath, string.Empty);
+		Directory.CreateDirectory(firstConfigDirectory);
+		Directory.CreateDirectory(secondConfigDirectory);
+		Guid firstAccountId = Guid.NewGuid();
+		Guid secondAccountId = Guid.NewGuid();
+		ClaudeSubscriptionContext firstContext = ClaudeSubscriptionContext.CreateVerified(
+			"claude@example.com", "org-123", "max", "Example Organization");
+		ClaudeSubscriptionContext secondContext = ClaudeSubscriptionContext.CreateVerified(
+			"second@example.com", "org-second", "max", "Example Organization");
+		ClaudeAccountBinding firstBinding = ClaudeAccountBinding.Create(firstAccountId, firstContext);
+		ClaudeAccountBinding secondBinding = ClaudeAccountBinding.Create(secondAccountId, secondContext);
+		InMemoryClaudeAccountBindingStore bindingStore = new(firstBinding, secondBinding);
+		ClaudeBindingCommitGate bindingCommitGate = new();
+		ClaudeAccountOperationGate operationGate = new();
+		TimeSpan queuedCommandTimeout = TimeSpan.FromSeconds(1);
+		TaskCompletionSource firstUsageEntered = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource releaseFirstUsage = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		int firstProcessRunCount = 0;
+		int secondProcessRunCount = 0;
+		ClaudeCliUsagePoller firstPoller = new(
+			_ => firstConfigDirectory,
+			() => executablePath,
+			async (startInfo, cancellationToken) =>
+			{
+				Interlocked.Increment(ref firstProcessRunCount);
+
+				if (startInfo.ArgumentList[0] == "-p")
+				{
+					firstUsageEntered.TrySetResult();
+					await releaseFirstUsage.Task.WaitAsync(cancellationToken);
+				}
+
+				return new ClaudeCliUsagePoller.ProcessResult(
+					0, GetStandardOutput(startInfo), string.Empty);
+			},
+			TimeProvider.System,
+			operationGate,
+			TimeSpan.FromSeconds(15),
+			accountBindingStore: bindingStore,
+			bindingCommitGate: bindingCommitGate);
+		ClaudeCliUsagePoller secondPoller = new(
+			_ => secondConfigDirectory,
+			() => executablePath,
+			(startInfo, _) =>
+			{
+				Interlocked.Increment(ref secondProcessRunCount);
+				string output = GetStandardOutput(startInfo)
+					.Replace("claude@example.com", "second@example.com", StringComparison.Ordinal)
+					.Replace("org-123", "org-second", StringComparison.Ordinal);
+				return Task.FromResult(new ClaudeCliUsagePoller.ProcessResult(
+					0, output, string.Empty));
+			},
+			TimeProvider.System,
+			operationGate,
+			queuedCommandTimeout,
+			accountBindingStore: bindingStore,
+			bindingCommitGate: bindingCommitGate);
+		using CancellationTokenSource cleanupSource = new();
+		Task<ClaudeUsagePollResult> firstPoll = firstPoller.PollBoundAsync(
+			firstAccountId,
+			ClaudeAccountBinding.CreatePublicBindingIdentity(firstBinding.PublicBindingId),
+			cleanupSource.Token);
+		Task<ClaudeUsagePollResult>? secondPoll = null;
+
+		try
+		{
+			await firstUsageEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			Stopwatch bindingWait = Stopwatch.StartNew();
+			secondPoll = secondPoller.PollBoundAsync(
+				secondAccountId,
+				ClaudeAccountBinding.CreatePublicBindingIdentity(secondBinding.PublicBindingId),
+				cleanupSource.Token);
+
+			// 本測試刻意量測真實排隊時間；TCS 已確立先後順序。
+			await Task.Delay(queuedCommandTimeout + TimeSpan.FromMilliseconds(250));
+			Assert.True(bindingWait.Elapsed > queuedCommandTimeout);
+			Assert.False(firstPoll.IsCompleted);
+			Assert.False(secondPoll.IsCompleted);
+			Assert.Equal(3, Volatile.Read(ref firstProcessRunCount));
+			Assert.Equal(0, Volatile.Read(ref secondProcessRunCount));
+			releaseFirstUsage.TrySetResult();
+
+			ClaudeUsagePollResult firstResult = await firstPoll.WaitAsync(TimeSpan.FromSeconds(5));
+			ClaudeUsagePollResult secondResult = await secondPoll.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.Equal(UsageText, firstResult.Output);
+			Assert.Equal(UsageText, secondResult.Output);
+			Assert.Equal(firstContext, firstResult.SubscriptionContext);
+			Assert.Equal(secondContext, secondResult.SubscriptionContext);
+			Assert.Equal(3, firstProcessRunCount);
+			Assert.Equal(3, secondProcessRunCount);
+		}
+		finally
+		{
+			releaseFirstUsage.TrySetResult();
+			cleanupSource.Cancel();
+			await Record.ExceptionAsync(() => firstPoll).WaitAsync(TimeSpan.FromSeconds(5));
+
+			if (secondPoll is not null)
+			{
+				await Record.ExceptionAsync(() => secondPoll).WaitAsync(TimeSpan.FromSeconds(5));
+			}
+		}
+	}
+
+	[Fact]
+	public async Task PollAsync_WhenBindingWaitIsCanceled_RunsNoCliAndLeavesGateAvailable()
+	{
+		ClaudeBindingCommitGate bindingCommitGate = new();
+		ControlledDeadlineTimeProvider timeProvider = new();
+		int processRunCount = 0;
+		ClaudeCliUsagePoller poller = new(
+			_ => @"C:\claude-config",
+			() => @"C:\claude.exe",
+			(_, _) =>
+			{
+				Interlocked.Increment(ref processRunCount);
+				throw new InvalidOperationException(
+					"Process runner must not be called while the binding gate is held.");
+			},
+			timeProvider,
+			new ClaudeAccountOperationGate(),
+			TimeSpan.FromSeconds(30),
+			accountBindingStore: new EmptyClaudeAccountBindingStore(),
+			bindingCommitGate: bindingCommitGate);
+		using IDisposable heldBindingLease = await bindingCommitGate.EnterAsync();
+		using CancellationTokenSource callerCancellationSource = new();
+		Task<ClaudeUsagePollResult> blockedPoll = poller.PollAsync(
+			Guid.NewGuid(), callerCancellationSource.Token);
+
+		try
+		{
+			Assert.False(blockedPoll.IsCompleted);
+			Assert.Equal(0, timeProvider.CreatedTimerCount);
+			callerCancellationSource.Cancel();
+			OperationCanceledException exception =
+				await Assert.ThrowsAnyAsync<OperationCanceledException>(
+					() => blockedPoll.WaitAsync(TimeSpan.FromSeconds(5)));
+			Assert.Equal(callerCancellationSource.Token, exception.CancellationToken);
+			heldBindingLease.Dispose();
+			using IDisposable bindingLease = await bindingCommitGate.EnterAsync()
+				.AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.Equal(0, processRunCount);
+			Assert.Equal(0, timeProvider.CreatedTimerCount);
+		}
+		finally
+		{
+			callerCancellationSource.Cancel();
+			heldBindingLease.Dispose();
+			await Record.ExceptionAsync(() => blockedPoll).WaitAsync(TimeSpan.FromSeconds(5));
+		}
+	}
+
+	[Fact]
+	public async Task PollAsync_WhenAccountDeadlineExpiresAfterBindingAdmission_ReleasesBindingAndPreservesCause()
+	{
+		Guid accountId = Guid.NewGuid();
+		ClaudeAccountOperationGate operationGate = new();
+		ClaudeBindingCommitGate bindingCommitGate = new();
+		ControlledDeadlineTimeProvider timeProvider = new();
+		TimeSpan commandTimeout = TimeSpan.FromSeconds(30);
+		int processRunCount = 0;
+		ClaudeCliUsagePoller poller = new(
+			_ => @"C:\claude-config",
+			() => @"C:\claude.exe",
+			(_, _) =>
+			{
+				Interlocked.Increment(ref processRunCount);
+				throw new InvalidOperationException(
+					"Process runner must not be called while the account gate is held.");
+			},
+			timeProvider,
+			operationGate,
+			commandTimeout,
+			accountBindingStore: new EmptyClaudeAccountBindingStore(),
+			bindingCommitGate: bindingCommitGate);
+		using IDisposable accountLease = await operationGate.EnterAsync(accountId, CancellationToken.None);
+		using IDisposable heldBindingLease = await bindingCommitGate.EnterAsync();
+		using CancellationTokenSource cleanupSource = new();
+		Task<ClaudeUsagePollResult> blockedPoll = poller.PollAsync(accountId, cleanupSource.Token);
+
+		try
+		{
+			Assert.Equal(0, timeProvider.CreatedTimerCount);
+			heldBindingLease.Dispose();
+			await timeProvider.TimerCreated.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.Equal(1, timeProvider.CreatedTimerCount);
+			Assert.False(blockedPoll.IsCompleted);
+			timeProvider.ExpireDeadline(commandTimeout);
+
+			TimeoutException exception = await Assert.ThrowsAsync<TimeoutException>(
+				() => blockedPoll.WaitAsync(TimeSpan.FromSeconds(5)));
+			Assert.Equal("等待前一個 Claude 帳號作業逾時。", exception.Message);
+			Assert.IsAssignableFrom<OperationCanceledException>(exception.InnerException);
+			Assert.False(cleanupSource.IsCancellationRequested);
+			Assert.Equal(0, processRunCount);
+			using IDisposable bindingLease = await bindingCommitGate.EnterAsync()
+				.AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+		}
+		finally
+		{
+			cleanupSource.Cancel();
+			heldBindingLease.Dispose();
+			await Record.ExceptionAsync(() => blockedPoll).WaitAsync(TimeSpan.FromSeconds(5));
+		}
 	}
 
 	[Fact]

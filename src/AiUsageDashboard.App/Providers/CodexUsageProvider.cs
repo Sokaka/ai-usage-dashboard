@@ -10,7 +10,8 @@ using AiUsageDashboard.Core.Providers;
 
 namespace AiUsageDashboard.App.Providers;
 
-internal sealed class CodexUsageProvider : IUsageProvider
+internal sealed class CodexUsageProvider : IUsageProvider,
+	IUsageProviderRefreshAdmission
 {
 	private const int MaximumAccountIdentityLength = 320;
 	private const int MaximumDisplayValueLength = 512;
@@ -40,6 +41,14 @@ internal sealed class CodexUsageProvider : IUsageProvider
 	{
 		_poller = poller ?? throw new ArgumentNullException(nameof(poller));
 		_timeProvider = timeProvider ?? TimeProvider.System;
+	}
+
+	public bool RequiresSerializedRefresh(AccountProfile account)
+	{
+		ArgumentNullException.ThrowIfNull(account);
+		return CodexWorkspaceBinding.TryNormalizePublicBindingIdentity(
+			account.ProviderAccountIdentity,
+			out _);
 	}
 
 	public async Task<UsageSnapshot> GetUsageAsync(

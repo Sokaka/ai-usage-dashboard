@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -9,26 +10,72 @@ namespace AiUsageDashboard.Tests;
 
 public sealed class CodexAppServerUsagePollerTests
 {
+	private sealed class ControlledDeadlineTimeProvider : TimeProvider
+	{
+		private readonly ConcurrentDictionary<TimeSpan, ITimer> _latestTimers = new();
+		private readonly TaskCompletionSource _timerCreated = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		private int _createdTimerCount;
+
+		internal int CreatedTimerCount => Volatile.Read(ref _createdTimerCount);
+
+		internal Task TimerCreated => _timerCreated.Task;
+
+		public override ITimer CreateTimer(
+			TimerCallback callback,
+			object? state,
+			TimeSpan dueTime,
+			TimeSpan period)
+		{
+			Assert.Equal(Timeout.InfiniteTimeSpan, period);
+			ITimer timer = TimeProvider.System.CreateTimer(
+				callback, state, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+			_latestTimers[dueTime] = timer;
+			Interlocked.Increment(ref _createdTimerCount);
+			_timerCreated.TrySetResult();
+			return timer;
+		}
+
+		internal void ExpireDeadline(TimeSpan timeout)
+		{
+			Assert.True(_latestTimers.TryGetValue(timeout, out ITimer? timer));
+			Assert.NotNull(timer);
+			Assert.True(timer.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan));
+		}
+	}
+
 	private sealed class FakeCodexWorkspaceBindingStore :
 		ICodexWorkspaceBindingStore
 	{
 		private readonly Dictionary<Guid, CodexWorkspaceBinding> _bindings;
 		private readonly Exception? _loadAllException;
+		private readonly Task? _loadBlock;
 		private readonly Exception? _loadException;
+		private readonly TaskCompletionSource _loadStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+
+		internal int LoadAllCallCount { get; private set; }
+
+		internal int LoadCallCount { get; private set; }
+
+		internal Task LoadStarted => _loadStarted.Task;
 
 		internal FakeCodexWorkspaceBindingStore(
 			IEnumerable<CodexWorkspaceBinding> bindings,
 			Exception? loadException = null,
-			Exception? loadAllException = null)
+			Exception? loadAllException = null,
+			Task? loadBlock = null)
 		{
 			_bindings = bindings.ToDictionary(binding => binding.AccountId);
 			_loadException = loadException;
 			_loadAllException = loadAllException;
+			_loadBlock = loadBlock;
 		}
 
 		public Task<IReadOnlyList<CodexWorkspaceBinding>> LoadAllAsync(
 			CancellationToken cancellationToken = default)
 		{
+			LoadAllCallCount++;
 			cancellationToken.ThrowIfCancellationRequested();
 			if (_loadAllException is not null)
 			{
@@ -39,17 +86,23 @@ public sealed class CodexAppServerUsagePollerTests
 				_bindings.Values.ToArray());
 		}
 
-		public Task<CodexWorkspaceBinding?> LoadAsync(
+		public async Task<CodexWorkspaceBinding?> LoadAsync(
 			Guid accountId,
 			CancellationToken cancellationToken = default)
 		{
+			LoadCallCount++;
+			_loadStarted.TrySetResult();
 			cancellationToken.ThrowIfCancellationRequested();
 			if (_loadException is not null)
 			{
-				return Task.FromException<CodexWorkspaceBinding?>(_loadException);
+				return await Task.FromException<CodexWorkspaceBinding?>(_loadException);
+			}
+			if (_loadBlock is not null)
+			{
+				await _loadBlock.WaitAsync(cancellationToken);
 			}
 			_bindings.TryGetValue(accountId, out CodexWorkspaceBinding? binding);
-			return Task.FromResult(binding);
+			return binding;
 		}
 
 		public Task SaveAsync(
@@ -100,6 +153,7 @@ public sealed class CodexAppServerUsagePollerTests
 		private readonly Queue<string> _automaticResponses = new();
 		private readonly bool _blockReads;
 		private readonly Task _disposeBlock;
+		private readonly Task? _readBlock;
 		private readonly Exception? _readFailure;
 		private readonly Queue<string> _responses;
 		private readonly TaskCompletionSource _abortObserved = new(
@@ -128,13 +182,15 @@ public sealed class CodexAppServerUsagePollerTests
 			IEnumerable<string>? responses = null,
 			bool blockReads = false,
 			Task? disposeBlock = null,
-			Exception? readFailure = null)
+			Exception? readFailure = null,
+			Task? readBlock = null)
 		{
 			StartInfo = startInfo;
 			_responses = new Queue<string>(responses ?? Array.Empty<string>());
 			_blockReads = blockReads;
 			_disposeBlock = disposeBlock ?? Task.CompletedTask;
 			_readFailure = readFailure;
+			_readBlock = readBlock;
 		}
 
 		public void Abort()
@@ -155,6 +211,11 @@ public sealed class CodexAppServerUsagePollerTests
 			{
 				_readStarted.TrySetResult();
 				await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+			}
+			if (_readBlock is not null)
+			{
+				_readStarted.TrySetResult();
+				await _readBlock.WaitAsync(cancellationToken);
 			}
 
 			cancellationToken.ThrowIfCancellationRequested();
@@ -769,6 +830,260 @@ public sealed class CodexAppServerUsagePollerTests
 		Assert.Equal(
 			new[] { "initialize", "initialized", "config/read" },
 			transport.WrittenMessages.Select(GetMethod));
+	}
+
+	[Fact]
+	public async Task PollBoundAsync_WhenRealBindingWaitExceedsCommandDeadline_SerializesAccountsAndSucceeds()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CreateExecutable(temporaryDirectory.Path);
+		string firstHomeDirectory = Path.Combine(temporaryDirectory.Path, "first-home");
+		string secondHomeDirectory = Path.Combine(temporaryDirectory.Path, "second-home");
+		Directory.CreateDirectory(firstHomeDirectory);
+		Directory.CreateDirectory(secondHomeDirectory);
+		Guid firstAccountId = Guid.NewGuid();
+		Guid secondAccountId = Guid.NewGuid();
+		Guid secondWorkspaceId = Guid.NewGuid();
+		CodexWorkspaceBinding firstBinding = CodexWorkspaceBinding.Create(
+			firstAccountId, Guid.NewGuid(), "user@example.com", WorkspaceId);
+		CodexWorkspaceBinding secondBinding = CodexWorkspaceBinding.Create(
+			secondAccountId, Guid.NewGuid(), "user@example.com", secondWorkspaceId);
+		FakeCodexWorkspaceBindingStore bindingStore = new([firstBinding, secondBinding]);
+		CodexBindingCommitGate bindingCommitGate = new();
+		CodexAccountOperationGate operationGate = new();
+		TimeSpan queuedCommandTimeout = TimeSpan.FromSeconds(1);
+		string[] responses = CreateResponses(
+			"""{"limitId":"codex","primary":{"usedPercent":10,"windowDurationMins":300,"resetsAt":1784100000},"secondary":null}""",
+			"null");
+		string[] firstResponses =
+		[
+			responses[0],
+			CreateConfigReadResponse(WorkspaceId.ToString("D")),
+			responses[1],
+			responses[2]
+		];
+		string[] secondResponses =
+		[
+			responses[0],
+			CreateConfigReadResponse(secondWorkspaceId.ToString("D")),
+			responses[1],
+			responses[2]
+		];
+		TaskCompletionSource releaseFirstRead = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<FakeTransport> firstTransportCreated = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeTransport? secondTransport = null;
+		int secondTransportFactoryCallCount = 0;
+		CodexAppServerUsagePoller firstPoller = new(
+			_ => firstHomeDirectory,
+			() => executablePath,
+			startInfo =>
+			{
+				FakeTransport transport = new(
+					startInfo, firstResponses, readBlock: releaseFirstRead.Task);
+				firstTransportCreated.TrySetResult(transport);
+				return transport;
+			},
+			TimeProvider.System,
+			operationGate,
+			bindingStore,
+			bindingCommitGate,
+			TimeSpan.FromSeconds(15));
+		CodexAppServerUsagePoller secondPoller = new(
+			_ => secondHomeDirectory,
+			() => executablePath,
+			startInfo =>
+			{
+				Interlocked.Increment(ref secondTransportFactoryCallCount);
+				secondTransport = new FakeTransport(startInfo, secondResponses);
+				return secondTransport;
+			},
+			TimeProvider.System,
+			operationGate,
+			bindingStore,
+			bindingCommitGate,
+			queuedCommandTimeout);
+		using CancellationTokenSource cleanupSource = new();
+		Task<CodexUsagePollResult> firstPoll = firstPoller.PollBoundAsync(
+			firstAccountId,
+			CodexWorkspaceBinding.CreatePublicBindingIdentity(firstBinding.PublicBindingId),
+			cleanupSource.Token);
+		Task<CodexUsagePollResult>? secondPoll = null;
+
+		try
+		{
+			FakeTransport firstTransport = await firstTransportCreated.Task.WaitAsync(
+				TimeSpan.FromSeconds(5));
+			await firstTransport.ReadStarted.WaitAsync(TimeSpan.FromSeconds(5));
+			Stopwatch bindingWait = Stopwatch.StartNew();
+			secondPoll = secondPoller.PollBoundAsync(
+				secondAccountId,
+				CodexWorkspaceBinding.CreatePublicBindingIdentity(secondBinding.PublicBindingId),
+				cleanupSource.Token);
+
+			// 本測試刻意量測真實排隊時間；TCS 已確認第一張卡片持有 binding gate。
+			await Task.Delay(queuedCommandTimeout + TimeSpan.FromMilliseconds(250));
+			Assert.True(bindingWait.Elapsed > queuedCommandTimeout);
+			Assert.False(firstPoll.IsCompleted);
+			Assert.False(secondPoll.IsCompleted);
+			Assert.Equal(1, bindingStore.LoadCallCount);
+			Assert.Equal(1, bindingStore.LoadAllCallCount);
+			Assert.Equal(0, Volatile.Read(ref secondTransportFactoryCallCount));
+			releaseFirstRead.TrySetResult();
+
+			CodexUsagePollResult firstResult = await firstPoll.WaitAsync(TimeSpan.FromSeconds(5));
+			CodexUsagePollResult secondResult = await secondPoll.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.Equal(WorkspaceId, firstResult.WorkspaceId);
+			Assert.Equal(secondWorkspaceId, secondResult.WorkspaceId);
+			Assert.Equal(
+				CodexWorkspaceBinding.CreatePublicBindingIdentity(firstBinding.PublicBindingId),
+				firstResult.PublicBindingIdentity);
+			Assert.Equal(
+				CodexWorkspaceBinding.CreatePublicBindingIdentity(secondBinding.PublicBindingId),
+				secondResult.PublicBindingIdentity);
+			Assert.Single(firstResult.RateLimits);
+			Assert.Single(secondResult.RateLimits);
+			Assert.Equal(2, bindingStore.LoadCallCount);
+			Assert.Equal(2, bindingStore.LoadAllCallCount);
+			Assert.Equal(1, secondTransportFactoryCallCount);
+			Assert.True(firstTransport.IsDisposed);
+			Assert.NotNull(secondTransport);
+			Assert.True(secondTransport.IsDisposed);
+			string[] expectedMethods =
+			[
+				"initialize", "initialized", "config/read", "account/read", "account/rateLimits/read"
+			];
+			Assert.Equal(expectedMethods, firstTransport.WrittenMessages.Select(GetMethod));
+			Assert.Equal(expectedMethods, secondTransport.WrittenMessages.Select(GetMethod));
+		}
+		finally
+		{
+			releaseFirstRead.TrySetResult();
+			cleanupSource.Cancel();
+			await Record.ExceptionAsync(() => firstPoll).WaitAsync(TimeSpan.FromSeconds(5));
+
+			if (secondPoll is not null)
+			{
+				await Record.ExceptionAsync(() => secondPoll).WaitAsync(TimeSpan.FromSeconds(5));
+			}
+		}
+	}
+
+	[Fact]
+	public async Task PollBoundAsync_WhenBindingWaitIsCanceled_ReadsNoStoreAndStartsNoTransport()
+	{
+		FakeCodexWorkspaceBindingStore bindingStore = new([]);
+		CodexBindingCommitGate bindingCommitGate = new();
+		ControlledDeadlineTimeProvider timeProvider = new();
+		int transportFactoryCallCount = 0;
+		CodexAppServerUsagePoller poller = new(
+			_ => @"C:\codex-home",
+			() => @"C:\codex.exe",
+			_ =>
+			{
+				Interlocked.Increment(ref transportFactoryCallCount);
+				throw new InvalidOperationException(
+					"Transport factory must not run while the binding gate is held.");
+			},
+			timeProvider,
+			new CodexAccountOperationGate(),
+			bindingStore,
+			bindingCommitGate);
+		using IDisposable heldBindingLease = await bindingCommitGate.EnterAsync();
+		using CancellationTokenSource callerCancellationSource = new();
+		Task<CodexUsagePollResult> blockedPoll = poller.PollBoundAsync(
+			Guid.NewGuid(),
+			CodexWorkspaceBinding.CreatePublicBindingIdentity(Guid.NewGuid()),
+			callerCancellationSource.Token);
+
+		try
+		{
+			Assert.False(blockedPoll.IsCompleted);
+			Assert.Equal(0, timeProvider.CreatedTimerCount);
+			callerCancellationSource.Cancel();
+			OperationCanceledException exception =
+				await Assert.ThrowsAnyAsync<OperationCanceledException>(
+					() => blockedPoll.WaitAsync(TimeSpan.FromSeconds(5)));
+			Assert.Equal(callerCancellationSource.Token, exception.CancellationToken);
+			heldBindingLease.Dispose();
+			using IDisposable bindingLease = await bindingCommitGate.EnterAsync()
+				.AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.Equal(0, bindingStore.LoadCallCount);
+			Assert.Equal(0, bindingStore.LoadAllCallCount);
+			Assert.Equal(0, transportFactoryCallCount);
+			Assert.Equal(0, timeProvider.CreatedTimerCount);
+		}
+		finally
+		{
+			callerCancellationSource.Cancel();
+			heldBindingLease.Dispose();
+			await Record.ExceptionAsync(() => blockedPoll).WaitAsync(TimeSpan.FromSeconds(5));
+		}
+	}
+
+	[Fact]
+	public async Task PollBoundAsync_WhenBindingReadDeadlineExpiresAfterAdmission_ReleasesGateAndPreservesCause()
+	{
+		Guid accountId = Guid.NewGuid();
+		CodexWorkspaceBinding binding = CodexWorkspaceBinding.Create(
+			accountId, Guid.NewGuid(), "user@example.com", WorkspaceId);
+		TaskCompletionSource releaseLoad = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeCodexWorkspaceBindingStore bindingStore = new([binding], loadBlock: releaseLoad.Task);
+		CodexBindingCommitGate bindingCommitGate = new();
+		ControlledDeadlineTimeProvider timeProvider = new();
+		TimeSpan commandTimeout = TimeSpan.FromSeconds(30);
+		int transportFactoryCallCount = 0;
+		CodexAppServerUsagePoller poller = new(
+			_ => @"C:\codex-home",
+			() => @"C:\codex.exe",
+			_ =>
+			{
+				Interlocked.Increment(ref transportFactoryCallCount);
+				throw new InvalidOperationException(
+					"Transport factory must not run before binding validation completes.");
+			},
+			timeProvider,
+			new CodexAccountOperationGate(),
+			bindingStore,
+			bindingCommitGate,
+			commandTimeout);
+		using IDisposable heldBindingLease = await bindingCommitGate.EnterAsync();
+		using CancellationTokenSource cleanupSource = new();
+		Task<CodexUsagePollResult> blockedPoll = poller.PollBoundAsync(
+			accountId,
+			CodexWorkspaceBinding.CreatePublicBindingIdentity(binding.PublicBindingId),
+			cleanupSource.Token);
+
+		try
+		{
+			Assert.Equal(0, timeProvider.CreatedTimerCount);
+			Assert.Equal(0, bindingStore.LoadCallCount);
+			heldBindingLease.Dispose();
+			await timeProvider.TimerCreated.WaitAsync(TimeSpan.FromSeconds(5));
+			await bindingStore.LoadStarted.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.Equal(1, timeProvider.CreatedTimerCount);
+			Assert.False(blockedPoll.IsCompleted);
+			timeProvider.ExpireDeadline(commandTimeout);
+
+			TimeoutException exception = await Assert.ThrowsAsync<TimeoutException>(
+				() => blockedPoll.WaitAsync(TimeSpan.FromSeconds(5)));
+			Assert.Equal("等待 Codex workspace binding 作業逾時。", exception.Message);
+			Assert.IsAssignableFrom<OperationCanceledException>(exception.InnerException);
+			Assert.False(cleanupSource.IsCancellationRequested);
+			Assert.Equal(1, bindingStore.LoadCallCount);
+			Assert.Equal(0, bindingStore.LoadAllCallCount);
+			Assert.Equal(0, transportFactoryCallCount);
+			using IDisposable bindingLease = await bindingCommitGate.EnterAsync()
+				.AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+		}
+		finally
+		{
+			cleanupSource.Cancel();
+			heldBindingLease.Dispose();
+			releaseLoad.TrySetResult();
+			await Record.ExceptionAsync(() => blockedPoll).WaitAsync(TimeSpan.FromSeconds(5));
+		}
 	}
 
 	[Fact]

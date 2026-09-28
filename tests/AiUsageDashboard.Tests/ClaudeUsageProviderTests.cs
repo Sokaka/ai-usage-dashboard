@@ -1,7 +1,10 @@
+using System.Collections.Concurrent;
+
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Providers;
+using AiUsageDashboard.Core.Refreshing;
 
 namespace AiUsageDashboard.Tests;
 
@@ -10,10 +13,13 @@ public sealed class ClaudeUsageProviderTests
 	private sealed class FakeClaudeUsagePoller : IClaudeUsagePoller
 	{
 		private readonly Func<Guid, CancellationToken, Task<ClaudeUsagePollResult>> _poll;
+		private readonly ConcurrentQueue<string> _expectedPublicBindingIdentities = new();
+		private int _callCount;
 
-		internal int CallCount { get; private set; }
+		internal int CallCount => Volatile.Read(ref _callCount);
 
-		internal List<string> ExpectedPublicBindingIdentities { get; } = new();
+		internal IReadOnlyList<string> ExpectedPublicBindingIdentities =>
+			_expectedPublicBindingIdentities.ToArray();
 
 		internal FakeClaudeUsagePoller(
 			Func<Guid, CancellationToken, Task<ClaudeUsagePollResult>> poll)
@@ -37,7 +43,7 @@ public sealed class ClaudeUsageProviderTests
 			Guid accountId,
 			CancellationToken cancellationToken = default)
 		{
-			CallCount++;
+			Interlocked.Increment(ref _callCount);
 			return _poll(accountId, cancellationToken);
 		}
 
@@ -46,8 +52,8 @@ public sealed class ClaudeUsageProviderTests
 			string expectedPublicBindingIdentity,
 			CancellationToken cancellationToken = default)
 		{
-			ExpectedPublicBindingIdentities.Add(expectedPublicBindingIdentity);
-			CallCount++;
+			_expectedPublicBindingIdentities.Enqueue(expectedPublicBindingIdentity);
+			Interlocked.Increment(ref _callCount);
 			return _poll(accountId, cancellationToken);
 		}
 	}
@@ -55,13 +61,20 @@ public sealed class ClaudeUsageProviderTests
 	private sealed class FakeClaudeAccountBindingStore :
 		IClaudeAccountBindingStore
 	{
-		private readonly ClaudeAccountBinding? _binding;
+		private readonly IReadOnlyDictionary<Guid, ClaudeAccountBinding> _bindings;
 
 		internal int LoadCallCount { get; private set; }
 
 		internal FakeClaudeAccountBindingStore(ClaudeAccountBinding? binding)
+			: this(binding is null
+				? Array.Empty<ClaudeAccountBinding>()
+				: new[] { binding })
 		{
-			_binding = binding;
+		}
+
+		internal FakeClaudeAccountBindingStore(IEnumerable<ClaudeAccountBinding> bindings)
+		{
+			_bindings = bindings.ToDictionary(binding => binding.AccountId);
 		}
 
 		public Task<IReadOnlyList<ClaudeAccountBinding>> LoadAllAsync(
@@ -78,8 +91,8 @@ public sealed class ClaudeUsageProviderTests
 			cancellationToken.ThrowIfCancellationRequested();
 			LoadCallCount++;
 
-			return Task.FromResult(
-				_binding?.AccountId == accountId ? _binding : null);
+			return Task.FromResult<ClaudeAccountBinding?>(
+				_bindings.GetValueOrDefault(accountId));
 		}
 
 		public Task SaveAsync(
@@ -126,7 +139,7 @@ public sealed class ClaudeUsageProviderTests
 		private readonly Func<Guid, CancellationToken, Task>? _disable;
 		private readonly Func<AccountProfile, CancellationToken, Task<UsageSnapshot>> _getUsage;
 
-		public ProviderKind Provider => ProviderKind.Claude;
+		public ProviderKind Provider { get; }
 
 		public TimeSpan MinimumRefreshInterval => TimeSpan.FromSeconds(10);
 
@@ -136,10 +149,12 @@ public sealed class ClaudeUsageProviderTests
 
 		internal FakeUsageProvider(
 			Func<AccountProfile, CancellationToken, Task<UsageSnapshot>> getUsage,
-			Func<Guid, CancellationToken, Task>? disable = null)
+			Func<Guid, CancellationToken, Task>? disable = null,
+			ProviderKind provider = ProviderKind.Claude)
 		{
 			_getUsage = getUsage;
 			_disable = disable;
+			Provider = provider;
 		}
 
 		public Task DisableAsync(
@@ -180,6 +195,198 @@ public sealed class ClaudeUsageProviderTests
 		Current session: 49% used · resets Jul 15, 11:30am (Asia/Taipei)
 		Current week (all models): 84% used · resets Jul 20, 8am (Asia/Taipei)
 		""";
+
+	[Theory]
+	[InlineData(false, false, false)]
+	[InlineData(false, true, false)]
+	[InlineData(true, false, false)]
+	[InlineData(true, true, true)]
+	public void RequiresSerializedRefresh_UsesBindingStoreAndQuotaRiskConsent(
+		bool hasBindingStore,
+		bool hasQuotaRiskConsent,
+		bool expected)
+	{
+		(AccountProfile account, ClaudeAccountBinding binding,
+			ClaudeSubscriptionContext _) = CreatePrivateBindingFixture();
+		FakeClaudeUsagePoller poller = new((_, _) =>
+			throw new InvalidOperationException("Admission must not poll Claude."));
+		FakeUsageProvider fallback = new((_, _) =>
+			throw new InvalidOperationException("Admission must not read fallback usage."));
+		FakeClaudeAccountBindingStore bindingStore = new(binding);
+		IUsageProviderRefreshAdmission provider = new ClaudeUsageProvider(
+			poller,
+			fallback,
+			bindingStore: hasBindingStore ? bindingStore : null);
+
+		Assert.Equal(expected, provider.RequiresSerializedRefresh(account with
+		{
+			HasAcceptedClaudeQuotaRisk = hasQuotaRiskConsent
+		}));
+		Assert.Equal(0, poller.CallCount);
+		Assert.Equal(0, fallback.CallCount);
+		Assert.Equal(0, bindingStore.LoadCallCount);
+	}
+
+	[Fact]
+	public void RequiresSerializedRefresh_WhenAccountIsNull_ThrowsArgumentNullException()
+	{
+		FakeClaudeUsagePoller poller = new((_, _) =>
+			throw new InvalidOperationException("Admission must not poll Claude."));
+		FakeUsageProvider fallback = new((_, _) =>
+			throw new InvalidOperationException("Admission must not read fallback usage."));
+		IUsageProviderRefreshAdmission provider = new ClaudeUsageProvider(poller, fallback);
+
+		ArgumentNullException exception = Assert.Throws<ArgumentNullException>(
+			() => provider.RequiresSerializedRefresh(null!));
+
+		Assert.Equal("account", exception.ParamName);
+	}
+
+	[Theory]
+	[InlineData(2)]
+	[InlineData(4)]
+	public async Task RefreshAsync_WhenBoundClaudeAccountsQueue_CompletesOtherProviderAndEveryCard(
+		int maximumConcurrentRefreshes)
+	{
+		DateTimeOffset now = new(2026, 7, 15, 2, 25, 0, TimeSpan.Zero);
+		FakeTimeProvider timeProvider = new(now);
+		var fixtures = Enumerable.Range(0, 12)
+			.Select(index =>
+			{
+				ClaudeSubscriptionContext context = ClaudeSubscriptionContext.CreateVerified(
+					$"owner-{index}@example.com",
+					$"organization:synthetic-{index}",
+					"max",
+					$"Synthetic Organization {index}");
+				Guid publicBindingId = Guid.NewGuid();
+				AccountProfile account = CreateAccount() with
+				{
+					DisplayName = $"Claude {index + 1}",
+					ProviderAccountIdentity =
+						ClaudeAccountBinding.CreatePublicBindingIdentity(publicBindingId)
+				};
+				ClaudeAccountBinding binding = ClaudeAccountBinding.Create(
+					account.Id,
+					publicBindingId,
+					context);
+
+				return (Account: account, Binding: binding, Context: context, UsedPercent: index + 1);
+			})
+			.ToArray();
+		var fixturesByAccount = fixtures.ToDictionary(fixture => fixture.Account.Id);
+		TaskCompletionSource<bool> firstPollStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> releaseFirstPoll = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		object pollingCountGate = new();
+		int activeClaudePolls = 0;
+		int peakClaudePolls = 0;
+		FakeClaudeUsagePoller poller = new(async (accountId, cancellationToken) =>
+		{
+			lock (pollingCountGate)
+			{
+				activeClaudePolls++;
+				peakClaudePolls = Math.Max(peakClaudePolls, activeClaudePolls);
+			}
+
+			try
+			{
+				if (accountId == fixtures[0].Account.Id)
+				{
+					firstPollStarted.TrySetResult(true);
+					await releaseFirstPoll.Task.WaitAsync(cancellationToken);
+				}
+
+				var fixture = fixturesByAccount[accountId];
+				return new ClaudeUsagePollResult(
+					UsageOutput.Replace(
+						"49% used",
+						$"{fixture.UsedPercent}% used",
+						StringComparison.Ordinal),
+					now,
+					SubscriptionContext: fixture.Context);
+			}
+			finally
+			{
+				lock (pollingCountGate)
+				{
+					activeClaudePolls--;
+				}
+			}
+		});
+		FakeClaudeAccountBindingStore bindingStore = new(
+			fixtures.Select(fixture => fixture.Binding));
+		FakeUsageProvider fallback = new((_, _) =>
+			throw new InvalidOperationException("Ready bound usage must not read fallback usage."));
+		ClaudeUsageProvider claudeProvider = new(poller, fallback, timeProvider, bindingStore);
+		FakeUsageProvider otherProvider = new(
+			(account, _) => Task.FromResult(CreateFallbackSnapshot(account, now)),
+			provider: ProviderKind.Copilot);
+		UsageRefreshCoordinator coordinator = new(
+			new UsageProviderRegistry(new IUsageProvider[] { claudeProvider, otherProvider }),
+			timeProvider,
+			maximumConcurrentRefreshes);
+		List<Task<UsageSnapshot>> refreshes = new();
+
+		try
+		{
+			foreach (var fixture in fixtures)
+			{
+				refreshes.Add(coordinator.RefreshAsync(fixture.Account));
+			}
+			await firstPollStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+			Assert.Equal(1, poller.CallCount);
+			Assert.All(refreshes, refresh => Assert.False(refresh.IsCompleted));
+			AccountProfile otherAccount = new(Guid.NewGuid(), ProviderKind.Copilot, "Copilot");
+			Task<UsageSnapshot> otherRefresh = coordinator.RefreshAsync(otherAccount);
+			refreshes.Add(otherRefresh);
+			UsageSnapshot otherSnapshot = await otherRefresh.WaitAsync(TimeSpan.FromSeconds(5));
+
+			Assert.Equal(otherAccount.Id, otherSnapshot.Account.Id);
+			Assert.Equal(SnapshotStatus.Ready, otherSnapshot.Status);
+			Assert.Equal(1, otherProvider.CallCount);
+			Assert.Equal(1, poller.CallCount);
+			releaseFirstPoll.TrySetResult(true);
+			UsageSnapshot[] snapshots = await Task.WhenAll(refreshes)
+				.WaitAsync(TimeSpan.FromSeconds(5));
+
+			for (int index = 0; index < fixtures.Length; index++)
+			{
+				var fixture = fixtures[index];
+				UsageSnapshot snapshot = snapshots[index];
+				Assert.Equal(fixture.Account.Id, snapshot.Account.Id);
+				Assert.Equal(SnapshotStatus.Ready, snapshot.Status);
+				Assert.Equal(SourceTrust.OfficialExperimental, snapshot.SourceTrust);
+				Assert.Equal(fixture.Account.ProviderAccountIdentity, snapshot.ProviderAccountIdentity);
+				Assert.Equal(fixture.Context.AccountIdentity, snapshot.ProviderAccountDisplayIdentity);
+				Assert.Equal(SubscriptionVerificationState.Verified, snapshot.SubscriptionVerificationState);
+				Assert.Equal(3, snapshot.Metrics.Count);
+				UsageMetric session = Assert.Single(snapshot.Metrics,
+					metric => metric.Key == "claude.rate_limit.five_hour");
+				Assert.Equal((double)fixture.UsedPercent, session.UsedPercent);
+			}
+
+			Assert.Equal(fixtures.Length, poller.CallCount);
+			Assert.Equal(
+				fixtures.Select(fixture => fixture.Account.ProviderAccountIdentity)
+					.OrderBy(identity => identity, StringComparer.Ordinal),
+				poller.ExpectedPublicBindingIdentities
+					.OrderBy(identity => identity, StringComparer.Ordinal));
+			Assert.Equal(0, fallback.CallCount);
+			Assert.Equal(1, peakClaudePolls);
+			Assert.Equal(0, activeClaudePolls);
+		}
+		finally
+		{
+			releaseFirstPoll.TrySetResult(true);
+			foreach (var fixture in fixtures)
+			{
+				coordinator.Invalidate(fixture.Account.Id);
+			}
+			await Task.WhenAll(refreshes).WaitAsync(TimeSpan.FromSeconds(5));
+		}
+	}
 
 	[Fact]
 	public async Task GetUsageAsync_WithoutQuotaRiskConsent_DoesNotPollOrReadFallback()

@@ -470,14 +470,15 @@ internal sealed class CodexAppServerUsagePoller : ICodexUsagePoller
 		TimeProvider timeProvider,
 		CodexAccountOperationGate operationGate,
 		ICodexWorkspaceBindingStore accountBindingStore,
-		CodexBindingCommitGate bindingCommitGate)
+		CodexBindingCommitGate bindingCommitGate,
+		TimeSpan? commandTimeout = null)
 		: this(
 			homeDirectoryResolver,
 			WrapExecutableResolver(executableResolver),
 			WrapTransportFactory(transportFactory),
 			timeProvider,
 			operationGate,
-			CommandTimeout,
+			commandTimeout ?? CommandTimeout,
 			accountBindingStore ??
 				throw new ArgumentNullException(nameof(accountBindingStore)),
 			bindingCommitGate ??
@@ -593,7 +594,10 @@ internal sealed class CodexAppServerUsagePoller : ICodexUsagePoller
 		}
 
 		cancellationToken.ThrowIfCancellationRequested();
-		using CancellationTokenSource gateTimeoutSource = new(_commandTimeout);
+		// 其他卡片的完整查詢不應消耗這張卡片讀取 binding 的期限。
+		using IDisposable bindingLease =
+			await _bindingCommitGate.EnterAsync(cancellationToken);
+		using CancellationTokenSource gateTimeoutSource = new(_commandTimeout, _timeProvider);
 		using CancellationTokenSource gateLinkedSource =
 			CancellationTokenSource.CreateLinkedTokenSource(
 				cancellationToken,
@@ -601,8 +605,6 @@ internal sealed class CodexAppServerUsagePoller : ICodexUsagePoller
 
 		try
 		{
-			using IDisposable bindingLease =
-				await _bindingCommitGate.EnterAsync(gateLinkedSource.Token);
 			CodexWorkspaceBinding? binding;
 			try
 			{
@@ -630,7 +632,7 @@ internal sealed class CodexAppServerUsagePoller : ICodexUsagePoller
 				normalizedPublicBindingIdentity,
 				cancellationToken);
 		}
-		catch (OperationCanceledException) when (
+		catch (OperationCanceledException exception) when (
 			gateLinkedSource.IsCancellationRequested)
 		{
 			if (cancellationToken.IsCancellationRequested)
@@ -639,7 +641,7 @@ internal sealed class CodexAppServerUsagePoller : ICodexUsagePoller
 			}
 
 			throw new TimeoutException(
-				"等待 Codex workspace binding 作業逾時。");
+				"等待 Codex workspace binding 作業逾時。", exception);
 		}
 	}
 
