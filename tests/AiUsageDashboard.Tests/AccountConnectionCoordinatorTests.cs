@@ -9034,7 +9034,7 @@ public sealed class AccountConnectionCoordinatorTests
 	{
 		using IDisposable languageScope = UiText.UseLanguage(language);
 		const string Reason =
-			"Opaque provider failure: nickname=檢查中…; path=C:/測試/診斷.log; code={0}\n未知來源診斷";
+			"Opaque provider failure: nickname=檢查中…; path=C:/測試/診斷.log; code={0}\r\n未知來源診斷";
 		(string message, string caption, MessageBoxImage image) = provider switch
 		{
 			ProviderKind.Claude => AccountConnectionCoordinator.GetClaudeLoginFailureNotice(

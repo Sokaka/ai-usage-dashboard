@@ -219,8 +219,14 @@ public static partial class UiText
 			{
 				if ((entry.Key is not string key) ||
 					(entry.Value is not string source) ||
-					(manager.GetString(key, targetCulture) is not string target) ||
-					(source == target))
+					(manager.GetString(key, targetCulture) is not string target))
+				{
+					continue;
+				}
+
+				source = NormalizeResourceLineEndings(source);
+				target = NormalizeResourceLineEndings(target);
+				if (source == target)
 				{
 					continue;
 				}

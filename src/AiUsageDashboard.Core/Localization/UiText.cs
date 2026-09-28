@@ -58,9 +58,10 @@ public static partial class UiText
 			throw new ArgumentException($"Unknown UI resource key '{key}'.", nameof(key));
 		}
 
-		return resourceManager.GetString(key[(separatorIndex + 1)..], Culture)
-			?? throw new InvalidOperationException(
-				$"UI resource '{key}' is missing for language '{CurrentLanguage}'.");
+		return NormalizeResourceLineEndings(
+			resourceManager.GetString(key[(separatorIndex + 1)..], Culture)
+				?? throw new InvalidOperationException(
+					$"UI resource '{key}' is missing for language '{CurrentLanguage}'."));
 	}
 
 	public static string Format(string key, params object?[] arguments)
@@ -82,7 +83,7 @@ public static partial class UiText
 			{
 				if ((resource.Key is string name) && (resource.Value is string value))
 				{
-					resources.Add($"{domain}.{name}", value);
+					resources.Add($"{domain}.{name}", NormalizeResourceLineEndings(value));
 				}
 			}
 		}
@@ -119,6 +120,12 @@ public static partial class UiText
 	{
 		return new ResourceManager(
 			$"AiUsageDashboard.Core.Localization.Resources.{domain}", typeof(UiText).Assembly);
+	}
+
+	private static string NormalizeResourceLineEndings(string value)
+	{
+		// 只正規化資源換行，使用者內容與原始診斷保留原文。
+		return value.Replace("\r\n", "\n", StringComparison.Ordinal);
 	}
 
 	private static void ValidateLanguage(AppLanguage language)

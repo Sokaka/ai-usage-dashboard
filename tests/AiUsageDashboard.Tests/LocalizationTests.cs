@@ -78,6 +78,38 @@ public sealed class LocalizationTests
 	}
 
 	[Theory]
+	[InlineData(AppLanguage.English)]
+	[InlineData(AppLanguage.TraditionalChinese)]
+	public void Resources_UseStableLineEndingsAcrossLookupAndCatalog(AppLanguage language)
+	{
+		using var languageScope = UiText.UseLanguage(language);
+		IReadOnlyDictionary<string, string> resources = UiText.GetResources();
+		Assert.Contains(resources.Values, value => value.Contains('\n'));
+		foreach ((string key, string value) in resources)
+		{
+			Assert.DoesNotContain('\r', value);
+			Assert.Equal(value, UiText.Get(key));
+		}
+	}
+
+	[Theory]
+	[InlineData(AppLanguage.English, "The card's existing connection is unaffected.")]
+	[InlineData(AppLanguage.TraditionalChinese, "原本的卡片連接不受影響。")]
+	public void ResourceLineEndings_PreserveOpaqueArgumentAndDiagnosticBytes(
+		AppLanguage language,
+		string expectedGuidance)
+	{
+		using var languageScope = UiText.UseLanguage(language);
+		const string Diagnostic = "Opaque provider diagnostic\r\n私有原文 {0}\rEnd";
+		string expected = $"{Diagnostic}\n\n{expectedGuidance}";
+		Assert.Equal(expected, UiText.Format(
+			"Status.TheCardSExistingConnectionIsUnaffected", Diagnostic));
+		Assert.Equal(expected, UiText.Translate($"{Diagnostic}\n\n原本的卡片連接不受影響。"));
+		Assert.Equal(Diagnostic, UiText.Translate(Diagnostic));
+		Assert.Equal(Diagnostic, UiText.Translate(Diagnostic));
+	}
+
+	[Theory]
 	[InlineData((int)AppLanguage.English, "Version 2.0 is available. Open AI Usage to see update options.")]
 	[InlineData((int)AppLanguage.TraditionalChinese, "版本 2.0 已可使用。開啟 AI Usage 查看更新選項。")]
 	public void FormattedText_PreservesTheSuppliedVersion(int language, string expected)

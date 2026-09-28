@@ -16,6 +16,7 @@
 
 - [x] Repository 預設 README 使用英文；繁中內容保留於 `README.zh-TW.md`，兩份正文可互相切換，`README.en.md` 保留舊英文入口。
 - [x] 2026-09-29 README 入口調整：Release 建置 0 warnings／errors，相關既有測試 44／44 通過，0 failed／skipped。三份 README 的 62 筆本機連結、13 份文件的 20 筆既有章節引用，以及 UTF-8、正文保留與 diff 檢查通過；GitHub 線上呈現尚未驗證。
+- [x] 2026-09-29 首次 [PR Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36488902386) 為 4,483 passed／20 failed／0 skipped：CI checkout 的 CRLF 資源使 16 個登入提示比對失敗，4 個更新提示保留中文尾句。已在資源讀取及 legacy catalog 邊界統一為 LF，保留未知診斷內的 CRLF。以全部 10 份 CRLF 資源重建後，96／96 定向測試通過，含四個新增資源一致性及原文保留案例；修正後完整 SHA 的 CI／候選結果另列正式發布紀錄，不覆寫首輪失敗。
 - [x] App 預設使用英文；浮窗與系統匣選單提供 English／繁體中文切換，既有視窗、帳號狀態與更新提示會立即更新。
 - [x] 語系寫入本機 preferences schema `8`，並納入 portable settings schema `7` 的匯出、匯入、復原與復原點；舊版本機設定缺少語系時使用英文，舊版匯入檔缺少語系時保留目前選擇。
 - [x] 帳號名稱、原始用量及無法辨識的來源訊息保持原樣；條款只翻譯介面標示，原文、catalog hash 與接受紀錄不變。畫面使用各語系的格式，不改動 process `CurrentCulture` 或持久化格式。
