@@ -10,6 +10,23 @@
 
 標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.14 / sequence 1028`。
 
+### 使用者體驗一致性與操作回饋
+
+- [x] Claude 帳號編輯畫面明確說明「儲存並連接」即接受用量風險，「儲存」可留待稍後決定。
+- [x] 匯入預告與完成提示共用重新連接說明，涵蓋五個 provider、Codex workspace ID，以及現有 Copilot 憑證清理。
+- [x] 既有 Codex workspace 卡片優先提供 workspace 連接；一般帳號按鈕明示會解除限定，workspace ID 不會被猜測或預填。
+- [x] 有可用用量的卡片在狀態 tooltip 與 automation help 顯示資料時間；未知觀測時間與本機讀取時間分開表達。
+- [x] Copilot 用量 tooltip 保留額外用量等完整 provider 狀態，卡面仍使用精簡數字。
+- [x] AGY 提交連接後關閉視窗時，提示等待完成；提交前仍提示取消與清理。
+- [x] 四個一般主題的三種捲軸狀態對四種背景共 48 組對比全部達到 3:1，最低為 3.07:1。
+- [x] 同帳號重複檢查依實際排隊／開始狀態回報；已加入的 caller 會收到後續開始通知，不受第一 caller 無 callback 或取消等待影響。
+- [x] 排序規則視窗依工作區與 DPI 限制寬高，保留內容捲動與關閉按鈕；返回較大工作區時恢復最小寬度。
+- [x] 2026-09-28 本機 restore、Release 建置通過，0 warnings／errors；刷新定向測試 6／6、完整測試 4,354／4,354 通過，0 failed／skipped，耗時 3 分 35 秒。Production line coverage 74.18%（48,618／65,537，門檻 70%）。
+
+完整測試首輪為 4,353 passed／1 failed；Copilot 整合測試仍預期 tooltip 省略額外用量狀態。更新該斷言、保留卡面數字檢查後，定向測試與上述完整重跑均通過。
+
+本輪使用合成資料與 WPF 布局驗證；未執行真實 CLI 登入／用量、安裝或真人高 DPI／多螢幕／螢幕閱讀器驗收，不代替正式候選的驗收。
+
 ### AGY official-only 與封裝縮減
 
 - [x] Production AGY 連接與背景更新只使用 user-installed、unmodified 官方 CLI 的 `agy -p /usage --output-format stream-json`；ConPTY、R0／R1 profile、private key、reviewed manifest 與 status-line capture 只保留在開發用 Spike，不會編入 production 路徑。

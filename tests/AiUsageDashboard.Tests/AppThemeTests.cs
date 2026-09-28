@@ -319,18 +319,30 @@ public sealed class AppThemeTests
 				3,
 				$"{fileName} {resourceKey} against the progress track");
 		}
-		Assert.Equal(
-			GetColor(palette, "ProgressTrackColor"),
-			GetColor(palette, "ScrollBarThumbColor"));
-		double previousScrollBarContrast = GetContrastRatio(
-			GetColor(palette, "ScrollBarThumbColor"),
-			windowBackground);
-		foreach (string resourceKey in new[] { "ScrollBarThumbHoverColor", "ScrollBarThumbPressedColor" })
+		double previousScrollBarContrast = 0;
+		foreach (string resourceKey in new[]
 		{
-			double scrollBarContrast = GetContrastRatio(
-				GetColor(palette, resourceKey),
-				windowBackground);
-			Assert.InRange(scrollBarContrast / previousScrollBarContrast, 1.1, 1.4);
+			"ScrollBarThumbColor",
+			"ScrollBarThumbHoverColor",
+			"ScrollBarThumbPressedColor"
+		})
+		{
+			Color thumbColor = GetColor(palette, resourceKey);
+			AssertMinimumContrast(
+				thumbColor,
+				windowBackground,
+				3,
+				$"{fileName} {resourceKey} against the window");
+			AssertMinimumContrast(
+				thumbColor,
+				cardBackground,
+				3,
+				$"{fileName} {resourceKey} against the card");
+			double scrollBarContrast = GetContrastRatio(thumbColor, windowBackground);
+			if (previousScrollBarContrast > 0)
+			{
+				Assert.InRange(scrollBarContrast / previousScrollBarContrast, 1.1, 1.4);
+			}
 			previousScrollBarContrast = scrollBarContrast;
 		}
 		AssertMinimumContrast(

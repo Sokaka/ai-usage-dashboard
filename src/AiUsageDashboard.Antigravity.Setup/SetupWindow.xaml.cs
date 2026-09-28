@@ -543,10 +543,13 @@ public partial class SetupWindow : Window
 		}
 
 		_isClosePending = true;
-		const string cancellationStatus =
-			"正在取消並清理這次連接…";
-		ProgressTextBlock.Text = cancellationStatus;
-		FooterStatusTextBlock.Text = cancellationStatus;
+		string closingStatus =
+			(_workflow.State == AntigravitySetupWorkflowState.Approving) ||
+			(_workflow.HasApprovalStarted)
+				? "正在完成連接，完成後會關閉視窗…"
+				: "正在取消並清理這次連接…";
+		ProgressTextBlock.Text = closingStatus;
+		FooterStatusTextBlock.Text = closingStatus;
 		CancelButton.IsEnabled = false;
 		FocusProgressIndicator();
 		QueueLiveRegionAnnouncement(FooterStatusTextBlock);

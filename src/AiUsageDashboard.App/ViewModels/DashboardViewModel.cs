@@ -76,6 +76,12 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			new(TaskCreationOptions.RunContinuationsAsynchronously);
 	}
 
+	private sealed class AccountRefreshProgressState
+	{
+		internal TaskCompletionSource<bool> StartedCompletion { get; } =
+			new(TaskCreationOptions.RunContinuationsAsynchronously);
+	}
+
 	private sealed record PortableSettingsImportUndoState(
 		PortableSettingsSnapshot PreviousSettings,
 		PortableSettingsSnapshot ImportedSettings,
@@ -225,6 +231,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	private readonly HashSet<Guid>
 		_unjournaledAntigravityConnectionWorkAccountIds = new();
 	private Guid? _activeRefreshAccountId;
+	private AccountRefreshProgressState? _activeAccountRefreshProgress;
 	private long _activeRefreshLifecycleRevision = -1;
 	private RefreshRequestScope _activeRefreshScope;
 	private Task? _activeRefreshTask;
@@ -2330,7 +2337,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		long lifecycleRevision = Accounts.FirstOrDefault(
 			account => account.Id == accountId)?.LifecycleRevision ?? -1;
 		Task refreshTask;
-		AccountRefreshProgress? coalescedProgress = null;
+		Task? coalescedStartedTask = null;
 
 		lock (_refreshSync)
 		{
@@ -2346,37 +2353,37 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				(_activeRefreshLifecycleRevision == lifecycleRevision))
 			{
 				refreshTask = _activeRefreshTask;
-				AccountUsageViewModel? activeAccount = Accounts.FirstOrDefault(
-					account => account.Id == accountId);
-				coalescedProgress = activeAccount?.StatusKind ==
-					AccountStatusKind.Refreshing
-						? AccountRefreshProgress.Started
-						: AccountRefreshProgress.Queued;
+				coalescedStartedTask =
+					_activeAccountRefreshProgress?.StartedCompletion.Task;
 			}
 			else
 			{
 				Task previousRefresh = IncludePeriodicAccountRefresh(
 					accountId,
 					_activeRefreshTask ?? Task.CompletedTask);
+				AccountRefreshProgressState progressState = new();
 				refreshTask = RefreshAccountUsageCoreAsync(
 					previousRefresh,
 					accountId,
 					lifecycleRevision,
 					reportProgress,
-					cancellationToken);
+					cancellationToken,
+					progressState);
 				_activeRefreshTask = refreshTask;
 				_activeRefreshAccountId = accountId;
+				_activeAccountRefreshProgress = progressState;
 				_activeRefreshLifecycleRevision = lifecycleRevision;
 				_activeRefreshScope = RefreshRequestScope.Account;
 			}
 		}
 
-		if (coalescedProgress.HasValue)
+		if (coalescedStartedTask is not null)
 		{
-			ReportAccountRefreshProgress(
+			return ObserveAccountRefreshProgressAsync(
+				refreshTask,
+				coalescedStartedTask,
 				reportProgress,
-				cancellationToken,
-				coalescedProgress.Value);
+				cancellationToken);
 		}
 
 		return refreshTask.WaitAsync(cancellationToken);
@@ -3409,7 +3416,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		Guid accountId,
 		long lifecycleRevision,
 		Action<AccountRefreshProgress>? reportProgress,
-		CancellationToken progressCancellationToken)
+		CancellationToken progressCancellationToken,
+		AccountRefreshProgressState? progressState = null)
 	{
 		AccountUsageViewModel? queuedAccount = Accounts.FirstOrDefault(
 			candidate => candidate.Id == accountId);
@@ -3508,6 +3516,10 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			}
 
 			refreshRevision = BeginAccountRefreshRequest(account.Id);
+			if (progressState is not null)
+			{
+				progressState.StartedCompletion.TrySetResult(true);
+			}
 		}
 
 		// Manual AGY refresh has the same metadata prelude as refresh-all.
@@ -3750,6 +3762,33 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				account?.CompleteUsageSafetyRevalidation(operationId);
 			}
 		}
+	}
+
+	private static async Task ObserveAccountRefreshProgressAsync(
+		Task refreshTask,
+		Task startedTask,
+		Action<AccountRefreshProgress>? reportProgress,
+		CancellationToken cancellationToken)
+	{
+		bool hasStarted = startedTask.IsCompletedSuccessfully;
+		ReportAccountRefreshProgress(
+			reportProgress,
+			cancellationToken,
+			hasStarted ? AccountRefreshProgress.Started : AccountRefreshProgress.Queued);
+
+		if ((!hasStarted) && (reportProgress is not null))
+		{
+			await Task.WhenAny(startedTask, refreshTask).WaitAsync(cancellationToken);
+			if (startedTask.IsCompletedSuccessfully)
+			{
+				ReportAccountRefreshProgress(
+					reportProgress,
+					cancellationToken,
+					AccountRefreshProgress.Started);
+			}
+		}
+
+		await refreshTask.WaitAsync(cancellationToken);
 	}
 
 	private static void ReportAccountRefreshProgress(

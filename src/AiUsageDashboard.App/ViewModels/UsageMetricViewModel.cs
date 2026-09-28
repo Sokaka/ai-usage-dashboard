@@ -128,8 +128,8 @@ public sealed class UsageMetricViewModel
 			: NormalizeUsedDisplayValue(
 				primaryDisplayValue,
 				HasUsageBar);
-		string defaultToolTipValue = usePercentageDisplayValue && HasUsageBar
-			? primaryDisplayValue
+		string defaultToolTipValue = usePercentageDisplayValue
+			? metric.DisplayValue
 			: DisplayValue;
 		ToolTipValue = HasUnreportedOrganizationQuotaLimit(
 				metric,

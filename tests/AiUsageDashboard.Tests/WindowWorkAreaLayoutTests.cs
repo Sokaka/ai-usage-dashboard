@@ -1,3 +1,7 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+
 using AiUsageDashboard.App;
 
 namespace AiUsageDashboard.Tests;
@@ -76,6 +80,81 @@ public sealed class WindowWorkAreaLayoutTests
 				preferredMinHeight: 360,
 				physicalWorkAreaHeight: 768,
 				dpiScaleY: dpiScaleY));
+	}
+
+	[Theory]
+	[InlineData(640, 480, 2, 304, 224)]
+	[InlineData(1920, 1080, 3, 624, 344)]
+	[InlineData(832, 832, 2, 400, 400)]
+	public async Task AutomaticSortRulesWindow_WithLimitedHighDpiWorkArea_KeepsRulesScrollableAndCloseVisible(
+		int physicalWidth,
+		int physicalHeight,
+		double dpiScale,
+		double expectedMaximumWidth,
+		double expectedMaximumHeight)
+	{
+		await RunOnStaThreadAsync(() =>
+		{
+			AutomaticSortRulesWindow window = new(CreateWindowResources());
+			try
+			{
+				window.ApplyWorkAreaConstraints(
+					new System.Drawing.Rectangle(0, 0, physicalWidth, physicalHeight),
+					new DpiScale(dpiScale, dpiScale));
+				Assert.Equal(Math.Min(320, expectedMaximumWidth), window.MinWidth);
+				Assert.Equal(expectedMaximumWidth, window.MaxWidth);
+				Assert.Equal(expectedMaximumHeight, window.MaxHeight);
+
+				Grid root = Assert.IsType<Grid>(window.Content);
+				double contentWidth = Math.Min(window.Width, window.MaxWidth);
+				root.Measure(new Size(contentWidth, window.MaxHeight));
+				root.Arrange(new Rect(0, 0, contentWidth, window.MaxHeight));
+				root.UpdateLayout();
+				ScrollViewer rules = Assert.IsType<ScrollViewer>(root.Children[0]);
+				Button close = Assert.IsType<Button>(root.Children[1]);
+				Point closePosition = close.TranslatePoint(new Point(), root);
+
+				Assert.True(rules.ScrollableHeight > 0);
+				Assert.True(rules.ViewportHeight > 0);
+				Assert.Equal(Visibility.Visible, rules.ComputedVerticalScrollBarVisibility);
+				Assert.Equal(Visibility.Visible, close.Visibility);
+				Assert.True(closePosition.Y >= 0);
+				Assert.True(closePosition.Y + close.ActualHeight <= root.ActualHeight);
+			}
+			finally
+			{
+				window.Close();
+			}
+		});
+	}
+
+	[Fact]
+	public async Task AutomaticSortRulesWindow_WhenReturningToLargerMonitor_RestoresMinimumWidth()
+	{
+		await RunOnStaThreadAsync(() =>
+		{
+			AutomaticSortRulesWindow window = new(CreateWindowResources());
+			try
+			{
+				window.ApplyWorkAreaConstraints(
+					new System.Drawing.Rectangle(0, 0, 640, 480),
+					new DpiScale(2, 2));
+				Assert.Equal(304, window.MinWidth);
+				Assert.Equal(304, window.MaxWidth);
+
+				window.ApplyWorkAreaConstraints(
+					new System.Drawing.Rectangle(0, 0, 1920, 1080),
+					new DpiScale(1, 1));
+
+				Assert.Equal(320, window.MinWidth);
+				Assert.Equal(1904, window.MaxWidth);
+				Assert.Equal(1064, window.MaxHeight);
+			}
+			finally
+			{
+				window.Close();
+			}
+		});
 	}
 
 	[Fact]
@@ -173,4 +252,41 @@ public sealed class WindowWorkAreaLayoutTests
 				hasPersistentInlineStatus));
 	}
 
+	private static ResourceDictionary CreateWindowResources()
+	{
+		ResourceDictionary resources = new();
+		resources.MergedDictionaries.Add(
+			(ResourceDictionary)Application.LoadComponent(new Uri(
+				"/AiUsageDashboard.App;component/Themes/Palette.xaml",
+				UriKind.Relative)));
+		resources.MergedDictionaries.Add(
+			(ResourceDictionary)Application.LoadComponent(new Uri(
+				"/AiUsageDashboard.App;component/Themes/Controls.xaml",
+				UriKind.Relative)));
+		return resources;
+	}
+
+	private static Task RunOnStaThreadAsync(Action operation)
+	{
+		TaskCompletionSource<bool> completion = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		Thread thread = new(() =>
+		{
+			try
+			{
+				operation();
+				completion.TrySetResult(true);
+			}
+			catch (Exception exception)
+			{
+				completion.TrySetException(exception);
+			}
+		})
+		{
+			IsBackground = true
+		};
+		thread.SetApartmentState(ApartmentState.STA);
+		thread.Start();
+		return completion.Task.WaitAsync(TimeSpan.FromSeconds(10));
+	}
 }

@@ -82,7 +82,7 @@ public sealed class UsageMetricViewModelTests
 		UsageDisplayMode.Remaining,
 		"75 / 300 已使用，額度用完後仍可使用",
 		"剩餘 75%")]
-	public void Constructor_WithPercentageDisplayValue_HidesKnownUsageStatus(
+	public void Constructor_WithPercentageDisplayValue_KeepsUsageStatusInToolTipOnly(
 		UsageDisplayMode usageDisplayMode,
 		string providerDisplayValue,
 		string expectedDisplayValue)
@@ -98,7 +98,7 @@ public sealed class UsageMetricViewModelTests
 			usePercentageDisplayValue: true);
 
 		Assert.Equal(expectedDisplayValue, viewModel.DisplayValue);
-		Assert.Equal("75 / 300 已使用", viewModel.ToolTipValue);
+		Assert.Equal(providerDisplayValue, viewModel.ToolTipValue);
 	}
 
 	[Theory]
@@ -119,7 +119,7 @@ public sealed class UsageMetricViewModelTests
 			usePercentageDisplayValue: true);
 
 		Assert.Equal(expectedDisplayValue, viewModel.DisplayValue);
-		Assert.Equal("0 / 1,500 已使用", viewModel.ToolTipValue);
+		Assert.Equal("0 / 1,500 已使用，額外用量已開啟", viewModel.ToolTipValue);
 	}
 
 	[Theory]
@@ -129,7 +129,7 @@ public sealed class UsageMetricViewModelTests
 	[InlineData(
 		"此方案未提供，額度用完後仍可使用",
 		"此方案未提供")]
-	public void Constructor_WithoutProgressBar_HidesKnownUsageStatus(
+	public void Constructor_WithoutProgressBar_KeepsUsageStatusInToolTipOnly(
 		string providerDisplayValue,
 		string expectedDisplayValue)
 	{
@@ -145,7 +145,7 @@ public sealed class UsageMetricViewModelTests
 
 		Assert.False(viewModel.HasUsageBar);
 		Assert.Equal(expectedDisplayValue, viewModel.DisplayValue);
-		Assert.Equal(expectedDisplayValue, viewModel.ToolTipValue);
+		Assert.Equal(providerDisplayValue, viewModel.ToolTipValue);
 	}
 
 	[Fact]
@@ -166,7 +166,7 @@ public sealed class UsageMetricViewModelTests
 	}
 
 	[Fact]
-	public void Constructor_WithUnlimitedQuotaAndStatusSuffix_HidesStatus()
+	public void Constructor_WithUnlimitedQuotaAndStatusSuffix_KeepsStatusInToolTipOnly()
 	{
 		UsageMetricViewModel viewModel = new(
 			new UsageMetric(
@@ -179,7 +179,7 @@ public sealed class UsageMetricViewModelTests
 			usePercentageDisplayValue: true);
 
 		Assert.Equal("已使用 123 次（無上限）", viewModel.DisplayValue);
-		Assert.Equal("已使用 123 次（無上限）", viewModel.ToolTipValue);
+		Assert.Equal("已使用 123 次（無上限），額外用量已開啟", viewModel.ToolTipValue);
 	}
 
 	[Fact]
@@ -202,26 +202,30 @@ public sealed class UsageMetricViewModelTests
 	}
 
 	[Theory]
-	[InlineData("copilot-quota-premium-interactions")]
-	[InlineData("copilot-quota-chat")]
+	[InlineData("copilot-quota-premium-interactions", "")]
+	[InlineData("copilot-quota-premium-interactions", "，額外用量已開啟")]
+	[InlineData("copilot-quota-chat", "")]
+	[InlineData("copilot-quota-chat", "，額度用完後仍可使用")]
 	public void Constructor_WithUnreportedOrganizationQuotaLimit_ExplainsTooltip(
-		string metricKey)
+		string metricKey,
+		string usageStatusSuffix)
 	{
-		const string ProviderDisplayValue =
+		const string PrimaryDisplayValue =
 			"已使用 123 次（此來源未提供上限）";
+		string providerDisplayValue = $"{PrimaryDisplayValue}{usageStatusSuffix}";
 		UsageMetricViewModel viewModel = new(
 			new UsageMetric(
 				metricKey,
 				"Copilot quota",
 				null,
-				ProviderDisplayValue),
+				providerDisplayValue),
 			UsageDisplayMode.Used,
 			showResetText: false,
 			usePercentageDisplayValue: true);
 
-		Assert.Equal(ProviderDisplayValue, viewModel.DisplayValue);
+		Assert.Equal(PrimaryDisplayValue, viewModel.DisplayValue);
 		Assert.Equal(
-			$"{ProviderDisplayValue}。Business／Enterprise 的 organization AI Credits 與預算不包含在這個來源中，請以 GitHub Copilot settings 為準。",
+			$"{providerDisplayValue}。Business／Enterprise 的 organization AI Credits 與預算不包含在這個來源中，請以 GitHub Copilot settings 為準。",
 			viewModel.ToolTipValue);
 		Assert.False(viewModel.HasUsageBar);
 	}

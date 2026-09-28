@@ -14,9 +14,44 @@ public sealed partial class CodexWorkspacePromptWindow : Window
 	public Guid? WorkspaceId { get; private set; }
 
 	public CodexWorkspacePromptWindow()
+		: this(prefersWorkspaceConnection: false)
 	{
+	}
+
+	internal CodexWorkspacePromptWindow(
+		bool prefersWorkspaceConnection,
+		ResourceDictionary? windowResources = null)
+	{
+		if (windowResources is not null)
+		{
+			Resources = windowResources;
+		}
+
 		InitializeComponent();
-		Loaded += (_, _) => DefaultConnectionButton.Focus();
+		DefaultConnectionButton.IsDefault = !prefersWorkspaceConnection;
+		WorkspaceConnectionButton.IsDefault = prefersWorkspaceConnection;
+
+		if (prefersWorkspaceConnection)
+		{
+			HeadingTextBlock.Text = "用 workspace ID 連接";
+			ConnectionHintTextBlock.Text =
+				"這張卡片原本使用 workspace ID。重新連接時請輸入原本的 ID；要切換 workspace，請輸入新的 ID。";
+			DefaultConnectionButton.Content = "改為一般帳號連接";
+			WorkspaceScopeChangeTextBlock.Visibility = Visibility.Visible;
+		}
+
+		Loaded += (_, _) =>
+		{
+			if (prefersWorkspaceConnection)
+			{
+				WorkspaceIdTextBox.Focus();
+				WorkspaceIdTextBox.BringIntoView();
+			}
+			else
+			{
+				DefaultConnectionButton.Focus();
+			}
+		};
 		DpiChanged += (_, _) => UpdateWorkAreaConstraints();
 		LocationChanged += (_, _) => UpdateWorkAreaConstraints();
 	}

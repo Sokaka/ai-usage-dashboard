@@ -1081,7 +1081,11 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			return Task.CompletedTask;
 		}
 
-		CodexWorkspacePromptWindow prompt = new()
+		bool prefersWorkspaceConnection =
+			CodexWorkspaceBinding.TryNormalizePublicBindingIdentity(
+				account.Profile.ProviderAccountIdentity,
+				out _);
+		CodexWorkspacePromptWindow prompt = new(prefersWorkspaceConnection)
 		{
 			Owner = owner
 		};

@@ -606,9 +606,11 @@
                                                 <Border Grid.Column="1"
                                                         Margin="8,0,6,0"
                                                         VerticalAlignment="Center"
+                                                        ToolTip="{Binding StatusToolTip}"
                                                         Style="{StaticResource StatusBadgeStyle}">
-                                                   <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
-                                                               AutomationProperties.LiveSetting="Polite"
+                                                    <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
+                                                                AutomationProperties.HelpText="{Binding StatusToolTip}"
+                                                                AutomationProperties.LiveSetting="Polite"
                                                                FontSize="10"
                                                                FontWeight="SemiBold"
                                                                Text="{Binding DisplayStatusText}" />

@@ -710,8 +710,8 @@ public sealed class XamlUsabilityRegressionTests
 			source);
 		Assert.Matches(
 			new Regex(
-				@"ProgressTextBlock\.Text\s*=\s*cancellationStatus;\s*" +
-					@"FooterStatusTextBlock\.Text\s*=\s*cancellationStatus;\s*" +
+				@"ProgressTextBlock\.Text\s*=\s*closingStatus;\s*" +
+					@"FooterStatusTextBlock\.Text\s*=\s*closingStatus;\s*" +
 					@"CancelButton\.IsEnabled\s*=\s*false;\s*" +
 					@"FocusProgressIndicator\(\);",
 				RegexOptions.CultureInvariant),
@@ -1197,11 +1197,11 @@ public sealed class XamlUsabilityRegressionTests
 				RegexOptions.CultureInvariant | RegexOptions.Singleline),
 			source);
 		Assert.Contains(
-			"匯入檔不含登入憑證。匯入後，Antigravity 與 Grok 必須逐一重新連接",
+			"匯入檔不含登入憑證。匯入的 Claude、Codex、GitHub Copilot、Antigravity 與 Grok 卡片都必須重新連接",
 			source,
 			StringComparison.Ordinal);
 		Assert.Contains(
-			"匯入後，Antigravity 與 Grok 必須逐一重新連接",
+			"目前 Copilot 卡片在 Windows Credential Manager 的登入資料也會清除",
 			source,
 			StringComparison.Ordinal);
 		Assert.Contains(
@@ -2134,7 +2134,7 @@ public sealed class XamlUsabilityRegressionTests
 			xaml,
 			StringComparison.Ordinal);
 		Assert.Contains(
-			"連接前會再請你確認",
+			"按「儲存並連接」即表示接受以上風險",
 			claudeNotice,
 			StringComparison.Ordinal);
 		Assert.Contains(
@@ -2548,7 +2548,7 @@ public sealed class XamlUsabilityRegressionTests
 		Assert.DoesNotContain("SaveAsync", source, StringComparison.Ordinal);
 		Assert.DoesNotContain("ProviderAccountIdentity", source, StringComparison.Ordinal);
 		Assert.Contains(
-			"CodexWorkspacePromptWindow prompt = new()",
+			"CodexWorkspacePromptWindow prompt = new(prefersWorkspaceConnection)",
 			coordinatorSource,
 			StringComparison.Ordinal);
 		Assert.Contains(

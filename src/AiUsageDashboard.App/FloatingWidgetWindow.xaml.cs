@@ -52,6 +52,8 @@ public partial class FloatingWidgetWindow : Window
 		public int Bottom;
 	}
 
+	private const string PortableSettingsReconnectNotice =
+		"匯入檔不含登入憑證。匯入的 Claude、Codex、GitHub Copilot、Antigravity 與 Grok 卡片都必須重新連接；Codex 的 workspace 卡片需重新輸入 workspace ID。";
 	private const double CollapsedSize = 56;
 	private const double CornerMargin = 18;
 	private const double CornerToggleContentInset = 42;
@@ -804,9 +806,9 @@ public partial class FloatingWidgetWindow : Window
 			MessageBoxResult confirmation = WpfMessageBox.Show(
 				this,
 				$"{preview}\n\n" +
-				$"{replacementDescription}Claude、Codex、Antigravity 與 Grok Build CLI 的預設登入資料不會被刪除；AI Usage 為現有 Grok 帳號另存的登入資料會清除。套用後可在關閉程式前選擇「還原匯入前設定」；若重新啟動後仍需還原，請先取消並匯出目前設定。\n\n" +
+				$"{replacementDescription}Claude、Codex、Antigravity 與 Grok Build CLI 的預設登入資料不會被刪除；AI Usage 為現有 Grok 帳號另存的登入資料會清除，目前 Copilot 卡片在 Windows Credential Manager 的登入資料也會清除。套用後可在關閉程式前選擇「還原匯入前設定」；若重新啟動後仍需還原，請先取消並匯出目前設定。\n\n" +
 				$"{claudeQuotaRiskNotice}\n\n" +
-				"匯入檔不含登入憑證。匯入後，Antigravity 與 Grok 必須逐一重新連接；若這台電腦沒有對應的 Claude／Codex 登入，也需重新連接。\n\n要套用這份設定嗎？",
+				$"{PortableSettingsReconnectNotice}\n\n要套用這份設定嗎？",
 				"取代目前設定",
 				MessageBoxButton.YesNo,
 				MessageBoxImage.Warning,
@@ -1256,7 +1258,7 @@ public partial class FloatingWidgetWindow : Window
 
 		return $"{appliedStatus}\n\n" +
 			$"{CreateClaudeQuotaRiskReconfirmationNotice(claudeQuotaRiskConfirmationCount)}\n\n" +
-			"匯入檔不含登入憑證。若這台電腦沒有對應的登入資料，請依帳號卡片提示重新連接 Claude 或 Codex。匯入後，Antigravity 與 Grok 必須逐一重新連接。\n\n" +
+			$"{PortableSettingsReconnectNotice}\n\n" +
 			"如需還原，請在關閉程式前選擇「匯入或匯出設定」→「還原匯入前設定」；還原後部分用量可能需要重新檢查。";
 	}
 
@@ -2247,11 +2249,8 @@ public partial class FloatingWidgetWindow : Window
 		}
 
 		IntPtr windowHandle = new WindowInteropHelper(this).Handle;
-		DrawingRectangle workingArea = GetTargetWorkingArea(windowHandle);
-		DpiScale dpi = VisualTreeHelper.GetDpi(this);
-		int margin = Math.Max(
-			0,
-			(int)Math.Round(CornerMargin * dpi.DpiScaleX));
+		(DrawingRectangle workingArea, int margin, DpiScale dpi) =
+			GetPlacementLayoutContext(windowHandle);
 		UpdateExpandedBounds(workingArea, margin, dpi);
 
 		if (!TryGetWindowBounds(windowHandle, out DrawingRectangle windowBounds))
@@ -3402,7 +3401,7 @@ public partial class FloatingWidgetWindow : Window
 			{
 				CollapsedButton.Visibility = Visibility.Collapsed;
 				ExpandedView.Visibility = Visibility.Visible;
-				UpdateExpandedSize(ExpandedWidth, ExpandedDefaultHeight);
+				UpdateExpandedSizeForLayoutTransition(windowHandle);
 			}
 
 			UpdateLayout();
@@ -3644,6 +3643,30 @@ public partial class FloatingWidgetWindow : Window
 			: Visibility.Collapsed;
 	}
 
+	private (DrawingRectangle WorkingArea, int Margin, DpiScale Dpi)
+		GetPlacementLayoutContext(IntPtr windowHandle)
+	{
+		DrawingRectangle workingArea = GetTargetWorkingArea(windowHandle);
+		DpiScale dpi = VisualTreeHelper.GetDpi(this);
+		int margin = Math.Max(
+			0,
+			(int)Math.Round(CornerMargin * dpi.DpiScaleX));
+		return (workingArea, margin, dpi);
+	}
+
+	private void UpdateExpandedSizeForLayoutTransition(IntPtr windowHandle)
+	{
+		if (windowHandle == IntPtr.Zero)
+		{
+			UpdateExpandedSize(ExpandedWidth, ExpandedDefaultHeight);
+			return;
+		}
+
+		(DrawingRectangle workingArea, int margin, DpiScale dpi) =
+			GetPlacementLayoutContext(windowHandle);
+		UpdateExpandedBounds(workingArea, margin, dpi);
+	}
+
 	private void UpdateExpandedBounds(
 		DrawingRectangle workingArea,
 		int margin,
@@ -3752,11 +3775,8 @@ public partial class FloatingWidgetWindow : Window
 	{
 		try
 		{
-			DrawingRectangle workingArea = GetTargetWorkingArea(windowHandle);
-			DpiScale dpi = VisualTreeHelper.GetDpi(this);
-			int margin = Math.Max(
-				0,
-				(int)Math.Round(CornerMargin * dpi.DpiScaleX));
+			(DrawingRectangle workingArea, int margin, DpiScale dpi) =
+				GetPlacementLayoutContext(windowHandle);
 			UpdateExpandedBounds(workingArea, margin, dpi);
 			UpdateLayout();
 

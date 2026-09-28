@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 
 using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App;
@@ -3886,6 +3887,52 @@ public sealed class AccountConnectionCoordinatorTests
 			NewIdentity,
 			Assert.Single(reloadedViewModel.Accounts)
 				.Profile.ProviderAccountIdentity);
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task CodexWorkspacePrompt_WhenReconnectingWorkspace_PrioritizesWorkspaceWithoutInventingId(
+		bool prefersWorkspaceConnection)
+	{
+		Task checks = await StartOnStaThreadAsync(() =>
+		{
+			ResourceDictionary controls = Assert.IsType<ResourceDictionary>(
+				Application.LoadComponent(new Uri(
+					"/AiUsageDashboard.App;component/Themes/Controls.xaml",
+					UriKind.Relative)));
+			ResourceDictionary resources = new();
+			resources.MergedDictionaries.Add(controls);
+			CodexWorkspacePromptWindow prompt = new(
+				prefersWorkspaceConnection,
+				resources);
+			try
+			{
+				Button generalConnection = Assert.IsType<Button>(
+					prompt.FindName("DefaultConnectionButton"));
+				Button workspaceConnection = Assert.IsType<Button>(
+					prompt.FindName("WorkspaceConnectionButton"));
+				TextBox workspaceId = Assert.IsType<TextBox>(
+					prompt.FindName("WorkspaceIdTextBox"));
+				TextBlock scopeChange = Assert.IsType<TextBlock>(
+					prompt.FindName("WorkspaceScopeChangeTextBlock"));
+
+				Assert.Equal(!prefersWorkspaceConnection, generalConnection.IsDefault);
+				Assert.Equal(prefersWorkspaceConnection, workspaceConnection.IsDefault);
+				Assert.Equal(string.Empty, workspaceId.Text);
+				Assert.Null(prompt.WorkspaceId);
+				Assert.Equal(
+					prefersWorkspaceConnection ? Visibility.Visible : Visibility.Collapsed,
+					scopeChange.Visibility);
+			}
+			finally
+			{
+				prompt.Close();
+			}
+
+			return Task.CompletedTask;
+		});
+		await checks.WaitAsync(AsyncWatchdogTimeout);
 	}
 
 	[Fact]
