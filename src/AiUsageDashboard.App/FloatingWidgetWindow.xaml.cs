@@ -2247,11 +2247,8 @@ public partial class FloatingWidgetWindow : Window
 		}
 
 		IntPtr windowHandle = new WindowInteropHelper(this).Handle;
-		DrawingRectangle workingArea = GetTargetWorkingArea(windowHandle);
-		DpiScale dpi = VisualTreeHelper.GetDpi(this);
-		int margin = Math.Max(
-			0,
-			(int)Math.Round(CornerMargin * dpi.DpiScaleX));
+		(DrawingRectangle workingArea, int margin, DpiScale dpi) =
+			GetPlacementLayoutContext(windowHandle);
 		UpdateExpandedBounds(workingArea, margin, dpi);
 
 		if (!TryGetWindowBounds(windowHandle, out DrawingRectangle windowBounds))
@@ -3402,7 +3399,7 @@ public partial class FloatingWidgetWindow : Window
 			{
 				CollapsedButton.Visibility = Visibility.Collapsed;
 				ExpandedView.Visibility = Visibility.Visible;
-				UpdateExpandedSize(ExpandedWidth, ExpandedDefaultHeight);
+				UpdateExpandedSizeForLayoutTransition(windowHandle);
 			}
 
 			UpdateLayout();
@@ -3644,6 +3641,30 @@ public partial class FloatingWidgetWindow : Window
 			: Visibility.Collapsed;
 	}
 
+	private (DrawingRectangle WorkingArea, int Margin, DpiScale Dpi)
+		GetPlacementLayoutContext(IntPtr windowHandle)
+	{
+		DrawingRectangle workingArea = GetTargetWorkingArea(windowHandle);
+		DpiScale dpi = VisualTreeHelper.GetDpi(this);
+		int margin = Math.Max(
+			0,
+			(int)Math.Round(CornerMargin * dpi.DpiScaleX));
+		return (workingArea, margin, dpi);
+	}
+
+	private void UpdateExpandedSizeForLayoutTransition(IntPtr windowHandle)
+	{
+		if (windowHandle == IntPtr.Zero)
+		{
+			UpdateExpandedSize(ExpandedWidth, ExpandedDefaultHeight);
+			return;
+		}
+
+		(DrawingRectangle workingArea, int margin, DpiScale dpi) =
+			GetPlacementLayoutContext(windowHandle);
+		UpdateExpandedBounds(workingArea, margin, dpi);
+	}
+
 	private void UpdateExpandedBounds(
 		DrawingRectangle workingArea,
 		int margin,
@@ -3752,11 +3773,8 @@ public partial class FloatingWidgetWindow : Window
 	{
 		try
 		{
-			DrawingRectangle workingArea = GetTargetWorkingArea(windowHandle);
-			DpiScale dpi = VisualTreeHelper.GetDpi(this);
-			int margin = Math.Max(
-				0,
-				(int)Math.Round(CornerMargin * dpi.DpiScaleX));
+			(DrawingRectangle workingArea, int margin, DpiScale dpi) =
+				GetPlacementLayoutContext(windowHandle);
 			UpdateExpandedBounds(workingArea, margin, dpi);
 			UpdateLayout();
 
