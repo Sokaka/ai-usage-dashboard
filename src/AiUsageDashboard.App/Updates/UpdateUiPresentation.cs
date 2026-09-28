@@ -1,4 +1,4 @@
-using System.Globalization;
+using AiUsageDashboard.Core.Localization;
 
 namespace AiUsageDashboard.App.Updates;
 
@@ -49,9 +49,9 @@ internal static class UpdateUiPresentationFactory
 			UpdatePresentationStatus.UnavailableInThisBuild =>
 				CreateUnavailable(state),
 			UpdatePresentationStatus.DisabledByUser =>
-				CreateIdle(state, "自動檢查更新已關閉；仍可手動檢查。"),
+				CreateIdle(state, UiText.Translate("自動檢查更新已關閉；仍可手動檢查。")),
 			UpdatePresentationStatus.IdleStale =>
-				CreateIdle(state, "尚未檢查更新。"),
+				CreateIdle(state, UiText.Translate("尚未檢查更新。")),
 			UpdatePresentationStatus.Checking =>
 				CreateChecking(
 					state,
@@ -80,7 +80,7 @@ internal static class UpdateUiPresentationFactory
 			_ => throw new ArgumentOutOfRangeException(
 				nameof(state),
 				state.Status,
-				"未知的更新顯示狀態。")
+				UiText.Translate("未知的更新顯示狀態。"))
 		};
 	}
 
@@ -88,11 +88,11 @@ internal static class UpdateUiPresentationFactory
 		UpdatePresentationState state)
 	{
 		return new UpdateUiPresentation(
-			"AI Usage 會定期連線檢查已簽署的穩定版更新；成功後 24 小時內不再自動檢查，失敗時會依 15 分鐘至 24 小時的間隔重試。",
+			UiText.Translate("AI Usage 會定期連線檢查已簽署的穩定版更新；成功後 24 小時內不再自動檢查，失敗時會依 15 分鐘至 24 小時的間隔重試。"),
 			CanCheckManually: true,
 			IsChecking: false,
 			IsBannerVisible: true,
-			"AI Usage 會定期連線檢查已簽署的穩定版更新，不會自動下載或安裝。成功後 24 小時內不再自動檢查；失敗時會依 15 分鐘至 24 小時的間隔重試。你可以在這裡或 tray 選單關閉自動檢查。",
+			UiText.Translate("AI Usage 會定期連線檢查已簽署的穩定版更新，不會自動下載或安裝。成功後 24 小時內不再自動檢查；失敗時會依 15 分鐘至 24 小時的間隔重試。你可以在這裡或 tray 選單關閉自動檢查。"),
 			UpdatePrimaryActionKind.None,
 			PrimaryActionText: string.Empty,
 			IsPrimaryActionEnabled: false,
@@ -108,7 +108,7 @@ internal static class UpdateUiPresentationFactory
 		UpdatePresentationState state)
 	{
 		return new UpdateUiPresentation(
-			"此開發版本未設定更新來源。正式發佈版本才會提供更新檢查。",
+			UiText.Translate("此開發版本未設定更新來源。正式發佈版本才會提供更新檢查。"),
 			CanCheckManually: false,
 			IsChecking: false,
 			IsBannerVisible: false,
@@ -164,13 +164,13 @@ internal static class UpdateUiPresentationFactory
 			return knownPresentation with
 			{
 				AboutStatusText =
-					$"正在檢查更新… {knownPresentation.AboutStatusText}",
+					UiText.Translate($"正在檢查更新… {knownPresentation.AboutStatusText}"),
 				CanCheckManually = false,
 				IsChecking = true,
 				IsBannerVisible = state.IsManualCheck ||
 					knownPresentation.IsBannerVisible,
 				BannerText = state.IsManualCheck
-					? "正在檢查更新…"
+					? UiText.Translate("正在檢查更新…")
 					: knownPresentation.BannerText,
 				IsPrimaryActionEnabled = false,
 				IsSnoozeVisible = false
@@ -179,11 +179,11 @@ internal static class UpdateUiPresentationFactory
 
 		bool isBannerVisible = state.IsManualCheck;
 		return new UpdateUiPresentation(
-			"正在檢查更新…",
+			UiText.Translate("正在檢查更新…"),
 			CanCheckManually: false,
 			IsChecking: true,
 			isBannerVisible,
-			isBannerVisible ? "正在檢查更新…" : string.Empty,
+			isBannerVisible ? UiText.Translate("正在檢查更新…") : string.Empty,
 			UpdatePrimaryActionKind.None,
 			PrimaryActionText: string.Empty,
 			IsPrimaryActionEnabled: false,
@@ -201,7 +201,7 @@ internal static class UpdateUiPresentationFactory
 	{
 		string checkTime = FormatCheckTime(state.LastSuccessfulCheckUtc, localNow);
 		return new UpdateUiPresentation(
-			$"上次檢查時已是最新版{checkTime}。",
+			UiText.Translate($"上次檢查時已是最新版{checkTime}。"),
 			CanCheckManually: true,
 			IsChecking: false,
 			IsBannerVisible: false,
@@ -229,24 +229,24 @@ internal static class UpdateUiPresentationFactory
 			? UpdatePrimaryActionKind.LaunchUpdater
 			: UpdatePrimaryActionKind.OpenReleases;
 		string actionText = canLaunchUpdater
-			? "更新並重新啟動"
-			: "開啟下載頁";
+			? UiText.Translate("更新並重新啟動")
+			: UiText.Translate("開啟下載頁");
 		string guidance = GetInstallationGuidance(
 			installationKind,
 			canLaunchUpdater);
 		string bannerText = state.IsSnoozed
 			? string.Empty
-			: $"AI Usage {version} 已可使用。{guidance}";
+			: UiText.Translate($"AI Usage {version} 已可使用。{guidance}");
 		string snoozeText = state.IsSnoozed &&
 			(state.SnoozedUntilUtc is DateTimeOffset snoozedUntilUtc)
-				? $"；已稍後提醒至 {FormatDateTime(snoozedUntilUtc, localNow)}"
+				? UiText.Translate($"；已稍後提醒至 {FormatDateTime(snoozedUntilUtc, localNow)}")
 				: string.Empty;
 		string checkTime = FormatCheckTime(
 			state.LastSuccessfulCheckUtc,
 			localNow);
 
 		return new UpdateUiPresentation(
-			$"有新版 {version} 可用{snoozeText}{checkTime}。{guidance}",
+			UiText.Translate($"有新版 {version} 可用{snoozeText}{checkTime}。{guidance}"),
 			CanCheckManually: !isUpdaterRunning,
 			IsChecking: false,
 			IsBannerVisible: !state.IsSnoozed,
@@ -260,8 +260,8 @@ internal static class UpdateUiPresentationFactory
 			HasUpdateBadge: true,
 			AvailableVersion: version,
 			TrayUpdateActionText: canLaunchUpdater
-				? $"更新並重新啟動 {version}"
-				: "開啟下載頁");
+				? UiText.Translate($"更新並重新啟動 {version}")
+				: UiText.Translate("開啟下載頁"));
 	}
 
 	private static UpdateUiPresentation CreateUnknownCurrentVersion(
@@ -273,20 +273,20 @@ internal static class UpdateUiPresentationFactory
 			state.LastSuccessfulCheckUtc,
 			localNow);
 		return new UpdateUiPresentation(
-			$"已找到版本 {version}{checkTime}，但無法可靠判斷目前執行版本。請到下載頁確認。",
+			UiText.Translate($"已找到版本 {version}{checkTime}，但無法可靠判斷目前執行版本。請到下載頁確認。"),
 			CanCheckManually: true,
 			IsChecking: false,
 			IsBannerVisible: true,
-			$"已找到版本 {version}，但無法可靠判斷目前版本。",
+			UiText.Translate($"已找到版本 {version}，但無法可靠判斷目前版本。"),
 			UpdatePrimaryActionKind.OpenReleases,
-			"開啟下載頁",
+			UiText.Translate("開啟下載頁"),
 			IsPrimaryActionEnabled: true,
 			IsReleaseHistoryVisible: true,
 			IsSnoozeVisible: false,
 			IsDisableAutomaticChecksVisible: false,
 			HasUpdateBadge: false,
 			AvailableVersion: version,
-			TrayUpdateActionText: "開啟下載頁");
+			TrayUpdateActionText: UiText.Translate("開啟下載頁"));
 	}
 
 	private static UpdateUiPresentation CreateCheckFailed(
@@ -318,7 +318,7 @@ internal static class UpdateUiPresentationFactory
 					AboutStatusText = manualFailureText,
 					IsBannerVisible = true,
 					BannerText =
-						$"{manualFailureText} 仍可使用上次確認的更新；可從 tray 或「關於 AI Usage」重新檢查。"
+						UiText.Translate($"{manualFailureText} 仍可使用上次確認的更新；可從 tray 或「關於 AI Usage」重新檢查。")
 				}
 				: knownUpdate with
 				{
@@ -364,7 +364,7 @@ internal static class UpdateUiPresentationFactory
 				IsBannerVisible: true,
 				failureText,
 				UpdatePrimaryActionKind.CheckNow,
-				"重新檢查",
+				UiText.Translate("重新檢查"),
 				IsPrimaryActionEnabled: true,
 				IsReleaseHistoryVisible: true,
 				IsSnoozeVisible: false,
@@ -376,8 +376,8 @@ internal static class UpdateUiPresentationFactory
 
 		string previousStatus = state.LastKnownResult is
 			{ Status: UpdateAvailabilityStatus.UpToDate }
-				? $"上次成功檢查時沒有新版{FormatCheckTime(state.LastSuccessfulCheckUtc, localNow)}。"
-				: "尚未有成功的更新檢查結果。";
+				? UiText.Translate($"上次成功檢查時沒有新版{FormatCheckTime(state.LastSuccessfulCheckUtc, localNow)}。")
+				: UiText.Translate("尚未有成功的更新檢查結果。");
 		string aboutStatus = CreateAutomaticFailureAboutStatus(
 			state,
 			previousStatus,
@@ -394,9 +394,9 @@ internal static class UpdateUiPresentationFactory
 			? $"（{FormatDateTime(failedAtUtc, localNow)}）"
 			: string.Empty;
 		string retryText = state.IsAutoCheckEnabled
-			? "，將依排程重試"
+			? UiText.Translate("，將依排程重試")
 			: string.Empty;
-		return $"最近一次自動檢查失敗{failureTime}{retryText}；{previousStatus}";
+		return UiText.Translate($"最近一次自動檢查失敗{failureTime}{retryText}；{previousStatus}");
 	}
 
 	private static UpdateUiPresentation? CreateKnownResultPresentation(
@@ -443,8 +443,8 @@ internal static class UpdateUiPresentationFactory
 		DateTimeOffset localNow)
 	{
 		string failureText = (string.IsNullOrWhiteSpace(state.FailureMessage)
-			? "無法完成更新檢查，請稍後再試。"
-			: state.FailureMessage).TrimEnd('。');
+			? UiText.Translate("無法完成更新檢查，請稍後再試。")
+			: UiText.Translate(state.FailureMessage)).TrimEnd('。', '.');
 		if (state.LastSuccessfulCheckUtc is not DateTimeOffset)
 		{
 			return failureText;
@@ -453,13 +453,13 @@ internal static class UpdateUiPresentationFactory
 		string previousResult = state.LastKnownResult switch
 		{
 			{ Status: UpdateAvailabilityStatus.UpdateAvailable } knownResult =>
-				$"；上次成功檢查找到版本 {knownResult.AvailableVersion}",
+				UiText.Translate($"；上次成功檢查找到版本 {knownResult.AvailableVersion}"),
 			{ Status: UpdateAvailabilityStatus.UpToDate } =>
-				"；上次成功檢查時沒有新版",
+				UiText.Translate("；上次成功檢查時沒有新版"),
 			{ Status: UpdateAvailabilityStatus.UnknownCurrentVersion } =>
-				"；上次成功取得新版資訊，但無法判斷目前版本",
-			null => "；上次成功檢查已有結果",
-			_ => throw new InvalidOperationException("未知的更新結果狀態。")
+				UiText.Translate("；上次成功取得新版資訊，但無法判斷目前版本"),
+			null => UiText.Translate("；上次成功檢查已有結果"),
+			_ => throw new InvalidOperationException(UiText.Translate("未知的更新結果狀態。"))
 		};
 		return $"{failureText}{previousResult}{FormatCheckTime(state.LastSuccessfulCheckUtc, localNow)}。";
 	}
@@ -471,17 +471,17 @@ internal static class UpdateUiPresentationFactory
 		return installationKind switch
 		{
 			AppInstallationKind.CanonicalManaged when canLaunchUpdater =>
-				"可使用既有維護 Updater 安裝。",
+				UiText.Translate("可使用既有維護 Updater 安裝。"),
 			AppInstallationKind.CanonicalManaged =>
-				"目前無法啟動維護 Updater，請改用下載頁。",
+				UiText.Translate("目前無法啟動維護 Updater，請改用下載頁。"),
 			AppInstallationKind.CustomManaged =>
-				"自訂安裝位置不會原地更新；下載頁的 Updater 可能建立標準安裝。",
+				UiText.Translate("自訂安裝位置不會原地更新；下載頁的 Updater 可能建立標準安裝。"),
 			AppInstallationKind.Unmanaged =>
-				"Portable 版請下載完整 ZIP、解壓到新資料夾，不要覆蓋目前資料夾。",
+				UiText.Translate("Portable 版請下載完整 ZIP、解壓到新資料夾，不要覆蓋目前資料夾。"),
 			_ => throw new ArgumentOutOfRangeException(
 				nameof(installationKind),
 				installationKind,
-				"未知的安裝型態。")
+				UiText.Translate("未知的安裝型態。"))
 		};
 	}
 
@@ -503,7 +503,7 @@ internal static class UpdateUiPresentationFactory
 	{
 		return GetKnownAvailableVersion(state) ??
 			throw new InvalidOperationException(
-				"更新顯示狀態缺少可用版本。");
+				UiText.Translate("更新顯示狀態缺少可用版本。"));
 	}
 
 	private static string FormatCheckTime(
@@ -511,7 +511,7 @@ internal static class UpdateUiPresentationFactory
 		DateTimeOffset localNow)
 	{
 		return checkUtc is DateTimeOffset value
-			? $"（上次檢查：{FormatDateTime(value, localNow)}）"
+			? UiText.Translate($"（上次檢查：{FormatDateTime(value, localNow)}）")
 			: string.Empty;
 	}
 
@@ -521,6 +521,6 @@ internal static class UpdateUiPresentationFactory
 	{
 		return value.ToOffset(localNow.Offset).ToString(
 			"g",
-			CultureInfo.CurrentCulture);
+			UiText.Culture);
 	}
 }

@@ -25,6 +25,20 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同版成品官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
+### 1.0.16
+
+本表對應預定發布的 `1.0.16 / sequence 1030`；正式候選尚待以整合後完整 main SHA 建置。App 與 Updater 均使用本次 source 重新建置，CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本版實測 | 未驗證 | 未驗證 |
+| Codex | 未以本版實測 | 未驗證 | 未驗證 |
+| GitHub Copilot | 未以本版實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
+| Grok | 未以本版實測 | 未驗證 | 未驗證 |
+| Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
+
+本版增加 English／繁體中文介面與語系設定匯入匯出，保留既有 provider 協定、帳號隔離及原始用量。完整 SHA 的 CI、正式候選、公開下載與安裝結果尚待回填；一般合成回歸不代替真人登入、用量、背景更新、App 線上更新或完整 UI／無障礙驗收。內容及回退限制見 [1.0.16 版本說明](releases/1.0.16.md)。
+
 ### 1.0.15
 
 本表只對應 `1.0.15 / sequence 1029`（[source `605e765d16e75bb37afd15843ea8349cc1187fb0`](https://github.com/Sokaka/ai-usage-dashboard/commit/605e765d16e75bb37afd15843ea8349cc1187fb0)）的同一組正式公開凍結成品。原始建置為 [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36415082312/attempts/1) attempt 1；Release ID `398185364`。本版沿用 `v1.0.14` 正式版中的 `1.0.12` Updater 原始 bytes，source [`1f7dfa10c606e500096f7af3472ee3277a94615a`](https://github.com/Sokaka/ai-usage-dashboard/commit/1f7dfa10c606e500096f7af3472ee3277a94615a)。CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。

@@ -1,5 +1,7 @@
 using System.Reflection;
 
+using AiUsageDashboard.Core.Localization;
+
 namespace AiUsageDashboard.App;
 
 internal static class AppVersionInfo
@@ -16,7 +18,7 @@ internal static class AppVersionInfo
 			return informationalVersion.Trim();
 		}
 
-		string version = assembly.GetName().Version?.ToString() ?? "無法辨識";
-		return $"{version}（版本資訊不完整）";
+		string version = assembly.GetName().Version?.ToString() ?? UiText.Get("Shell.VersionUnknown");
+		return UiText.Format("Shell.VersionIncomplete", version);
 	}
 }

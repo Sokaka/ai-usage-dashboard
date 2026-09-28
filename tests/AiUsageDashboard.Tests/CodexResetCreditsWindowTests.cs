@@ -6,6 +6,7 @@ using System.Windows.Threading;
 
 using AiUsageDashboard.App;
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.Tests;
@@ -27,9 +28,35 @@ public sealed class CodexResetCreditsWindowTests
 	private static readonly DateTimeOffset Now = new(
 		2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
 
+	[Theory]
+	[InlineData((int)AppLanguage.English, "2 credits available", "Reset credit 1", "Expires ")]
+	[InlineData((int)AppLanguage.TraditionalChinese, "可用 2 張", "重置券 1", "到期 ")]
+	public void CreateViewState_LocalizesPresentationWithoutChangingCreditOrAccountData(
+		int language,
+		string expectedCount,
+		string expectedHeading,
+		string expectedExpiryPrefix)
+	{
+		using IDisposable languageScope = UiText.UseLanguage((AppLanguage)language);
+		CodexResetCreditDetails details = new(2,
+			[new CodexResetCredit("available", null, null, Now.AddDays(1), null, null)], false);
+		UsageSnapshot snapshot = CreateSnapshot(2, Now, details);
+		CodexResetCreditsWindow.ViewState state =
+			CodexResetCreditsWindow.CreateViewState("工作帳號", snapshot, Now);
+
+		Assert.Equal(expectedCount, state.AvailableCountText);
+		Assert.Equal("工作帳號", state.AccountText);
+		Assert.Equal(expectedHeading, Assert.Single(state.CreditRows).Heading);
+		Assert.StartsWith(expectedExpiryPrefix, state.CreditRows[0].ExpiresAtText);
+		Assert.Same(details, snapshot.CodexResetCredits);
+		Assert.Equal(Now.AddDays(1), details.Credits![0].ExpiresAt);
+		Assert.Equal(2, details.AvailableCount);
+	}
+
 	[Fact]
 	public void CreateViewState_WithCountOnlyOrOldSnapshot_DoesNotInventCreditRows()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		UsageSnapshot snapshot = CreateSnapshot(
 			2,
 			Now.AddMinutes(-1),
@@ -58,6 +85,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public void CreateViewState_WithPartialDetails_ShowsOnlyAvailableRows()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		CodexResetCreditDetails details = new(
 			3,
 			[
@@ -90,6 +118,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public void CreateViewState_WithMixedStatuses_NumbersOnlyAvailableRows()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		CodexResetCreditDetails details = new(
 			2,
 			[
@@ -122,6 +151,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public void CreateViewState_WithNoAvailableCredits_HidesUsedRows()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		CodexResetCreditDetails details = new(
 			0,
 			[
@@ -149,6 +179,7 @@ public sealed class CodexResetCreditsWindowTests
 		long availableCount,
 		int rowCount)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		CodexResetCredit[] credits = Enumerable.Range(1, rowCount)
 			.Select(index => new CodexResetCredit(
 				"available", null, null, Now.AddDays(index),
@@ -171,6 +202,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public void CreateViewState_WithParserCountConflict_ShowsMismatchWithEmptyDetails()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		UsageSnapshot snapshot = CreateSnapshot(
 			0,
 			Now.AddMinutes(-1),
@@ -190,6 +222,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public void CreateViewState_ColorsEachExpiryWithinTwoDays()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		DateTimeOffset?[] expiryTimes =
 		[
 			Now.AddTicks(1),
@@ -221,6 +254,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public void CreateViewState_WhenAvailableCreditsExpireAfterSnapshot_HidesExpiredRows()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		CodexResetCreditDetails details = new(
 			3,
 			[
@@ -247,6 +281,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public void CreateViewState_DistinguishesNeverExpiresFromMissingExpiry()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		CodexResetCreditDetails details = new(
 			2,
 			[
@@ -271,6 +306,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public void GetNextExpiryRecheckDelay_UsesNearestFutureAvailableExpiry()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		CodexResetCreditDetails details = new(
 			3,
 			[
@@ -296,6 +332,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public void GetNextExpiryRecheckDelay_WhenNoFutureAvailableExpiry_ReturnsNull()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		CodexResetCreditDetails details = new(
 			3,
 			[
@@ -318,6 +355,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public void CreateViewState_WithStaleOrMissingSnapshot_DoesNotPresentCurrentInventory()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		UsageSnapshot staleSnapshot = CreateSnapshot(
 			1,
 			Now.AddHours(-3),
@@ -354,6 +392,7 @@ public sealed class CodexResetCreditsWindowTests
 	[Fact]
 	public async Task Window_WhenCardChanges_UpdatesAndClearsItsOwnDetails()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		await RunOnStaThreadAsync(() =>
 		{
 			ResourceDictionary resources = CreateWindowResources();

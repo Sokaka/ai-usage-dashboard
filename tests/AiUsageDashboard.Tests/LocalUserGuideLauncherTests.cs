@@ -4,6 +4,7 @@ using AiUsageDashboard.App;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class LocalUserGuideLauncherTests
 {
 	[Fact]

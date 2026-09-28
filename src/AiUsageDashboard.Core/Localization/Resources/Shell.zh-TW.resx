@@ -1,0 +1,804 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>2.0</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+	</resheader>
+	<data name="App001" xml:space="preserve">
+		<value>舊版 AI Usage 未在預期時間內關閉。請手動重新開啟 AI Usage。</value>
+	</data>
+	<data name="App002" xml:space="preserve">
+		<value>無法重新啟動</value>
+	</data>
+	<data name="App003" xml:space="preserve">
+		<value>無法顯示浮窗</value>
+	</data>
+	<data name="App004" xml:space="preserve">
+		<value>目前無法讀取顯示設定，因此不能開始匯入。</value>
+	</data>
+	<data name="App005" xml:space="preserve">
+		<value>啟動失敗</value>
+	</data>
+	<data name="App006" xml:space="preserve">
+		<value>無法確認已提交的帳號設定，因此不會授權清除 retained Copilot private state。</value>
+	</data>
+	<data name="App007" xml:space="preserve">
+		<value>Antigravity 帳號已新增</value>
+	</data>
+	<data name="App008" xml:space="preserve">
+		<value>Antigravity 帳號已連接並新增到 AI Usage，但帳號設定備份更新失敗。這次仍可使用；若下次啟動出現異常，請聯絡維護人員並提供診斷紀錄。
+
+</value>
+	</data>
+	<data name="App009" xml:space="preserve">
+		<value>請手動新增 Antigravity 帳號</value>
+	</data>
+	<data name="App010" xml:space="preserve">
+		<value>Antigravity 帳號已連接，但 AI Usage 無法自動新增帳號。請在浮窗手動新增 Antigravity；不需要再次登入。
+
+</value>
+	</data>
+	<data name="App011" xml:space="preserve">
+		<value>無法確認 Antigravity 帳號</value>
+	</data>
+	<data name="App012" xml:space="preserve">
+		<value>AI Usage 無法確認 Antigravity 帳號是否已新增。請先查看浮窗中的帳號，再繼續操作；不需要再次登入。
+
+</value>
+	</data>
+	<data name="App013" xml:space="preserve">
+		<value>目前執行檔的 ProductVersion 無法讀取。</value>
+	</data>
+	<data name="App014" xml:space="preserve">
+		<value>更新安全關閉通道在完成啟動前已被釋放。</value>
+	</data>
+	<data name="App015" xml:space="preserve">
+		<value>更新安全關閉通道意外停止。</value>
+	</data>
+	<data name="App016" xml:space="preserve">
+		<value>更新安全關閉通道狀態變更後無法更新畫面。</value>
+	</data>
+	<data name="App017" xml:space="preserve">
+		<value>正在檢查更新…</value>
+	</data>
+	<data name="App018" xml:space="preserve">
+		<value>檢查更新</value>
+	</data>
+	<data name="App019" xml:space="preserve">
+		<value>開啟下載頁</value>
+	</data>
+	<data name="App020" xml:space="preserve">
+		<value>無法監聽 Windows 從睡眠恢復事件；定時更新檢查仍會繼續。</value>
+	</data>
+	<data name="App021" xml:space="preserve">
+		<value>系統時間往回調整；已重新開始首次更新檢查的 30 秒等候時間。</value>
+	</data>
+	<data name="App022" xml:space="preserve">
+		<value>未知的首次更新檢查告知狀態。</value>
+	</data>
+	<data name="App023" xml:space="preserve">
+		<value>未知的首次更新檢查告知呈現方式。</value>
+	</data>
+	<data name="App024" xml:space="preserve">
+		<value>已啟用更新檢查</value>
+	</data>
+	<data name="App025" xml:space="preserve">
+		<value>AI Usage 會定期檢查已簽署的穩定版更新，不會自動下載或安裝。成功後 24 小時內不再檢查；失敗時會在 15 分鐘至 24 小時後重試，可從 tray 關閉。</value>
+	</data>
+	<data name="App026" xml:space="preserve">
+		<value>無法顯示自動更新檢查通知；在通知成功前不會自動連線。</value>
+	</data>
+	<data name="App027" xml:space="preserve">
+		<value>AI Usage 有新版</value>
+	</data>
+	<data name="App028" xml:space="preserve">
+		<value>版本 {0} 已可使用。開啟 AI Usage 查看更新選項。</value>
+	</data>
+	<data name="App029" xml:space="preserve">
+		<value>Windows 無法顯示新版通知；浮窗與 tray 狀態仍會保留。</value>
+	</data>
+	<data name="App030" xml:space="preserve">
+		<value>無法完成更新操作。
+
+原因：{0}</value>
+	</data>
+	<data name="App031" xml:space="preserve">
+		<value>更新操作失敗</value>
+	</data>
+	<data name="App032" xml:space="preserve">
+		<value>無法儲存自動檢查更新設定。請確認 AI Usage 本機資料夾可寫入，再重新設定。</value>
+	</data>
+	<data name="App033" xml:space="preserve">
+		<value>無法儲存更新設定</value>
+	</data>
+	<data name="App034" xml:space="preserve">
+		<value>無法儲存稍後提醒設定。請確認 AI Usage 本機資料夾可寫入，再重新設定。</value>
+	</data>
+	<data name="App035" xml:space="preserve">
+		<value>未知的更新操作。</value>
+	</data>
+	<data name="App036" xml:space="preserve">
+		<value>維護 Updater 在 App 關閉期間完成：</value>
+	</data>
+	<data name="App037" xml:space="preserve">
+		<value>目前無法啟動這份安裝所需的維護 Updater。</value>
+	</data>
+	<data name="App038" xml:space="preserve">
+		<value>無法啟動 Updater</value>
+	</data>
+	<data name="App039" xml:space="preserve">
+		<value>Windows 無法啟動維護 Updater。</value>
+	</data>
+	<data name="App040" xml:space="preserve">
+		<value>維護 Updater 沒有回報可辨識的執行結果。</value>
+	</data>
+	<data name="App041" xml:space="preserve">
+		<value>維護 Updater 未完成更新（exit code {0}）。</value>
+	</data>
+	<data name="App042" xml:space="preserve">
+		<value>更新未完成</value>
+	</data>
+	<data name="App043" xml:space="preserve">
+		<value>{0}
+
+要開啟下載頁查看最新版本嗎？</value>
+	</data>
+	<data name="App044" xml:space="preserve">
+		<value>找不到 AI Usage 執行檔，請手動重新開啟 AI Usage。</value>
+	</data>
+	<data name="App045" xml:space="preserve">
+		<value>無法建立重新啟動程序。</value>
+	</data>
+	<data name="App046" xml:space="preserve">
+		<value>無法重新開啟 AI Usage。請手動開啟 AI Usage。</value>
+	</data>
+	<data name="App047" xml:space="preserve">
+		<value>重新啟動</value>
+	</data>
+	<data name="App048" xml:space="preserve">
+		<value>結束</value>
+	</data>
+	<data name="App049" xml:space="preserve">
+		<value>Antigravity 帳號仍在連接中。若要{0} AI Usage，程式會先關閉連接視窗，尚未完成的連接會取消。若已開始儲存連接資料，重新啟動後會自動繼續。
+
+要中斷目前操作並{1}嗎？</value>
+	</data>
+	<data name="App050" xml:space="preserve">
+		<value>停止 Antigravity 連接？</value>
+	</data>
+	<data name="App051" xml:space="preserve">
+		<value>尚有工作未能確認已停止；AI Usage 將保持 fail-closed，等待工作自然完成後重新啟動舊版並中止這次更新。</value>
+	</data>
+	<data name="App052" xml:space="preserve">
+		<value>找不到目前的 AI Usage 執行檔；程式將安全結束，但無法自動重新開啟舊版。</value>
+	</data>
+	<data name="App053" xml:space="preserve">
+		<value>等待先前的連接處理停止已逾時。</value>
+	</data>
+	<data name="App054" xml:space="preserve">
+		<value>等待用量檢查停止已逾時。</value>
+	</data>
+	<data name="App055" xml:space="preserve">
+		<value>等待帳號連接停止已逾時。</value>
+	</data>
+	<data name="App056" xml:space="preserve">
+		<value>AI Usage 已在執行，但目前無法顯示既有浮窗。
+
+</value>
+	</data>
+	<data name="App057" xml:space="preserve">
+		<value>原因：{0}
+
+</value>
+	</data>
+	<data name="App058" xml:space="preserve">
+		<value>請先從系統匣選擇「顯示浮窗」。如果系統匣沒有圖示，請在工作管理員結束 AI Usage，再重新開啟。
+
+</value>
+	</data>
+	<data name="App059" xml:space="preserve">
+		<value>AI Usage 無法完成啟動。
+
+</value>
+	</data>
+	<data name="App060" xml:space="preserve">
+		<value>請重新開啟 AI Usage；若問題持續，可提供診斷紀錄協助釐清。
+
+</value>
+	</data>
+	<data name="App061" xml:space="preserve">
+		<value>Windows 不允許存取 AI Usage 的本機資料。請確認 AI Usage 本機資料夾可讀取與寫入。</value>
+	</data>
+	<data name="App062" xml:space="preserve">
+		<value>顯示設定由較新版本的 AI Usage 建立；為避免覆寫，這次變更沒有儲存。請使用相同或較新的 AI Usage 版本。</value>
+	</data>
+	<data name="App063" xml:space="preserve">
+		<value>顯示設定檔超過 64 KiB；為避免覆寫，這次變更沒有儲存。請先備份，再檢查或重建顯示設定檔。</value>
+	</data>
+	<data name="App064" xml:space="preserve">
+		<value>目前無法安全讀取原有顯示設定；為避免覆寫，這次變更沒有儲存。請稍後再試。</value>
+	</data>
+	<data name="App065" xml:space="preserve">
+		<value>顯示設定檔路徑經過連結，或目標不是一般檔案；為保護本機資料，這次變更沒有儲存。請將 AI Usage 本機資料夾還原為一般資料夾與檔案後再試。</value>
+	</data>
+	<data name="App066" xml:space="preserve">
+		<value>儲存浮窗設定時發生未預期錯誤。</value>
+	</data>
+	<data name="App067" xml:space="preserve">
+		<value>{0} 本次仍可使用，重新啟動後可能恢復舊設定。</value>
+	</data>
+	<data name="App068" xml:space="preserve">
+		<value>找不到用來更新視窗與系統匣圖示的 ThemeLogoStyle。</value>
+	</data>
+	<data name="App069" xml:space="preserve">
+		<value>更新目前主題的視窗與系統匣圖示時失敗。</value>
+	</data>
+	<data name="App070" xml:space="preserve">
+		<value>無法更新目前主題的視窗與系統匣圖示。</value>
+	</data>
+	<data name="App071" xml:space="preserve">
+		<value>無法還原原本的系統匣圖示。</value>
+	</data>
+	<data name="App072" xml:space="preserve">
+		<value>無法還原原本的視窗圖示。</value>
+	</data>
+	<data name="App073" xml:space="preserve">
+		<value>浮窗設定未儲存</value>
+	</data>
+	<data name="App074" xml:space="preserve">
+		<value>診斷紀錄：{0}</value>
+	</data>
+	<data name="App075" xml:space="preserve">
+		<value>診斷紀錄也無法建立。請確認 Windows 的本機應用程式資料目錄可寫入。</value>
+	</data>
+	<data name="App076" xml:space="preserve">
+		<value>既有 AI Usage 沒有在預期時間內回應。</value>
+	</data>
+	<data name="App077" xml:space="preserve">
+		<value>Windows 不允許本次啟動與既有 AI Usage 通訊。</value>
+	</data>
+	<data name="App078" xml:space="preserve">
+		<value>既有 AI Usage 的喚醒通道目前無法使用。</value>
+	</data>
+	<data name="App079" xml:space="preserve">
+		<value>既有 AI Usage 無法接收顯示要求。</value>
+	</data>
+	<data name="App080" xml:space="preserve">
+		<value>隱藏浮窗</value>
+	</data>
+	<data name="App081" xml:space="preserve">
+		<value>顯示浮窗</value>
+	</data>
+	<data name="App082" xml:space="preserve">
+		<value>Windows 登入啟動項：僅標準安裝可用</value>
+	</data>
+	<data name="App083" xml:space="preserve">
+		<value>Windows 登入啟動項：無法使用（啟動命令過長）</value>
+	</data>
+	<data name="App084" xml:space="preserve">
+		<value>Windows 登入啟動項：未登錄</value>
+	</data>
+	<data name="App085" xml:space="preserve">
+		<value>Windows 登入啟動項：已登錄</value>
+	</data>
+	<data name="App086" xml:space="preserve">
+		<value>Windows 登入啟動項：需修復</value>
+	</data>
+	<data name="App087" xml:space="preserve">
+		<value>Windows 登入啟動項：無法讀取</value>
+	</data>
+	<data name="App088" xml:space="preserve">
+		<value>Windows 登入啟動項狀態無法辨識。</value>
+	</data>
+	<data name="App089" xml:space="preserve">
+		<value>偵測到同名的 Windows 登入啟動項，但內容不符合目前 AI Usage 的標準啟動命令。要以目前安裝取代它嗎？</value>
+	</data>
+	<data name="App090" xml:space="preserve">
+		<value>修復登入啟動項？</value>
+	</data>
+	<data name="App091" xml:space="preserve">
+		<value>Windows 登入啟動項在更新時被其他程序變更，請再試一次。</value>
+	</data>
+	<data name="App092" xml:space="preserve">
+		<value>AI Usage 無法更新 Windows 登入啟動項。
+
+原因：{0}
+
+</value>
+	</data>
+	<data name="App093" xml:space="preserve">
+		<value>無法更新登入啟動項</value>
+	</data>
+	<data name="App094" xml:space="preserve">
+		<value>無法開啟 Windows 啟動應用程式設定。
+
+原因：{0}</value>
+	</data>
+	<data name="App095" xml:space="preserve">
+		<value>無法開啟 Windows 設定</value>
+	</data>
+	<data name="App096" xml:space="preserve">
+		<value>置頂</value>
+	</data>
+	<data name="App097" xml:space="preserve">
+		<value>自動檢查更新</value>
+	</data>
+	<data name="App098" xml:space="preserve">
+		<value>這裡只顯示登錄狀態；Windows 設定或組織原則仍可停用執行。</value>
+	</data>
+	<data name="App099" xml:space="preserve">
+		<value>開啟 Windows 啟動應用程式設定</value>
+	</data>
+	<data name="App100" xml:space="preserve">
+		<value>匯出設定…</value>
+	</data>
+	<data name="App101" xml:space="preserve">
+		<value>還原匯入前設定</value>
+	</data>
+	<data name="App102" xml:space="preserve">
+		<value>使用說明</value>
+	</data>
+	<data name="App103" xml:space="preserve">
+		<value>關於 AI Usage</value>
+	</data>
+	<data name="App104" xml:space="preserve">
+		<value>結束 AI Usage</value>
+	</data>
+	<data name="App105" xml:space="preserve">
+		<value>無法開啟使用說明</value>
+	</data>
+	<data name="Widget106" xml:space="preserve">
+		<value>無法儲存浮窗位置與顯示設定；</value>
+	</data>
+	<data name="Widget107" xml:space="preserve">
+		<value>浮窗位置與顯示設定已恢復儲存。</value>
+	</data>
+	<data name="Widget108" xml:space="preserve">
+		<value>已有設定匯入、匯出或還原正在進行。</value>
+	</data>
+	<data name="Widget109" xml:space="preserve">
+		<value>匯出檔是未加密的 JSON，包含帳號暱稱、連接後顯示的帳號（例如電子郵件）、帳號順序、用量顯示方式、浮窗設定、主題與語系。
+
+</value>
+	</data>
+	<data name="Widget110" xml:space="preserve">
+		<value>檔案不包含密碼或登入憑證。請只存放在可信任的位置。
+
+要繼續匯出嗎？</value>
+	</data>
+	<data name="Widget111" xml:space="preserve">
+		<value>匯出設定</value>
+	</data>
+	<data name="Widget112" xml:space="preserve">
+		<value>AI Usage 設定 (*.aiusage.json)|*.aiusage.json|JSON 檔案 (*.json)|*.json</value>
+	</data>
+	<data name="Widget113" xml:space="preserve">
+		<value>匯出 AI Usage 設定</value>
+	</data>
+	<data name="Widget114" xml:space="preserve">
+		<value>已匯出 {0} 個帳號與設定；檔案不含登入憑證。</value>
+	</data>
+	<data name="Widget115" xml:space="preserve">
+		<value>匯出</value>
+	</data>
+	<data name="Widget116" xml:space="preserve">
+		<value>匯入 AI Usage 設定</value>
+	</data>
+	<data name="Widget117" xml:space="preserve">
+		<value>匯入</value>
+	</data>
+	<data name="Widget123" xml:space="preserve">
+		<value>{0}Claude、Codex、Antigravity 與 Grok Build CLI 的預設登入資料不會被刪除；AI Usage 為現有 Grok 帳號另存的登入資料會清除，目前 Copilot 卡片在 Windows Credential Manager 的登入資料也會清除。套用後可在關閉程式前選擇「還原匯入前設定」；若重新啟動後仍需還原，請先取消並匯出目前設定。
+
+</value>
+	</data>
+	<data name="Widget124" xml:space="preserve">
+		<value>{0}
+
+要套用這份設定嗎？</value>
+	</data>
+	<data name="Widget125" xml:space="preserve">
+		<value>取代目前設定</value>
+	</data>
+	<data name="Widget126" xml:space="preserve">
+		<value>正在匯入設定；如有進行中的用量檢查，會先等待它結束…</value>
+	</data>
+	<data name="Widget127" xml:space="preserve">
+		<value>設定已匯入，但備份更新失敗</value>
+	</data>
+	<data name="Widget128" xml:space="preserve">
+		<value>正在還原匯入前設定；如有進行中的用量檢查，會先等待它結束…</value>
+	</data>
+	<data name="Widget129" xml:space="preserve">
+		<value>設定已還原，但備份更新失敗</value>
+	</data>
+	<data name="Widget130" xml:space="preserve">
+		<value>還原</value>
+	</data>
+	<data name="Widget131" xml:space="preserve">
+		<value>無帳號</value>
+	</data>
+	<data name="Widget132" xml:space="preserve">
+		<value>變更預覽：
+</value>
+	</data>
+	<data name="Widget133" xml:space="preserve">
+		<value>• 帳號：{0} → {1}</value>
+	</data>
+	<data name="Widget134" xml:space="preserve">
+		<value>（新增 {0}、移除 {1}、更新 {2}）
+</value>
+	</data>
+	<data name="Widget135" xml:space="preserve">
+		<value>會變更</value>
+	</data>
+	<data name="Widget136" xml:space="preserve">
+		<value>不變</value>
+	</data>
+	<data name="Widget137" xml:space="preserve">
+		<value>• 順序：{0}
+</value>
+	</data>
+	<data name="Widget138" xml:space="preserve">
+		<value>• 排序方式：{0} → </value>
+	</data>
+	<data name="Widget139" xml:space="preserve">
+		<value>• 顯示方式：{0} → </value>
+	</data>
+	<data name="Widget140" xml:space="preserve">
+		<value>• 浮窗設定：{0}
+</value>
+	</data>
+	<data name="Widget141" xml:space="preserve">
+		<value>• 主題：{0}
+</value>
+	</data>
+	<data name="Widget142" xml:space="preserve">
+		<value>• 需重新確認 Claude 用量讀取：{0} 個帳號
+</value>
+	</data>
+	<data name="Widget143" xml:space="preserve">
+		<value>• 帳號所屬服務：{0}</value>
+	</data>
+	<data name="Widget144" xml:space="preserve">
+		<value>匯入後有 {0} 個 Claude 帳號需要重新確認用量讀取；確認前不會檢查這些帳號的用量。</value>
+	</data>
+	<data name="Widget145" xml:space="preserve">
+		<value>手動</value>
+	</data>
+	<data name="Widget146" xml:space="preserve">
+		<value>自動</value>
+	</data>
+	<data name="Widget147" xml:space="preserve">
+		<value>未知</value>
+	</data>
+	<data name="Widget148" xml:space="preserve">
+		<value>未知服務</value>
+	</data>
+	<data name="Widget149" xml:space="preserve">
+		<value>已使用</value>
+	</data>
+	<data name="Widget150" xml:space="preserve">
+		<value>剩餘</value>
+	</data>
+	<data name="Widget151" xml:space="preserve">
+		<value>保留目前設定</value>
+	</data>
+	<data name="Widget152" xml:space="preserve">
+		<value>顯示</value>
+	</data>
+	<data name="Widget153" xml:space="preserve">
+		<value>隱藏</value>
+	</data>
+	<data name="Widget154" xml:space="preserve">
+		<value>收合</value>
+	</data>
+	<data name="Widget155" xml:space="preserve">
+		<value>展開</value>
+	</data>
+	<data name="Widget156" xml:space="preserve">
+		<value>不置頂</value>
+	</data>
+	<data name="Widget157" xml:space="preserve">
+		<value>高度隨卡片數量</value>
+	</data>
+	<data name="Widget158" xml:space="preserve">
+		<value>固定可用高度</value>
+	</data>
+	<data name="Widget159" xml:space="preserve">
+		<value>高度維持目前設定</value>
+	</data>
+	<data name="Widget160" xml:space="preserve">
+		<value>左上角</value>
+	</data>
+	<data name="Widget161" xml:space="preserve">
+		<value>右上角</value>
+	</data>
+	<data name="Widget162" xml:space="preserve">
+		<value>左下角</value>
+	</data>
+	<data name="Widget163" xml:space="preserve">
+		<value>右下角</value>
+	</data>
+	<data name="Widget164" xml:space="preserve">
+		<value>未知角落</value>
+	</data>
+	<data name="Widget165" xml:space="preserve">
+		<value>保留目前主題</value>
+	</data>
+	<data name="Widget166" xml:space="preserve">
+		<value>經典藍</value>
+	</data>
+	<data name="Widget167" xml:space="preserve">
+		<value>曜石黑</value>
+	</data>
+	<data name="Widget168" xml:space="preserve">
+		<value>柔霧灰</value>
+	</data>
+	<data name="Widget169" xml:space="preserve">
+		<value>櫻花粉</value>
+	</data>
+	<data name="Widget170" xml:space="preserve">
+		<value>設定匯入完成</value>
+	</data>
+	<data name="Widget171" xml:space="preserve">
+		<value>已匯入 {0} 個帳號，並套用檔案包含的排序、用量顯示、浮窗、主題與語系設定。</value>
+	</data>
+	<data name="Widget172" xml:space="preserve">
+		<value>如需還原，請在關閉程式前選擇「匯入或匯出設定」→「還原匯入前設定」；還原後部分用量可能需要重新檢查。</value>
+	</data>
+	<data name="Widget173" xml:space="preserve">
+		<value>{0}設定時發生錯誤。</value>
+	</data>
+	<data name="Widget174" xml:space="preserve">
+		<value>
+
+診斷紀錄：{0}</value>
+	</data>
+	<data name="Widget175" xml:space="preserve">
+		<value>無法{0}設定：{1}</value>
+	</data>
+	<data name="Widget176" xml:space="preserve">
+		<value>無法{0}設定。
+
+{1}{2}</value>
+	</data>
+	<data name="Widget177" xml:space="preserve">
+		<value>設定{0}失敗</value>
+	</data>
+	<data name="Widget178" xml:space="preserve">
+		<value>更新帳號設定時發生錯誤。</value>
+	</data>
+	<data name="Widget179" xml:space="preserve">
+		<value>正在取消「{0}」的 Claude 帳號連接…</value>
+	</data>
+	<data name="Widget180" xml:space="preserve">
+		<value>正在取消「{0}」的 Codex 帳號連接…</value>
+	</data>
+	<data name="Widget181" xml:space="preserve">
+		<value>正在取消「{0}」的 Copilot 帳號連接…</value>
+	</data>
+	<data name="Widget182" xml:space="preserve">
+		<value>正在取消「{0}」的 Grok 帳號連接…</value>
+	</data>
+	<data name="Widget183" xml:space="preserve">
+		<value>從 AI Usage 移除帳號</value>
+	</data>
+	<data name="Widget184" xml:space="preserve">
+		<value>帳號備份更新失敗</value>
+	</data>
+	<data name="Widget185" xml:space="preserve">
+		<value>無法更新帳號設定：{0}</value>
+	</data>
+	<data name="Widget186" xml:space="preserve">
+		<value>無法更新帳號設定；原設定未變更。
+
+{0}{1}</value>
+	</data>
+	<data name="Widget187" xml:space="preserve">
+		<value>帳號設定錯誤</value>
+	</data>
+	<data name="Widget188" xml:space="preserve">
+		<value>更新顯示設定時發生錯誤。</value>
+	</data>
+	<data name="Widget189" xml:space="preserve">
+		<value>無法更新顯示設定；原設定未變更。
+
+{0}{1}</value>
+	</data>
+	<data name="Widget190" xml:space="preserve">
+		<value>顯示設定錯誤</value>
+	</data>
+	<data name="Widget191" xml:space="preserve">
+		<value>正在取消「{0}」的 {1} 帳號連接…</value>
+	</data>
+	<data name="Widget192" xml:space="preserve">
+		<value>處理步驟已複製到剪貼簿。</value>
+	</data>
+	<data name="Widget193" xml:space="preserve">
+		<value>目前無法存取剪貼簿。處理步驟如下：{0}</value>
+	</data>
+	<data name="Widget194" xml:space="preserve">
+		<value>已開啟使用說明。</value>
+	</data>
+	<data name="Widget195" xml:space="preserve">
+		<value>{0} 設定步驟：{1}</value>
+	</data>
+	<data name="Widget196" xml:space="preserve">
+		<value>檢查中…</value>
+	</data>
+	<data name="Widget197" xml:space="preserve">
+		<value>Antigravity：目前版本的 AI Usage 尚未支援這個用量格式。請更新 AI Usage；更新後會自動重新檢查。既有 Antigravity 連接通常可沿用；若卡片後續要求，請重新確認連接。</value>
+	</data>
+	<data name="Widget198" xml:space="preserve">
+		<value>Antigravity：請確認 Antigravity CLI 已安裝且可正常啟動，並更新 Antigravity 或 AI Usage。完成後會自動重新檢查。既有 Antigravity 連接通常可沿用；若卡片後續要求，請重新確認連接。</value>
+	</data>
+	<data name="Widget199" xml:space="preserve">
+		<value>Antigravity：請按「{0}」，確認帳號與用量。完成後 AI Usage 會自動重新檢查。</value>
+	</data>
+	<data name="Widget200" xml:space="preserve">
+		<value>Claude：請從官方來源安裝或更新 Claude Code。這不會刪除既有帳號設定或登入資料。完成後回到浮窗按「完成後再檢查」。</value>
+	</data>
+	<data name="Widget201" xml:space="preserve">
+		<value>Codex：請從官方來源安裝或更新 Codex CLI。這不會刪除既有帳號設定或登入資料。完成後回到浮窗按「完成後再檢查」。</value>
+	</data>
+	<data name="Widget202" xml:space="preserve">
+		<value>Copilot：請安裝或更新本機官方 GitHub Copilot CLI（正式版 1.0.79 以上且低於 2.0.0）。安裝說明：https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli 。原有卡片 credential 會保留；完成後回到浮窗按「完成後再檢查」。</value>
+	</data>
+	<data name="Widget203" xml:space="preserve">
+		<value>Grok：請從 xAI 官方來源安裝或更新 Grok Build CLI。這不會影響 AI Usage 已儲存的帳號設定。完成後回到浮窗按「完成後再檢查」。</value>
+	</data>
+	<data name="Widget204" xml:space="preserve">
+		<value>Antigravity：請依卡片提示處理。完成後 AI Usage 會自動重新檢查。</value>
+	</data>
+	<data name="Widget205" xml:space="preserve">
+		<value>請從服務的官方來源安裝或更新 CLI。完成後回到浮窗按「完成後再檢查」。</value>
+	</data>
+	<data name="Widget206" xml:space="preserve">
+		<value>取得拖曳中的浮窗範圍</value>
+	</data>
+	<data name="Widget207" xml:space="preserve">
+		<value>移動拖曳中的浮窗</value>
+	</data>
+	<data name="Widget208" xml:space="preserve">
+		<value>儲存浮窗位置時取得範圍</value>
+	</data>
+	<data name="Widget209" xml:space="preserve">
+		<value>限制浮窗位置</value>
+	</data>
+	<data name="Widget210" xml:space="preserve">
+		<value>{0}失敗；windowHandle={1}。</value>
+	</data>
+	<data name="Widget211" xml:space="preserve">
+		<value>Windows 無法開啟下載與版本紀錄：{0}</value>
+	</data>
+	<data name="Widget212" xml:space="preserve">
+		<value>「{0}」的用量檢查已排隊；目前的檢查完成後會自動開始。</value>
+	</data>
+	<data name="Widget213" xml:space="preserve">
+		<value>正在檢查「{0}」的用量…</value>
+	</data>
+	<data name="Widget214" xml:space="preserve">
+		<value>目前無法檢查「{0}」；已保留上次可用資料，稍後會自動再試。</value>
+	</data>
+	<data name="Widget215" xml:space="preserve">
+		<value>正在重新檢查「{0}」的 {1} 用量…</value>
+	</data>
+	<data name="Widget216" xml:space="preserve">
+		<value>「{0}」這次仍未完成檢查；自動檢查維持暫停。</value>
+	</data>
+	<data name="Widget217" xml:space="preserve">
+		<value>「{0}」這次仍未完成；稍後會自動再試。</value>
+	</data>
+	<data name="Widget218" xml:space="preserve">
+		<value>目前無法重新檢查「{0}」；其他帳號不受影響。</value>
+	</data>
+	<data name="Widget219" xml:space="preserve">
+		<value>收合 AI Usage 到自訂位置</value>
+	</data>
+	<data name="Widget220" xml:space="preserve">
+		<value>收合 AI Usage 到{0}</value>
+	</data>
+	<data name="Widget221" xml:space="preserve">
+		<value>；有新版 {0} 可用</value>
+	</data>
+	<data name="Widget222" xml:space="preserve">
+		<value>位於自訂位置</value>
+	</data>
+	<data name="Widget223" xml:space="preserve">
+		<value>目前停靠在{0}</value>
+	</data>
+	<data name="Widget224" xml:space="preserve">
+		<value>展開 AI Usage 浮窗，{0}{1}</value>
+	</data>
+	<data name="Widget225" xml:space="preserve">
+		<value>按一下展開 AI Usage；拖曳可在螢幕可用範圍內移動。{0}{1}。</value>
+	</data>
+	<data name="Widget226" xml:space="preserve">
+		<value>無法在切換版面前隱藏浮窗；windowHandle={0}。</value>
+	</data>
+	<data name="Widget227" xml:space="preserve">
+		<value>無法取得切換版面後的浮窗範圍；windowHandle={0}。</value>
+	</data>
+	<data name="Widget228" xml:space="preserve">
+		<value>無法顯示切換版面後的浮窗；windowHandle={0}。</value>
+	</data>
+	<data name="Widget229" xml:space="preserve">
+		<value>完成切換版面後無法定位並顯示浮窗；windowHandle={0}。</value>
+	</data>
+	<data name="ReconnectNotice" xml:space="preserve">
+		<value>匯入檔不含登入憑證。匯入的 Claude、Codex、GitHub Copilot、Antigravity 與 Grok 卡片都必須重新連接；Codex 的 workspace 卡片需重新輸入 workspace ID。</value>
+	</data>
+	<data name="Language" xml:space="preserve">
+		<value>語系</value>
+	</data>
+	<data name="LanguageEnglish" xml:space="preserve">
+		<value>English</value>
+	</data>
+	<data name="LanguageTraditionalChinese" xml:space="preserve">
+		<value>繁體中文</value>
+	</data>
+	<data name="LanguagePreview" xml:space="preserve">
+		<value>• 語系：{0}
+</value>
+	</data>
+	<data name="KeepCurrentLanguage" xml:space="preserve">
+		<value>保留目前語系</value>
+	</data>
+	<data name="ImportReplaceDescription" xml:space="preserve">
+		<value>繼續會取代目前的帳號、手動順序、排序方式、用量顯示方式，以及檔案包含的浮窗、主題與語系設定。舊版檔案未包含的設定會保留目前值。 </value>
+	</data>
+	<data name="DiagnosticStartupFailed" xml:space="preserve">
+		<value>啟動程序發生錯誤。</value>
+	</data>
+	<data name="DiagnosticAccessDenied" xml:space="preserve">
+		<value>Windows 不允許存取 AI Usage 的本機資料。</value>
+	</data>
+	<data name="DiagnosticDirectoryMissing" xml:space="preserve">
+		<value>AI Usage 的本機資料路徑不存在或無法使用。</value>
+	</data>
+	<data name="DiagnosticDriveUnavailable" xml:space="preserve">
+		<value>AI Usage 使用的磁碟目前無法使用。</value>
+	</data>
+	<data name="DiagnosticInvalidFormat" xml:space="preserve">
+		<value>AI Usage 的本機設定資料格式無法讀取。</value>
+	</data>
+	<data name="DiagnosticIoFailure" xml:space="preserve">
+		<value>AI Usage 無法讀取或寫入本機資料；檔案可能正被占用，或磁碟目前無法使用。</value>
+	</data>
+	<data name="DiagnosticUnsupportedPath" xml:space="preserve">
+		<value>AI Usage 無法使用目前的本機設定或資料路徑。</value>
+	</data>
+	<data name="UserGuideMissing" xml:space="preserve">
+		<value>找不到使用說明。請重新解壓完整安裝包。</value>
+	</data>
+	<data name="UserGuideOpenFailed" xml:space="preserve">
+		<value>Windows 無法開啟使用說明。請到 app 資料夾手動開啟 README.md。</value>
+	</data>
+	<data name="ListSeparator" xml:space="preserve">
+		<value>、</value>
+	</data>
+	<data name="AccountStatusAnnouncement" xml:space="preserve">
+		<value>帳號「{0}」：{1}。</value>
+	</data>
+	<data name="AnnouncementSeparator" xml:space="preserve">
+		<value>；</value>
+	</data>
+	<data name="MoreAccountStatusUpdates" xml:space="preserve">
+		<value>；另有 {0} 個帳號狀態已更新。</value>
+	</data>
+	<data name="VersionUnknown" xml:space="preserve">
+		<value>無法辨識</value>
+	</data>
+	<data name="VersionIncomplete" xml:space="preserve">
+		<value>{0}（版本資訊不完整）</value>
+	</data>
+</root>

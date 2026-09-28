@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Persistence;
 
@@ -44,7 +45,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 	private sealed class SettingsFileTooLargeException : IOException
 	{
 		public SettingsFileTooLargeException()
-			: base("帳號設定檔不可超過 1 MB。")
+			: base(UiText.Get("Persistence.AccountsFileTooLarge"))
 		{
 		}
 	}
@@ -130,14 +131,14 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 				if (!loadResult.CanSave)
 				{
 					throw new AccountProfileStoreException(
-						loadResult.Message ?? "帳號設定目前不可寫入。");
+						loadResult.Message ?? UiText.Get("Persistence.AccountsNotWritable"));
 				}
 			}
 
 			if (!_canSave)
 			{
 				throw new AccountProfileStoreException(
-					_saveBlockedMessage ?? "帳號設定目前不可寫入。");
+					_saveBlockedMessage ?? UiText.Get("Persistence.AccountsNotWritable"));
 			}
 
 			SettingsDocument document = CreateDocument(accounts);
@@ -165,7 +166,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			(exception is NotSupportedException))
 		{
 			throw new AccountProfileStoreException(
-				"帳號設定無法儲存；原設定檔未變更。",
+				UiText.Get("Persistence.AccountSaveFailed"),
 				exception);
 		}
 		finally
@@ -250,7 +251,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		if (accounts.Count > MaximumAccountCount)
 		{
 			throw new ArgumentException(
-				$"帳號數量不可超過 {MaximumAccountCount} 個。",
+				UiText.Format("Persistence.AccountLimit", MaximumAccountCount),
 				nameof(accounts));
 		}
 
@@ -262,17 +263,17 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		{
 			if (account.Id == Guid.Empty)
 			{
-				throw new ArgumentException("帳號資料不可為空。", nameof(accounts));
+				throw new ArgumentException(UiText.Get("Persistence.AccountIdEmpty"), nameof(accounts));
 			}
 
 			if (!accountIds.Add(account.Id))
 			{
-				throw new ArgumentException("帳號不可重複。", nameof(accounts));
+				throw new ArgumentException(UiText.Get("Persistence.DuplicateAccount"), nameof(accounts));
 			}
 
 			if (!Enum.IsDefined(typeof(ProviderKind), account.Provider))
 			{
-				throw new ArgumentException("帳號包含不支援的服務。", nameof(accounts));
+				throw new ArgumentException(UiText.Get("Persistence.UnsupportedProvider"), nameof(accounts));
 			}
 
 			string displayName = NormalizeDisplayName(account.DisplayName, nameof(accounts));
@@ -418,7 +419,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 
 		if (parsedDocument.RootElement.ValueKind != JsonValueKind.Object)
 		{
-			throw new InvalidDataException("帳號設定檔根節點必須是物件。");
+			throw new InvalidDataException(UiText.Get("Persistence.AccountRootNotObject"));
 		}
 
 		if (!parsedDocument.RootElement.TryGetProperty(
@@ -427,7 +428,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			schemaVersionElement.ValueKind != JsonValueKind.Number ||
 			!schemaVersionElement.TryGetInt32(out int schemaVersion))
 		{
-			throw new InvalidDataException("設定檔缺少 schemaVersion。");
+			throw new InvalidDataException(UiText.Get("Persistence.SchemaVersionMissing"));
 		}
 
 		if (schemaVersion > CurrentSchemaVersion)
@@ -437,7 +438,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 
 		if (schemaVersion < LegacySchemaVersion)
 		{
-			throw new InvalidDataException("設定檔版本無效。");
+			throw new InvalidDataException(UiText.Get("Persistence.InvalidSchemaVersion"));
 		}
 
 		if (!parsedDocument.RootElement.TryGetProperty(
@@ -446,7 +447,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			(accountsElement.ValueKind != JsonValueKind.Array) ||
 			(accountsElement.GetArrayLength() > MaximumAccountCount))
 		{
-			throw new InvalidDataException("帳號清單格式或數量無效。");
+			throw new InvalidDataException(UiText.Get("Persistence.InvalidAccountList"));
 		}
 
 		SettingsDocument? document = JsonSerializer.Deserialize<SettingsDocument>(
@@ -455,7 +456,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 
 		if (document is null)
 		{
-			throw new InvalidDataException("帳號設定檔內容不可為空。");
+			throw new InvalidDataException(UiText.Get("Persistence.AccountsContentEmpty"));
 		}
 
 		IReadOnlyList<AccountProfile> accounts = ReadAccounts(document);
@@ -491,7 +492,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		if ((document.Accounts is null) ||
 			(document.Accounts.Count > MaximumAccountCount))
 		{
-			throw new InvalidDataException("帳號清單格式或數量無效。");
+			throw new InvalidDataException(UiText.Get("Persistence.InvalidAccountList"));
 		}
 
 		HashSet<Guid> accountIds = new();
@@ -502,42 +503,42 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		{
 			if (account is null)
 			{
-				throw new InvalidDataException("帳號項目不可為空。");
+				throw new InvalidDataException(UiText.Get("Persistence.AccountEntryEmpty"));
 			}
 
 			if (account.Id == Guid.Empty)
 			{
-				throw new InvalidDataException("帳號資料不可為空。");
+				throw new InvalidDataException(UiText.Get("Persistence.AccountIdEmpty"));
 			}
 
 			if (!accountIds.Add(account.Id))
 			{
-				throw new InvalidDataException("帳號不可重複。");
+				throw new InvalidDataException(UiText.Get("Persistence.DuplicateAccount"));
 			}
 
 			if ((account.Provider is null) ||
 				!Enum.IsDefined(typeof(ProviderKind), account.Provider.Value))
 			{
-				throw new InvalidDataException("帳號缺少服務，或服務不受支援。");
+				throw new InvalidDataException(UiText.Get("Persistence.AccountProviderMissing"));
 			}
 
 			if (account.IsEnabled is null)
 			{
-				throw new InvalidDataException("帳號缺少用量檢查設定。");
+				throw new InvalidDataException(UiText.Get("Persistence.AccountUsageCheckingMissing"));
 			}
 
 			if ((document.SchemaVersion >= ClaudeQuotaRiskSchemaVersion) &&
 				(account.HasAcceptedClaudeQuotaRisk is null))
 			{
 				throw new InvalidDataException(
-					"帳號缺少 hasAcceptedClaudeQuotaRisk。");
+					UiText.Get("Persistence.ClaudeQuotaRiskMissing"));
 			}
 
 			if ((document.SchemaVersion >= SubscriptionContextSchemaVersion) &&
 				(account.ShowSubscriptionContext is null))
 			{
 				throw new InvalidDataException(
-					"帳號缺少 showSubscriptionContext。");
+					UiText.Get("Persistence.SubscriptionContextMissing"));
 			}
 
 			string displayName = NormalizeDisplayName(account.DisplayName, null);
@@ -578,10 +579,10 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		{
 			if (parameterName is not null)
 			{
-				throw new ArgumentException("帳號顯示名稱不可為 null。", parameterName);
+				throw new ArgumentException(UiText.Get("Persistence.DisplayNameExplicitNull"), parameterName);
 			}
 
-			throw new InvalidDataException("帳號顯示名稱不可為 null。");
+			throw new InvalidDataException(UiText.Get("Persistence.DisplayNameExplicitNull"));
 		}
 
 		string normalizedDisplayName = displayName.Trim();
@@ -591,11 +592,11 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			if (parameterName is not null)
 			{
 				throw new ArgumentException(
-					$"帳號顯示名稱不可超過 {MaximumDisplayNameLength} 個字元。",
+					UiText.Format("Persistence.DisplayNameLimit", MaximumDisplayNameLength),
 					parameterName);
 			}
 
-			throw new InvalidDataException("帳號顯示名稱過長。");
+			throw new InvalidDataException(UiText.Get("Persistence.DisplayNameTooLong"));
 		}
 
 		if (normalizedDisplayName.Any(char.IsControl))
@@ -603,11 +604,11 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			if (parameterName is not null)
 			{
 				throw new ArgumentException(
-					"帳號顯示名稱不可包含控制字元。",
+					UiText.Get("Persistence.DisplayNameControlCharacters"),
 					parameterName);
 			}
 
-			throw new InvalidDataException("帳號顯示名稱包含控制字元。");
+			throw new InvalidDataException(UiText.Get("Persistence.DisplayNameContainsControls"));
 		}
 
 		return normalizedDisplayName;
@@ -688,12 +689,12 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		if (parameterName is not null)
 		{
 			throw new ArgumentException(
-				"同一個登入帳號不可重複連接到多張帳號卡片。",
+				UiText.Get("Persistence.DuplicateConnectedAccount"),
 				parameterName);
 		}
 
 		throw new InvalidDataException(
-			"同一個登入帳號不可重複連接到多張帳號卡片。");
+			UiText.Get("Persistence.DuplicateConnectedAccount"));
 	}
 
 	private static string? NormalizeProviderAccountIdentity(
@@ -719,15 +720,15 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		{
 			throw new ArgumentException(
 				provider == ProviderKind.Grok
-					? "Grok 帳號連接資料格式無效。"
-					: "帳號資訊格式無效。",
+					? UiText.Get("Persistence.InvalidGrokBinding")
+					: UiText.Get("Persistence.InvalidAccountIdentity"),
 				parameterName);
 		}
 
 		throw new InvalidDataException(
 			provider == ProviderKind.Grok
-				? "Grok 帳號連接資料格式無效。"
-				: "帳號資訊格式無效。");
+				? UiText.Get("Persistence.InvalidGrokBinding")
+				: UiText.Get("Persistence.InvalidAccountIdentity"));
 	}
 
 	private async Task<AccountProfileLoadResult> LoadCoreAsync(
@@ -756,7 +757,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			if (document.SchemaVersion > CurrentSchemaVersion)
 			{
 				string unsupportedVersionMessage =
-					"這份帳號設定由較新版本建立。為避免覆寫，目前無法編輯帳號。";
+					UiText.Get("Persistence.AccountsNewerSchema");
 				BlockSaving(unsupportedVersionMessage);
 				SetLoadedFileState(fileExisted: true, fingerprint: loadedFileFingerprint);
 				_isInitialized = true;
@@ -776,7 +777,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			if (backupStatus == BackupValidationStatus.Blocked)
 			{
 				string blockedBackupMessage =
-					"帳號設定已載入，但無法讀取備份。為避免覆寫，目前無法編輯帳號。";
+					UiText.Get("Persistence.AccountsLoadedBackupUnreadable");
 				BlockSaving(blockedBackupMessage);
 				return new AccountProfileLoadResult(
 					document.Accounts!,
@@ -788,7 +789,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			if (backupStatus == BackupValidationStatus.FutureVersion)
 			{
 				string futureBackupMessage =
-					"帳號設定已載入，但備份由較新版本建立。為避免覆寫，目前無法編輯帳號。";
+					UiText.Get("Persistence.AccountsLoadedBackupNewerSchema");
 				BlockSaving(futureBackupMessage);
 				return new AccountProfileLoadResult(
 					document.Accounts!,
@@ -800,7 +801,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			if (backupStatus == BackupValidationStatus.Oversized)
 			{
 				string oversizedBackupMessage =
-					"帳號設定已載入，但備份超過 1 MB。為避免覆寫，目前無法編輯帳號。";
+					UiText.Get("Persistence.AccountsLoadedBackupTooLarge");
 				BlockSaving(oversizedBackupMessage);
 				return new AccountProfileLoadResult(
 					document.Accounts!,
@@ -811,7 +812,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 
 			string? backupMessage = backupStatus == BackupValidationStatus.Available
 				? null
-				: "帳號設定已載入，但無法建立或修復備份。目前仍可使用；請確認資料夾寫入權限。";
+				: UiText.Get("Persistence.AccountsLoadedBackupRepairFailed");
 			return new AccountProfileLoadResult(
 				document.Accounts!,
 				AccountProfileLoadStatus.Loaded,
@@ -825,7 +826,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		catch (SettingsFileTooLargeException)
 		{
 			string message =
-				"帳號設定檔超過 1 MB。為避免耗用過多記憶體或覆寫原檔，目前無法編輯帳號。";
+				UiText.Get("Persistence.AccountsTooLargeEditingBlocked");
 			BlockSaving(message);
 			_isInitialized = true;
 			return new AccountProfileLoadResult(
@@ -851,7 +852,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 				"account-profile-load",
 				"stage=primary-read;result=unavailable",
 				exception);
-			string message = "無法讀取帳號設定檔。為避免覆寫，目前無法編輯帳號。";
+			string message = UiText.Get("Persistence.AccountsUnreadableEditingBlocked");
 			BlockSaving(message);
 			_isInitialized = true;
 			return new AccountProfileLoadResult(
@@ -1139,7 +1140,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			(exception is IOException) ||
 			(exception is UnauthorizedAccessException))
 		{
-			string message = "帳號設定檔遺失，也無法讀取備份。為避免覆寫，目前無法編輯帳號。";
+			string message = UiText.Get("Persistence.AccountsMissingBackupUnreadable");
 			BlockSaving(message);
 			_isInitialized = true;
 			return new AccountProfileLoadResult(
@@ -1197,7 +1198,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			(exception is IOException) ||
 			(exception is UnauthorizedAccessException))
 		{
-			string message = "帳號設定檔已損壞，也無法讀取備份。為避免覆寫，目前無法編輯帳號。";
+			string message = UiText.Get("Persistence.AccountsCorruptBackupUnreadable");
 			BlockSaving(message);
 			_isInitialized = true;
 			return new AccountProfileLoadResult(
@@ -1216,7 +1217,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 
 		if (directory is null)
 		{
-			string unavailableMessage = "帳號設定檔路徑無效，目前無法編輯帳號。";
+			string unavailableMessage = UiText.Get("Persistence.AccountsInvalidPathEditingBlocked");
 			BlockSaving(unavailableMessage);
 			_isInitialized = true;
 			return new AccountProfileLoadResult(
@@ -1240,7 +1241,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 					expectedFingerprint,
 					StringComparison.Ordinal))
 			{
-				string changedMessage = "其他程序在讀取期間修改了帳號設定檔。為避免移動新內容，目前無法編輯帳號。";
+				string changedMessage = UiText.Get("Persistence.AccountsChangedDuringRead");
 				BlockSaving(changedMessage);
 				_isInitialized = true;
 				return new AccountProfileLoadResult(
@@ -1258,7 +1259,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 						invalidBackupFingerprint,
 						StringComparison.Ordinal))
 				{
-					string changedMessage = "其他程序在讀取期間修改了帳號設定備份。為避免移動新內容，目前無法編輯帳號。";
+					string changedMessage = UiText.Get("Persistence.AccountsBackupChangedDuringRead");
 					BlockSaving(changedMessage);
 					_isInitialized = true;
 					return new AccountProfileLoadResult(
@@ -1279,7 +1280,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			(exception is InvalidDataException) ||
 			(exception is NotSupportedException))
 		{
-			string unavailableMessage = "帳號設定檔已損壞，也無法保留副本。目前無法編輯帳號。";
+			string unavailableMessage = UiText.Get("Persistence.AccountsCorruptCopyUnavailable");
 			BlockSaving(unavailableMessage);
 			_isInitialized = true;
 			return new AccountProfileLoadResult(
@@ -1293,8 +1294,8 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		SetLoadedFileState(fileExisted: false, fingerprint: null);
 		_isInitialized = true;
 		string message = invalidBackupFingerprint is null
-			? "帳號設定檔格式無效，已保留原檔並改用空白設定。"
-			: "帳號設定檔與備份格式都無效，已保留原檔並改用空白設定。";
+			? UiText.Get("Persistence.AccountsInvalidPreservedEmpty")
+			: UiText.Get("Persistence.AccountsBothInvalidPreservedEmpty");
 		return new AccountProfileLoadResult(
 			Array.Empty<AccountProfile>(),
 			AccountProfileLoadStatus.RecoveredCorruptFile,
@@ -1308,7 +1309,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 	{
 		if (expectedFingerprint is null)
 		{
-			string unavailableMessage = "帳號設定檔遺失，也無法確認備份內容。目前無法編輯帳號。";
+			string unavailableMessage = UiText.Get("Persistence.AccountsMissingBackupUnverified");
 			BlockSaving(unavailableMessage);
 			_isInitialized = true;
 			return new AccountProfileLoadResult(
@@ -1328,7 +1329,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 					expectedFingerprint,
 					StringComparison.Ordinal))
 			{
-				string changedMessage = "其他程序在讀取期間修改了帳號設定備份。為避免移動新內容，目前無法編輯帳號。";
+				string changedMessage = UiText.Get("Persistence.AccountsBackupChangedDuringRead");
 				BlockSaving(changedMessage);
 				_isInitialized = true;
 				return new AccountProfileLoadResult(
@@ -1346,7 +1347,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			(exception is InvalidDataException) ||
 			(exception is NotSupportedException))
 		{
-			string unavailableMessage = "帳號設定備份已損壞，也無法保留副本。目前無法編輯帳號。";
+			string unavailableMessage = UiText.Get("Persistence.AccountsBackupCorruptCopyUnavailable");
 			BlockSaving(unavailableMessage);
 			_isInitialized = true;
 			return new AccountProfileLoadResult(
@@ -1359,7 +1360,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		EnableSaving();
 		SetLoadedFileState(fileExisted: false, fingerprint: null);
 		_isInitialized = true;
-		string message = "帳號設定檔遺失且備份格式無效，已保留損壞備份並改用空白設定。";
+		string message = UiText.Get("Persistence.AccountsMissingInvalidBackupPreserved");
 		return new AccountProfileLoadResult(
 			Array.Empty<AccountProfile>(),
 			AccountProfileLoadStatus.RecoveredCorruptFile,
@@ -1379,7 +1380,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 
 		if (directory is null)
 		{
-			string unavailableMessage = "帳號設定檔路徑無效，目前無法編輯帳號。";
+			string unavailableMessage = UiText.Get("Persistence.AccountsInvalidPathEditingBlocked");
 			BlockSaving(unavailableMessage);
 			_isInitialized = true;
 			return new AccountProfileLoadResult(
@@ -1410,7 +1411,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 					backupFingerprint,
 					StringComparison.Ordinal))
 			{
-				throw new IOException("帳號設定備份在還原期間已變更。");
+				throw new IOException(UiText.Get("Persistence.AccountsBackupChangedDuringRestore"));
 			}
 
 			bool primaryExists = await FileExistsAsync(
@@ -1421,7 +1422,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			{
 				if (primaryExists)
 				{
-					throw new IOException("帳號設定檔在還原期間已由其他程序建立。");
+					throw new IOException(UiText.Get("Persistence.AccountsCreatedDuringRestore"));
 				}
 			}
 			else if (!primaryExists ||
@@ -1432,7 +1433,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 					primaryFingerprint,
 					StringComparison.Ordinal))
 			{
-				throw new IOException("帳號設定檔在還原期間已變更。");
+				throw new IOException(UiText.Get("Persistence.AccountsChangedDuringRestore"));
 			}
 
 			await WriteFileDurablyAsync(
@@ -1466,7 +1467,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			(exception is InvalidDataException) ||
 			(exception is NotSupportedException))
 		{
-			string unavailableMessage = "無法從帳號設定備份還原。為避免覆寫，目前無法編輯帳號。";
+			string unavailableMessage = UiText.Get("Persistence.AccountsBackupRestoreFailed");
 			BlockSaving(unavailableMessage);
 			_isInitialized = true;
 			return new AccountProfileLoadResult(
@@ -1485,7 +1486,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 
 		if (backupDocument.SchemaVersion > CurrentSchemaVersion)
 		{
-			string message = "已從備份還原帳號設定，但這份備份由較新版本建立。為避免覆寫，目前無法編輯帳號。";
+			string message = UiText.Get("Persistence.AccountsRestoredNewerBackup");
 			BlockSaving(message);
 			return new AccountProfileLoadResult(
 				Array.Empty<AccountProfile>(),
@@ -1497,8 +1498,8 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 
 		EnableSaving();
 		string recoveredMessage = primaryFingerprint is null
-			? "帳號設定檔遺失，已從驗證通過的備份自動還原。"
-			: "帳號設定檔已從驗證通過的備份自動還原；原損壞檔已保留。";
+			? UiText.Get("Persistence.AccountsMissingRestored")
+			: UiText.Get("Persistence.AccountsCorruptRestored");
 		return new AccountProfileLoadResult(
 			backupDocument.Accounts!,
 			AccountProfileLoadStatus.RecoveredCorruptFile,
@@ -1525,7 +1526,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 
 		if (directory is null)
 		{
-			throw new AccountProfileStoreException("帳號設定檔路徑無效。");
+			throw new AccountProfileStoreException(UiText.Get("Persistence.AccountsInvalidPath"));
 		}
 
 		await CreateDirectoryAsync(directory, cancellationToken)
@@ -1537,7 +1538,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		if (serializedDocument.Length > MaximumSettingsFileSize)
 		{
 			throw new AccountProfileStoreException(
-				"帳號設定檔超過可儲存的大小上限。");
+				UiText.Get("Persistence.AccountsSaveTooLarge"));
 		}
 
 		string fingerprint = ComputeFingerprint(serializedDocument);
@@ -1613,7 +1614,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 				(exception is NotSupportedException))
 			{
 				throw new AccountProfileStoreException(
-					"帳號設定已套用，但備份更新失敗。請確認 AI Usage 設定資料夾的寫入權限，然後再次儲存帳號設定。",
+					UiText.Get("Persistence.AccountBackupUpdateFailedCommitted"),
 					exception,
 					hasCommittedChanges: true);
 			}
@@ -1754,7 +1755,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 		if (fileExists != _loadedFileExisted)
 		{
 			throw new AccountProfileStoreException(
-				"帳號設定檔已由其他程序變更；請重新啟動應用程式後再操作。");
+				UiText.Get("Persistence.AccountsChangedRestartRequired"));
 		}
 
 		if (!fileExists)
@@ -1773,7 +1774,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			StringComparison.Ordinal))
 		{
 			throw new AccountProfileStoreException(
-				"帳號設定檔已由其他程序變更；請重新啟動應用程式後再操作。");
+				UiText.Get("Persistence.AccountsChangedRestartRequired"));
 		}
 	}
 
@@ -1796,7 +1797,7 @@ public sealed class JsonAccountProfileStore : IAccountProfileStore
 			if (backupDocument.SchemaVersion > CurrentSchemaVersion)
 			{
 				throw new AccountProfileStoreException(
-					"帳號設定備份由較新版本建立；為避免覆寫，請使用建立該備份的版本。");
+					UiText.Get("Persistence.AccountsBackupNewerVersionRequired"));
 			}
 		}
 		catch (OperationCanceledException)

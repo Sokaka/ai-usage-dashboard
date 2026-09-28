@@ -1,7 +1,7 @@
 <Window x:Class="AiUsageDashboard.App.CodexWorkspacePromptWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="連接 Codex"
+        Title="{DynamicResource Windows.Workspace.ConnectCodex}"
         Icon="{DynamicResource ThemeWindowIcon}"
         Width="460"
         MinWidth="380"
@@ -31,15 +31,15 @@
                                Foreground="{DynamicResource PrimaryTextBrush}"
                                FontSize="23"
                                FontWeight="SemiBold"
-                               Text="選擇連接方式" />
+                               Text="{DynamicResource Windows.Workspace.ChooseAConnectionMethod}" />
                     <TextBlock x:Name="ConnectionHintTextBlock"
                                Margin="0,7,0,0"
                                Foreground="{DynamicResource SecondaryTextBrush}"
-                               Text="只需要一張 Codex 卡片時，選「一般帳號連接」。"
+                               Text="{DynamicResource Windows.Workspace.ChooseStandardAccountConnectionIfYouOnlyNeed}"
                                TextWrapping="Wrap" />
                     <TextBlock Margin="0,4,0,0"
                                Foreground="{DynamicResource SecondaryTextBrush}"
-                               Text="同一個 ChatGPT 帳號若要用多張卡片顯示不同 workspace，才需要 workspace ID。"
+                               Text="{DynamicResource Windows.Workspace.AWorkspaceIDIsNeededOnlyWhenDisplaying}"
                                TextWrapping="Wrap" />
                 </StackPanel>
 
@@ -48,14 +48,14 @@
                     <Button x:Name="DefaultConnectionButton"
                             Padding="14,10"
                             Click="ContinueWithoutWorkspaceButton_Click"
-                            Content="一般帳號連接"
+                            Content="{DynamicResource Windows.Workspace.StandardAccountConnection}"
                             IsDefault="True"
                             Style="{StaticResource PrimaryButtonStyle}" />
                     <TextBlock x:Name="WorkspaceScopeChangeTextBlock"
                                Margin="0,7,0,0"
                                Foreground="{DynamicResource WarningTextBrush}"
                                FontSize="12"
-                               Text="改為一般帳號連接會解除這張卡片原本的 workspace 限定；同帳號已有其他 workspace 卡片時，可能無法完成連接。"
+                               Text="{DynamicResource Windows.Workspace.SwitchingToAStandardAccountConnectionRemovesThis}"
                                TextWrapping="Wrap"
                                Visibility="Collapsed" />
                 </StackPanel>
@@ -64,16 +64,16 @@
                             Margin="0,24,0,0">
                     <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
                                FontWeight="SemiBold"
-                               Text="每個 workspace 各一張卡片" />
+                               Text="{DynamicResource Windows.Workspace.OneCardPerWorkspace}" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="12"
-                               Text="workspace 是 ChatGPT 裡的工作空間，不是電腦資料夾，也不是訂閱方案。"
+                               Text="{DynamicResource Windows.Workspace.AWorkspaceIsASpaceWithinChatGPTRather}"
                                TextWrapping="Wrap" />
                     <TextBlock Margin="0,4,0,0"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="12"
-                               Text="每張卡片都要填入對應的 workspace ID，原本的第一張也一樣。"
+                               Text="{DynamicResource Windows.Workspace.EnterTheMatchingWorkspaceIDForEveryCard}"
                                TextWrapping="Wrap" />
                     <Label Margin="0,14,0,0"
                            Padding="0"
@@ -83,24 +83,24 @@
                     <TextBox x:Name="WorkspaceIdTextBox"
                              Margin="0,7,0,0"
                              Padding="10,8"
-                             AutomationProperties.HelpText="輸入 ChatGPT workspace 管理者提供的 ID（UUID 格式）"
+                             AutomationProperties.HelpText="{DynamicResource Windows.Workspace.EnterTheIDProvidedByYourChatGPTWorkspace}"
                              CaretBrush="{DynamicResource PrimaryTextBrush}"
                              Foreground="{DynamicResource PrimaryTextBrush}"
                              PreviewKeyDown="WorkspaceIdTextBox_PreviewKeyDown" />
                     <TextBlock Margin="0,7,0,0"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="12"
-                               Text="請向 ChatGPT workspace 管理者索取 ID。AI Usage 無法從電子郵件、ChatGPT 帳號或方案查出。"
+                               Text="{DynamicResource Windows.Workspace.AskYourChatGPTWorkspaceAdministratorForTheID}"
                                TextWrapping="Wrap" />
                     <TextBlock Margin="0,5,0,0"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="12"
-                               Text="ID 會寫入這張卡片的 Codex 設定。用 ChatGPT 登入 Codex 時，只能使用指定的 workspace。"
+                               Text="{DynamicResource Windows.Workspace.TheIDIsWrittenToThisCardS}"
                                TextWrapping="Wrap" />
                     <TextBlock Margin="0,5,0,0"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="12"
-                               Text="ID 不會放進匯出的設定檔。重新連接時要再輸入一次。"
+                               Text="{DynamicResource Windows.Workspace.TheIDIsNotIncludedInExportedSettings}"
                                TextWrapping="Wrap" />
                     <Button x:Name="WorkspaceConnectionButton"
                             Margin="0,14,0,0"
@@ -108,7 +108,7 @@
                             Background="{DynamicResource AccentSurfaceBrush}"
                             BorderBrush="{DynamicResource AccentBrush}"
                             Click="ContinueWithWorkspaceButton_Click"
-                            Content="用 workspace ID 連接"
+                            Content="{DynamicResource Windows.Workspace.ConnectWithWorkspaceID}"
                             Style="{StaticResource SecondaryButtonStyle}" />
                 </StackPanel>
 
@@ -119,7 +119,7 @@
                    Margin="0,24,0,0"
                    HorizontalAlignment="Right">
             <Button Click="CancelButton_Click"
-                    Content="取消"
+                    Content="{DynamicResource Windows.Common.Cancel}"
                     IsCancel="True"
                     Style="{StaticResource GhostButtonStyle}" />
         </WrapPanel>

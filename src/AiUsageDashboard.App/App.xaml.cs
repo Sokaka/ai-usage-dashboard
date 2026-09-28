@@ -18,6 +18,7 @@ using AiUsageDashboard.App.Updates;
 using AiUsageDashboard.App.ViewModels;
 using AiUsageDashboard.Licensing;
 using AiUsageDashboard.LegalUi;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Persistence;
 using AiUsageDashboard.Core.Providers;
@@ -147,6 +148,7 @@ public partial class App : System.Windows.Application
 	private bool _isUpdateShutdownReserved;
 	private int _dashboardPreferencesRecoveryRequestPendingAfterTransaction;
 	private AppTheme _selectedTheme = AppTheme.ClassicBlue;
+	private AppLanguage _selectedLanguage = AppLanguage.English;
 	private FormsNotifyIcon? _notifyIcon;
 	private Task _dashboardPreferencesRecoveryTask = Task.CompletedTask;
 	private Task _postStartupRecoveryTask = Task.CompletedTask;
@@ -166,6 +168,8 @@ public partial class App : System.Windows.Application
 	private FormsToolStripMenuItem? _undoPortableSettingsImportMenuItem;
 	private FormsToolStripMenuItem? _widgetTopmostMenuItem;
 	private FormsToolStripMenuItem? _widgetVisibilityMenuItem;
+	private FormsToolStripMenuItem? _englishLanguageMenuItem;
+	private FormsToolStripMenuItem? _traditionalChineseLanguageMenuItem;
 
 	public bool IsFloatingWidgetVisible =>
 		_floatingWidgetWindow?.IsVisible == true;
@@ -208,6 +212,7 @@ public partial class App : System.Windows.Application
 
 		ShutdownMode = ShutdownMode.OnExplicitShutdown;
 		ApplyThemePalette();
+		ApplyLanguage(AppLanguage.English);
 		SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
 		try
 		{
@@ -222,8 +227,8 @@ public partial class App : System.Windows.Application
 			if (!await WaitForRestartParentAsync(e.Args))
 			{
 				WpfMessageBox.Show(
-					"舊版 AI Usage 未在預期時間內關閉。請手動重新開啟 AI Usage。",
-					"無法重新啟動",
+					UiText.Get("Shell.App001"),
+					UiText.Get("Shell.App002"),
 					MessageBoxButton.OK,
 					MessageBoxImage.Error);
 				Shutdown(-1);
@@ -274,7 +279,7 @@ public partial class App : System.Windows.Application
 						CreateActivationFailureMessage(
 							activationResult.Failure,
 							diagnostic),
-						"無法顯示浮窗",
+						UiText.Get("Shell.App003"),
 						MessageBoxButton.OK,
 						MessageBoxImage.Warning);
 				}
@@ -300,6 +305,7 @@ public partial class App : System.Windows.Application
 					await themePreviewStore.LoadDashboardShellPreferencesAsync();
 				_selectedTheme = themePreview.Theme;
 				ApplyThemePalette();
+				ApplyLanguage(themePreview.Language);
 			}
 
 			bool canStart = isAccepted ||
@@ -387,7 +393,7 @@ public partial class App : System.Windows.Application
 						(currentShellPreferences is null))
 					{
 						throw new InvalidOperationException(
-							"目前無法讀取顯示設定，因此不能開始匯入。");
+							UiText.Get("Shell.App004"));
 					}
 
 					await dashboardPreferencesStore
@@ -438,6 +444,7 @@ public partial class App : System.Windows.Application
 				await dashboardPreferencesStore.LoadDashboardShellPreferencesAsync();
 			_selectedTheme = shellPreferences.Theme;
 			ApplyThemePalette();
+			ApplyLanguage(shellPreferences.Language);
 			Volatile.Write(
 				ref _latestDashboardShellPreferences,
 				shellPreferences);
@@ -698,7 +705,7 @@ public partial class App : System.Windows.Application
 				exception);
 			WpfMessageBox.Show(
 				CreateStartupFailureMessage(exception, diagnostic),
-				"啟動失敗",
+				UiText.Get("Shell.App005"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Error);
 			Shutdown(-1);
@@ -717,7 +724,7 @@ public partial class App : System.Windows.Application
 		if (committedProfiles.Status != AccountProfileLoadStatus.Loaded)
 		{
 			throw new InvalidDataException(
-				"無法確認已提交的帳號設定，因此不會授權清除 retained Copilot private state。");
+				UiText.Get("Shell.App006"));
 		}
 
 		(Guid AccountId, ProviderKind Provider)[] committedCopilotKeys =
@@ -1273,14 +1280,14 @@ public partial class App : System.Windows.Application
 			})
 		{
 			return new AntigravityAccountEnsureFailureNotification(
-				"Antigravity 帳號已新增",
-				"Antigravity 帳號已連接並新增到 AI Usage，但帳號設定備份更新失敗。這次仍可使用；若下次啟動出現異常，請聯絡維護人員並提供診斷紀錄。\n\n" +
+				UiText.Get("Shell.App007"),
+				UiText.Get("Shell.App008") +
 				CreateDiagnosticGuidance(diagnostic));
 		}
 
 		return new AntigravityAccountEnsureFailureNotification(
-			"請手動新增 Antigravity 帳號",
-			"Antigravity 帳號已連接，但 AI Usage 無法自動新增帳號。請在浮窗手動新增 Antigravity；不需要再次登入。\n\n" +
+			UiText.Get("Shell.App009"),
+			UiText.Get("Shell.App010") +
 			CreateDiagnosticGuidance(diagnostic));
 	}
 
@@ -1289,8 +1296,8 @@ public partial class App : System.Windows.Application
 			AppDiagnosticWriteResult diagnostic)
 	{
 		return new AntigravityAccountEnsureFailureNotification(
-			"無法確認 Antigravity 帳號",
-			"AI Usage 無法確認 Antigravity 帳號是否已新增。請先查看浮窗中的帳號，再繼續操作；不需要再次登入。\n\n" +
+			UiText.Get("Shell.App011"),
+			UiText.Get("Shell.App012") +
 			CreateDiagnosticGuidance(diagnostic));
 	}
 
@@ -1436,7 +1443,7 @@ public partial class App : System.Windows.Application
 		{
 			_ = AppDiagnostics.TryWrite(
 				"update-current-version",
-				"目前執行檔的 ProductVersion 無法讀取。",
+				UiText.Get("Shell.App013"),
 				exception);
 			return null;
 		}
@@ -1491,7 +1498,7 @@ public partial class App : System.Windows.Application
 		catch (Exception exception)
 		{
 			string summary = exception is ObjectDisposedException
-				? "更新安全關閉通道在完成啟動前已被釋放。"
+				? UiText.Get("Shell.App014")
 				: AppDiagnostics.GetUserFacingFailureReason(exception);
 			ReportUpdateShutdownChannelStopped(
 				channel,
@@ -1518,7 +1525,7 @@ public partial class App : System.Windows.Application
 			ReportUpdateShutdownChannelStopped(
 				channel,
 				"update-shutdown-channel-listener",
-				"更新安全關閉通道意外停止。",
+				UiText.Get("Shell.App015"),
 				exception);
 			return;
 		}
@@ -1526,7 +1533,7 @@ public partial class App : System.Windows.Application
 		ReportUpdateShutdownChannelStopped(
 			channel,
 			"update-shutdown-channel-listener",
-			"更新安全關閉通道意外停止。");
+			UiText.Get("Shell.App015"));
 	}
 
 	private void ReportUpdateShutdownChannelStopped(
@@ -1561,7 +1568,7 @@ public partial class App : System.Windows.Application
 		{
 			_ = AppDiagnostics.TryWrite(
 				"update-shutdown-channel-presentation",
-				"更新安全關閉通道狀態變更後無法更新畫面。",
+				UiText.Get("Shell.App016"),
 				presentationException);
 		}
 	}
@@ -1640,7 +1647,7 @@ public partial class App : System.Windows.Application
 			presentation,
 			bannerAnnouncementKey);
 		_aboutWindow?.UpdateUpdateStatus(
-			presentation.AboutStatusText,
+			() => _updateUiPresentation?.AboutStatusText ?? string.Empty,
 			presentation.CanCheckManually,
 			presentation.IsChecking);
 		UpdateUpdateTrayMenuItems(presentation);
@@ -1670,8 +1677,8 @@ public partial class App : System.Windows.Application
 			_checkForUpdatesMenuItem.Enabled =
 				isFeatureAvailable && presentation.CanCheckManually;
 			_checkForUpdatesMenuItem.Text = presentation.IsChecking
-				? "正在檢查更新…"
-				: "檢查更新";
+				? UiText.Get("Shell.App017")
+				: UiText.Get("Shell.App018");
 		}
 
 		if (_automaticUpdateChecksMenuItem is not null)
@@ -1689,7 +1696,7 @@ public partial class App : System.Windows.Application
 			_updateAvailableMenuItem.Enabled =
 				presentation.IsPrimaryActionEnabled;
 			_updateAvailableMenuItem.Text =
-				presentation.TrayUpdateActionText ?? "開啟下載頁";
+				presentation.TrayUpdateActionText ?? UiText.Get("Shell.App019");
 		}
 	}
 
@@ -1718,7 +1725,7 @@ public partial class App : System.Windows.Application
 		{
 			_ = AppDiagnostics.TryWrite(
 				"update-resume-monitor-startup",
-				"無法監聽 Windows 從睡眠恢復事件；定時更新檢查仍會繼續。",
+				UiText.Get("Shell.App020"),
 				exception);
 		}
 	}
@@ -1850,7 +1857,7 @@ public partial class App : System.Windows.Application
 				_automaticUpdateNoticePresentedAtUtc = utcNow;
 				_ = AppDiagnostics.TryWrite(
 					"automatic-update-notice-clock-rollback",
-					"系統時間往回調整；已重新開始首次更新檢查的 30 秒等候時間。");
+					UiText.Get("Shell.App021"));
 				return false;
 			case AutomaticUpdateCheckGateAction.MarkNoticeShownAndAllow:
 				await coordinator.MarkAutomaticCheckNoticeShownAsync();
@@ -1859,7 +1866,7 @@ public partial class App : System.Windows.Application
 				throw new ArgumentOutOfRangeException(
 					nameof(action),
 					action,
-					"未知的首次更新檢查告知狀態。");
+					UiText.Get("Shell.App022"));
 		}
 	}
 
@@ -1897,7 +1904,7 @@ public partial class App : System.Windows.Application
 				throw new ArgumentOutOfRangeException(
 					nameof(action),
 					action,
-					"未知的首次更新檢查告知呈現方式。");
+					UiText.Get("Shell.App023"));
 		}
 	}
 
@@ -1912,8 +1919,8 @@ public partial class App : System.Windows.Application
 		{
 			_notifyIcon.ShowBalloonTip(
 				7000,
-				"已啟用更新檢查",
-				"AI Usage 會定期檢查已簽署的穩定版更新，不會自動下載或安裝。成功後 24 小時內不再檢查；失敗時會在 15 分鐘至 24 小時後重試，可從 tray 關閉。",
+				UiText.Get("Shell.App024"),
+				UiText.Get("Shell.App025"),
 				System.Windows.Forms.ToolTipIcon.Info);
 			return true;
 		}
@@ -1922,7 +1929,7 @@ public partial class App : System.Windows.Application
 		{
 			_ = AppDiagnostics.TryWrite(
 				"automatic-update-check-notice",
-				"無法顯示自動更新檢查通知；在通知成功前不會自動連線。",
+				UiText.Get("Shell.App026"),
 				exception);
 			return false;
 		}
@@ -1967,8 +1974,8 @@ public partial class App : System.Windows.Application
 			{
 				notifyIcon.ShowBalloonTip(
 					7000,
-					"AI Usage 有新版",
-					$"版本 {key.Version} 已可使用。開啟 AI Usage 查看更新選項。",
+					UiText.Get("Shell.App027"),
+					UiText.Format("Shell.App028", key.Version),
 					System.Windows.Forms.ToolTipIcon.Info);
 			}
 			catch (Exception exception) when (
@@ -1976,7 +1983,7 @@ public partial class App : System.Windows.Application
 			{
 				_ = AppDiagnostics.TryWrite(
 					"update-availability-balloon",
-					"Windows 無法顯示新版通知；浮窗與 tray 狀態仍會保留。",
+					UiText.Get("Shell.App029"),
 					exception);
 				return;
 			}
@@ -2074,8 +2081,8 @@ public partial class App : System.Windows.Application
 			}
 
 			ShowShellMessage(
-				$"無法完成更新操作。\n\n原因：{reason}",
-				"更新操作失敗",
+				UiText.Format("Shell.App030", reason),
+				UiText.Get("Shell.App031"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Warning,
 				preferredOwner: preferredOwner);
@@ -2152,8 +2159,8 @@ public partial class App : System.Windows.Application
 		{
 			ShowShellMessage(
 				result.PersistenceWarning ??
-					"無法儲存自動檢查更新設定。請確認 AI Usage 本機資料夾可寫入，再重新設定。",
-				"無法儲存更新設定",
+					UiText.Get("Shell.App032"),
+				UiText.Get("Shell.App033"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Warning);
 		}
@@ -2173,8 +2180,8 @@ public partial class App : System.Windows.Application
 			{
 				ShowShellMessage(
 					result.PersistenceWarning ??
-						"無法儲存稍後提醒設定。請確認 AI Usage 本機資料夾可寫入，再重新設定。",
-					"無法儲存更新設定",
+						UiText.Get("Shell.App034"),
+					UiText.Get("Shell.App033"),
 					MessageBoxButton.OK,
 					MessageBoxImage.Warning);
 			}
@@ -2206,7 +2213,7 @@ public partial class App : System.Windows.Application
 				throw new ArgumentOutOfRangeException(
 					nameof(presentation),
 					presentation.PrimaryAction,
-					"未知的更新操作。");
+					UiText.Get("Shell.App035"));
 		}
 	}
 
@@ -2226,7 +2233,7 @@ public partial class App : System.Windows.Application
 			{
 				_ = AppDiagnostics.TryWrite(
 					"maintenance-updater-completion-during-shutdown",
-					$"維護 Updater 在 App 關閉期間完成：" +
+					UiText.Get("Shell.App036") +
 					$"failure={result.Failure}, exitCode={result.ExitCode?.ToString() ?? "none"}。",
 					result.Exception);
 			}
@@ -2242,8 +2249,8 @@ public partial class App : System.Windows.Application
 			MaintenanceUpdaterLaunchFailure.ExecutableUnavailable)
 		{
 			OfferOpenUpdateReleases(
-				"目前無法啟動這份安裝所需的維護 Updater。",
-				"無法啟動 Updater");
+				UiText.Get("Shell.App037"),
+				UiText.Get("Shell.App038"));
 			return;
 		}
 
@@ -2256,26 +2263,26 @@ public partial class App : System.Windows.Application
 		{
 			_ = AppDiagnostics.TryWrite(
 				"maintenance-updater-launch",
-				"Windows 無法啟動維護 Updater。",
+				UiText.Get("Shell.App039"),
 				result.Exception);
 			OfferOpenUpdateReleases(
-				"Windows 無法啟動維護 Updater。",
-				"無法啟動 Updater");
+				UiText.Get("Shell.App039"),
+				UiText.Get("Shell.App038"));
 			return;
 		}
 
 		if (!result.WasStarted || (result.ExitCode is not int exitCode))
 		{
 			throw new InvalidOperationException(
-				"維護 Updater 沒有回報可辨識的執行結果。",
+				UiText.Get("Shell.App040"),
 				result.Exception);
 		}
 
 		if (exitCode != 0)
 		{
 			OfferOpenUpdateReleases(
-				$"維護 Updater 未完成更新（exit code {exitCode}）。",
-				"更新未完成",
+				UiText.Format("Shell.App041", exitCode),
+				UiText.Get("Shell.App042"),
 				defaultResult: MessageBoxResult.Yes);
 		}
 	}
@@ -2286,7 +2293,7 @@ public partial class App : System.Windows.Application
 		MessageBoxResult defaultResult = MessageBoxResult.No)
 	{
 		MessageBoxResult result = ShowShellMessage(
-			$"{reason}\n\n要開啟下載頁查看最新版本嗎？",
+			UiText.Format("Shell.App043", reason),
 			title,
 			MessageBoxButton.YesNo,
 			MessageBoxImage.Warning,
@@ -2704,8 +2711,8 @@ public partial class App : System.Windows.Application
 			!System.IO.File.Exists(executablePath))
 		{
 			ShowShellMessage(
-				"找不到 AI Usage 執行檔，請手動重新開啟 AI Usage。",
-				"無法重新啟動",
+				UiText.Get("Shell.App044"),
+				UiText.Get("Shell.App002"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Error);
 			return;
@@ -2730,14 +2737,14 @@ public partial class App : System.Windows.Application
 
 			if (restartProcess is null)
 			{
-				throw new InvalidOperationException("無法建立重新啟動程序。");
+				throw new InvalidOperationException(UiText.Get("Shell.App045"));
 			}
 		}
 		catch (Exception)
 		{
 			ShowShellMessage(
-				"無法重新開啟 AI Usage。請手動開啟 AI Usage。",
-				"無法重新啟動",
+				UiText.Get("Shell.App046"),
+				UiText.Get("Shell.App002"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Error);
 			return;
@@ -2749,9 +2756,9 @@ public partial class App : System.Windows.Application
 	internal static string CreateActiveAntigravitySetupCancellationMessage(
 		bool isRestart)
 	{
-		string action = isRestart ? "重新啟動" : "結束";
+		string action = isRestart ? UiText.Get("Shell.App047") : UiText.Get("Shell.App048");
 		return
-			$"Antigravity 帳號仍在連接中。若要{action} AI Usage，程式會先關閉連接視窗，尚未完成的連接會取消。若已開始儲存連接資料，重新啟動後會自動繼續。\n\n要中斷目前操作並{action}嗎？";
+			UiText.Format("Shell.App049", action, action);
 	}
 
 	private bool ConfirmActiveAntigravitySetupCancellation(bool isRestart)
@@ -2763,7 +2770,7 @@ public partial class App : System.Windows.Application
 
 		return ShowShellMessage(
 			CreateActiveAntigravitySetupCancellationMessage(isRestart),
-			"停止 Antigravity 連接？",
+			UiText.Get("Shell.App050"),
 			MessageBoxButton.YesNo,
 			MessageBoxImage.Warning,
 			MessageBoxResult.No) == MessageBoxResult.Yes;
@@ -2843,7 +2850,7 @@ public partial class App : System.Windows.Application
 		{
 			AppDiagnostics.TryWrite(
 				"update-shutdown-deferred",
-				"尚有工作未能確認已停止；AI Usage 將保持 fail-closed，等待工作自然完成後重新啟動舊版並中止這次更新。");
+				UiText.Get("Shell.App051"));
 
 			do
 			{
@@ -3004,7 +3011,7 @@ public partial class App : System.Windows.Application
 		{
 			AppDiagnostics.TryWrite(
 				"update-shutdown-restart",
-				"找不到目前的 AI Usage 執行檔；程式將安全結束，但無法自動重新開啟舊版。");
+				UiText.Get("Shell.App052"));
 			return;
 		}
 
@@ -3022,7 +3029,7 @@ public partial class App : System.Windows.Application
 
 			if (restartProcess is null)
 			{
-				throw new InvalidOperationException("無法建立重新啟動程序。");
+				throw new InvalidOperationException(UiText.Get("Shell.App045"));
 			}
 		}
 		catch (Exception exception)
@@ -3118,7 +3125,7 @@ public partial class App : System.Windows.Application
 		{
 			AppDiagnostics.TryWrite(
 				"post-startup-recovery-shutdown-timeout",
-				"等待先前的連接處理停止已逾時。");
+				UiText.Get("Shell.App053"));
 			return false;
 		}
 		catch (Exception exception)
@@ -3149,7 +3156,7 @@ public partial class App : System.Windows.Application
 			{
 				AppDiagnostics.TryWrite(
 					"usage-refresh-shutdown-timeout",
-					"等待用量檢查停止已逾時。");
+					UiText.Get("Shell.App054"));
 			}
 
 			return wasDrained;
@@ -3184,7 +3191,7 @@ public partial class App : System.Windows.Application
 			{
 				AppDiagnostics.TryWrite(
 					"account-connection-shutdown-timeout",
-					"等待帳號連接停止已逾時。");
+					UiText.Get("Shell.App055"));
 			}
 
 			return wasDrained;
@@ -3372,9 +3379,9 @@ public partial class App : System.Windows.Application
 		AppDiagnosticWriteResult diagnostic)
 	{
 		return
-			"AI Usage 已在執行，但目前無法顯示既有浮窗。\n\n" +
-			$"原因：{GetActivationFailureReason(failure)}\n\n" +
-			"請先從系統匣選擇「顯示浮窗」。如果系統匣沒有圖示，請在工作管理員結束 AI Usage，再重新開啟。\n\n" +
+			UiText.Get("Shell.App056") +
+			UiText.Format("Shell.App057", GetActivationFailureReason(failure)) +
+			UiText.Get("Shell.App058") +
 			CreateDiagnosticGuidance(diagnostic);
 	}
 
@@ -3384,9 +3391,9 @@ public partial class App : System.Windows.Application
 	{
 		ArgumentNullException.ThrowIfNull(exception);
 		return
-			"AI Usage 無法完成啟動。\n\n" +
-			$"原因：{AppDiagnostics.GetUserFacingFailureReason(exception)}\n\n" +
-			"請重新開啟 AI Usage；若問題持續，可提供診斷紀錄協助釐清。\n\n" +
+			UiText.Get("Shell.App059") +
+			UiText.Format("Shell.App057", AppDiagnostics.GetUserFacingFailureReason(exception)) +
+			UiText.Get("Shell.App060") +
 			CreateDiagnosticGuidance(diagnostic);
 	}
 
@@ -3401,7 +3408,7 @@ public partial class App : System.Windows.Application
 		{
 			if (current is UnauthorizedAccessException or SecurityException)
 			{
-				return "Windows 不允許存取 AI Usage 的本機資料。請確認 AI Usage 本機資料夾可讀取與寫入。";
+				return UiText.Get("Shell.App061");
 			}
 		}
 
@@ -3414,28 +3421,28 @@ public partial class App : System.Windows.Application
 				return blockedException.Reason switch
 				{
 					DashboardPreferencesSaveBlockReason.NewerSchema =>
-						"顯示設定由較新版本的 AI Usage 建立；為避免覆寫，這次變更沒有儲存。請使用相同或較新的 AI Usage 版本。",
+						UiText.Get("Shell.App062"),
 					DashboardPreferencesSaveBlockReason.DocumentTooLarge =>
-						"顯示設定檔超過 64 KiB；為避免覆寫，這次變更沒有儲存。請先備份，再檢查或重建顯示設定檔。",
+						UiText.Get("Shell.App063"),
 					DashboardPreferencesSaveBlockReason.ExistingSettingsUnavailable =>
-						"目前無法安全讀取原有顯示設定；為避免覆寫，這次變更沒有儲存。請稍後再試。",
+						UiText.Get("Shell.App064"),
 					DashboardPreferencesSaveBlockReason.UnsafePath =>
-						"顯示設定檔路徑經過連結，或目標不是一般檔案；為保護本機資料，這次變更沒有儲存。請將 AI Usage 本機資料夾還原為一般資料夾與檔案後再試。",
-					_ => "儲存浮窗設定時發生未預期錯誤。"
+						UiText.Get("Shell.App065"),
+					_ => UiText.Get("Shell.App066")
 				};
 			}
 		}
 
 		return AppDiagnostics.GetUserFacingFailureReason(
 			exception,
-			"儲存浮窗設定時發生未預期錯誤。");
+			UiText.Get("Shell.App066"));
 	}
 
 	internal static string CreateShellPreferencesSaveFailureNotificationText(
 		string failureReason)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(failureReason);
-		return $"{failureReason} 本次仍可使用，重新啟動後可能恢復舊設定。";
+		return UiText.Format("Shell.App067", failureReason);
 	}
 
 	private void ApplyThemePalette()
@@ -3486,7 +3493,7 @@ public partial class App : System.Windows.Application
 			if (Resources["ThemeLogoStyle"] is not Style logoStyle)
 			{
 				throw new InvalidOperationException(
-					"找不到用來更新視窗與系統匣圖示的 ThemeLogoStyle。");
+					UiText.Get("Shell.App068"));
 			}
 
 			ThemeAppIcon? previous = _themeAppIcon;
@@ -3510,7 +3517,7 @@ public partial class App : System.Windows.Application
 				keepReplacement = RestoreThemeAppIcon(
 					previousTrayIcon, previousWindowIcon, replacement);
 				throw new InvalidOperationException(
-					"更新目前主題的視窗與系統匣圖示時失敗。",
+					UiText.Get("Shell.App069"),
 					updateException);
 			}
 			finally
@@ -3530,7 +3537,7 @@ public partial class App : System.Windows.Application
 		{
 			_ = AppDiagnostics.TryWrite(
 				"theme-app-icon",
-				"無法更新目前主題的視窗與系統匣圖示。",
+				UiText.Get("Shell.App070"),
 				exception);
 		}
 	}
@@ -3550,7 +3557,7 @@ public partial class App : System.Windows.Application
 			{
 				_ = AppDiagnostics.TryWrite(
 					"theme-app-icon-rollback",
-					"無法還原原本的系統匣圖示。",
+					UiText.Get("Shell.App071"),
 					rollbackException);
 			}
 		}
@@ -3567,7 +3574,7 @@ public partial class App : System.Windows.Application
 		{
 			_ = AppDiagnostics.TryWrite(
 				"theme-app-icon-rollback",
-				"無法還原原本的視窗圖示。",
+				UiText.Get("Shell.App072"),
 				rollbackException);
 		}
 
@@ -3595,11 +3602,71 @@ public partial class App : System.Windows.Application
 			ApplyThemePalette();
 		}
 
+		if ((_floatingWidgetWindow is not null)
+			&& (_selectedLanguage != _floatingWidgetWindow.SelectedLanguage))
+		{
+			ApplyLanguage(_floatingWidgetWindow.SelectedLanguage);
+		}
+
 		UpdateWidgetTopmostMenuItem();
 		RefreshUpdatePresentation();
 		BeginAutomaticUpdateNoticePresentation();
 		BeginUpdateBalloonAttempt();
 		QueueShellPreferencesSave();
+	}
+
+	internal void ApplyLanguage(AppLanguage language)
+	{
+		_selectedLanguage = language;
+		UiText.SetLanguage(language);
+		foreach (var (key, value) in UiText.GetResources())
+		{
+			Resources[key] = value;
+		}
+
+		_dashboardViewModel?.RefreshLocalizedPresentation();
+		_floatingWidgetWindow?.RefreshLocalizedPresentation();
+		if (_notifyIcon?.ContextMenuStrip is FormsContextMenuStrip menu)
+		{
+			RefreshTrayLanguage(menu.Items);
+			UpdateWidgetVisibilityMenuItem();
+			UpdateLogonStartupMenuItem();
+			UpdateLanguageMenuItems();
+		}
+
+		if (_updateCheckCoordinator is not null)
+		{
+			RefreshUpdatePresentation();
+		}
+	}
+
+	private static void RefreshTrayLanguage(System.Windows.Forms.ToolStripItemCollection items)
+	{
+		foreach (System.Windows.Forms.ToolStripItem item in items)
+		{
+			item.Text = UiText.Translate(item.Text ?? string.Empty);
+			item.ToolTipText = UiText.Translate(item.ToolTipText ?? string.Empty);
+			if (item is FormsToolStripMenuItem menuItem)
+			{
+				RefreshTrayLanguage(menuItem.DropDownItems);
+			}
+		}
+	}
+
+	private void UpdateLanguageMenuItems()
+	{
+		if (_englishLanguageMenuItem is not null)
+		{
+			_englishLanguageMenuItem.Checked = _selectedLanguage == AppLanguage.English;
+			_englishLanguageMenuItem.Enabled = _dashboardViewModel?.CanChangeUsageDisplayMode == true;
+		}
+
+		if (_traditionalChineseLanguageMenuItem is not null)
+		{
+			_traditionalChineseLanguageMenuItem.Checked =
+				_selectedLanguage == AppLanguage.TraditionalChinese;
+			_traditionalChineseLanguageMenuItem.Enabled = _dashboardViewModel?.CanChangeUsageDisplayMode == true;
+		}
 	}
 
 	private void ShellWindow_ActivityChanged(object? sender, EventArgs e)
@@ -3760,7 +3827,7 @@ public partial class App : System.Windows.Application
 		{
 			_notifyIcon?.ShowBalloonTip(
 				5000,
-				"浮窗設定未儲存",
+				UiText.Get("Shell.App073"),
 				CreateShellPreferencesSaveFailureNotificationText(failureReason),
 				System.Windows.Forms.ToolTipIcon.Warning);
 		}
@@ -3786,10 +3853,10 @@ public partial class App : System.Windows.Application
 		if (diagnostic.WasWritten &&
 			!string.IsNullOrWhiteSpace(diagnostic.FilePath))
 		{
-			return $"診斷紀錄：{diagnostic.FilePath}";
+			return UiText.Format("Shell.App074", diagnostic.FilePath);
 		}
 
-		return "診斷紀錄也無法建立。請確認 Windows 的本機應用程式資料目錄可寫入。";
+		return UiText.Get("Shell.App075");
 	}
 
 	private static string GetActivationFailureReason(
@@ -3798,12 +3865,12 @@ public partial class App : System.Windows.Application
 		return failure switch
 		{
 			SingleInstanceActivationFailure.TimedOut =>
-				"既有 AI Usage 沒有在預期時間內回應。",
+				UiText.Get("Shell.App076"),
 			SingleInstanceActivationFailure.AccessDenied =>
-				"Windows 不允許本次啟動與既有 AI Usage 通訊。",
+				UiText.Get("Shell.App077"),
 			SingleInstanceActivationFailure.Unavailable =>
-				"既有 AI Usage 的喚醒通道目前無法使用。",
-			_ => "既有 AI Usage 無法接收顯示要求。"
+				UiText.Get("Shell.App078"),
+			_ => UiText.Get("Shell.App079")
 		};
 	}
 
@@ -3842,8 +3909,8 @@ public partial class App : System.Windows.Application
 		bool isVisible = IsFloatingWidgetVisible;
 		_widgetVisibilityMenuItem.Checked = isVisible;
 		_widgetVisibilityMenuItem.Text = isVisible
-			? "隱藏浮窗"
-			: "顯示浮窗";
+			? UiText.Get("Shell.App080")
+			: UiText.Get("Shell.App081");
 	}
 
 	private void UpdateWidgetTopmostMenuItem()
@@ -3859,6 +3926,7 @@ public partial class App : System.Windows.Application
 
 	private void UpdatePortableSettingsMenuItems()
 	{
+		UpdateLanguageMenuItems();
 		if (_exportPortableSettingsMenuItem is not null)
 		{
 			_exportPortableSettingsMenuItem.Enabled =
@@ -3881,7 +3949,7 @@ public partial class App : System.Windows.Application
 		if (!canManageRegistration)
 		{
 			return new LogonStartupMenuPresentation(
-				"Windows 登入啟動項：僅標準安裝可用",
+				UiText.Get("Shell.App082"),
 				IsChecked: false,
 				IsEnabled: false);
 		}
@@ -3889,7 +3957,7 @@ public partial class App : System.Windows.Application
 		if (!canCreateExpectedCommand)
 		{
 			return new LogonStartupMenuPresentation(
-				"Windows 登入啟動項：無法使用（啟動命令過長）",
+				UiText.Get("Shell.App083"),
 				IsChecked: false,
 				IsEnabled: false);
 		}
@@ -3898,21 +3966,21 @@ public partial class App : System.Windows.Application
 		{
 			LogonStartupRegistrationState.Absent =>
 				new LogonStartupMenuPresentation(
-					"Windows 登入啟動項：未登錄",
+					UiText.Get("Shell.App084"),
 					IsChecked: false,
 					IsEnabled: true),
 			LogonStartupRegistrationState.ExactMatch =>
 				new LogonStartupMenuPresentation(
-					"Windows 登入啟動項：已登錄",
+					UiText.Get("Shell.App085"),
 					IsChecked: true,
 					IsEnabled: true),
 			LogonStartupRegistrationState.Conflict =>
 				new LogonStartupMenuPresentation(
-					"Windows 登入啟動項：需修復",
+					UiText.Get("Shell.App086"),
 					IsChecked: false,
 					IsEnabled: true),
 			_ => new LogonStartupMenuPresentation(
-				"Windows 登入啟動項：無法讀取",
+				UiText.Get("Shell.App087"),
 				IsChecked: false,
 				IsEnabled: false)
 		};
@@ -4032,7 +4100,7 @@ public partial class App : System.Windows.Application
 					break;
 				default:
 					throw new InvalidOperationException(
-						"Windows 登入啟動項狀態無法辨識。");
+						UiText.Get("Shell.App088"));
 			}
 		}
 		catch (Exception exception)
@@ -4048,8 +4116,8 @@ public partial class App : System.Windows.Application
 	private bool ConfirmLogonStartupRegistrationReplacement()
 	{
 		return ShowShellMessage(
-			"偵測到同名的 Windows 登入啟動項，但內容不符合目前 AI Usage 的標準啟動命令。要以目前安裝取代它嗎？",
-			"修復登入啟動項？",
+			UiText.Get("Shell.App089"),
+			UiText.Get("Shell.App090"),
 			MessageBoxButton.YesNo,
 			MessageBoxImage.Warning,
 			MessageBoxResult.No) == MessageBoxResult.Yes;
@@ -4062,7 +4130,7 @@ public partial class App : System.Windows.Application
 		if (actual != expected)
 		{
 			throw new InvalidOperationException(
-				"Windows 登入啟動項在更新時被其他程序變更，請再試一次。");
+				UiText.Get("Shell.App091"));
 		}
 	}
 
@@ -4075,9 +4143,9 @@ public partial class App : System.Windows.Application
 			failureReason,
 			exception);
 		ShowShellMessage(
-			$"AI Usage 無法更新 Windows 登入啟動項。\n\n原因：{failureReason}\n\n" +
+			UiText.Format("Shell.App092", failureReason) +
 				CreateDiagnosticGuidance(diagnostic),
-			"無法更新登入啟動項",
+			UiText.Get("Shell.App093"),
 			MessageBoxButton.OK,
 			MessageBoxImage.Warning);
 	}
@@ -4116,8 +4184,8 @@ public partial class App : System.Windows.Application
 				failureReason,
 				exception);
 			ShowShellMessage(
-				$"無法開啟 Windows 啟動應用程式設定。\n\n原因：{failureReason}",
-				"無法開啟 Windows 設定",
+				UiText.Format("Shell.App094", failureReason),
+				UiText.Get("Shell.App095"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Warning);
 		}
@@ -4135,23 +4203,34 @@ public partial class App : System.Windows.Application
 				UpdateUpdateTrayMenuItems(presentation);
 			}
 		});
-		_widgetVisibilityMenuItem = new FormsToolStripMenuItem("顯示浮窗")
+		_widgetVisibilityMenuItem = new FormsToolStripMenuItem(UiText.Get("Shell.App081"))
 		{
 			CheckOnClick = false
 		};
 		_widgetVisibilityMenuItem.Click +=
 			(_, _) => Dispatcher.Invoke(ToggleFloatingWidget);
 		menu.Items.Add(_widgetVisibilityMenuItem);
-		_widgetTopmostMenuItem = new FormsToolStripMenuItem("置頂")
+		_widgetTopmostMenuItem = new FormsToolStripMenuItem(UiText.Get("Shell.App096"))
 		{
 			CheckOnClick = false
 		};
 		_widgetTopmostMenuItem.Click +=
 			(_, _) => Dispatcher.Invoke(ToggleFloatingWidgetTopmost);
 		menu.Items.Add(_widgetTopmostMenuItem);
+		var languageMenu = new FormsToolStripMenuItem(UiText.Get("Shell.Language"));
+		_englishLanguageMenuItem = new FormsToolStripMenuItem(UiText.Get("Shell.LanguageEnglish"));
+		_traditionalChineseLanguageMenuItem =
+			new FormsToolStripMenuItem(UiText.Get("Shell.LanguageTraditionalChinese"));
+		_englishLanguageMenuItem.Click += (_, _) => Dispatcher.Invoke(
+			() => _floatingWidgetWindow?.ChangeLanguage(AppLanguage.English));
+		_traditionalChineseLanguageMenuItem.Click += (_, _) => Dispatcher.Invoke(
+			() => _floatingWidgetWindow?.ChangeLanguage(AppLanguage.TraditionalChinese));
+		languageMenu.DropDownItems.Add(_englishLanguageMenuItem);
+		languageMenu.DropDownItems.Add(_traditionalChineseLanguageMenuItem);
+		menu.Items.Add(languageMenu);
 		menu.Items.Add("-");
 		_updateAvailableMenuItem = new FormsToolStripMenuItem(
-			"開啟下載頁")
+			UiText.Get("Shell.App019"))
 		{
 			Visible = false
 		};
@@ -4160,7 +4239,7 @@ public partial class App : System.Windows.Application
 				ExecutePrimaryUpdateActionAsync,
 				"tray-update-primary-action"));
 		menu.Items.Add(_updateAvailableMenuItem);
-		_checkForUpdatesMenuItem = new FormsToolStripMenuItem("檢查更新");
+		_checkForUpdatesMenuItem = new FormsToolStripMenuItem(UiText.Get("Shell.App018"));
 		_checkForUpdatesMenuItem.Click += (_, _) => Dispatcher.Invoke(() =>
 			StartUpdateUiOperation(
 				() => CheckForUpdatesManuallyAsync(
@@ -4168,7 +4247,7 @@ public partial class App : System.Windows.Application
 				"tray-manual-update-check"));
 		menu.Items.Add(_checkForUpdatesMenuItem);
 		_automaticUpdateChecksMenuItem = new FormsToolStripMenuItem(
-			"自動檢查更新")
+			UiText.Get("Shell.App097"))
 		{
 			CheckOnClick = false
 		};
@@ -4180,44 +4259,44 @@ public partial class App : System.Windows.Application
 		menu.Items.Add(_automaticUpdateChecksMenuItem);
 		menu.Items.Add("-");
 		_logonStartupMenuItem = new FormsToolStripMenuItem(
-			"Windows 登入啟動項：無法讀取")
+			UiText.Get("Shell.App087"))
 		{
 			CheckOnClick = false,
 			ToolTipText =
-				"這裡只顯示登錄狀態；Windows 設定或組織原則仍可停用執行。"
+				UiText.Get("Shell.App098")
 		};
 		_logonStartupMenuItem.Click +=
 			(_, _) => Dispatcher.Invoke(ToggleLogonStartupRegistration);
 		menu.Items.Add(_logonStartupMenuItem);
 		menu.Items.Add(
-			"開啟 Windows 啟動應用程式設定",
+			UiText.Get("Shell.App099"),
 			null,
 			(_, _) => Dispatcher.Invoke(OpenWindowsStartupAppsSettings));
 		menu.Items.Add("-");
 		_exportPortableSettingsMenuItem = new FormsToolStripMenuItem(
-			"匯出設定…");
+			UiText.Get("Shell.App100"));
 		_exportPortableSettingsMenuItem.Click +=
 			(_, _) => Dispatcher.Invoke(
 				() => _floatingWidgetWindow?.BeginPortableSettingsExport());
 		menu.Items.Add(_exportPortableSettingsMenuItem);
 		_undoPortableSettingsImportMenuItem = new FormsToolStripMenuItem(
-			"還原匯入前設定");
+			UiText.Get("Shell.App101"));
 		_undoPortableSettingsImportMenuItem.Click +=
 			(_, _) => Dispatcher.Invoke(
 				() => _floatingWidgetWindow?.BeginPortableSettingsImportUndo());
 		menu.Items.Add(_undoPortableSettingsImportMenuItem);
 		menu.Items.Add("-");
 		menu.Items.Add(
-			"使用說明",
+			UiText.Get("Shell.App102"),
 			null,
 			(_, _) => Dispatcher.Invoke(OpenUserGuide));
 		menu.Items.Add(
-			"關於 AI Usage",
+			UiText.Get("Shell.App103"),
 			null,
 			(_, _) => Dispatcher.Invoke(ShowAboutWindowFromTray));
 		menu.Items.Add("-");
 		menu.Items.Add(
-			"結束 AI Usage",
+			UiText.Get("Shell.App104"),
 			null,
 			(_, _) => Dispatcher.Invoke(Quit));
 
@@ -4237,6 +4316,7 @@ public partial class App : System.Windows.Application
 			(_, _) => Dispatcher.Invoke(ShowFloatingWidget);
 		UpdateWidgetVisibilityMenuItem();
 		UpdateWidgetTopmostMenuItem();
+		UpdateLanguageMenuItems();
 		UpdatePortableSettingsMenuItems();
 		UpdateLogonStartupMenuItem();
 		if (_updateUiPresentation is UpdateUiPresentation presentation)
@@ -4299,7 +4379,7 @@ public partial class App : System.Windows.Application
 		if (_updateUiPresentation is UpdateUiPresentation presentation)
 		{
 			aboutWindow.UpdateUpdateStatus(
-				presentation.AboutStatusText,
+				() => _updateUiPresentation?.AboutStatusText ?? string.Empty,
 				presentation.CanCheckManually,
 				presentation.IsChecking);
 		}
@@ -4367,7 +4447,7 @@ public partial class App : System.Windows.Application
 
 		ShowShellMessage(
 			LocalUserGuideLauncher.GetFailureMessage(result),
-			"無法開啟使用說明",
+			UiText.Get("Shell.App105"),
 			MessageBoxButton.OK,
 			MessageBoxImage.Warning);
 	}

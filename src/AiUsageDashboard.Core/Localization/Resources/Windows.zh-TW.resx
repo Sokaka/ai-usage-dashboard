@@ -1,0 +1,1018 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="About.AboutAIUsage">
+    <value>關於 AI Usage</value>
+  </data>
+  <data xml:space="preserve" name="About.CheckForUpdates">
+    <value>檢查更新</value>
+  </data>
+  <data xml:space="preserve" name="About.CopyVersion">
+    <value>複製版本</value>
+  </data>
+  <data xml:space="preserve" name="About.CouldNotCopyTheAIUsageVersionAnother">
+    <value>無法複製 AI Usage 版本，剪貼簿可能正被其他程式使用。請稍後再試，或選取版本文字手動複製。
+
+{0}</value>
+  </data>
+  <data xml:space="preserve" name="About.CouldNotCopyVersion">
+    <value>無法複製版本</value>
+  </data>
+  <data xml:space="preserve" name="About.CouldNotOpenSupportPage">
+    <value>無法開啟支援頁面</value>
+  </data>
+  <data xml:space="preserve" name="About.CouldNotOpenUserGuide">
+    <value>無法開啟使用說明</value>
+  </data>
+  <data xml:space="preserve" name="About.DownloadsAndReleaseNotes">
+    <value>下載與版本紀錄</value>
+  </data>
+  <data xml:space="preserve" name="About.ReportAnIssue">
+    <value>回報問題</value>
+  </data>
+  <data xml:space="preserve" name="About.TheFullRunningVersionSelectItToCopy">
+    <value>目前執行的完整版本，可選取並複製。</value>
+  </data>
+  <data xml:space="preserve" name="About.Updates">
+    <value>更新</value>
+  </data>
+  <data xml:space="preserve" name="About.UpdatesHaveNotBeenCheckedYet">
+    <value>尚未檢查更新。</value>
+  </data>
+  <data xml:space="preserve" name="About.UserGuide">
+    <value>使用說明</value>
+  </data>
+  <data xml:space="preserve" name="About.Version">
+    <value>版本</value>
+  </data>
+  <data xml:space="preserve" name="About.VersionCopied">
+    <value>已複製版本。</value>
+  </data>
+  <data xml:space="preserve" name="About.ViewYourAISubscriptionUsageOnTheDesktop">
+    <value>在桌面查看 AI 服務訂閱用量</value>
+  </data>
+  <data xml:space="preserve" name="About.WindowsCouldNotOpenTheSupportPageOpen">
+    <value>Windows 無法開啟支援頁面。請在瀏覽器開啟：
+{0}
+
+{1}</value>
+  </data>
+  <data xml:space="preserve" name="Card.ActionsAutomation">
+    <value>{0} 帳號操作</value>
+  </data>
+  <data xml:space="preserve" name="Card.MoveDownAutomation">
+    <value>將帳號「{0}」向下移動</value>
+  </data>
+  <data xml:space="preserve" name="Card.MoveUpAutomation">
+    <value>將帳號「{0}」向上移動</value>
+  </data>
+  <data xml:space="preserve" name="Common.Cancel">
+    <value>取消</value>
+  </data>
+  <data xml:space="preserve" name="Common.Checking">
+    <value>檢查中…</value>
+  </data>
+  <data xml:space="preserve" name="Common.Close">
+    <value>關閉</value>
+  </data>
+  <data xml:space="preserve" name="Common.Save">
+    <value>儲存</value>
+  </data>
+  <data xml:space="preserve" name="Common.SaveAndConnect">
+    <value>儲存並連接</value>
+  </data>
+  <data xml:space="preserve" name="Credits.0CreditsAvailable">
+    <value>可用 {0} 張</value>
+  </data>
+  <data xml:space="preserve" name="Credits.Available0">
+    <value>可用 {0}</value>
+  </data>
+  <data xml:space="preserve" name="Credits.AvailableCountNotYetRetrieved">
+    <value>可用張數尚未取得</value>
+  </data>
+  <data xml:space="preserve" name="Credits.CodexResetCredits">
+    <value>Codex 重置券</value>
+  </data>
+  <data xml:space="preserve" name="Credits.CreditDetailsDoNotMatchTheAvailableCount">
+    <value>重置券明細與可用張數不一致，請檢查此帳號用量。</value>
+  </data>
+  <data xml:space="preserve" name="Credits.DetailsAreIncompleteShowingThe0AvailableCredits">
+    <value>明細不完整，僅顯示已取得的 {0} 張可用券。</value>
+  </data>
+  <data xml:space="preserve" name="Credits.DoesNotExpire">
+    <value>不會到期</value>
+  </data>
+  <data xml:space="preserve" name="Credits.Expires0G">
+    <value>到期 {0:yyyy/MM/dd HH:mm}</value>
+  </data>
+  <data xml:space="preserve" name="Credits.ExpiryTimeNotProvided">
+    <value>未提供到期時間</value>
+  </data>
+  <data xml:space="preserve" name="Credits.Fetched0G">
+    <value>資料時間 {0:yyyy/MM/dd HH:mm}</value>
+  </data>
+  <data xml:space="preserve" name="Credits.LastResult0CreditsAvailable">
+    <value>上次資料可用 {0} 張</value>
+  </data>
+  <data xml:space="preserve" name="Credits.NoDataYetCheckUsageForThisAccount">
+    <value>尚未取得資料，請檢查此帳號用量。</value>
+  </data>
+  <data xml:space="preserve" name="Credits.NoResetCreditsAreCurrentlyAvailable">
+    <value>目前沒有可用重置券。</value>
+  </data>
+  <data xml:space="preserve" name="Credits.OnlyTheAvailableCountIsProvidedIndividualCredit">
+    <value>目前只有可用張數，沒有逐張資料。</value>
+  </data>
+  <data xml:space="preserve" name="Credits.ResetCredit0">
+    <value>重置券 {0}</value>
+  </data>
+  <data xml:space="preserve" name="Credits.SomeCreditsHaveExpiredCheckUsageForThis">
+    <value>部分重置券已到期，請檢查此帳號用量。</value>
+  </data>
+  <data xml:space="preserve" name="Credits.TheResetCreditsWindowRequiresACodexAccount">
+    <value>重置券視窗需要目前清單中的 Codex 帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Credits.ThisDataIsOldCheckUsageForThis">
+    <value>資料較舊，請檢查此帳號用量。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.01Account">
+    <value>{0} {1} 帳號</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AGitHubAccountCannotBeConnectedToMore">
+    <value>同一個 GitHub 帳號不能重複連接到多張卡片。organization 或 subscription 不會拆成多張額度卡。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AIUsageCanOnlyDetermineAfterExecutionWhether">
+    <value>AI Usage 只能在執行後確認是否產生模型請求、token 或費用，已產生的用量或費用不能取消。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AIUsageStoresCardSettingsAccountDetailsAnd">
+    <value>AI Usage 會儲存卡片設定、帳號資訊和上次用量，不會儲存密碼。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AIUsageStoresEachCardSGitHubCredential">
+    <value>AI Usage 會把每張卡片的 GitHub credential 分開儲存在 Windows Credential Manager。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AIUsageStoresOnlyCardSettingsAndThe">
+    <value>AI Usage 只會儲存卡片設定和上次用量。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AStandardAccountConnectionDoesNotNeedA">
+    <value>一般帳號連接不需要 workspace ID。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.Account0">
+    <value>帳號：{0}</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AccountConnected">
+    <value>帳號：已連接</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AccountConnection">
+    <value>帳號連接</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AccountNotConnected">
+    <value>帳號：尚未連接</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AccountSettings">
+    <value>帳號設定</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AddAccount">
+    <value>新增帳號</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingChooseStandardAccountConnectionOrConnect">
+    <value>儲存後先選「一般帳號連接」或「用 workspace ID 連接」，再用 Codex CLI 登入。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingClaudeCodeCLIOpensSoYou">
+    <value>儲存後會開啟 Claude Code CLI，讓你登入或切換帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingGrokBuildCLIOpensSoYou">
+    <value>儲存後會開啟 Grok Build CLI，讓你登入或切換帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingTheCurrentAntigravitySignInOn">
+    <value>儲存後會沿用這台電腦目前登入的 Antigravity 帳號，不會另開登入畫面。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingTheOfficialGitHubAuthorizationPageOpens">
+    <value>儲存後會開啟 GitHub 官方授權頁面，讓你登入或切換 Copilot 帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AfterSavingYouWillBeAskedToConfirm">
+    <value>儲存後會先確認是否讀取 Claude 用量。需要登入時才會開啟 Claude Code CLI。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.AntigravityCLIHandlesSignInAIUsageDoes">
+    <value>Antigravity CLI 負責登入。AI Usage 不會讀取密碼或其他登入憑證。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnecting">
+    <value>連接前注意事項</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnectingAntigravity">
+    <value>連接 Antigravity 前</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnectingClaude">
+    <value>連接 Claude 前</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnectingCodex">
+    <value>連接 Codex 前</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnectingCopilot">
+    <value>連接 Copilot 前</value>
+  </data>
+  <data xml:space="preserve" name="Editor.BeforeConnectingGrok">
+    <value>連接 Grok 前</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ByChoosingSaveAndConnectYouAcceptThese">
+    <value>按「儲存並連接」即表示接受以上風險；若要稍後決定，請按「儲存」。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.CLIConnectionAndUsageChecksAreNotCurrently">
+    <value>目前不支援用 CLI 連接或讀取用量。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ChangeTheNicknameTurnUsageChecksOnOr">
+    <value>可以改暱稱、開關用量檢查，或重新連接帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ChooseAService">
+    <value>請選擇服務。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ChooseAServiceAndSetUpTheAccount">
+    <value>選擇服務並設定帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ChooseTheServiceWhoseUsageYouWantTo">
+    <value>選擇要顯示用量的服務</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ClaudeCodeCLIHandlesSignInAIUsage">
+    <value>Claude Code CLI 負責登入。AI Usage 會確認目前的帳號與 Claude organization 是否和這張卡片原本的一樣。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.CodexCLIHandlesSignInAIUsageChecks">
+    <value>Codex CLI 負責登入。AI Usage 會確認目前的 ChatGPT 帳號與 workspace 是否和這張卡片原本的一樣。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.CompleteAuthorizationOnTheOfficialGitHubPageEach">
+    <value>請在 GitHub 官方頁面完成授權。連接後，每張卡片的 credential 會獨立儲存在 Windows Credential Manager。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ConfirmClaudeUsageCheck">
+    <value>確認 Claude 用量讀取</value>
+  </data>
+  <data xml:space="preserve" name="Editor.Connect">
+    <value>連接</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ConnectAccount">
+    <value>連接帳號</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ConnectionIsUnavailableFollowTheNoticeOnThe">
+    <value>目前無法連接。請先處理卡片上的提示。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.CredentialsAreNotWrittenToAccountSettingsUsage">
+    <value>credential 不會寫入帳號設定、上次用量、診斷紀錄或匯出的設定；移除卡片時也會刪除。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ForEnterpriseAccountsAIUsageCannotVerifyOr">
+    <value>使用企業帳號時，AI Usage 無法確認或指定專案。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.GrokBuildCLIStoresEachCardSSign">
+    <value>Grok Build CLI 會把每張卡片的登入資料分開儲存。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.IfTheAccountHasNoEmailAddressUse">
+    <value>帳號沒有電子郵件時，可以用暱稱區分卡片。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.IfTheSignInPageShowsAnAuthorization">
+    <value>登入時若網頁顯示授權碼或完整回呼網址，請貼回終端機。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.LeaveBlankToHideTheNickname">
+    <value>留白時不顯示暱稱</value>
+  </data>
+  <data xml:space="preserve" name="Editor.LeaveBlankToHideTheNickname76">
+    <value>留白時不顯示暱稱。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.NicknameOptional">
+    <value>暱稱（選填）</value>
+  </data>
+  <data xml:space="preserve" name="Editor.Reconnect">
+    <value>重新連接</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SelectStartUsageChecksBeforeConnectingTheAccount">
+    <value>請先勾選「開始檢查用量」，才能連接帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.Service">
+    <value>服務</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SignInOrSwitchAccountsWithClaudeCode">
+    <value>使用 Claude Code CLI 登入或切換帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SignInOrSwitchAccountsWithGrokBuild">
+    <value>使用 Grok Build CLI 登入或切換帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SignInTakesPlaceInTheTerminal">
+    <value>登入會在終端機中完成。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SignInToAntigravityOnThisComputerFirst">
+    <value>請先在這台電腦登入 Antigravity。AI Usage 不會另開登入畫面。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.SignInWithCodexCLI">
+    <value>使用 Codex CLI 登入。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.StartUsageChecks">
+    <value>開始檢查用量</value>
+  </data>
+  <data xml:space="preserve" name="Editor.StoredData">
+    <value>儲存的資料</value>
+  </data>
+  <data xml:space="preserve" name="Editor.Switch">
+    <value>切換</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheAssociatedSignInDataIsDeletedWhen">
+    <value>移除卡片或匯入設定時，相關登入資料也會刪除。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheFirstCheckRunsClaudeUsageAndMay">
+    <value>第一次讀取會執行 Claude /usage，可能產生少量用量。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheLastUsageResultOnThisComputerRetains">
+    <value>這台電腦的上次用量資料會保留電子郵件、方案和 organization 名稱，但不會跟著設定匯出。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheLastUsageResultOnThisComputerRetains182">
+    <value>這台電腦的上次用量資料會保留電子郵件和方案，但不會跟著設定匯出。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheNicknameCannotContainLineBreaksTabsOr">
+    <value>暱稱不可包含換行、Tab 或其他控制字元。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheOrganizationIDItselfIsNotStoredDirectly">
+    <value>organization ID 本身不會直接儲存。這張卡片也會記住你是否同意讀取 Claude 用量。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheServiceCannotBeChangedAfterCreationRemove">
+    <value>建立後不能更改服務。若要更換，請先移除這個帳號，再重新新增。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.TheWorkspaceIDIsWrittenOnlyToThis">
+    <value>workspace ID 只會寫進這張卡片的 Codex 設定；重新連接時要再輸入。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ThisComputerRetainsTheApprovedCLISourceFour">
+    <value>這台電腦會保留核准的 CLI 來源、四項用量和讀取時間。官方 /usage 不提供電子郵件或方案，AI Usage 不會為此安裝 status-line helper。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ThisServiceCannotBeAddedRightNow">
+    <value>這個服務目前不能新增。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ThisWindowsUserAlreadyHasAnAntigravityCard">
+    <value>這個 Windows 帳號已有 Antigravity 卡片，不能再新增。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.ToDisplayMultipleWorkspacesFromOneChatGPTAccount">
+    <value>同一個 ChatGPT 帳號若要顯示多個 workspace，每張卡片都要填入對應的 workspace ID，原本的第一張也一樣。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.UseAnAntigravityVersionThatSupportsTheOfficial">
+    <value>請使用支援官方唯讀 /usage 的 Antigravity 版本。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.UseOfficialGitHubAuthorizationToConnectDifferentCopilot">
+    <value>使用 GitHub 官方授權連接不同的 Copilot 帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Editor.UseTheCurrentAntigravitySignInOnThis">
+    <value>使用這台電腦目前登入的 Antigravity 帳號。</value>
+  </data>
+  <data xml:space="preserve" name="Language.English">
+    <value>English</value>
+  </data>
+  <data xml:space="preserve" name="Language.Menu">
+    <value>語系</value>
+  </data>
+  <data xml:space="preserve" name="Language.TraditionalChinese">
+    <value>繁體中文</value>
+  </data>
+  <data xml:space="preserve" name="Legal.Accept">
+    <value>接受並繼續</value>
+  </data>
+  <data xml:space="preserve" name="Legal.AcceptanceExplanation">
+    <value>首次使用前，請閱讀適用的第三方條款。接受後會在這個 Windows 使用者的本機保存版本與範圍；背景查詢不會重複詢問。</value>
+  </data>
+  <data xml:space="preserve" name="Legal.CodeAndAcceptance">
+    <value>自有程式碼依 MIT；下列第三方元件各依隨附原約。接受紀錄僅保存在目前 Windows 使用者的本機。以下授權與條款原文未經翻譯。
+</value>
+  </data>
+  <data xml:space="preserve" name="Legal.Decline">
+    <value>不接受並離開</value>
+  </data>
+  <data xml:space="preserve" name="Legal.InstallerScope">
+    <value>此範圍涵蓋 Updater 與即將安裝的 App ZIP；部分元件由 App ZIP 提供，並非全部包含在這個 Updater EXE。
+</value>
+  </data>
+  <data xml:space="preserve" name="Legal.Scope">
+    <value>範圍：{0}</value>
+  </data>
+  <data xml:space="preserve" name="Legal.Source">
+    <value>來源：{0}</value>
+  </data>
+  <data xml:space="preserve" name="Legal.TermsVersion">
+    <value>條款版本：{0}</value>
+  </data>
+  <data xml:space="preserve" name="Legal.Title">
+    <value>AI Usage Dashboard 授權與第三方條款</value>
+  </data>
+  <data xml:space="preserve" name="Legal.ViewExplanation">
+    <value>以下是這個程式適用的授權與第三方條款。查看條款不會建立接受紀錄。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.00Remaining">
+    <value>剩餘 {0:0.##}%</value>
+  </data>
+  <data xml:space="preserve" name="Setup.5HourUsageClaudeGPT">
+    <value>5小時用量 · Claude + GPT</value>
+  </data>
+  <data xml:space="preserve" name="Setup.5HourUsageGemini">
+    <value>5小時用量 · Gemini</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AIUsageCouldNotRecognizeTheFourUsage">
+    <value>AI Usage 無法辨識 Antigravity 回傳的四項用量。請確認 Antigravity 已登入且能顯示用量；若仍失敗，請更新 AI Usage 或 Antigravity，並提供技術資訊給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AIUsageDirectlyRunsOnlyOfficialReadOnly">
+    <value>AI Usage 只會直接執行官方唯讀 /usage，且不會讀取登入憑證，也不會使用終端畫面擷取或 status-line helper。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AIUsageIsRunningAnotherAntigravityUsageCheck">
+    <value>AI Usage 正在進行另一項 Antigravity 用量檢查。請稍候片刻再試，不需要重新安裝 Antigravity 或重新登入。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AIUsageStoresOnlyTheFourUsageValues">
+    <value>AI Usage 只會儲存官方用量讀取流程回傳的四項用量、取得時間，以及這台電腦核准的 Antigravity CLI 來源。不會儲存完整 CLI 輸出、status line 內容或登入憑證，也不會安裝 status-line helper。官方 /usage 不提供電子郵件或方案，因此卡片會顯示為「目前登入的 Antigravity 帳號」。這張卡會跟隨這台電腦目前的 Antigravity 登入，AI Usage 無法確認或固定企業專案範圍。讀不到支援的版本或四項用量時，連接不會完成。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AIUsageWillCheckThisAccountSUsage">
+    <value>AI Usage 會重新讀取這個帳號的用量。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AProblemOccurredWhileFinishingTheConnectionTry">
+    <value>完成連接時發生問題。請再試一次；若仍失敗，請提供技術資訊給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ASupportedAntigravityCLICouldNotBeFound">
+    <value>找不到支援的 Antigravity CLI。請執行 agy --version。若無法執行或顯示的版本不受支援，請更新或重新安裝官方 Antigravity CLI；若更新後仍無法連接，請提供版本與技術資訊給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Account">
+    <value>帳號</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AnotherUsageCheckIsRunningExecutionBusy">
+    <value>另一項用量檢查仍在進行（ExecutionBusy）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityAccountConnected">
+    <value>Antigravity 帳號已連接</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityCannotBeConnectedRightNow">
+    <value>目前無法連接 Antigravity</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionAndWindowCleanupBothFailed">
+    <value>Antigravity 連接與視窗收尾都失敗。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionFailedAndCleanupDidNotFinish">
+    <value>Antigravity 連接失敗，且清理未完整完成。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionIncomplete">
+    <value>Antigravity 連接未完成</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionIsIncompleteTryAgainIfThe">
+    <value>Antigravity 連接未完成。請再試一次；若問題持續，請提供技術資訊給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionSettingsCannotBeSavedRightNow">
+    <value>目前無法儲存 Antigravity 連接設定。請再試一次；若仍失敗，請提供技術資訊給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityConnectionTechnicalInformation">
+    <value>Antigravity 連接技術資訊</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityReadinessCouldNotBeVerifiedOpenAntigravity">
+    <value>無法確認 Antigravity 是否可用。請開啟 Antigravity，確認已登入且可正常使用後再試。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravitySettingsRejectedSettingsRejected">
+    <value>Antigravity 設定不符（SettingsRejected）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravitySignInOrSetupIsIncompletePromptRejected">
+    <value>Antigravity 尚未完成登入或設定（PromptRejected）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityUsageCheckIsStillRunning">
+    <value>Antigravity 用量檢查仍在進行</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AntigravityUsageWindow">
+    <value>Antigravity 用量區間</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AppVersion0">
+    <value>應用程式版本：{0}</value>
+  </data>
+  <data xml:space="preserve" name="Setup.AvailableNow">
+    <value>目前可用</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CancellingAndCleaningUpThisConnection">
+    <value>正在取消並清理這次連接…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotFinishConnectionUnexpectedFailure">
+    <value>無法完成連接（UnexpectedFailure）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotPrepareConnectionDataPrivateStorageRejected">
+    <value>無法準備連接資料（PrivateStorageRejected）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotSaveConnectionApprovalRejected">
+    <value>無法儲存連接（ApprovalRejected）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotUseCurrentAntigravitySettings">
+    <value>無法使用目前的 Antigravity 設定</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotVerifyAntigravityStatus">
+    <value>無法確認 Antigravity 狀態</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotVerifyAntigravityUsage">
+    <value>無法確認 Antigravity 用量</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CannotVerifyUsageUsageRejected">
+    <value>無法確認用量（UsageRejected）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckAntigravityUsageAgain">
+    <value>重新檢查 Antigravity 用量</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckThatAntigravityIsSignedInAndCan">
+    <value>請確認 Antigravity 已登入且能顯示用量；若仍失敗，請更新 AI Usage 或 Antigravity，並提供技術資訊給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckThatAntigravityIsSignedInAndWorking">
+    <value>請確認 Antigravity 已登入且可正常使用；若仍失敗，請更新 AI Usage 或 Antigravity，並提供技術資訊給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckThatTheFollowingIsTheCurrentAntigravity">
+    <value>請確認以下是這台電腦目前的 Antigravity 登入。這張卡會跟隨本機登入，AI Usage 無法確認或固定企業專案範圍。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckingAntigravityReadinessCalibratingPrompt">
+    <value>確認 Antigravity 可用（CalibratingPrompt）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckingAntigravityUsageAgain">
+    <value>正在重新檢查 Antigravity 用量…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckingSupportedAntigravityVersions">
+    <value>正在檢查支援的 Antigravity 版本…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CheckingThatAntigravityIsReady">
+    <value>正在確認 Antigravity 可以正常使用…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CloseOtherAntigravityWindowsFirst">
+    <value>請先關閉其他 Antigravity 視窗</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CloseOtherAntigravityWindowsThenTryAgain">
+    <value>請關閉其他 Antigravity 視窗後再試。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConfirmThatOneReadOnlyUsageCheckCan">
+    <value>請確認目前可以執行一次唯讀 /usage，再按「重新檢查 Antigravity 用量」；不需要重新登入。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConfirmationRequiredBeforeCheckingAntigravityUsageAgain">
+    <value>需要確認後再檢查 Antigravity 用量</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConfirmationRequiredBeforeCheckingUsageAgainSafetyRevalidationRequired">
+    <value>需要確認後再檢查用量（SafetyRevalidationRequired）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectAntigravityAccount">
+    <value>連接 Antigravity 帳號</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectingAntigravity">
+    <value>正在連接 Antigravity</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectingAntigravity233">
+    <value>正在連接 Antigravity…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectionComplete">
+    <value>連接完成</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectionSettingsSavedCompletionNotConfirmed">
+    <value>連接設定已儲存，但完成狀態待確認</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ConnectionSettingsWereSavedButCleanupEncounteredA">
+    <value>連接設定已儲存，但收尾時發生問題，因此無法確認是否完成。請再試一次；若仍失敗，請提供技術資訊給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CopiesOnlyTheVersionFailureTypeLastStage">
+    <value>複製的內容只有版本、失敗類型、最後階段與建議處理方式，不含帳號或私人路徑。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CopyTechnicalInformation">
+    <value>複製技術資訊</value>
+  </data>
+  <data xml:space="preserve" name="Setup.CurrentAntigravitySignInEmailUnavailable">
+    <value>目前登入的 Antigravity 帳號（未取得電子郵件）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.EachWindowsUserUsuallyNeedsToSetThis">
+    <value>在同一台電腦上，每個 Windows 使用者通常只要設定一次。只有連接 Antigravity 時需要這項設定。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FailureType0">
+    <value>失敗類型：{0}</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FindingAntigravityCLIDiscoveringExecutable">
+    <value>尋找 Antigravity CLI（DiscoveringExecutable）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FinishConnecting">
+    <value>完成連接</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FinishingAntigravityConnection">
+    <value>正在完成 Antigravity 連接…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FinishingTheConnectionTheWindowWillCloseWhen">
+    <value>正在完成連接，完成後會關閉視窗…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.FollowTheInstructionsBelowThenTryAgain">
+    <value>請依照下方說明處理後再試一次。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.HideTechnicalInformation">
+    <value>隱藏技術資訊</value>
+  </data>
+  <data xml:space="preserve" name="Setup.In0DaysAnd1Hours">
+    <value>{0} 天 {1} 小時後</value>
+  </data>
+  <data xml:space="preserve" name="Setup.In0HoursAnd1Minutes">
+    <value>{0} 小時 {1} 分後</value>
+  </data>
+  <data xml:space="preserve" name="Setup.In0Minutes">
+    <value>{0} 分後</value>
+  </data>
+  <data xml:space="preserve" name="Setup.KeepOnlyTheAntigravityCLIYouWantTo">
+    <value>請只保留要使用的一個 Antigravity CLI，移除其他安裝或 PATH 路徑後再試。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.LastStage0">
+    <value>最後階段：{0}</value>
+  </data>
+  <data xml:space="preserve" name="Setup.LoadingCompatibilityDataLoadingReviewedContract">
+    <value>載入支援資料（LoadingReviewedContract）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.LookingForAntigravityOnThisComputer">
+    <value>正在尋找這台電腦上的 Antigravity…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.MultipleAntigravityCLIsFoundAmbiguousExecutable">
+    <value>找到多個 Antigravity CLI（AmbiguousExecutable）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.MultipleAntigravityCLIsWereFoundOnThisComputer">
+    <value>這台電腦上找到多個 Antigravity CLI。請只保留要使用的一個，移除其他安裝或 PATH 路徑後再試。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.MultipleAntigravityInstallationsFound">
+    <value>找到多個 Antigravity 安裝</value>
+  </data>
+  <data xml:space="preserve" name="Setup.NoneNone">
+    <value>無（None）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.NotStarted">
+    <value>尚未開始</value>
+  </data>
+  <data xml:space="preserve" name="Setup.OpenAIUsage">
+    <value>開啟 AI Usage</value>
+  </data>
+  <data xml:space="preserve" name="Setup.OpenAntigravityCheckThatItIsSignedIn">
+    <value>請開啟 Antigravity，確認已登入且可正常使用後再試。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.OtherAntigravityWindowsAreRunningExistingProcessDetected">
+    <value>其他 Antigravity 視窗仍在執行（ExistingProcessDetected）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PrepareToConnect">
+    <value>準備連接</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingAccountReview">
+    <value>正在準備帳號確認畫面…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingAccountReviewReadyForApproval">
+    <value>準備帳號確認（ReadyForApproval）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingConnectionDataPreparingPrivateStorage">
+    <value>準備連接資料（PreparingPrivateStorage）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingLocalConnectionSettings">
+    <value>正在準備本機連接設定…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingLocalConnectionSettingsMaterializingProfile">
+    <value>準備本機連接設定（MaterializingProfile）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.PreparingThisComputer">
+    <value>正在準備這台電腦…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ReadingAntigravitySFourUsageValues">
+    <value>正在讀取 Antigravity 的四項用量…</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ReadingAntigravityUsageValidatingUsage">
+    <value>讀取 Antigravity 用量（ValidatingUsage）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ResetTimeNotProvided">
+    <value>未提供重置時間</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Resets0">
+    <value>{0}重置</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ReturnToAIUsageChooseToConnectAgain">
+    <value>請回到 AI Usage，重新選擇連接並確認讀取說明。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ReviewAccountAndUsage">
+    <value>確認帳號與用量</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ReviewTheAccount">
+    <value>請確認帳號</value>
+  </data>
+  <data xml:space="preserve" name="Setup.RunAgyVersionIfItFailsOrReports">
+    <value>請執行 agy --version。若無法執行或顯示的版本不受支援，請更新或重新安裝官方 Antigravity CLI；若更新後仍無法連接，請提供版本與技術資訊給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.SavingAntigravityConnectionApproving">
+    <value>儲存 Antigravity 連接（Approving）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ShowOrHideTechnicalInformationForMaintainersIt">
+    <value>顯示或隱藏可供維護者判斷問題的技術資訊，不含帳號或私人路徑。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ShowTechnicalInformation">
+    <value>顯示技術資訊</value>
+  </data>
+  <data xml:space="preserve" name="Setup.SignInToAntigravityFirstAIUsageAccepts">
+    <value>請先登入 Antigravity。AI Usage 只接受支援官方唯讀 /usage 的版本，會確認這台電腦上的官方 Antigravity CLI，再讀取目前帳號的四項用量供你確認。這張卡會跟隨這台電腦目前的 Antigravity 登入；AI Usage 無法確認或固定企業專案範圍。這項操作不會讀取登入憑證。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Soon">
+    <value>即將</value>
+  </data>
+  <data xml:space="preserve" name="Setup.SuggestedNextSteps0">
+    <value>建議處理方式：{0}</value>
+  </data>
+  <data xml:space="preserve" name="Setup.SupportedAntigravityCLINotFound">
+    <value>找不到支援的 Antigravity CLI</value>
+  </data>
+  <data xml:space="preserve" name="Setup.SupportedAntigravityCLINotFoundUnsupportedBuild">
+    <value>找不到支援的 Antigravity CLI（UnsupportedBuild）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TechnicalInformationCopied">
+    <value>技術資訊已複製</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TheAntigravitySetupAttemptIDCannotBeEmpty">
+    <value>Antigravity setup attempt ID 不可為空。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TheClipboardIsUnavailableTryAgainLater">
+    <value>目前無法存取剪貼簿，請稍後再試。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TheCurrentAntigravitySettingsCannotBeUsedCheck">
+    <value>無法使用目前的 Antigravity 設定。請確認 Antigravity 已登入且可正常使用；若仍失敗，請更新 AI Usage 或 Antigravity。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TheFollowingContainsOnlyTheVersionFailureType">
+    <value>以下只有版本、失敗類型、最後階段與建議處理方式。需要協助時，可提供給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.ThisAntigravityVersionRequiresOtherAntigravityWindowsTo">
+    <value>目前使用的 Antigravity 版本需要暫時關閉其他 Antigravity 視窗。請關閉後再試。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TryAgain">
+    <value>再試一次</value>
+  </data>
+  <data xml:space="preserve" name="Setup.TryAgainIfItStillFailsShareThe">
+    <value>請再試一次；若仍失敗，請提供完整技術資訊給維護者。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Unknown">
+    <value>未知</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Unknown0">
+    <value>無法判斷（{0}）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.UsageDisclosureConfirmationRequiredConsentRequired">
+    <value>需要確認讀取說明（ConsentRequired）</value>
+  </data>
+  <data xml:space="preserve" name="Setup.WaitForTheCurrentAntigravityUsageCheckTo">
+    <value>請稍候目前的 Antigravity 用量檢查完成後再試，不需要重新安裝 Antigravity 或重新登入。</value>
+  </data>
+  <data xml:space="preserve" name="Setup.WeeklyUsageClaudeGPT">
+    <value>週用量 · Claude + GPT</value>
+  </data>
+  <data xml:space="preserve" name="Setup.WeeklyUsageGemini">
+    <value>週用量 · Gemini</value>
+  </data>
+  <data xml:space="preserve" name="Setup.Working">
+    <value>處理中</value>
+  </data>
+  <data xml:space="preserve" name="Setup.YourConfirmationIsRequiredBeforeCheckingAntigravityUsage">
+    <value>目前需要你確認後才能再次讀取 Antigravity 用量。AI Usage 不會自動再試，以免重複執行。請確認目前可以執行一次唯讀 /usage，再按「重新檢查 Antigravity 用量」；這不會重新登入 Antigravity。</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.1ServiceOrder">
+    <value>1  服務順序</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.2CardsFromTheSameService">
+    <value>2  同一服務的卡片</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.3OtherCases">
+    <value>3  其他情況</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.AutomaticSortRules">
+    <value>自動排序規則</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.AutomaticSortingChangesOnlyTheOrderOfCards">
+    <value>自動排序只調整畫面上的卡片順序。</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.CloseAutomaticSortRules">
+    <value>關閉自動排序規則</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.GotIt">
+    <value>知道了</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.HowAreCardsSorted">
+    <value>卡片怎麼排？</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.MissingOrPastResetTimesComeLastFor">
+    <value>未提供或已過的重置時間排在同項最後；沒有用量項目的卡片排在同服務最後。條件相同時沿用手動順序。</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.ResetTimesAreComparedInOrder5Hour">
+    <value>依序比較 5 小時、週用量、其他用量的重置時間；前一項相同，才看下一項。未來重置時間較近者排前。</value>
+  </data>
+  <data xml:space="preserve" name="SortRules.UsagePercentagesDoNotAffectSortingSwitchingBack">
+    <value>排序不看用量百分比。切回手動後，會恢復原本的自訂順序。</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AboutAIUsage">
+    <value>關於 AI Usage</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AccountActions">
+    <value>帳號操作</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AccountSettings">
+    <value>帳號設定</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AccountUsage">
+    <value>帳號用量顯示</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AddAccount">
+    <value>新增帳號</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AdjustWindowHeightToFitCards">
+    <value>視窗高度隨卡片數量調整</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AutomaticSortRules">
+    <value>自動排序規則</value>
+  </data>
+  <data xml:space="preserve" name="Widget.AutomaticallyShortenTheWindowToFitCardsAnd">
+    <value>依目前卡片與提示內容自動縮短視窗；卡片過多時仍可捲動。</value>
+  </data>
+  <data xml:space="preserve" name="Widget.BottomLeft">
+    <value>左下角</value>
+  </data>
+  <data xml:space="preserve" name="Widget.BottomRight">
+    <value>右下角</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CheckAgainWhenDone">
+    <value>完成後再檢查</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CheckForUpdates">
+    <value>檢查更新</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CheckTheLatestUsageForEachService">
+    <value>檢查各服務的最新用量</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CheckUsageForAllAccounts">
+    <value>檢查全部帳號用量</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CheckUsageForThisAccount">
+    <value>檢查此帳號用量</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ClassicBlue">
+    <value>經典藍</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ClassicBlueTheme">
+    <value>經典藍主題</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ClickToExpandAIUsageDragToChoose">
+    <value>按一下展開 AI Usage；拖曳可變更停靠角落。</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CollapseAIUsageToTheBottomRight">
+    <value>收合 AI Usage 到右下角</value>
+  </data>
+  <data xml:space="preserve" name="Widget.CopyRecoverySteps">
+    <value>複製處理步驟</value>
+  </data>
+  <data xml:space="preserve" name="Widget.DockPosition">
+    <value>停靠位置</value>
+  </data>
+  <data xml:space="preserve" name="Widget.DragThisAreaToMoveTheWidgetOr">
+    <value>拖曳此區域可移動浮窗；也可從更多操作選擇停靠角落。</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ExpandAIUsage">
+    <value>展開 AI Usage</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ExpandAIUsageWidget">
+    <value>展開 AI Usage 浮窗</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ExportSettings">
+    <value>匯出設定…</value>
+  </data>
+  <data xml:space="preserve" name="Widget.FitHeightToCards">
+    <value>高度隨卡片數量調整</value>
+  </data>
+  <data xml:space="preserve" name="Widget.HideWidget">
+    <value>隱藏浮窗</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ImportOrExportSettings">
+    <value>匯入或匯出設定</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ImportSettings">
+    <value>匯入設定…</value>
+  </data>
+  <data xml:space="preserve" name="Widget.KeepWindowOnTop">
+    <value>視窗置頂</value>
+  </data>
+  <data xml:space="preserve" name="Widget.Light">
+    <value>柔霧灰</value>
+  </data>
+  <data xml:space="preserve" name="Widget.LightTheme">
+    <value>柔霧灰主題</value>
+  </data>
+  <data xml:space="preserve" name="Widget.Midnight">
+    <value>曜石黑</value>
+  </data>
+  <data xml:space="preserve" name="Widget.MidnightTheme">
+    <value>曜石黑主題</value>
+  </data>
+  <data xml:space="preserve" name="Widget.MoreActions">
+    <value>更多操作</value>
+  </data>
+  <data xml:space="preserve" name="Widget.MoveDown">
+    <value>向下移動</value>
+  </data>
+  <data xml:space="preserve" name="Widget.MoveUp">
+    <value>向上移動</value>
+  </data>
+  <data xml:space="preserve" name="Widget.OnTop">
+    <value>置頂</value>
+  </data>
+  <data xml:space="preserve" name="Widget.OpenMoreActions">
+    <value>開啟更多操作</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ReleaseNotes">
+    <value>版本紀錄</value>
+  </data>
+  <data xml:space="preserve" name="Widget.RemindMeLater">
+    <value>稍後提醒</value>
+  </data>
+  <data xml:space="preserve" name="Widget.RemoveAccountFromAIUsage">
+    <value>從 AI Usage 移除帳號</value>
+  </data>
+  <data xml:space="preserve" name="Widget.RestoreSettingsFromBeforeImport">
+    <value>還原匯入前設定</value>
+  </data>
+  <data xml:space="preserve" name="Widget.RestoreTheAccountsOrderAndSettingsReplacedBy">
+    <value>只還原這次匯入取代的帳號、順序與設定。關閉程式後便無法還原。</value>
+  </data>
+  <data xml:space="preserve" name="Widget.Sakura">
+    <value>櫻花粉</value>
+  </data>
+  <data xml:space="preserve" name="Widget.SakuraTheme">
+    <value>櫻花粉主題</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ScrollWithTheMouseWheelScrollbarOrBy">
+    <value>可用滾輪、捲軸，或按住帳號卡片上下拖曳來捲動畫面。</value>
+  </data>
+  <data xml:space="preserve" name="Widget.StartUsageChecks">
+    <value>開始檢查用量</value>
+  </data>
+  <data xml:space="preserve" name="Widget.StopUsageChecks">
+    <value>停止檢查用量</value>
+  </data>
+  <data xml:space="preserve" name="Widget.Theme">
+    <value>主題配色</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ToggleAlwaysOnTop">
+    <value>切換永遠置頂</value>
+  </data>
+  <data xml:space="preserve" name="Widget.TopLeft">
+    <value>左上角</value>
+  </data>
+  <data xml:space="preserve" name="Widget.TopRight">
+    <value>右上角</value>
+  </data>
+  <data xml:space="preserve" name="Widget.TurnOffAutomaticChecks">
+    <value>關閉自動檢查</value>
+  </data>
+  <data xml:space="preserve" name="Widget.UserGuide">
+    <value>使用說明</value>
+  </data>
+  <data xml:space="preserve" name="Widget.ViewResetCredits">
+    <value>查看重置券</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.AWorkspaceIDIsNeededOnlyWhenDisplaying">
+    <value>同一個 ChatGPT 帳號若要用多張卡片顯示不同 workspace，才需要 workspace ID。</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.AWorkspaceIsASpaceWithinChatGPTRather">
+    <value>workspace 是 ChatGPT 裡的工作空間，不是電腦資料夾，也不是訂閱方案。</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.AskYourChatGPTWorkspaceAdministratorForTheID">
+    <value>請向 ChatGPT workspace 管理者索取 ID。AI Usage 無法從電子郵件、ChatGPT 帳號或方案查出。</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.ChooseAConnectionMethod">
+    <value>選擇連接方式</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.ChooseStandardAccountConnectionIfYouOnlyNeed">
+    <value>只需要一張 Codex 卡片時，選「一般帳號連接」。</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.ConnectCodex">
+    <value>連接 Codex</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.ConnectWithWorkspaceID">
+    <value>用 workspace ID 連接</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.EnterAValidChatGPTWorkspaceIDUUIDFormat">
+    <value>請輸入有效的 ChatGPT workspace ID（UUID 格式）。</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.EnterTheIDProvidedByYourChatGPTWorkspace">
+    <value>輸入 ChatGPT workspace 管理者提供的 ID（UUID 格式）</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.EnterTheMatchingWorkspaceIDForEveryCard">
+    <value>每張卡片都要填入對應的 workspace ID，原本的第一張也一樣。</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.OneCardPerWorkspace">
+    <value>每個 workspace 各一張卡片</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.StandardAccountConnection">
+    <value>一般帳號連接</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.SwitchToStandardAccountConnection">
+    <value>改為一般帳號連接</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.SwitchingToAStandardAccountConnectionRemovesThis">
+    <value>改為一般帳號連接會解除這張卡片原本的 workspace 限定；同帳號已有其他 workspace 卡片時，可能無法完成連接。</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.TheIDIsNotIncludedInExportedSettings">
+    <value>ID 不會放進匯出的設定檔。重新連接時要再輸入一次。</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.TheIDIsWrittenToThisCardS">
+    <value>ID 會寫入這張卡片的 Codex 設定。用 ChatGPT 登入 Codex 時，只能使用指定的 workspace。</value>
+  </data>
+  <data xml:space="preserve" name="Workspace.ThisCardUsedAWorkspaceIDEnterThe">
+    <value>這張卡片原本使用 workspace ID。重新連接時請輸入原本的 ID；要切換 workspace，請輸入新的 ID。</value>
+  </data>
+</root>

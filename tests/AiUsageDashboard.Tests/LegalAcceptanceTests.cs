@@ -1,5 +1,8 @@
+using System.Text;
 using System.Text.Json.Nodes;
 
+using AiUsageDashboard.Core.Localization;
+using AiUsageDashboard.LegalUi;
 using AiUsageDashboard.Licensing;
 
 namespace AiUsageDashboard.Tests;
@@ -13,6 +16,41 @@ public sealed class LegalAcceptanceTests : IDisposable
 
 	private readonly string _testDirectory = Path.Combine(Path.GetTempPath(),
 		"AiUsageDashboard.LegalTests." + Guid.NewGuid().ToString("N"));
+
+	[Fact]
+	public void LocalizedDisplayPreservesOriginalDocumentsNativeTextAndAcceptance()
+	{
+		LegalCatalog catalog = LegalCatalog.Load(LegalProfile.App);
+		LegalAcceptanceStore store = CreateStore("S-1-5-21-test-user-a");
+		byte[] nativeText = Encoding.UTF8.GetBytes(catalog.GetReadableText());
+		byte[] manifest = catalog.GetScopedManifestBytes();
+		string digest = catalog.Digest;
+		store.Accept(catalog, digest);
+		string english;
+		using (UiText.UseLanguage(AppLanguage.English))
+		{
+			english = LegalTermsDialog.GetDisplayText(catalog);
+			Assert.StartsWith("AI Usage Dashboard licenses and third-party terms", english);
+		}
+
+		string chinese;
+		using (UiText.UseLanguage(AppLanguage.TraditionalChinese))
+		{
+			chinese = LegalTermsDialog.GetDisplayText(catalog);
+			Assert.StartsWith("AI Usage Dashboard 授權與第三方條款", chinese);
+		}
+
+		Assert.NotEqual(english, chinese);
+		Assert.Equal(nativeText, Encoding.UTF8.GetBytes(catalog.GetReadableText()));
+		Assert.Equal(manifest, catalog.GetScopedManifestBytes());
+		Assert.Equal(digest, catalog.Digest);
+		Assert.True(store.IsAccepted(catalog));
+		foreach (LegalDocument document in catalog.Documents.Where(document => document.IsReadable))
+		{
+			Assert.Contains(document.GetText(), english, StringComparison.Ordinal);
+			Assert.Contains(document.GetText(), chinese, StringComparison.Ordinal);
+		}
+	}
 
 	[Fact]
 	public void AppAcceptanceCoversUpdaterInstallerAndClaudeCaptureForTheSameWindowsUser()

@@ -8,6 +8,7 @@ using AiUsageDashboard.Core.Refreshing;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class GrokStartupRecoveryTests
 {
 	private sealed class InMemoryAccountProfileStore : IAccountProfileStore

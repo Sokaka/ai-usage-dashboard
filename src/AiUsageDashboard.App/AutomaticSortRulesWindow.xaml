@@ -1,7 +1,7 @@
 <Window x:Class="AiUsageDashboard.App.AutomaticSortRulesWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="自動排序規則"
+        Title="{DynamicResource Windows.SortRules.AutomaticSortRules}"
         Icon="{DynamicResource ThemeWindowIcon}"
         Width="460"
         MinWidth="320"
@@ -22,16 +22,16 @@
                 <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
                            FontSize="21"
                            FontWeight="SemiBold"
-                           Text="卡片怎麼排？" />
+                           Text="{DynamicResource Windows.SortRules.HowAreCardsSorted}" />
                 <TextBlock Margin="0,8,0,0"
                            Foreground="{DynamicResource SecondaryTextBrush}"
-                           Text="自動排序只調整畫面上的卡片順序。"
+                           Text="{DynamicResource Windows.SortRules.AutomaticSortingChangesOnlyTheOrderOfCards}"
                            TextWrapping="Wrap" />
 
                 <TextBlock Margin="0,22,0,6"
                            Foreground="{DynamicResource PrimaryTextBrush}"
                            FontWeight="SemiBold"
-                           Text="1  服務順序" />
+                           Text="{DynamicResource Windows.SortRules.1ServiceOrder}" />
                 <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
                            Text="Claude → Codex → Antigravity → Grok → Copilot"
                            TextWrapping="Wrap" />
@@ -39,17 +39,17 @@
                 <TextBlock Margin="0,18,0,6"
                            Foreground="{DynamicResource PrimaryTextBrush}"
                            FontWeight="SemiBold"
-                           Text="2  同一服務的卡片" />
+                           Text="{DynamicResource Windows.SortRules.2CardsFromTheSameService}" />
                 <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
-                           Text="依序比較 5 小時、週用量、其他用量的重置時間；前一項相同，才看下一項。未來重置時間較近者排前。"
+                           Text="{DynamicResource Windows.SortRules.ResetTimesAreComparedInOrder5Hour}"
                            TextWrapping="Wrap" />
 
                 <TextBlock Margin="0,18,0,6"
                            Foreground="{DynamicResource PrimaryTextBrush}"
                            FontWeight="SemiBold"
-                           Text="3  其他情況" />
+                           Text="{DynamicResource Windows.SortRules.3OtherCases}" />
                 <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
-                           Text="未提供或已過的重置時間排在同項最後；沒有用量項目的卡片排在同服務最後。條件相同時沿用手動順序。"
+                           Text="{DynamicResource Windows.SortRules.MissingOrPastResetTimesComeLastFor}"
                            TextWrapping="Wrap" />
 
                 <Border Margin="0,22,0,0"
@@ -59,7 +59,7 @@
                         BorderThickness="1"
                         CornerRadius="6">
                     <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
-                               Text="排序不看用量百分比。切回手動後，會恢復原本的自訂順序。"
+                               Text="{DynamicResource Windows.SortRules.UsagePercentagesDoNotAffectSortingSwitchingBack}"
                                TextWrapping="Wrap" />
                 </Border>
             </StackPanel>
@@ -69,9 +69,9 @@
                 Grid.Row="1"
                 Margin="0,22,0,0"
                 HorizontalAlignment="Right"
-                AutomationProperties.Name="關閉自動排序規則"
+                AutomationProperties.Name="{DynamicResource Windows.SortRules.CloseAutomaticSortRules}"
                 Click="CloseButton_Click"
-                Content="知道了"
+                Content="{DynamicResource Windows.SortRules.GotIt}"
                 IsCancel="True"
                 Style="{StaticResource GhostButtonStyle}" />
     </Grid>

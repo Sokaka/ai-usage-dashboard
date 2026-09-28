@@ -1,0 +1,804 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>2.0</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+	</resheader>
+	<data name="App001" xml:space="preserve">
+		<value>The previous AI Usage process did not close in time. Please reopen AI Usage manually.</value>
+	</data>
+	<data name="App002" xml:space="preserve">
+		<value>Unable to restart</value>
+	</data>
+	<data name="App003" xml:space="preserve">
+		<value>Unable to show widget</value>
+	</data>
+	<data name="App004" xml:space="preserve">
+		<value>Display settings cannot be read right now, so settings cannot be imported.</value>
+	</data>
+	<data name="App005" xml:space="preserve">
+		<value>Startup failed</value>
+	</data>
+	<data name="App006" xml:space="preserve">
+		<value>Committed account settings could not be verified; retained Copilot private state will not be cleared.</value>
+	</data>
+	<data name="App007" xml:space="preserve">
+		<value>Antigravity account added</value>
+	</data>
+	<data name="App008" xml:space="preserve">
+		<value>Your Antigravity account was connected and added to AI Usage, but its settings backup could not be updated. You can continue using it. If startup fails later, contact support and provide the diagnostic log.
+
+</value>
+	</data>
+	<data name="App009" xml:space="preserve">
+		<value>Add your Antigravity account manually</value>
+	</data>
+	<data name="App010" xml:space="preserve">
+		<value>Your Antigravity account is connected, but AI Usage could not add it automatically. Add an Antigravity card in the widget; you do not need to sign in again.
+
+</value>
+	</data>
+	<data name="App011" xml:space="preserve">
+		<value>Unable to verify Antigravity account</value>
+	</data>
+	<data name="App012" xml:space="preserve">
+		<value>AI Usage could not verify whether your Antigravity account was added. Check the accounts in the widget before continuing; you do not need to sign in again.
+
+</value>
+	</data>
+	<data name="App013" xml:space="preserve">
+		<value>The running executable's ProductVersion could not be read.</value>
+	</data>
+	<data name="App014" xml:space="preserve">
+		<value>The update shutdown channel was disposed before startup completed.</value>
+	</data>
+	<data name="App015" xml:space="preserve">
+		<value>The update shutdown channel stopped unexpectedly.</value>
+	</data>
+	<data name="App016" xml:space="preserve">
+		<value>The display could not be updated after the update shutdown channel changed state.</value>
+	</data>
+	<data name="App017" xml:space="preserve">
+		<value>Checking for updates…</value>
+	</data>
+	<data name="App018" xml:space="preserve">
+		<value>Check for updates</value>
+	</data>
+	<data name="App019" xml:space="preserve">
+		<value>Open downloads</value>
+	</data>
+	<data name="App020" xml:space="preserve">
+		<value>Windows resume notifications could not be monitored; scheduled update checks will continue.</value>
+	</data>
+	<data name="App021" xml:space="preserve">
+		<value>The system clock moved backward; the 30-second wait before the first update check has restarted.</value>
+	</data>
+	<data name="App022" xml:space="preserve">
+		<value>Unknown initial update notice state.</value>
+	</data>
+	<data name="App023" xml:space="preserve">
+		<value>Unknown initial update notice presentation.</value>
+	</data>
+	<data name="App024" xml:space="preserve">
+		<value>Update checks enabled</value>
+	</data>
+	<data name="App025" xml:space="preserve">
+		<value>AI Usage periodically checks for signed stable releases. It does not download or install automatically. Successful checks are spaced at least 24 hours apart; failed checks retry after 15 minutes to 24 hours. You can disable checks from the tray menu.</value>
+	</data>
+	<data name="App026" xml:space="preserve">
+		<value>The automatic update notice could not be displayed; automatic connections will wait until it is shown.</value>
+	</data>
+	<data name="App027" xml:space="preserve">
+		<value>AI Usage update available</value>
+	</data>
+	<data name="App028" xml:space="preserve">
+		<value>Version {0} is available. Open AI Usage to see update options.</value>
+	</data>
+	<data name="App029" xml:space="preserve">
+		<value>Windows could not display the update notification; update status remains available in the widget and tray.</value>
+	</data>
+	<data name="App030" xml:space="preserve">
+		<value>The update action could not be completed.
+
+Reason: {0}</value>
+	</data>
+	<data name="App031" xml:space="preserve">
+		<value>Update action failed</value>
+	</data>
+	<data name="App032" xml:space="preserve">
+		<value>Automatic update settings could not be saved. Check that the AI Usage local data folder is writable, then try again.</value>
+	</data>
+	<data name="App033" xml:space="preserve">
+		<value>Unable to save update settings</value>
+	</data>
+	<data name="App034" xml:space="preserve">
+		<value>The reminder setting could not be saved. Check that the AI Usage local data folder is writable, then try again.</value>
+	</data>
+	<data name="App035" xml:space="preserve">
+		<value>Unknown update action.</value>
+	</data>
+	<data name="App036" xml:space="preserve">
+		<value>The maintenance Updater completed while the App was closing: </value>
+	</data>
+	<data name="App037" xml:space="preserve">
+		<value>The maintenance Updater required for this installation could not be started.</value>
+	</data>
+	<data name="App038" xml:space="preserve">
+		<value>Unable to start Updater</value>
+	</data>
+	<data name="App039" xml:space="preserve">
+		<value>Windows could not start the maintenance Updater.</value>
+	</data>
+	<data name="App040" xml:space="preserve">
+		<value>The maintenance Updater did not return a recognized result.</value>
+	</data>
+	<data name="App041" xml:space="preserve">
+		<value>The maintenance Updater did not complete the update (exit code {0}).</value>
+	</data>
+	<data name="App042" xml:space="preserve">
+		<value>Update incomplete</value>
+	</data>
+	<data name="App043" xml:space="preserve">
+		<value>{0}
+
+Open the downloads page to check the latest version?</value>
+	</data>
+	<data name="App044" xml:space="preserve">
+		<value>The AI Usage executable could not be found. Please reopen AI Usage manually.</value>
+	</data>
+	<data name="App045" xml:space="preserve">
+		<value>A restart process could not be created.</value>
+	</data>
+	<data name="App046" xml:space="preserve">
+		<value>AI Usage could not be restarted. Please open it manually.</value>
+	</data>
+	<data name="App047" xml:space="preserve">
+		<value>restart</value>
+	</data>
+	<data name="App048" xml:space="preserve">
+		<value>quit</value>
+	</data>
+	<data name="App049" xml:space="preserve">
+		<value>An Antigravity account connection is still in progress. To {0} AI Usage, the connection window will close and unfinished connections will be canceled. If connection data is already being saved, it will resume after restart.
+
+Interrupt this operation and {1}?</value>
+	</data>
+	<data name="App050" xml:space="preserve">
+		<value>Stop Antigravity connection?</value>
+	</data>
+	<data name="App051" xml:space="preserve">
+		<value>Some work could not be confirmed stopped. AI Usage will remain fail-closed, wait for it to finish, reopen the previous version, and cancel this update.</value>
+	</data>
+	<data name="App052" xml:space="preserve">
+		<value>The current AI Usage executable could not be found. The App will close safely but cannot reopen the previous version automatically.</value>
+	</data>
+	<data name="App053" xml:space="preserve">
+		<value>Timed out waiting for the previous connection operation to stop.</value>
+	</data>
+	<data name="App054" xml:space="preserve">
+		<value>Timed out waiting for usage checks to stop.</value>
+	</data>
+	<data name="App055" xml:space="preserve">
+		<value>Timed out waiting for account connections to stop.</value>
+	</data>
+	<data name="App056" xml:space="preserve">
+		<value>AI Usage is already running, but its widget could not be shown.
+
+</value>
+	</data>
+	<data name="App057" xml:space="preserve">
+		<value>Reason: {0}
+
+</value>
+	</data>
+	<data name="App058" xml:space="preserve">
+		<value>Choose “Show widget” from the tray menu. If there is no tray icon, end AI Usage in Task Manager and reopen it.
+
+</value>
+	</data>
+	<data name="App059" xml:space="preserve">
+		<value>AI Usage could not finish starting.
+
+</value>
+	</data>
+	<data name="App060" xml:space="preserve">
+		<value>Please reopen AI Usage. If the problem continues, provide the diagnostic log to help investigate.
+
+</value>
+	</data>
+	<data name="App061" xml:space="preserve">
+		<value>Windows denied access to AI Usage local data. Check that its local data folder is readable and writable.</value>
+	</data>
+	<data name="App062" xml:space="preserve">
+		<value>Display settings were created by a newer AI Usage version. This change was not saved to avoid overwriting them. Use the same or a newer version of AI Usage.</value>
+	</data>
+	<data name="App063" xml:space="preserve">
+		<value>The display settings file exceeds 64 KiB. This change was not saved to avoid overwriting it. Back up the file before inspecting or recreating it.</value>
+	</data>
+	<data name="App064" xml:space="preserve">
+		<value>Existing display settings cannot be read safely. This change was not saved to avoid overwriting them. Try again later.</value>
+	</data>
+	<data name="App065" xml:space="preserve">
+		<value>The display settings path contains a link, or its target is not a regular file. This change was not saved to protect local data. Restore the AI Usage local data folder to regular folders and files, then try again.</value>
+	</data>
+	<data name="App066" xml:space="preserve">
+		<value>An unexpected error occurred while saving widget settings.</value>
+	</data>
+	<data name="App067" xml:space="preserve">
+		<value>{0} You can continue using the App, but previous settings may return after restart.</value>
+	</data>
+	<data name="App068" xml:space="preserve">
+		<value>ThemeLogoStyle could not be found for updating window and tray icons.</value>
+	</data>
+	<data name="App069" xml:space="preserve">
+		<value>Window and tray icons could not be updated for the current theme.</value>
+	</data>
+	<data name="App070" xml:space="preserve">
+		<value>Window and tray icons could not be updated for the current theme.</value>
+	</data>
+	<data name="App071" xml:space="preserve">
+		<value>The original tray icon could not be restored.</value>
+	</data>
+	<data name="App072" xml:space="preserve">
+		<value>The original window icon could not be restored.</value>
+	</data>
+	<data name="App073" xml:space="preserve">
+		<value>Widget settings not saved</value>
+	</data>
+	<data name="App074" xml:space="preserve">
+		<value>Diagnostic log: {0}</value>
+	</data>
+	<data name="App075" xml:space="preserve">
+		<value>A diagnostic log could not be created either. Check that the Windows local application data folder is writable.</value>
+	</data>
+	<data name="App076" xml:space="preserve">
+		<value>The running AI Usage instance did not respond in time.</value>
+	</data>
+	<data name="App077" xml:space="preserve">
+		<value>Windows denied communication with the running AI Usage instance.</value>
+	</data>
+	<data name="App078" xml:space="preserve">
+		<value>The running AI Usage instance's activation channel is unavailable.</value>
+	</data>
+	<data name="App079" xml:space="preserve">
+		<value>The running AI Usage instance could not receive the request to show its widget.</value>
+	</data>
+	<data name="App080" xml:space="preserve">
+		<value>Hide widget</value>
+	</data>
+	<data name="App081" xml:space="preserve">
+		<value>Show widget</value>
+	</data>
+	<data name="App082" xml:space="preserve">
+		<value>Start at Windows sign-in: installed App only</value>
+	</data>
+	<data name="App083" xml:space="preserve">
+		<value>Start at Windows sign-in: unavailable (command too long)</value>
+	</data>
+	<data name="App084" xml:space="preserve">
+		<value>Start at Windows sign-in: not registered</value>
+	</data>
+	<data name="App085" xml:space="preserve">
+		<value>Start at Windows sign-in: registered</value>
+	</data>
+	<data name="App086" xml:space="preserve">
+		<value>Start at Windows sign-in: repair needed</value>
+	</data>
+	<data name="App087" xml:space="preserve">
+		<value>Start at Windows sign-in: unreadable</value>
+	</data>
+	<data name="App088" xml:space="preserve">
+		<value>The Windows sign-in startup registration state was not recognized.</value>
+	</data>
+	<data name="App089" xml:space="preserve">
+		<value>A Windows sign-in startup entry with the same name was found, but its command does not match this AI Usage installation. Replace it with the current installation?</value>
+	</data>
+	<data name="App090" xml:space="preserve">
+		<value>Repair startup entry?</value>
+	</data>
+	<data name="App091" xml:space="preserve">
+		<value>Another process changed the Windows sign-in startup entry during the update. Try again.</value>
+	</data>
+	<data name="App092" xml:space="preserve">
+		<value>AI Usage could not update its Windows sign-in startup entry.
+
+Reason: {0}
+
+</value>
+	</data>
+	<data name="App093" xml:space="preserve">
+		<value>Unable to update startup entry</value>
+	</data>
+	<data name="App094" xml:space="preserve">
+		<value>Windows Startup Apps settings could not be opened.
+
+Reason: {0}</value>
+	</data>
+	<data name="App095" xml:space="preserve">
+		<value>Unable to open Windows settings</value>
+	</data>
+	<data name="App096" xml:space="preserve">
+		<value>Always on top</value>
+	</data>
+	<data name="App097" xml:space="preserve">
+		<value>Check for updates automatically</value>
+	</data>
+	<data name="App098" xml:space="preserve">
+		<value>This shows registration status only. Windows settings or organization policies can still disable startup.</value>
+	</data>
+	<data name="App099" xml:space="preserve">
+		<value>Open Windows Startup Apps settings</value>
+	</data>
+	<data name="App100" xml:space="preserve">
+		<value>Export settings…</value>
+	</data>
+	<data name="App101" xml:space="preserve">
+		<value>Restore settings before import</value>
+	</data>
+	<data name="App102" xml:space="preserve">
+		<value>User guide</value>
+	</data>
+	<data name="App103" xml:space="preserve">
+		<value>About AI Usage</value>
+	</data>
+	<data name="App104" xml:space="preserve">
+		<value>Quit AI Usage</value>
+	</data>
+	<data name="App105" xml:space="preserve">
+		<value>Unable to open user guide</value>
+	</data>
+	<data name="Widget106" xml:space="preserve">
+		<value>Widget position and display settings could not be saved. </value>
+	</data>
+	<data name="Widget107" xml:space="preserve">
+		<value>Widget position and display settings can be saved again.</value>
+	</data>
+	<data name="Widget108" xml:space="preserve">
+		<value>A settings import, export, or restore operation is already in progress.</value>
+	</data>
+	<data name="Widget109" xml:space="preserve">
+		<value>The export is an unencrypted JSON file containing account nicknames, connected account details (such as email addresses), account order, usage display, widget settings, theme, and language.
+
+</value>
+	</data>
+	<data name="Widget110" xml:space="preserve">
+		<value>It contains no passwords or sign-in credentials. Store it only in a trusted location.
+
+Continue exporting?</value>
+	</data>
+	<data name="Widget111" xml:space="preserve">
+		<value>Export settings</value>
+	</data>
+	<data name="Widget112" xml:space="preserve">
+		<value>AI Usage settings (*.aiusage.json)|*.aiusage.json|JSON files (*.json)|*.json</value>
+	</data>
+	<data name="Widget113" xml:space="preserve">
+		<value>Export AI Usage settings</value>
+	</data>
+	<data name="Widget114" xml:space="preserve">
+		<value>Exported {0} accounts and settings. The file contains no sign-in credentials.</value>
+	</data>
+	<data name="Widget115" xml:space="preserve">
+		<value>export</value>
+	</data>
+	<data name="Widget116" xml:space="preserve">
+		<value>Import AI Usage settings</value>
+	</data>
+	<data name="Widget117" xml:space="preserve">
+		<value>import</value>
+	</data>
+	<data name="Widget123" xml:space="preserve">
+		<value>{0}Default sign-in data for Claude, Codex, Antigravity, and Grok Build CLI will be kept. Sign-in data saved separately by AI Usage for existing Grok accounts will be cleared, as will existing Copilot cards' credentials in Windows Credential Manager. After applying, you can choose “Restore settings before import” before closing the App. If you need a backup that survives a restart, cancel and export your current settings first.
+
+</value>
+	</data>
+	<data name="Widget124" xml:space="preserve">
+		<value>{0}
+
+Apply these settings?</value>
+	</data>
+	<data name="Widget125" xml:space="preserve">
+		<value>Replace current settings</value>
+	</data>
+	<data name="Widget126" xml:space="preserve">
+		<value>Importing settings; any usage check in progress will finish first…</value>
+	</data>
+	<data name="Widget127" xml:space="preserve">
+		<value>Settings imported, but backup could not be updated</value>
+	</data>
+	<data name="Widget128" xml:space="preserve">
+		<value>Restoring settings before import; any usage check in progress will finish first…</value>
+	</data>
+	<data name="Widget129" xml:space="preserve">
+		<value>Settings restored, but backup could not be updated</value>
+	</data>
+	<data name="Widget130" xml:space="preserve">
+		<value>restore</value>
+	</data>
+	<data name="Widget131" xml:space="preserve">
+		<value>No accounts</value>
+	</data>
+	<data name="Widget132" xml:space="preserve">
+		<value>Change preview:
+</value>
+	</data>
+	<data name="Widget133" xml:space="preserve">
+		<value>• Accounts: {0} → {1}</value>
+	</data>
+	<data name="Widget134" xml:space="preserve">
+		<value> (added {0}, removed {1}, updated {2})
+</value>
+	</data>
+	<data name="Widget135" xml:space="preserve">
+		<value>will change</value>
+	</data>
+	<data name="Widget136" xml:space="preserve">
+		<value>unchanged</value>
+	</data>
+	<data name="Widget137" xml:space="preserve">
+		<value>• Order: {0}
+</value>
+	</data>
+	<data name="Widget138" xml:space="preserve">
+		<value>• Sorting: {0} → </value>
+	</data>
+	<data name="Widget139" xml:space="preserve">
+		<value>• Usage display: {0} → </value>
+	</data>
+	<data name="Widget140" xml:space="preserve">
+		<value>• Widget settings: {0}
+</value>
+	</data>
+	<data name="Widget141" xml:space="preserve">
+		<value>• Theme: {0}
+</value>
+	</data>
+	<data name="Widget142" xml:space="preserve">
+		<value>• Claude usage access needs confirmation: {0} accounts
+</value>
+	</data>
+	<data name="Widget143" xml:space="preserve">
+		<value>• Account services: {0}</value>
+	</data>
+	<data name="Widget144" xml:space="preserve">
+		<value>After import, {0} Claude accounts need usage-access confirmation. Their usage will not be checked until you confirm.</value>
+	</data>
+	<data name="Widget145" xml:space="preserve">
+		<value>Manual</value>
+	</data>
+	<data name="Widget146" xml:space="preserve">
+		<value>Automatic</value>
+	</data>
+	<data name="Widget147" xml:space="preserve">
+		<value>Unknown</value>
+	</data>
+	<data name="Widget148" xml:space="preserve">
+		<value>Unknown service</value>
+	</data>
+	<data name="Widget149" xml:space="preserve">
+		<value>Used</value>
+	</data>
+	<data name="Widget150" xml:space="preserve">
+		<value>Remaining</value>
+	</data>
+	<data name="Widget151" xml:space="preserve">
+		<value>Keep current settings</value>
+	</data>
+	<data name="Widget152" xml:space="preserve">
+		<value>Visible</value>
+	</data>
+	<data name="Widget153" xml:space="preserve">
+		<value>Hidden</value>
+	</data>
+	<data name="Widget154" xml:space="preserve">
+		<value>Collapsed</value>
+	</data>
+	<data name="Widget155" xml:space="preserve">
+		<value>Expanded</value>
+	</data>
+	<data name="Widget156" xml:space="preserve">
+		<value>Not always on top</value>
+	</data>
+	<data name="Widget157" xml:space="preserve">
+		<value>Height follows card count</value>
+	</data>
+	<data name="Widget158" xml:space="preserve">
+		<value>Fixed available height</value>
+	</data>
+	<data name="Widget159" xml:space="preserve">
+		<value>Keep current height setting</value>
+	</data>
+	<data name="Widget160" xml:space="preserve">
+		<value>top left</value>
+	</data>
+	<data name="Widget161" xml:space="preserve">
+		<value>top right</value>
+	</data>
+	<data name="Widget162" xml:space="preserve">
+		<value>bottom left</value>
+	</data>
+	<data name="Widget163" xml:space="preserve">
+		<value>bottom right</value>
+	</data>
+	<data name="Widget164" xml:space="preserve">
+		<value>Unknown corner</value>
+	</data>
+	<data name="Widget165" xml:space="preserve">
+		<value>Keep current theme</value>
+	</data>
+	<data name="Widget166" xml:space="preserve">
+		<value>Classic Blue</value>
+	</data>
+	<data name="Widget167" xml:space="preserve">
+		<value>Midnight</value>
+	</data>
+	<data name="Widget168" xml:space="preserve">
+		<value>Light</value>
+	</data>
+	<data name="Widget169" xml:space="preserve">
+		<value>Sakura</value>
+	</data>
+	<data name="Widget170" xml:space="preserve">
+		<value>Settings imported</value>
+	</data>
+	<data name="Widget171" xml:space="preserve">
+		<value>Imported {0} accounts and applied sorting, usage display, widget settings, theme, and language where included.</value>
+	</data>
+	<data name="Widget172" xml:space="preserve">
+		<value>To restore, choose “Import or export settings” → “Restore settings before import” before closing the App. Some usage may need to be checked again after restoring.</value>
+	</data>
+	<data name="Widget173" xml:space="preserve">
+		<value>An error occurred while trying to {0} settings.</value>
+	</data>
+	<data name="Widget174" xml:space="preserve">
+		<value>
+
+Diagnostic log: {0}</value>
+	</data>
+	<data name="Widget175" xml:space="preserve">
+		<value>Unable to {0} settings: {1}</value>
+	</data>
+	<data name="Widget176" xml:space="preserve">
+		<value>Unable to {0} settings.
+
+{1}{2}</value>
+	</data>
+	<data name="Widget177" xml:space="preserve">
+		<value>Settings {0} failed</value>
+	</data>
+	<data name="Widget178" xml:space="preserve">
+		<value>An error occurred while updating account settings.</value>
+	</data>
+	<data name="Widget179" xml:space="preserve">
+		<value>Canceling the Claude connection for “{0}”…</value>
+	</data>
+	<data name="Widget180" xml:space="preserve">
+		<value>Canceling the Codex connection for “{0}”…</value>
+	</data>
+	<data name="Widget181" xml:space="preserve">
+		<value>Canceling the Copilot connection for “{0}”…</value>
+	</data>
+	<data name="Widget182" xml:space="preserve">
+		<value>Canceling the Grok connection for “{0}”…</value>
+	</data>
+	<data name="Widget183" xml:space="preserve">
+		<value>Remove account from AI Usage</value>
+	</data>
+	<data name="Widget184" xml:space="preserve">
+		<value>Account backup could not be updated</value>
+	</data>
+	<data name="Widget185" xml:space="preserve">
+		<value>Unable to update account settings: {0}</value>
+	</data>
+	<data name="Widget186" xml:space="preserve">
+		<value>Unable to update account settings. Previous settings are unchanged.
+
+{0}{1}</value>
+	</data>
+	<data name="Widget187" xml:space="preserve">
+		<value>Account settings error</value>
+	</data>
+	<data name="Widget188" xml:space="preserve">
+		<value>An error occurred while updating display settings.</value>
+	</data>
+	<data name="Widget189" xml:space="preserve">
+		<value>Unable to update display settings. Previous settings are unchanged.
+
+{0}{1}</value>
+	</data>
+	<data name="Widget190" xml:space="preserve">
+		<value>Display settings error</value>
+	</data>
+	<data name="Widget191" xml:space="preserve">
+		<value>Canceling the {1} connection for “{0}”…</value>
+	</data>
+	<data name="Widget192" xml:space="preserve">
+		<value>Recovery steps copied to clipboard.</value>
+	</data>
+	<data name="Widget193" xml:space="preserve">
+		<value>The clipboard is unavailable. Follow these recovery steps: {0}</value>
+	</data>
+	<data name="Widget194" xml:space="preserve">
+		<value>User guide opened.</value>
+	</data>
+	<data name="Widget195" xml:space="preserve">
+		<value>{0} Setup steps: {1}</value>
+	</data>
+	<data name="Widget196" xml:space="preserve">
+		<value>Checking…</value>
+	</data>
+	<data name="Widget197" xml:space="preserve">
+		<value>Antigravity: This AI Usage version does not support this usage format. Update AI Usage; it will check again automatically. Existing Antigravity connections can usually be kept. Confirm the connection again if the card asks.</value>
+	</data>
+	<data name="Widget198" xml:space="preserve">
+		<value>Antigravity: Check that Antigravity CLI is installed and starts correctly, then update Antigravity or AI Usage. Usage will be checked again automatically. Existing connections can usually be kept. Confirm the connection again if the card asks.</value>
+	</data>
+	<data name="Widget199" xml:space="preserve">
+		<value>Antigravity: Select “{0}” to confirm the account and usage. AI Usage will check again automatically afterward.</value>
+	</data>
+	<data name="Widget200" xml:space="preserve">
+		<value>Claude: Install or update Claude Code from its official source. Existing account settings and sign-in data will be kept. Then return to the widget and select “Check again when ready”.</value>
+	</data>
+	<data name="Widget201" xml:space="preserve">
+		<value>Codex: Install or update Codex CLI from its official source. Existing account settings and sign-in data will be kept. Then return to the widget and select “Check again when ready”.</value>
+	</data>
+	<data name="Widget202" xml:space="preserve">
+		<value>Copilot: Install or update the official local GitHub Copilot CLI (stable 1.0.79 or later, below 2.0.0). Instructions: https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli . Existing card credentials will be kept. Then return to the widget and select “Check again when ready”.</value>
+	</data>
+	<data name="Widget203" xml:space="preserve">
+		<value>Grok: Install or update Grok Build CLI from xAI's official source. AI Usage account settings will be kept. Then return to the widget and select “Check again when ready”.</value>
+	</data>
+	<data name="Widget204" xml:space="preserve">
+		<value>Antigravity: Follow the card's instructions. AI Usage will check again automatically afterward.</value>
+	</data>
+	<data name="Widget205" xml:space="preserve">
+		<value>Install or update the CLI from the service's official source. Then return to the widget and select “Check again when ready”.</value>
+	</data>
+	<data name="Widget206" xml:space="preserve">
+		<value>Reading the dragged widget bounds</value>
+	</data>
+	<data name="Widget207" xml:space="preserve">
+		<value>Moving the dragged widget</value>
+	</data>
+	<data name="Widget208" xml:space="preserve">
+		<value>Reading widget bounds to save its position</value>
+	</data>
+	<data name="Widget209" xml:space="preserve">
+		<value>Constraining widget position</value>
+	</data>
+	<data name="Widget210" xml:space="preserve">
+		<value>{0} failed; windowHandle={1}.</value>
+	</data>
+	<data name="Widget211" xml:space="preserve">
+		<value>Windows could not open downloads and release history: {0}</value>
+	</data>
+	<data name="Widget212" xml:space="preserve">
+		<value>The usage check for “{0}” is queued and will start after the current check finishes.</value>
+	</data>
+	<data name="Widget213" xml:space="preserve">
+		<value>Checking usage for “{0}”…</value>
+	</data>
+	<data name="Widget214" xml:space="preserve">
+		<value>Usage for “{0}” could not be checked. The last available data was kept; another check will run automatically later.</value>
+	</data>
+	<data name="Widget215" xml:space="preserve">
+		<value>Checking {1} usage again for “{0}”…</value>
+	</data>
+	<data name="Widget216" xml:space="preserve">
+		<value>The check for “{0}” is still incomplete. Automatic checks remain paused.</value>
+	</data>
+	<data name="Widget217" xml:space="preserve">
+		<value>The operation for “{0}” is still incomplete. It will retry automatically later.</value>
+	</data>
+	<data name="Widget218" xml:space="preserve">
+		<value>Usage for “{0}” could not be checked again. Other accounts are unaffected.</value>
+	</data>
+	<data name="Widget219" xml:space="preserve">
+		<value>Collapse AI Usage at custom position</value>
+	</data>
+	<data name="Widget220" xml:space="preserve">
+		<value>Collapse AI Usage to {0}</value>
+	</data>
+	<data name="Widget221" xml:space="preserve">
+		<value>; version {0} is available</value>
+	</data>
+	<data name="Widget222" xml:space="preserve">
+		<value>at a custom position</value>
+	</data>
+	<data name="Widget223" xml:space="preserve">
+		<value>currently docked at {0}</value>
+	</data>
+	<data name="Widget224" xml:space="preserve">
+		<value>Expand AI Usage widget, {0}{1}</value>
+	</data>
+	<data name="Widget225" xml:space="preserve">
+		<value>Click to expand AI Usage; drag to move it within the screen's work area. It is {0}{1}.</value>
+	</data>
+	<data name="Widget226" xml:space="preserve">
+		<value>The widget could not be hidden before changing layout; windowHandle={0}.</value>
+	</data>
+	<data name="Widget227" xml:space="preserve">
+		<value>The widget bounds could not be read after changing layout; windowHandle={0}.</value>
+	</data>
+	<data name="Widget228" xml:space="preserve">
+		<value>The widget could not be shown after changing layout; windowHandle={0}.</value>
+	</data>
+	<data name="Widget229" xml:space="preserve">
+		<value>The widget could not be positioned and shown after changing layout; windowHandle={0}.</value>
+	</data>
+	<data name="ReconnectNotice" xml:space="preserve">
+		<value>The import contains no sign-in credentials. Imported Claude, Codex, GitHub Copilot, Antigravity, and Grok cards must be reconnected. Codex workspace cards also need their workspace ID entered again.</value>
+	</data>
+	<data name="Language" xml:space="preserve">
+		<value>Language</value>
+	</data>
+	<data name="LanguageEnglish" xml:space="preserve">
+		<value>English</value>
+	</data>
+	<data name="LanguageTraditionalChinese" xml:space="preserve">
+		<value>繁體中文</value>
+	</data>
+	<data name="LanguagePreview" xml:space="preserve">
+		<value>• Language: {0}
+</value>
+	</data>
+	<data name="KeepCurrentLanguage" xml:space="preserve">
+		<value>Keep current language</value>
+	</data>
+	<data name="ImportReplaceDescription" xml:space="preserve">
+		<value>Continuing replaces your accounts, manual order, sorting, and usage display, plus any widget, theme, and language settings included in this file. Settings missing from older files keep their current values. </value>
+	</data>
+	<data name="DiagnosticStartupFailed" xml:space="preserve">
+		<value>An error occurred during startup.</value>
+	</data>
+	<data name="DiagnosticAccessDenied" xml:space="preserve">
+		<value>Windows denied access to AI Usage local data.</value>
+	</data>
+	<data name="DiagnosticDirectoryMissing" xml:space="preserve">
+		<value>The AI Usage local data folder does not exist or is unavailable.</value>
+	</data>
+	<data name="DiagnosticDriveUnavailable" xml:space="preserve">
+		<value>The drive used by AI Usage is unavailable.</value>
+	</data>
+	<data name="DiagnosticInvalidFormat" xml:space="preserve">
+		<value>The format of AI Usage local settings could not be read.</value>
+	</data>
+	<data name="DiagnosticIoFailure" xml:space="preserve">
+		<value>AI Usage could not read or write local data. The file may be in use, or the drive may be unavailable.</value>
+	</data>
+	<data name="DiagnosticUnsupportedPath" xml:space="preserve">
+		<value>AI Usage cannot use the current local settings or data path.</value>
+	</data>
+	<data name="UserGuideMissing" xml:space="preserve">
+		<value>The user guide could not be found. Extract the complete installation package again.</value>
+	</data>
+	<data name="UserGuideOpenFailed" xml:space="preserve">
+		<value>Windows could not open the user guide. Open README.md in the app folder manually.</value>
+	</data>
+	<data name="ListSeparator" xml:space="preserve">
+		<value>, </value>
+	</data>
+	<data name="AccountStatusAnnouncement" xml:space="preserve">
+		<value>Account “{0}”: {1}.</value>
+	</data>
+	<data name="AnnouncementSeparator" xml:space="preserve">
+		<value>; </value>
+	</data>
+	<data name="MoreAccountStatusUpdates" xml:space="preserve">
+		<value>; {0} more account statuses updated.</value>
+	</data>
+	<data name="VersionUnknown" xml:space="preserve">
+		<value>Unknown</value>
+	</data>
+	<data name="VersionIncomplete" xml:space="preserve">
+		<value>{0} (version information incomplete)</value>
+	</data>
+</root>

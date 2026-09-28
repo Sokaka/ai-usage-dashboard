@@ -1,0 +1,1784 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AntigravityAccountVerifiedAIUsageIsSavingThe" xml:space="preserve">
+    <value>Antigravity account verified. AI Usage is saving the connection; reconnecting is unnecessary.</value>
+  </data>
+  <data name="AIUsageIsCheckingWhetherThePreviousAntigravity" xml:space="preserve">
+    <value>AI Usage is checking whether the previous Antigravity connection completed. Reconnecting is unnecessary.</value>
+  </data>
+  <data name="AIUsageWillRetryAutomaticallyNoActionIs" xml:space="preserve">
+    <value>AI Usage will retry automatically. No action is needed.</value>
+  </data>
+  <data name="AIUsageWillRetryAutomaticallyAndKeepThe" xml:space="preserve">
+    <value>AI Usage will retry automatically and keep the last successfully read data.</value>
+  </data>
+  <data name="AIUsageWillRetryAutomaticallyAndKeepThe2" xml:space="preserve">
+    <value>AI Usage will retry automatically and keep the existing account and usage data.</value>
+  </data>
+  <data name="AIUsageWillRetryAutomatically" xml:space="preserve">
+    <value>AI Usage will retry automatically.</value>
+  </data>
+  <data name="WillRetryAutomatically" xml:space="preserve">
+    <value>Will retry automatically.</value>
+  </data>
+  <data name="WillRetryAutomatically2" xml:space="preserve">
+    <value>Will retry automatically.</value>
+  </data>
+  <data name="WillRetryAutomatically3" xml:space="preserve">
+    <value>Will retry automatically.</value>
+  </data>
+  <data name="WillCheckAgainAutomatically" xml:space="preserve">
+    <value>Will check again automatically; </value>
+  </data>
+  <data name="WaitingToCheckAgain" xml:space="preserve">
+    <value>Waiting to check again</value>
+  </data>
+  <data name="Nickname" xml:space="preserve">
+    <value>Nickname · {0}</value>
+  </data>
+  <data name="CompletingTheConnection" xml:space="preserve">
+    <value>Completing the {0} connection</value>
+  </data>
+  <data name="CancelConnection" xml:space="preserve">
+    <value>Cancel {0} connection</value>
+  </data>
+  <data name="ConfirmClaudeUsageAccess" xml:space="preserve">
+    <value>Confirm Claude usage access</value>
+  </data>
+  <data name="ConfirmClaudeSubscription" xml:space="preserve">
+    <value>Confirm Claude subscription</value>
+  </data>
+  <data name="SwitchAccount" xml:space="preserve">
+    <value>Switch {0} account</value>
+  </data>
+  <data name="ConnectAccount" xml:space="preserve">
+    <value>Connect {0} account</value>
+  </data>
+  <data name="ReconnectAntigravityAccount" xml:space="preserve">
+    <value>Reconnect Antigravity account</value>
+  </data>
+  <data name="ShowOrganization" xml:space="preserve">
+    <value>Show organization</value>
+  </data>
+  <data name="ShowWorkspace" xml:space="preserve">
+    <value>Show workspace</value>
+  </data>
+  <data name="ShowTheOrganizationNameOnThisCard" xml:space="preserve">
+    <value>Show the organization name on this card</value>
+  </data>
+  <data name="ShowWorkspaceConnectionDetailsOnThisCard" xml:space="preserve">
+    <value>Show workspace connection details on this card</value>
+  </data>
+  <data name="ConfirmUsageAccess" xml:space="preserve">
+    <value>Confirm usage access</value>
+  </data>
+  <data name="NotConnected" xml:space="preserve">
+    <value>Not connected</value>
+  </data>
+  <data name="SwitchAccountRequired" xml:space="preserve">
+    <value>Switch account required</value>
+  </data>
+  <data name="ConfirmClaudeSubscription2" xml:space="preserve">
+    <value>Confirm Claude subscription</value>
+  </data>
+  <data name="RestartRequired" xml:space="preserve">
+    <value>Restart required</value>
+  </data>
+  <data name="InstallOrUpdateRequired" xml:space="preserve">
+    <value>Install or update required</value>
+  </data>
+  <data name="CheckAgainRequired" xml:space="preserve">
+    <value>Check again required</value>
+  </data>
+  <data name="UpdateAIUsageRequired" xml:space="preserve">
+    <value>Update AI Usage required</value>
+  </data>
+  <data name="WillRetryAutomatically4" xml:space="preserve">
+    <value>Will retry automatically</value>
+  </data>
+  <data name="UsageStatus" xml:space="preserve">
+    <value>Usage status</value>
+  </data>
+  <data name="UsageNeedsConfirmation" xml:space="preserve">
+    <value>Usage needs confirmation</value>
+  </data>
+  <data name="OpenSetupInstructions" xml:space="preserve">
+    <value>Open setup instructions</value>
+  </data>
+  <data name="RestartAIUsage" xml:space="preserve">
+    <value>Restart AI Usage</value>
+  </data>
+  <data name="ViewAIUsageUpdateInstructions" xml:space="preserve">
+    <value>View AI Usage update instructions</value>
+  </data>
+  <data name="ViewInstructions" xml:space="preserve">
+    <value>View {0} instructions</value>
+  </data>
+  <data name="ViewCLIInstructions" xml:space="preserve">
+    <value>View {0} CLI instructions</value>
+  </data>
+  <data name="CheckUsageAgain" xml:space="preserve">
+    <value>Check {0} usage again</value>
+  </data>
+  <data name="ClaudeUsageMayCountASmallAmountOf" xml:space="preserve">
+    <value>Claude /usage may count a small amount of usage. After confirmation, usage updates automatically; the official Claude sign-in opens if needed.</value>
+  </data>
+  <data name="NoAccountIsConnectedConnectAnAccountTo" xml:space="preserve">
+    <value>No {0} account is connected. Connect an account to read usage.</value>
+  </data>
+  <data name="TheCurrentAccountOrSignInMethodCannot" xml:space="preserve">
+    <value>The current {0} account or sign-in method cannot read usage. Switch accounts.</value>
+  </data>
+  <data name="UseThisCardSOriginalClaudeAccountTo" xml:space="preserve">
+    <value>Use this card's original Claude account to confirm its organization and subscription plan, then check usage again.</value>
+  </data>
+  <data name="AIUsageWillVerifyTheCurrentAntigravityAccount" xml:space="preserve">
+    <value>AI Usage will verify the current Antigravity account and usage access again. Existing Antigravity sign-in is unaffected.</value>
+  </data>
+  <data name="AIUsageWillUpdateUsageAutomaticallyAfterThe" xml:space="preserve">
+    <value>AI Usage will update usage automatically after the Antigravity account connects.</value>
+  </data>
+  <data name="FollowTheCardSInstructionsToConfirmUsage" xml:space="preserve">
+    <value>Follow the card's instructions to confirm usage access, then check again. Signing in again is unnecessary.</value>
+  </data>
+  <data name="UsageChecksArePausedToPreventRepeatedChecks" xml:space="preserve">
+    <value>Usage checks are paused to prevent repeated checks. Restart AI Usage to try again.</value>
+  </data>
+  <data name="ThisAIUsageVersionDoesNotSupportThe" xml:space="preserve">
+    <value>This AI Usage version does not support the Antigravity usage format. Update AI Usage to check again automatically. Existing connections can usually be reused; confirm the connection again if the card requests it.</value>
+  </data>
+  <data name="ThisAIUsageVersionDoesNotSupportThe2" xml:space="preserve">
+    <value>This AI Usage version does not support the usage format. Update AI Usage to check again automatically; reconnecting is unnecessary.</value>
+  </data>
+  <data name="NoUsableAntigravityCLIWasFoundOrThis" xml:space="preserve">
+    <value>No usable Antigravity CLI was found, or this Antigravity or AI Usage version does not support usage checks. Verify the installation and update Antigravity or AI Usage. Existing connections can usually be reused; confirm the connection again if the card requests it.</value>
+  </data>
+  <data name="NoUsableGrokBuildCLIWasFoundOr" xml:space="preserve">
+    <value>No usable Grok Build CLI was found, or its version does not support usage checks. Install or update it from an official xAI source; reconnecting is unnecessary afterward.</value>
+  </data>
+  <data name="TheLocalGitHubCopilotCLIIsUnavailableInstall" xml:space="preserve">
+    <value>The local GitHub Copilot CLI is unavailable. Install or update the official CLI; reconnecting is unnecessary afterward.</value>
+  </data>
+  <data name="TheCurrentCLIIsUnavailableInstallUpdateOr" xml:space="preserve">
+    <value>The current {0} CLI is unavailable. Install, update, or repair it; reconnecting is unnecessary afterward.</value>
+  </data>
+  <data name="TheLastAntigravityUsageCheckDidNotFinish" xml:space="preserve">
+    <value>The last Antigravity usage check did not finish. Check again; this does not sign in to Antigravity again.</value>
+  </data>
+  <data name="TheLastClaudeUsageCheckDidNotFinish" xml:space="preserve">
+    <value>The last Claude usage check did not finish. This action checks this account once, without restarting AI Usage or signing in to Claude again.</value>
+  </data>
+  <data name="NotVerified" xml:space="preserve">
+    <value>Not verified</value>
+  </data>
+  <data name="ClaudeCodeStaysSignedInAndItsCredentials" xml:space="preserve">
+    <value>Claude Code stays signed in and its credentials are kept.</value>
+  </data>
+  <data name="CodexCLIStaysSignedInAndItsCredentials" xml:space="preserve">
+    <value>Codex CLI stays signed in and its credentials are kept.</value>
+  </data>
+  <data name="AIUsageDeletesThisCardSGitHubCredential" xml:space="preserve">
+    <value>AI Usage deletes this card's GitHub credential from Windows Credential Manager. Other Copilot cards are unaffected.</value>
+  </data>
+  <data name="AntigravityStaysSignedInAndItsSignIn" xml:space="preserve">
+    <value>Antigravity stays signed in and its sign-in data is kept. If no Antigravity account remains enabled for usage checks, AI Usage also removes the usage display settings it created. Other Antigravity settings are unaffected.</value>
+  </data>
+  <data name="AIUsageDeletesTheGrokBuildCLISign" xml:space="preserve">
+    <value>AI Usage deletes the Grok Build CLI sign-in data saved separately for this account. The default Grok Build CLI sign-in is unaffected.</value>
+  </data>
+  <data name="TheServiceStaysSignedInAndItsCredentials" xml:space="preserve">
+    <value>The service stays signed in and its credentials are kept.</value>
+  </data>
+  <data name="RemoveThisAccountFromAIUsage" xml:space="preserve">
+    <value>Remove this account from AI Usage?
+
+</value>
+  </data>
+  <data name="Nickname2" xml:space="preserve">
+    <value>Nickname: {0}
+</value>
+  </data>
+  <data name="Service" xml:space="preserve">
+    <value>Service: {0}
+</value>
+  </data>
+  <data name="Account" xml:space="preserve">
+    <value>Account: {0}
+
+</value>
+  </data>
+  <data name="TheAccountWillBeRemovedFromAIUsage" xml:space="preserve">
+    <value>The account will be removed from AI Usage, and its previous usage will be cleared if possible.
+</value>
+  </data>
+  <data name="Connecting" xml:space="preserve">
+    <value>Connecting</value>
+  </data>
+  <data name="AwaitingConfirmation" xml:space="preserve">
+    <value>Awaiting confirmation</value>
+  </data>
+  <data name="Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Checking" xml:space="preserve">
+    <value>Checking</value>
+  </data>
+  <data name="ShowingPreviousData" xml:space="preserve">
+    <value>Showing previous data</value>
+  </data>
+  <data name="ReadFailed" xml:space="preserve">
+    <value>Read failed</value>
+  </data>
+  <data name="NotConfigured" xml:space="preserve">
+    <value>Not configured</value>
+  </data>
+  <data name="ChecksDisabled" xml:space="preserve">
+    <value>Checks disabled</value>
+  </data>
+  <data name="NotSupported" xml:space="preserve">
+    <value>Not supported</value>
+  </data>
+  <data name="UnknownStatus" xml:space="preserve">
+    <value>Unknown status</value>
+  </data>
+  <data name="ReadingUsage" xml:space="preserve">
+    <value>Reading usage</value>
+  </data>
+  <data name="WaitingForUsageAccessConfirmation" xml:space="preserve">
+    <value>Waiting for usage access confirmation</value>
+  </data>
+  <data name="UsageDisplayIsNotSupportedForThisService" xml:space="preserve">
+    <value>Usage display is not supported for this service</value>
+  </data>
+  <data name="UsageIsTemporarilyUnavailableWillRetryAutomatically" xml:space="preserve">
+    <value>Usage is temporarily unavailable. Will retry automatically.</value>
+  </data>
+  <data name="WaitingForUsageData" xml:space="preserve">
+    <value>Waiting for usage data</value>
+  </data>
+  <data name="Connected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="Resets" xml:space="preserve">
+    <value>Resets {0}</value>
+  </data>
+  <data name="ShowingTheLastSuccessfullyReadDataTimeUnknown" xml:space="preserve">
+    <value>Showing the last successfully read data (time unknown).</value>
+  </data>
+  <data name="ShowingDataSuccessfullyReadAt" xml:space="preserve">
+    <value>Showing data successfully read at {0}.</value>
+  </data>
+  <data name="NoNewUsageWasObtainedWillRetryAutomatically" xml:space="preserve">
+    <value>No new usage was obtained. Will retry automatically; no action is needed.</value>
+  </data>
+  <data name="ShowingTheLastSuccessfullyReadData" xml:space="preserve">
+    <value>Showing the last successfully read data</value>
+  </data>
+  <data name="ShowingDataSuccessfullyReadAt2" xml:space="preserve">
+    <value>Showing data successfully read at {0}</value>
+  </data>
+  <data name="AIUsageWillRetryAutomaticallyNoActionIs2" xml:space="preserve">
+    <value>{0}. {1} AI Usage will retry automatically; no action is needed.</value>
+  </data>
+  <data name="WillRetryAutomaticallyNoActionIsNeeded" xml:space="preserve">
+    <value>{0}. Will retry automatically; no action is needed.</value>
+  </data>
+  <data name="AntigravityAccountConnectedReadingUsageAgainTemporaryFailures" xml:space="preserve">
+    <value>Antigravity account connected. Reading usage again; temporary failures will be retried automatically.</value>
+  </data>
+  <data name="AccountConnectedCheckingUsageAgainTemporaryFailuresWill" xml:space="preserve">
+    <value>{0} account connected. Checking usage again; temporary failures will be retried automatically.</value>
+  </data>
+  <data name="AccountConnectedButNoNewUsageWasObtained" xml:space="preserve">
+    <value>{0} account connected, but no new usage was obtained; </value>
+  </data>
+  <data name="LatestUsageIsTemporarilyUnavailableShowingThisAccount" xml:space="preserve">
+    <value>Latest usage is temporarily unavailable. Showing this account's last successfully read data.</value>
+  </data>
+  <data name="TheNewlySignedInAccountIsNotVerified" xml:space="preserve">
+    <value>The newly signed-in account is not verified. Showing usage for the last verified account, {0}.</value>
+  </data>
+  <data name="TheNewlySignedInAccountIsNotVerified2" xml:space="preserve">
+    <value>The newly signed-in account is not verified. Showing the last successfully read usage from before the switch.</value>
+  </data>
+  <data name="CLIInstallationOrUpdateRequired" xml:space="preserve">
+    <value>CLI installation or update required</value>
+  </data>
+  <data name="SwitchAccountRequired2" xml:space="preserve">
+    <value>Switch account required</value>
+  </data>
+  <data name="ConfirmSubscription" xml:space="preserve">
+    <value>Confirm subscription</value>
+  </data>
+  <data name="ThisCheckCouldNotVerifyTheSignedIn" xml:space="preserve">
+    <value>This check could not verify the signed-in account, so its result was ignored. Reconnect the account.</value>
+  </data>
+  <data name="ThisCheckReturnedADifferentSignedInAccount" xml:space="preserve">
+    <value>This check returned a different signed-in account, so its result was ignored. Reconnect the correct account.</value>
+  </data>
+  <data name="DataTime" xml:space="preserve">
+    <value>Data time {0}</value>
+  </data>
+  <data name="DataTimeUnknown" xml:space="preserve">
+    <value>Data time unknown</value>
+  </data>
+  <data name="DataTimeUnknownReadAt" xml:space="preserve">
+    <value>Data time unknown; read at {0}</value>
+  </data>
+  <data name="UsageChecksAreDisabledForThisAccount" xml:space="preserve">
+    <value>Usage checks are disabled for this account</value>
+  </data>
+  <data name="CheckingUsage" xml:space="preserve">
+    <value>Checking usage</value>
+  </data>
+  <data name="NoUsageObtainedYet" xml:space="preserve">
+    <value>No usage obtained yet</value>
+  </data>
+  <data name="WaitingForTheLocalAntigravityCLICheck" xml:space="preserve">
+    <value>Waiting for the local Antigravity CLI check</value>
+  </data>
+  <data name="AccountConnectionIncomplete" xml:space="preserve">
+    <value>Account connection incomplete</value>
+  </data>
+  <data name="NotCheckedChecksDisabled" xml:space="preserve">
+    <value>Not checked (checks disabled)</value>
+  </data>
+  <data name="LastVerified" xml:space="preserve">
+    <value>{0} (last verified)</value>
+  </data>
+  <data name="ConnectedGrokAccount" xml:space="preserve">
+    <value>Connected Grok account</value>
+  </data>
+  <data name="ConnectedGitHubAccount" xml:space="preserve">
+    <value>Connected GitHub account</value>
+  </data>
+  <data name="ConnectedClaudeSubscriptionScope" xml:space="preserve">
+    <value>Connected Claude subscription scope</value>
+  </data>
+  <data name="ConnectedCodexWorkspace" xml:space="preserve">
+    <value>Connected Codex workspace</value>
+  </data>
+  <data name="CurrentlySignedInAntigravityAccount" xml:space="preserve">
+    <value>Currently signed-in Antigravity account</value>
+  </data>
+  <data name="Scope" xml:space="preserve">
+    <value>Scope {0}</value>
+  </data>
+  <data name="Plan" xml:space="preserve">
+    <value>{0} · Plan {1}</value>
+  </data>
+  <data name="AdvancedWorkspaceLocalConnectionCode" xml:space="preserve">
+    <value>{0}{1}Advanced workspace · Local connection code {2}</value>
+  </data>
+  <data name="NoAccountsAvailableForUsageChecks" xml:space="preserve">
+    <value>No accounts available for usage checks</value>
+  </data>
+  <data name="LoadingAccountSettings" xml:space="preserve">
+    <value>Loading account settings…</value>
+  </data>
+  <data name="NotCheckedYet" xml:space="preserve">
+    <value>Not checked yet</value>
+  </data>
+  <data name="NoAccountsAdded" xml:space="preserve">
+    <value>No accounts added</value>
+  </data>
+  <data name="AccountSettingsCannotBeLoaded" xml:space="preserve">
+    <value>Account settings cannot be loaded</value>
+  </data>
+  <data name="ChooseAddAccountToGetStarted" xml:space="preserve">
+    <value>Choose Add account to get started.</value>
+  </data>
+  <data name="TheSettingsFileMayComeFromANewer" xml:space="preserve">
+    <value>The settings file may come from a newer version or be unreadable. The original file will not be overwritten.</value>
+  </data>
+  <data name="Checking2" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="CheckUsage" xml:space="preserve">
+    <value>Check usage</value>
+  </data>
+  <data name="SwitchToManualSorting" xml:space="preserve">
+    <value>Switch to manual sorting</value>
+  </data>
+  <data name="SwitchToAutomaticSorting" xml:space="preserve">
+    <value>Switch to automatic sorting</value>
+  </data>
+  <data name="SortAutomatic" xml:space="preserve">
+    <value>Sort: automatic</value>
+  </data>
+  <data name="SortManual" xml:space="preserve">
+    <value>Sort: manual</value>
+  </data>
+  <data name="SortByServiceThenByTheResetTime" xml:space="preserve">
+    <value>Sort by service, then by the reset time of 5-hour and weekly usage, regardless of usage percentage. Click to use manual sorting.</value>
+  </data>
+  <data name="KeepTheCustomAccountOrderClickToUse" xml:space="preserve">
+    <value>Keep the custom account order. Click to use automatic sorting.</value>
+  </data>
+  <data name="ShowUsedUsage" xml:space="preserve">
+    <value>Show used usage</value>
+  </data>
+  <data name="ShowRemainingUsage" xml:space="preserve">
+    <value>Show remaining usage</value>
+  </data>
+  <data name="DisplayRemaining" xml:space="preserve">
+    <value>Display: remaining</value>
+  </data>
+  <data name="DisplayUsed" xml:space="preserve">
+    <value>Display: used</value>
+  </data>
+  <data name="ShowingRemainingUsageClickToShowUsedUsage" xml:space="preserve">
+    <value>Showing remaining usage. Click to show used usage.</value>
+  </data>
+  <data name="ShowingUsedUsageClickToShowRemainingUsage" xml:space="preserve">
+    <value>Showing used usage. Click to show remaining usage.</value>
+  </data>
+  <data name="NoDisplaySettingsAreAvailableToRestore" xml:space="preserve">
+    <value>No display settings are available to restore.</value>
+  </data>
+  <data name="TheImportFileContainsAnUnknownUsageSort" xml:space="preserve">
+    <value>The import file contains an unknown usage sort mode.</value>
+  </data>
+  <data name="TheImportFileContainsAnUnknownUsageDisplay" xml:space="preserve">
+    <value>The import file contains an unknown usage display mode.</value>
+  </data>
+  <data name="WidgetSettingsCannotBeSavedSoSettingsWere" xml:space="preserve">
+    <value>Widget settings cannot be saved, so settings were not imported.</value>
+  </data>
+  <data name="AnAccountIsConnectingCompleteOrCancelThe" xml:space="preserve">
+    <value>An account is connecting. Complete or cancel the connection before importing settings.</value>
+  </data>
+  <data name="AnAccountIsConnectingCompleteOrCancelThe2" xml:space="preserve">
+    <value>An account is connecting. Complete or cancel the connection before restoring settings.</value>
+  </data>
+  <data name="SettingsHaveChangedSinceTheLastImportSo" xml:space="preserve">
+    <value>Settings have changed since the last import, so it cannot be undone. Use a previously exported settings file.</value>
+  </data>
+  <data name="AddedAccount" xml:space="preserve">
+    <value>Added account “{0}”.</value>
+  </data>
+  <data name="UpdatedAccount" xml:space="preserve">
+    <value>Updated account “{0}”.</value>
+  </data>
+  <data name="RemovedAccountFromAIUsageAndClearedIts" xml:space="preserve">
+    <value>Removed account “{0}” from AI Usage and cleared its previous usage.</value>
+  </data>
+  <data name="RemovedAccountFromAIUsageButItsPrevious" xml:space="preserve">
+    <value>Removed account “{0}” from AI Usage, but its previous usage could not be cleared. The data may remain on this computer.</value>
+  </data>
+  <data name="MovedAccount" xml:space="preserve">
+    <value>Moved account “{0}” {1}.</value>
+  </data>
+  <data name="Up" xml:space="preserve">
+    <value>up</value>
+  </data>
+  <data name="Down" xml:space="preserve">
+    <value>down</value>
+  </data>
+  <data name="SwitchedToAutomaticSortingTheManualAccountOrder" xml:space="preserve">
+    <value>Switched to automatic sorting. The manual account order is kept on this computer.</value>
+  </data>
+  <data name="SwitchedToManualSortingAndRestoredTheCustom" xml:space="preserve">
+    <value>Switched to manual sorting and restored the custom account order.</value>
+  </data>
+  <data name="NowShowingRemainingUsage" xml:space="preserve">
+    <value>Now showing remaining usage.</value>
+  </data>
+  <data name="NowShowingUsedUsage" xml:space="preserve">
+    <value>Now showing used usage.</value>
+  </data>
+  <data name="NewUsageChecksCannotBeScheduledRestartAI" xml:space="preserve">
+    <value>New usage checks cannot be scheduled. Restart AI Usage.</value>
+  </data>
+  <data name="CheckFailedWillRetryAutomatically" xml:space="preserve">
+    <value>Check failed; will retry automatically</value>
+  </data>
+  <data name="CheckFailedWillRetryAutomatically2" xml:space="preserve">
+    <value>Check failed; will retry automatically</value>
+  </data>
+  <data name="UsageCheckFailedWillRetryAutomatically" xml:space="preserve">
+    <value>Usage check failed. Will retry automatically.</value>
+  </data>
+  <data name="Min" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="Sec" xml:space="preserve">
+    <value>{0} sec</value>
+  </data>
+  <data name="PreviousDataIsStillDisplayed" xml:space="preserve">
+    <value>Previous data is still displayed.</value>
+  </data>
+  <data name="NoUsageDataIsAvailableToDisplayYet" xml:space="preserve">
+    <value>No usage data is available to display yet.</value>
+  </data>
+  <data name="AIUsageScheduledAnAutomaticRetryIn" xml:space="preserve">
+    <value>AI Usage scheduled an automatic retry in {0}. {1}</value>
+  </data>
+  <data name="WillRetryAutomatically5" xml:space="preserve">
+    <value>Will retry automatically</value>
+  </data>
+  <data name="UpdatesAreTooFrequentTryAgainIn" xml:space="preserve">
+    <value>Updates are too frequent. Try again in {0}. {1}</value>
+  </data>
+  <data name="UpdateAvailableLater" xml:space="preserve">
+    <value>Update available later</value>
+  </data>
+  <data name="PreviousData" xml:space="preserve">
+    <value>Previous data</value>
+  </data>
+  <data name="Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="SetupRequired" xml:space="preserve">
+    <value>Setup required</value>
+  </data>
+  <data name="Unsupported" xml:space="preserve">
+    <value>Unsupported</value>
+  </data>
+  <data name="Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="UpdateLater" xml:space="preserve">
+    <value>Update later: {0}</value>
+  </data>
+  <data name="OldestData" xml:space="preserve">
+    <value>; oldest data {0}</value>
+  </data>
+  <data name="CheckComplete" xml:space="preserve">
+    <value>Check complete: {0}{1}</value>
+  </data>
+  <data name="LimitNotProvidedByThisSource" xml:space="preserve">
+    <value>(limit not provided by this source)</value>
+  </data>
+  <data name="ThisSourceDoesNotIncludeBusinessEnterpriseOrganization" xml:space="preserve">
+    <value>This source does not include Business/Enterprise organization AI Credits or budgets. Refer to GitHub Copilot settings.</value>
+  </data>
+  <data name="ExtraUsageEnabled" xml:space="preserve">
+    <value>Extra usage enabled</value>
+  </data>
+  <data name="UsageAllowedAfterQuotaIsExhausted" xml:space="preserve">
+    <value>Usage allowed after quota is exhausted</value>
+  </data>
+  <data name="Remaining" xml:space="preserve">
+    <value>{0}, remaining</value>
+  </data>
+  <data name="Used" xml:space="preserve">
+    <value>{0}, used</value>
+  </data>
+  <data name="Expires" xml:space="preserve">
+    <value>Expires</value>
+  </data>
+  <data name="Resets2" xml:space="preserve">
+    <value>Resets</value>
+  </data>
+  <data name="ResetTimeUnavailable" xml:space="preserve">
+    <value>Reset time unavailable</value>
+  </data>
+  <data name="Remaining2" xml:space="preserve">
+    <value>Remaining</value>
+  </data>
+  <data name="Used2" xml:space="preserve">
+    <value>Used</value>
+  </data>
+  <data name="Used3" xml:space="preserve">
+    <value>Used {0}</value>
+  </data>
+  <data name="Remaining3" xml:space="preserve">
+    <value>Remaining {0}</value>
+  </data>
+  <data name="UsedUnlimited" xml:space="preserve">
+    <value>Used {0} (unlimited)</value>
+  </data>
+  <data name="UsedExtraUsageEnabled" xml:space="preserve">
+    <value>Used {0}, extra usage enabled</value>
+  </data>
+  <data name="UsedUsageAllowedAfterQuotaIsExhausted" xml:space="preserve">
+    <value>Used {0}, usage allowed after quota is exhausted</value>
+  </data>
+  <data name="UsedLimitNotProvidedByThisSource" xml:space="preserve">
+    <value>Used {0} (limit not provided by this source)</value>
+  </data>
+  <data name="UsedLimitNotProvidedByThisSourceExtra" xml:space="preserve">
+    <value>Used {0} (limit not provided by this source), extra usage enabled</value>
+  </data>
+  <data name="UsedLimitNotProvidedByThisSourceUsage" xml:space="preserve">
+    <value>Used {0} (limit not provided by this source), usage allowed after quota is exhausted</value>
+  </data>
+  <data name="Unlimited" xml:space="preserve">
+    <value>Unlimited</value>
+  </data>
+  <data name="NoQuotaProvidedByThisPlan" xml:space="preserve">
+    <value>No quota provided by this plan</value>
+  </data>
+  <data name="NoQuotaProvidedByThisPlanExtraUsage" xml:space="preserve">
+    <value>No quota provided by this plan, extra usage enabled</value>
+  </data>
+  <data name="NoQuotaProvidedByThisPlanUsageAllowed" xml:space="preserve">
+    <value>No quota provided by this plan, usage allowed after quota is exhausted</value>
+  </data>
+  <data name="UsageNotProvidedYet" xml:space="preserve">
+    <value>Usage not provided yet</value>
+  </data>
+  <data name="CurrentlyAvailable" xml:space="preserve">
+    <value>Currently available</value>
+  </data>
+  <data name="HourUsage" xml:space="preserve">
+    <value>5-hour usage</value>
+  </data>
+  <data name="WeeklyUsage" xml:space="preserve">
+    <value>Weekly usage</value>
+  </data>
+  <data name="PrimaryUsage" xml:space="preserve">
+    <value>Primary usage</value>
+  </data>
+  <data name="SecondaryUsage" xml:space="preserve">
+    <value>Secondary usage</value>
+  </data>
+  <data name="AvailableResets" xml:space="preserve">
+    <value>Available resets</value>
+  </data>
+  <data name="Resets3" xml:space="preserve">
+    <value>{0} resets</value>
+  </data>
+  <data name="HourUsage2" xml:space="preserve">
+    <value>{0}-hour usage</value>
+  </data>
+  <data name="MinuteUsage" xml:space="preserve">
+    <value>{0}-minute usage</value>
+  </data>
+  <data name="DayUsage" xml:space="preserve">
+    <value>{0}-day usage</value>
+  </data>
+  <data name="AccountsRequiringAction" xml:space="preserve">
+    <value>Accounts requiring action: {0}</value>
+  </data>
+  <data name="SomeAccountsWillRetryAutomatically" xml:space="preserve">
+    <value>Some accounts will retry automatically</value>
+  </data>
+  <data name="AccountsRetryingAutomatically" xml:space="preserve">
+    <value>Accounts retrying automatically: {0}</value>
+  </data>
+  <data name="AccountsUpdatingLater" xml:space="preserve">
+    <value>Accounts updating later: {0}</value>
+  </data>
+  <data name="AccountsNeedingAttention" xml:space="preserve">
+    <value>Accounts needing attention: {0}</value>
+  </data>
+  <data name="Updated" xml:space="preserve">
+    <value>Updated {0}</value>
+  </data>
+  <data name="AutomaticUpdateChecksAreDisabledYouCanStill" xml:space="preserve">
+    <value>Automatic update checks are disabled. You can still check manually.</value>
+  </data>
+  <data name="UpdatesHaveNotBeenCheckedYet" xml:space="preserve">
+    <value>Updates have not been checked yet.</value>
+  </data>
+  <data name="AIUsagePeriodicallyConnectsToCheckForSigned" xml:space="preserve">
+    <value>AI Usage periodically connects to check for signed stable releases. Successful checks pause automatic checks for 24 hours; failures retry at intervals from 15 minutes to 24 hours.</value>
+  </data>
+  <data name="AIUsagePeriodicallyConnectsToCheckForSigned2" xml:space="preserve">
+    <value>AI Usage periodically connects to check for signed stable releases without downloading or installing them automatically. Successful checks pause automatic checks for 24 hours; failures retry at intervals from 15 minutes to 24 hours. You can disable automatic checks here or in the tray menu.</value>
+  </data>
+  <data name="ThisDevelopmentBuildHasNoUpdateSourceUpdate" xml:space="preserve">
+    <value>This development build has no update source. Update checks are available in official releases.</value>
+  </data>
+  <data name="CheckingForUpdates" xml:space="preserve">
+    <value>Checking for updates… {0}</value>
+  </data>
+  <data name="CheckingForUpdates2" xml:space="preserve">
+    <value>Checking for updates…</value>
+  </data>
+  <data name="UpToDateAtTheLastCheck" xml:space="preserve">
+    <value>Up to date at the last check{0}.</value>
+  </data>
+  <data name="UpdateAndRestart" xml:space="preserve">
+    <value>Update and restart</value>
+  </data>
+  <data name="OpenDownloads" xml:space="preserve">
+    <value>Open downloads</value>
+  </data>
+  <data name="AIUsageIsAvailable" xml:space="preserve">
+    <value>AI Usage {0} is available. {1}</value>
+  </data>
+  <data name="ReminderPostponedUntil" xml:space="preserve">
+    <value>; reminder postponed until {0}</value>
+  </data>
+  <data name="VersionIsAvailable" xml:space="preserve">
+    <value>Version {0} is available{1}{2}. {3}</value>
+  </data>
+  <data name="UpdateAndRestart2" xml:space="preserve">
+    <value>Update and restart {0}</value>
+  </data>
+  <data name="VersionWasFoundButTheRunningVersionCannot" xml:space="preserve">
+    <value>Version {0} was found{1}, but the running version cannot be reliably determined. Check the downloads page.</value>
+  </data>
+  <data name="VersionWasFoundButTheCurrentVersionCannot" xml:space="preserve">
+    <value>Version {0} was found, but the current version cannot be reliably determined.</value>
+  </data>
+  <data name="TheLastVerifiedUpdateRemainsAvailableCheckAgain" xml:space="preserve">
+    <value>{0} The last verified update remains available. Check again from the tray or About AI Usage.</value>
+  </data>
+  <data name="CheckAgain" xml:space="preserve">
+    <value>Check again</value>
+  </data>
+  <data name="NoNewerVersionWasAvailableAtTheLast" xml:space="preserve">
+    <value>No newer version was available at the last successful check{0}.</value>
+  </data>
+  <data name="NoSuccessfulUpdateCheckYet" xml:space="preserve">
+    <value>No successful update check yet.</value>
+  </data>
+  <data name="WillRetryOnSchedule" xml:space="preserve">
+    <value>; will retry on schedule</value>
+  </data>
+  <data name="TheLatestAutomaticCheckFailed" xml:space="preserve">
+    <value>The latest automatic check failed{0}{1}; {2}</value>
+  </data>
+  <data name="TheUpdateCheckCouldNotCompleteTryAgain" xml:space="preserve">
+    <value>The update check could not complete. Try again later.</value>
+  </data>
+  <data name="UpdateServiceConnectionFailed" xml:space="preserve">
+    <value>Unable to connect to the update service. Try again later.</value>
+  </data>
+  <data name="UpdateInformationValidationFailed" xml:space="preserve">
+    <value>Update information failed validation. This check has been stopped.</value>
+  </data>
+  <data name="TheLastSuccessfulCheckFoundVersion" xml:space="preserve">
+    <value>; the last successful check found version {0}</value>
+  </data>
+  <data name="NoNewerVersionWasFoundAtTheLast" xml:space="preserve">
+    <value>; no newer version was found at the last successful check</value>
+  </data>
+  <data name="TheLastSuccessfulCheckFoundReleaseInformationBut" xml:space="preserve">
+    <value>; the last successful check found release information but could not determine the current version</value>
+  </data>
+  <data name="APreviousSuccessfulCheckResultIsAvailable" xml:space="preserve">
+    <value>; a previous successful check result is available</value>
+  </data>
+  <data name="UseTheInstalledMaintenanceUpdaterToInstallIt" xml:space="preserve">
+    <value>Use the installed maintenance Updater to install it.</value>
+  </data>
+  <data name="TheMaintenanceUpdaterCannotStartUseTheDownloads" xml:space="preserve">
+    <value>The maintenance Updater cannot start. Use the downloads page.</value>
+  </data>
+  <data name="CustomInstallationLocationsCannotBeUpdatedInPlace" xml:space="preserve">
+    <value>Custom installation locations cannot be updated in place. The Updater from the downloads page may create a standard installation.</value>
+  </data>
+  <data name="ForThePortableVersionDownloadTheFullZIP" xml:space="preserve">
+    <value>For the portable version, download the full ZIP and extract it to a new folder. Keep the current folder intact.</value>
+  </data>
+  <data name="LastChecked" xml:space="preserve">
+    <value> (last checked: {0})</value>
+  </data>
+  <data name="UpdateCheckComplete" xml:space="preserve">
+    <value>Update check complete</value>
+  </data>
+  <data name="YouAreUpToDate" xml:space="preserve">
+    <value>You are up to date.</value>
+  </data>
+  <data name="TheLastVerifiedUpdateActionIsStillAvailable" xml:space="preserve">
+    <value>
+
+The last verified update action is still available from the tray.</value>
+  </data>
+  <data name="UnableToCheckForUpdates" xml:space="preserve">
+    <value>Unable to check for updates</value>
+  </data>
+  <data name="SignInToAntigravityFirstAIUsageWill" xml:space="preserve">
+    <value>Sign in to Antigravity first. AI Usage will verify this computer's Antigravity CLI and existing connection, then read the current account's four usage metrics.</value>
+  </data>
+  <data name="AIUsageAcceptsVersionsFromUpToBut" xml:space="preserve">
+    <value>AI Usage accepts versions from 1.1.11 up to, but excluding, 2.0.0 that support the official read-only /usage command.</value>
+  </data>
+  <data name="ThisCardFollowsTheCurrentAntigravitySignIn" xml:space="preserve">
+    <value>This card follows the current Antigravity sign-in on this computer. AI Usage cannot verify or pin an enterprise project scope. This operation does not read sign-in credentials.</value>
+  </data>
+  <data name="ConnectingTheAccountFor" xml:space="preserve">
+    <value>Connecting the {1} account for “{0}”…</value>
+  </data>
+  <data name="SigningInToTheCopilotAccountFor" xml:space="preserve">
+    <value>Signing in to the Copilot account for “{0}”…</value>
+  </data>
+  <data name="VerifyingTheOriginalClaudeAccountFor" xml:space="preserve">
+    <value>Verifying the original Claude account for “{0}”…</value>
+  </data>
+  <data name="CancelledTheConnectionFor" xml:space="preserve">
+    <value>Cancelled the {1} connection for “{0}”.</value>
+  </data>
+  <data name="TheAntigravityConnectionHasNotStartedBecauseIts" xml:space="preserve">
+    <value>The Antigravity connection has not started because its progress cannot currently be recorded. AI Usage will retry automatically.</value>
+  </data>
+  <data name="TheAntigravityConnectionForDidNotCompleteIts" xml:space="preserve">
+    <value>The Antigravity connection for “{0}” did not complete. Its connection window shows the cause and next steps. AI Usage kept the previous usage.</value>
+  </data>
+  <data name="TheAntigravityConnectionWindowHasNotReportedCompletion" xml:space="preserve">
+    <value>The Antigravity connection window has not reported completion. AI Usage recorded the progress and will verify it automatically, including after a restart.</value>
+  </data>
+  <data name="TheCurrentAntigravityUsageCheckHasNotFinished" xml:space="preserve">
+    <value>The current Antigravity usage check has not finished, so AI Usage did not start the account connection. Try again later.</value>
+  </data>
+  <data name="AntigravityIsStillInUse" xml:space="preserve">
+    <value>Antigravity is still in use</value>
+  </data>
+  <data name="TheAntigravityConnectionCouldNotCompletePreviousUsage" xml:space="preserve">
+    <value>The Antigravity connection could not complete. Previous usage is kept. Try again later.</value>
+  </data>
+  <data name="ConnectionFailed" xml:space="preserve">
+    <value>{0} connection failed</value>
+  </data>
+  <data name="ClaudeUsageMayCountASmallAmountOf2" xml:space="preserve">
+    <value>Claude /usage may count a small amount of usage. AI Usage only accepts results that did not generate model requests, tokens, or charges, but this can only be verified afterward. Any usage or charges already incurred cannot be undone.
+
+Start the check?</value>
+  </data>
+  <data name="ThisCardHasLegacyClaudeUsageDataConfirm" xml:space="preserve">
+    <value>This card has legacy Claude usage data. Confirm the newly observed subscription scope:
+
+</value>
+  </data>
+  <data name="Account2" xml:space="preserve">
+    <value>Account: {0}
+</value>
+  </data>
+  <data name="Organization" xml:space="preserve">
+    <value>Organization: {0}
+</value>
+  </data>
+  <data name="Plan2" xml:space="preserve">
+    <value>Plan: {0}
+
+</value>
+  </data>
+  <data name="ChooseYesToKeepThePreviousUsageAs" xml:space="preserve">
+    <value>Choose Yes to keep the previous usage as history for this subscription scope, No to clear it, or Cancel to keep the data and stop this connection so you can add another card.</value>
+  </data>
+  <data name="ConfirmClaudeSubscriptionScope" xml:space="preserve">
+    <value>Confirm Claude subscription scope</value>
+  </data>
+  <data name="KeptItsOriginalClaudeAccountAndRefreshedUsage" xml:space="preserve">
+    <value>“{0}” kept its original Claude account and refreshed usage.</value>
+  </data>
+  <data name="KeptItsOriginalClaudeAccountAIUsageWill" xml:space="preserve">
+    <value>“{0}” kept its original Claude account. AI Usage will check usage again automatically.</value>
+  </data>
+  <data name="KeptItsOriginalClaudeAccountTheLastUsage" xml:space="preserve">
+    <value>“{0}” kept its original Claude account. The last usage check did not finish. Choose Check Claude usage again on the card.</value>
+  </data>
+  <data name="KeptItsOriginalClaudeAccountFollowTheCard" xml:space="preserve">
+    <value>“{0}” kept its original Claude account. Follow the card's instructions for its usage check.</value>
+  </data>
+  <data name="ClaudeSignInCompletedButItsSubscriptionScope" xml:space="preserve">
+    <value>Claude sign-in completed, but its subscription scope could not be verified.</value>
+  </data>
+  <data name="ThisCardHasLegacyClaudeUsageFirstConfirm" xml:space="preserve">
+    <value>This card has legacy Claude usage. First confirm the subscription scope and how to handle the previous data.</value>
+  </data>
+  <data name="VerifiedOrganizationNameNotProvided" xml:space="preserve">
+    <value>Verified organization (name not provided)</value>
+  </data>
+  <data name="ShowingLegacyUsageHistoryNotYetBoundTo" xml:space="preserve">
+    <value>Showing legacy usage history not yet bound to a subscription scope. This connection did not complete.</value>
+  </data>
+  <data name="KeptTheLegacyClaudeUsageAndConnectionFor" xml:space="preserve">
+    <value>Kept the legacy Claude usage and connection for “{0}”. Add another card to connect the new subscription scope.</value>
+  </data>
+  <data name="CannotConnectThisClaudeSubscriptionScopeIsAlready" xml:space="preserve">
+    <value>“{0}” cannot connect: this Claude subscription scope is already connected to another card.</value>
+  </data>
+  <data name="ClaudeSignInOrUsageRefreshCouldNot" xml:space="preserve">
+    <value>Claude sign-in or usage refresh could not complete. Previous usage is kept. Try again later.</value>
+  </data>
+  <data name="ThisAIUsageBuildLacksTheCompleteConnection" xml:space="preserve">
+    <value>This AI Usage build lacks the complete {0} connection components. Update it and try again.</value>
+  </data>
+  <data name="ThisAIUsageBuildLacksTheCompleteCodex" xml:space="preserve">
+    <value>This AI Usage build lacks the complete Codex workspace binding components. Update it and try again.</value>
+  </data>
+  <data name="ConnectionComponentsUnavailable" xml:space="preserve">
+    <value>{0} connection components unavailable</value>
+  </data>
+  <data name="CodexReturnedAWorkspaceDifferentFromThisConnection" xml:space="preserve">
+    <value>Codex returned a workspace different from this connection. Reconnect the account.</value>
+  </data>
+  <data name="CannotConnectThisCodexAccountIsAlreadyConnected" xml:space="preserve">
+    <value>“{0}” cannot connect. This Codex account is already connected to another card. To show different workspaces on separate cards, reconnect every card, including the first, with its own workspace ID.</value>
+  </data>
+  <data name="CannotConnectThisCodexAccountHasAStandard" xml:space="preserve">
+    <value>“{0}” cannot connect. This Codex account has a standard connection, or the workspace is already connected to another card. To show separate workspaces, every card, including the first, needs its own workspace ID.</value>
+  </data>
+  <data name="CouldNotOpenOrCompleteSignInTry" xml:space="preserve">
+    <value>Could not open or complete {0} sign-in. Try again.</value>
+  </data>
+  <data name="SignInFailed" xml:space="preserve">
+    <value>{0} sign-in failed</value>
+  </data>
+  <data name="TheLocalGitHubCopilotCLIIsNotReady" xml:space="preserve">
+    <value>The local GitHub Copilot CLI is not ready. Install or update the official CLI.</value>
+  </data>
+  <data name="CopilotUnavailable" xml:space="preserve">
+    <value>Copilot unavailable</value>
+  </data>
+  <data name="CopilotDidNotReturnVerifiableAccountDetails" xml:space="preserve">
+    <value>Copilot did not return verifiable account details.</value>
+  </data>
+  <data name="CannotConnectThisGitHubAccountIsAlreadyConnected" xml:space="preserve">
+    <value>“{0}” cannot connect. This GitHub account is already connected to another Copilot card. Its existing connection is unaffected.</value>
+  </data>
+  <data name="CopilotSignInCompletedButCredentialsCouldNot" xml:space="preserve">
+    <value>Copilot sign-in completed, but credentials could not be saved safely. Usage checks for this card are disabled. Reconnect it.</value>
+  </data>
+  <data name="CopilotCredentialsWereNotSavedAndTheComplete" xml:space="preserve">
+    <value>Copilot credentials were not saved and the complete safety state could not be retained. AI Usage will not use this sign-in result. Restart it before reconnecting.</value>
+  </data>
+  <data name="CopilotConnectionIncomplete" xml:space="preserve">
+    <value>Copilot connection incomplete</value>
+  </data>
+  <data name="CopilotSignInCouldNotCompleteTheCard" xml:space="preserve">
+    <value>Copilot sign-in could not complete. The card's existing connection is unaffected. Try again later.</value>
+  </data>
+  <data name="ThisAccountHasAnUnfinishedGrokConnectionA" xml:space="preserve">
+    <value>This account has an unfinished Grok connection. A new sign-in will not start, to avoid overwriting an account that may have switched. Restart AI Usage, then try again after recovery.</value>
+  </data>
+  <data name="GrokConnectionRecoveryPending" xml:space="preserve">
+    <value>Grok connection recovery pending</value>
+  </data>
+  <data name="ThePreviousGrokConnectionProgressIsCorruptAI" xml:space="preserve">
+    <value>The previous Grok connection progress is corrupt. AI Usage kept the original file and will sign in again without applying unverified data.</value>
+  </data>
+  <data name="CorruptGrokConnectionDataRetained" xml:space="preserve">
+    <value>Corrupt Grok connection data retained</value>
+  </data>
+  <data name="ThisReconnectionReplacedThePreviousUnfinishedGrokSign" xml:space="preserve">
+    <value>This reconnection replaced the previous unfinished Grok sign-in.</value>
+  </data>
+  <data name="OpenedTheGrokSignInTerminalForFollow" xml:space="preserve">
+    <value>Opened the Grok sign-in terminal for “{0}”. Follow its instructions to sign in through the browser. If the page asks you to copy a value, paste the authorization code or full callback URL into the terminal and press Enter.</value>
+  </data>
+  <data name="GrokSignInCompletedButAIUsageCannot" xml:space="preserve">
+    <value>Grok sign-in completed, but AI Usage cannot currently save the connection. It will retry automatically after a restart.</value>
+  </data>
+  <data name="ThisGrokAccountIsAlreadyConnectedToAnother" xml:space="preserve">
+    <value>This Grok account is already connected to another card</value>
+  </data>
+  <data name="CannotConnectThisGrokAccountIsAlreadyConnected" xml:space="preserve">
+    <value>“{0}” cannot connect: this Grok account is already connected to another card.</value>
+  </data>
+  <data name="AIUsageCannotVerifyThatThePreviousGrok" xml:space="preserve">
+    <value>AI Usage cannot verify that the previous Grok process ended, so it will not attempt another connection. Restart AI Usage before connecting this account.</value>
+  </data>
+  <data name="AIUsageRestartRequired" xml:space="preserve">
+    <value>AI Usage restart required</value>
+  </data>
+  <data name="TheOfficialGrokBuildCLIWasNotFound" xml:space="preserve">
+    <value>The official Grok Build CLI was not found. Install or update it from an official xAI source, then reconnect.</value>
+  </data>
+  <data name="InstallOrUpdateGrokBuildCLI" xml:space="preserve">
+    <value>Install or update Grok Build CLI</value>
+  </data>
+  <data name="ThisGrokBuildCLIIsNotASupported" xml:space="preserve">
+    <value>This Grok Build CLI is not a supported official version, or its installation location does not meet the requirements. Reinstall or update it from an official xAI source, then try again.</value>
+  </data>
+  <data name="GrokSignInEndedButTheOfficialAccount" xml:space="preserve">
+    <value>Grok sign-in ended, but the official account could not be verified. AI Usage recorded its progress and will verify it after a restart. Reconnect if this message remains.</value>
+  </data>
+  <data name="GrokAccountNotVerified" xml:space="preserve">
+    <value>Grok account not verified</value>
+  </data>
+  <data name="GrokSignInEndedButAnAccountEligible" xml:space="preserve">
+    <value>Grok sign-in ended, but an account eligible for usage access has not been verified. AI Usage recorded its progress and will verify it after a restart. Reconnect if this message remains.</value>
+  </data>
+  <data name="GrokSignInMayHaveCompletedButAI" xml:space="preserve">
+    <value>Grok sign-in may have completed, but AI Usage has not verified the connection. Progress was recorded and processing will resume automatically after a restart. Reconnect if this message remains.</value>
+  </data>
+  <data name="GrokConnectionIncomplete" xml:space="preserve">
+    <value>Grok connection incomplete</value>
+  </data>
+  <data name="AnotherLegacyClaudeCardMayBelongToThe" xml:space="preserve">
+    <value>Another legacy Claude card may belong to the same signed-in account, but its subscription scope cannot currently be verified safely.</value>
+  </data>
+  <data name="AnotherLegacyClaudeCardMayBelongToThe2" xml:space="preserve">
+    <value>Another legacy Claude card may belong to the same signed-in account, but its subscription scope is temporarily unverifiable. Try again later.</value>
+  </data>
+  <data name="ClaudeSignInChangedDuringVerificationTheSubscription" xml:space="preserve">
+    <value>Claude sign-in changed during verification. The subscription scope was not saved. Reconnect and confirm it.</value>
+  </data>
+  <data name="TheSubscriptionScopeCouldNotBeVerifiedAgain" xml:space="preserve">
+    <value>The subscription scope could not be verified again after Claude sign-in. This connection was not saved. Try again later.</value>
+  </data>
+  <data name="CodexSignInCompletedForButAIUsage" xml:space="preserve">
+    <value>Codex sign-in completed for “{0}”, but AI Usage could not save the connection. This card's usage checks are disabled and previous usage is hidden. Verify that the AI Usage settings folder is writable, then reconnect.</value>
+  </data>
+  <data name="ClaudeSignInDidNotCompleteForAnd" xml:space="preserve">
+    <value>Claude sign-in did not complete for “{0}”, and AI Usage could not safely restore the local subscription connection. The connection will not change and new usage will not be displayed. Verify that the settings folder is writable, then reconnect the original card.</value>
+  </data>
+  <data name="SignInCompletedForButAIUsageCould" xml:space="preserve">
+    <value>{1} sign-in completed for “{0}”, but AI Usage could not save the state after an account conflict. Usage checks are disabled and previous usage is hidden. The original connection may reappear after a restart. Verify that the settings folder is writable, then reconnect.</value>
+  </data>
+  <data name="TheGrokAccountConflictAndUnfinishedConnectionData" xml:space="preserve">
+    <value>The Grok account conflict and unfinished connection data were cleared.</value>
+  </data>
+  <data name="TheOriginalGrokConnectionCouldNotBeRestored" xml:space="preserve">
+    <value>The original Grok connection could not be restored either. AI Usage kept the recovery record. If a restart does not restore it, keep the settings data and contact support.</value>
+  </data>
+  <data name="LocalGrokCleanupIsPendingRestartAIUsage" xml:space="preserve">
+    <value>Local Grok cleanup is pending. Restart AI Usage and try again.</value>
+  </data>
+  <data name="CannotConnect" xml:space="preserve">
+    <value>“{0}” cannot connect: {1}.</value>
+  </data>
+  <data name="CannotConnectTheOriginalGrokConnectionCouldNot" xml:space="preserve">
+    <value>“{0}” cannot connect: {1}. The original Grok connection could not be restored either. AI Usage kept the recovery record. If a restart does not restore it, keep the settings data and contact support.</value>
+  </data>
+  <data name="CannotConnectLocalCleanupIsPendingRestartAI" xml:space="preserve">
+    <value>“{0}” cannot connect: {1}. Local cleanup is pending. Restart AI Usage and try again.</value>
+  </data>
+  <data name="CodexRequestsOpeningThisSignInWebsiteIn" xml:space="preserve">
+    <value>Codex requests opening this sign-in website in your browser:
+
+</value>
+  </data>
+  <data name="ConfirmThatThisIsTheExpectedWebsiteThen" xml:space="preserve">
+    <value>Confirm that this is the expected website, then choose Yes.</value>
+  </data>
+  <data name="ConfirmCodexSignInWebsite" xml:space="preserve">
+    <value>Confirm Codex sign-in website</value>
+  </data>
+  <data name="ThisCardWillConnectToTheFollowingGitHub" xml:space="preserve">
+    <value>This card will connect to the following GitHub account:
+
+</value>
+  </data>
+  <data name="UseThisAccount" xml:space="preserve">
+    <value>Use this account?</value>
+  </data>
+  <data name="ConfirmCopilotAccount" xml:space="preserve">
+    <value>Confirm Copilot account</value>
+  </data>
+  <data name="Service2" xml:space="preserve">
+    <value>Service</value>
+  </data>
+  <data name="CopilotSignInCompletedForButAIUsage" xml:space="preserve">
+    <value>Copilot sign-in completed for “{0}”, but AI Usage could not save the card's connection. The staged credential was not applied, and the existing connection is unaffected. Verify that the settings folder is writable, then reconnect.</value>
+  </data>
+  <data name="SignInCompletedForButTheConnectionCould" xml:space="preserve">
+    <value>{1} sign-in completed for “{0}”, but the connection could not be saved after repeated attempts. {2} may have switched to the new account while AI Usage kept the original connection. Verify that the settings folder is writable, then reconnect.</value>
+  </data>
+  <data name="TheAccountForIsConnectedUsageWillBe" xml:space="preserve">
+    <value>The {1} account for “{0}” is connected. Usage will be checked again automatically.</value>
+  </data>
+  <data name="AntigravityAccountVerifiedButTheConnectionCannotCurrently" xml:space="preserve">
+    <value>Antigravity account verified, but the connection cannot currently be saved. Will retry automatically.</value>
+  </data>
+  <data name="TheAccountConnectionCouldNotBeUpdatedAfter" xml:space="preserve">
+    <value>The account connection could not be updated after repeated attempts.</value>
+  </data>
+  <data name="AntigravityAccountVerifiedButTheConnectionHasNot" xml:space="preserve">
+    <value>Antigravity account verified, but the connection has not been applied. {0}</value>
+  </data>
+  <data name="AccountConnectedAndUsageRefreshed" xml:space="preserve">
+    <value>{0} account connected and usage refreshed.</value>
+  </data>
+  <data name="AccountConnectedUsageIsTemporarilyUnavailableWillRetry" xml:space="preserve">
+    <value>{0} account connected. Usage is temporarily unavailable; will retry automatically.</value>
+  </data>
+  <data name="AccountConnectedTheLastCheckDidNotFinish" xml:space="preserve">
+    <value>{0} account connected. The last check did not finish. Choose Check {1} usage again on the card.</value>
+  </data>
+  <data name="AntigravityAccountConnectedAIUsageDoesNotSupport" xml:space="preserve">
+    <value>Antigravity account connected. AI Usage does not support this usage format yet. Update AI Usage. The connection can usually be reused; confirm it again if the card requests it.</value>
+  </data>
+  <data name="AntigravityAccountConnectedButNoSupportedAntigravityCLI" xml:space="preserve">
+    <value>Antigravity account connected, but no supported Antigravity CLI was found. Verify its installation and version. The connection can usually be reused; confirm it again if the card requests it.</value>
+  </data>
+  <data name="AntigravityAccountConnectedConfirmUsageAccessAgainUsing" xml:space="preserve">
+    <value>Antigravity account connected. Confirm usage access again using the card's instructions. Existing sign-in is unaffected.</value>
+  </data>
+  <data name="AntigravityConnectionIncompleteFollowTheCardSInstructions" xml:space="preserve">
+    <value>Antigravity connection incomplete. Follow the card's instructions to verify the account.</value>
+  </data>
+  <data name="AntigravityAccountConnectedNoNewUsageIsAvailable" xml:space="preserve">
+    <value>Antigravity account connected. No new usage is available to display; check the card's status.</value>
+  </data>
+  <data name="CopilotIsNotSignedInConnectAnAccount" xml:space="preserve">
+    <value>Copilot is not signed in. Connect an account and try again.</value>
+  </data>
+  <data name="CopilotNotSignedIn" xml:space="preserve">
+    <value>Copilot not signed in</value>
+  </data>
+  <data name="TheSignedInGitHubAccountDiffersFromThis" xml:space="preserve">
+    <value>The signed-in GitHub account differs from this Copilot card. This result was not saved. Verify the account and try again.</value>
+  </data>
+  <data name="CopilotAccountMismatch" xml:space="preserve">
+    <value>Copilot account mismatch</value>
+  </data>
+  <data name="GitHubIsSignedInButThisAccountCannot" xml:space="preserve">
+    <value>GitHub is signed in, but this account cannot read Copilot quota. Verify the plan or use another account.</value>
+  </data>
+  <data name="CopilotPermissionDenied" xml:space="preserve">
+    <value>Copilot permission denied</value>
+  </data>
+  <data name="GitHubTemporarilyLimitedCopilotQuotaQueriesTryAgain" xml:space="preserve">
+    <value>GitHub temporarily limited Copilot quota queries. Try again later.</value>
+  </data>
+  <data name="GitHubRequestsTemporarilyLimited" xml:space="preserve">
+    <value>GitHub requests temporarily limited</value>
+  </data>
+  <data name="TheLocalGitHubCopilotCLIIsUnavailableInstall2" xml:space="preserve">
+    <value>The local GitHub Copilot CLI is unavailable. Install or update the official CLI.</value>
+  </data>
+  <data name="CopilotQuotaDataCouldNotBeRecognizedUpdate" xml:space="preserve">
+    <value>Copilot quota data could not be recognized. Update AI Usage and try again.</value>
+  </data>
+  <data name="CopilotUsageUnavailable" xml:space="preserve">
+    <value>Copilot usage unavailable</value>
+  </data>
+  <data name="CopilotQuotaIsTemporarilyUnavailableTheCardS" xml:space="preserve">
+    <value>Copilot quota is temporarily unavailable. The card's existing connection is unaffected.</value>
+  </data>
+  <data name="TheCardSExistingConnectionIsUnaffected" xml:space="preserve">
+    <value>{0}
+
+The card's existing connection is unaffected.</value>
+  </data>
+  <data name="ClaudeAccountConnectedButUsageChecksArePaused" xml:space="preserve">
+    <value>Claude account connected, but usage checks are paused. Restart AI Usage and try again.</value>
+  </data>
+  <data name="ClaudeUsageChecksPaused" xml:space="preserve">
+    <value>Claude usage checks paused</value>
+  </data>
+  <data name="ClaudeAccountConnectedButTheLastUsageCheck" xml:space="preserve">
+    <value>Claude account connected, but the last usage check did not finish. Choose Check Claude usage again on the card.</value>
+  </data>
+  <data name="ClaudeSignInCompletedButNoUsableClaude" xml:space="preserve">
+    <value>Claude sign-in completed, but no usable Claude Code CLI was found. Install or update Claude Code, then check again.</value>
+  </data>
+  <data name="ClaudeCodeCLIUpdateRequired" xml:space="preserve">
+    <value>Claude Code CLI update required</value>
+  </data>
+  <data name="ClaudeSignInCompletedButTheSubscriptionIs" xml:space="preserve">
+    <value>Claude sign-in completed, but the subscription is not verified. Use the original account to confirm the organization and plan.</value>
+  </data>
+  <data name="ClaudeSignInCompletedButAUsableSubscription" xml:space="preserve">
+    <value>Claude sign-in completed, but a usable subscription account could not be verified after repeated checks. Verify that the signed-in account has a supported Claude subscription, then reconnect.</value>
+  </data>
+  <data name="ClaudeStatusNeedsVerification" xml:space="preserve">
+    <value>Claude status needs verification</value>
+  </data>
+  <data name="ClaudeSignInCompletedButTheCurrentAccount" xml:space="preserve">
+    <value>Claude sign-in completed, but the current account or sign-in method cannot read usage. Switch to an account with a supported Claude subscription.</value>
+  </data>
+  <data name="SwitchClaudeAccountRequired" xml:space="preserve">
+    <value>Switch Claude account required</value>
+  </data>
+  <data name="AccountConnectedButUsageAccessNeedsConfirmationAgain" xml:space="preserve">
+    <value>{0} account connected, but usage access needs confirmation again. Signing in again is unnecessary.</value>
+  </data>
+  <data name="ConfirmClaudeUsageAccess2" xml:space="preserve">
+    <value>Confirm Claude usage access</value>
+  </data>
+  <data name="ClaudeSignInCompletedButUsageChecksCannot" xml:space="preserve">
+    <value>Claude sign-in completed, but usage checks cannot continue. Restart AI Usage and try again.</value>
+  </data>
+  <data name="ClaudeUsageNeedsVerification" xml:space="preserve">
+    <value>Claude usage needs verification</value>
+  </data>
+  <data name="SignInCompletedButTheLatestAccountStatus" xml:space="preserve">
+    <value>{0} sign-in completed, but the latest account status has not been verified. Will retry automatically.</value>
+  </data>
+  <data name="ClaudeSubscriptionScopeConnectedAndVerifiedButThis" xml:space="preserve">
+    <value>Claude subscription scope connected and verified, but this plan's /usage format has not been validated. AI Usage will not guess or display its quota.</value>
+  </data>
+  <data name="ClaudeSubscriptionScopeVerified" xml:space="preserve">
+    <value>Claude subscription scope verified</value>
+  </data>
+  <data name="AccountConnectedUsageIsUnavailableWillRetryAutomatically" xml:space="preserve">
+    <value>{0} account connected. Usage is unavailable; will retry automatically.</value>
+  </data>
+  <data name="ClaudeSignInComplete" xml:space="preserve">
+    <value>Claude sign-in complete</value>
+  </data>
+  <data name="AccountConnectedShowingTheLastVerifiedUsageIt" xml:space="preserve">
+    <value>{0} account connected. Showing the last verified usage; it will update automatically.</value>
+  </data>
+  <data name="CodexSignInCompletedButAccountUsageCould" xml:space="preserve">
+    <value>Codex sign-in completed, but account usage could not be verified. Will retry automatically.</value>
+  </data>
+  <data name="CodexSignInCompletedButAUsableChatGPT" xml:space="preserve">
+    <value>Codex sign-in completed, but a usable ChatGPT subscription account has not been verified. Will retry automatically.</value>
+  </data>
+  <data name="CodexSignInCompletedButTheCurrentlySigned" xml:space="preserve">
+    <value>Codex sign-in completed, but the currently signed-in account has not been verified. Will retry automatically.</value>
+  </data>
+  <data name="CodexSignInCompletedButAUsableChatGPT2" xml:space="preserve">
+    <value>Codex sign-in completed, but a usable ChatGPT subscription account could not be verified after repeated checks. Reconnect using the card's instructions.</value>
+  </data>
+  <data name="CodexAccountConnectedButThisUsageCheckReturned" xml:space="preserve">
+    <value>Codex account connected, but this usage check returned a different account. The result was ignored. Verify the account using the card's instructions.</value>
+  </data>
+  <data name="CodexAccountConnectedButCodexCLINeedsInstallation" xml:space="preserve">
+    <value>Codex account connected, but Codex CLI needs installation or an update. AI Usage will resume checks afterward.</value>
+  </data>
+  <data name="CodexAccountConnectedButItsUsageCheckNeeds" xml:space="preserve">
+    <value>Codex account connected, but its usage check needs confirmation again. Follow the card's instructions.</value>
+  </data>
+  <data name="CopilotSignInCompletedButAGitHubAccount" xml:space="preserve">
+    <value>Copilot sign-in completed, but a GitHub account eligible for quota access has not been verified. Reconnect using the card's instructions.</value>
+  </data>
+  <data name="CopilotAccountConnectedButThisQuotaCheckReturned" xml:space="preserve">
+    <value>Copilot account connected, but this quota check returned a different account. The result was ignored. Verify the account using the card's instructions.</value>
+  </data>
+  <data name="CopilotAccountConnectedInstallOrUpdateTheLocal" xml:space="preserve">
+    <value>Copilot account connected. Install or update the local official GitHub Copilot CLI; AI Usage will resume checks afterward.</value>
+  </data>
+  <data name="CopilotAccountConnectedQuotaIsTemporarilyUnavailableWill" xml:space="preserve">
+    <value>Copilot account connected. Quota is temporarily unavailable; will retry automatically.</value>
+  </data>
+  <data name="CopilotAccountConnectedAndPlanVerifiedButNo" xml:space="preserve">
+    <value>Copilot account connected and plan verified, but no quota is available to display.</value>
+  </data>
+  <data name="AccountConnectedLatestUsageWillBeVerifiedAutomatically" xml:space="preserve">
+    <value>{0} account connected. Latest usage will be verified automatically.</value>
+  </data>
+  <data name="GrokSignInCompletedButAnAccountEligible" xml:space="preserve">
+    <value>Grok sign-in completed, but an account eligible for usage access has not been verified. Reconnect using the card's instructions.</value>
+  </data>
+  <data name="GrokAccountConnectedButItsWeeklyUsageIs" xml:space="preserve">
+    <value>Grok account connected, but its weekly usage is unavailable. Verify or switch the account using the card's instructions.</value>
+  </data>
+  <data name="GrokAccountConnectedButGrokBuildCLINeeds" xml:space="preserve">
+    <value>Grok account connected, but Grok Build CLI needs installation or an update. AI Usage will resume checks afterward.</value>
+  </data>
+  <data name="ThePreviousUsageIsKeptFollowTheInstructions" xml:space="preserve">
+    <value>{0}
+
+The previous usage is kept. Follow the instructions above, then reconnect.</value>
+  </data>
+  <data name="Account3" xml:space="preserve">
+    <value>Account “{0}”: {1}.</value>
+  </data>
+  <data name="StatusUpdatedForMoreAccounts" xml:space="preserve">
+    <value>; status updated for {0} more accounts.</value>
+  </data>
+  <data name="UsageIsTemporarilyUnavailableAIUsageWillRetry" xml:space="preserve">
+    <value>Usage is temporarily unavailable. AI Usage will retry automatically.</value>
+  </data>
+  <data name="UsageHasResetAIUsageWillRetryAutomatically" xml:space="preserve">
+    <value>Usage has reset. AI Usage will retry automatically.</value>
+  </data>
+  <data name="UsageChecksStopped" xml:space="preserve">
+    <value>Usage checks stopped.</value>
+  </data>
+  <data name="AntigravityCanCheckUsageForOnlyOneAccount" xml:space="preserve">
+    <value>Antigravity can check usage for only one account at a time. Disable usage checks for the other Antigravity accounts or remove them. Signing in again is unnecessary.</value>
+  </data>
+  <data name="ThisSignedInAccountIsAlreadyConnectedTo" xml:space="preserve">
+    <value>This signed-in account is already connected to another card. The result was ignored. Use another account.</value>
+  </data>
+  <data name="ThisConnectionSAccountDetailsCouldNotBe" xml:space="preserve">
+    <value>This connection's account details could not be saved. The result was ignored. Will retry automatically.</value>
+  </data>
+  <data name="TheSignedInAccountFromThisUsageCheck" xml:space="preserve">
+    <value>The signed-in account from this usage check differs from the verified Antigravity account. The result was ignored. Reconnect the correct account.</value>
+  </data>
+  <data name="ThisAccountConnectionCouldNotBeSavedAfter" xml:space="preserve">
+    <value>This account connection could not be saved after repeated attempts. Verify that the AI Usage settings folder is writable, then reconnect.</value>
+  </data>
+  <data name="TheStateAfterAnAccountConflictCouldNot" xml:space="preserve">
+    <value>The state after an account conflict could not be saved. Usage checks are disabled and previous usage is hidden. The original connection may reappear after a restart. Verify that the AI Usage settings folder is writable, then reconnect.</value>
+  </data>
+  <data name="TheGrokConnectionIsUnfinishedProcessingWillContinue" xml:space="preserve">
+    <value>The Grok connection is unfinished. Processing will continue after restarting AI Usage. Reconnect the account if this message remains.</value>
+  </data>
+  <data name="AntigravityAccountVerifiedButUsageFromBeforeThe" xml:space="preserve">
+    <value>Antigravity account verified, but usage from before the switch still needs cleanup. Cleanup retries automatically, including after a restart. Reconnecting is unnecessary.</value>
+  </data>
+  <data name="AntigravityAccountVerifiedButTheConnectionStillNeeds" xml:space="preserve">
+    <value>Antigravity account verified, but the connection still needs saving. Saving retries automatically, including after a restart. Reconnecting is unnecessary.</value>
+  </data>
+  <data name="TheSavedAntigravityConnectionProgressIsCorruptOr" xml:space="preserve">
+    <value>The saved Antigravity connection progress is corrupt or comes from an unsupported AI Usage version. Antigravity usage checks and new connections are paused to avoid connecting the wrong account. Update AI Usage first. If recovery fails, keep the settings data and contact support.</value>
+  </data>
+  <data name="AntigravityConnectionProgressCannotCurrentlyBeReadOr" xml:space="preserve">
+    <value>Antigravity connection progress cannot currently be read or written. New connections are paused and will retry automatically. If this continues, verify that the settings folder is writable.</value>
+  </data>
+  <data name="AIUsageIsVerifyingWhetherThePreviousAntigravity" xml:space="preserve">
+    <value>AI Usage is verifying whether the previous Antigravity connection completed. It will retry automatically, including after a restart. No further action is needed.</value>
+  </data>
+  <data name="UsageFromBeforeTheSwitchCouldNotBe" xml:space="preserve">
+    <value>Usage from before the switch could not be cleared. It will not be displayed for the current account.</value>
+  </data>
+  <data name="ClaudeSubscriptionScopeConnectedButTheLegacyUsage" xml:space="preserve">
+    <value>Claude subscription scope connected, but the legacy usage you assigned to it could not be saved durably. It will remain available during this session as a fallback for temporary failures.</value>
+  </data>
+  <data name="UnpairedConnectionDataCouldNotBeVerifiedOr" xml:space="preserve">
+    <value>Unpaired {0} connection data could not be verified or cleaned up. Previous {1} usage is hidden during this session, and safety checks continue until reconnection. Verify that the settings folder is writable.</value>
+  </data>
+  <data name="PreviousDataForSomeAccountsStillNeedsCleanup" xml:space="preserve">
+    <value>Previous data for some accounts still needs cleanup. Cleanup retries automatically, including after a restart. Usage checks for these accounts remain disabled until it finishes.</value>
+  </data>
+  <data name="SavedAccountCleanupProgressIsCorruptOrComes" xml:space="preserve">
+    <value>Saved account cleanup progress is corrupt or comes from an unsupported AI Usage version. All usage checks are paused and automatic repair is unavailable. Update AI Usage. If recovery fails, keep the settings data and contact support.</value>
+  </data>
+  <data name="AnImportedAntigravityAccountIsStillCancellingIts" xml:space="preserve">
+    <value>An imported Antigravity account is still cancelling its previous connection. AI Usage will finish automatically; import again afterward.</value>
+  </data>
+  <data name="AccountSettingsWereNotImportedAndDisplaySettings" xml:space="preserve">
+    <value>Account settings were not imported, and display settings could not be restored. Restart AI Usage and verify the settings.</value>
+  </data>
+  <data name="TheSettingsImportDidNotCompleteThePrevious" xml:space="preserve">
+    <value>The settings import did not complete. The previous account and display settings were restored.</value>
+  </data>
+  <data name="ImportedAccountsSortingAndDisplaySettings" xml:space="preserve">
+    <value>Imported {0} accounts, sorting, and display settings.</value>
+  </data>
+  <data name="ImportedAccountsSortingUsageDisplayAndWidgetSettings" xml:space="preserve">
+    <value>Imported {0} accounts, sorting, usage display, and widget settings.</value>
+  </data>
+  <data name="ImportedAccountsSortingUsageDisplayWidgetSettingsAnd" xml:space="preserve">
+    <value>Imported {0} accounts, sorting, usage display, widget settings, and theme.</value>
+  </data>
+  <data name="ClaudeSubscriptionConnectionsAreNotIncludedInSettings" xml:space="preserve">
+    <value> Claude subscription connections are not included in settings imports and were reset. Reconnect each Claude account.</value>
+  </data>
+  <data name="CodexConnectionsAreNotIncludedInSettingsImports" xml:space="preserve">
+    <value> Codex connections are not included in settings imports and were reset. Reconnect each Codex account. Workspace connections require entering the workspace ID again.</value>
+  </data>
+  <data name="CopilotCredentialsAreNotIncludedInSettingsImports" xml:space="preserve">
+    <value> Copilot credentials are not included in settings imports and card connections were reset. Reconnect each Copilot account.</value>
+  </data>
+  <data name="AntigravityConnectionsBelongToThisComputerAndWere" xml:space="preserve">
+    <value> Antigravity connections belong to this computer and were reset. Reconnect the Antigravity account here.</value>
+  </data>
+  <data name="GrokConnectionsAreNotIncludedInSettingsImports" xml:space="preserve">
+    <value> Grok connections are not included in settings imports and were reset. Reconnect each Grok account.</value>
+  </data>
+  <data name="PreviousUsageForSomeAccountsCouldNotBe" xml:space="preserve">
+    <value> Previous usage for some accounts could not be cleared. The data may remain on this computer.</value>
+  </data>
+  <data name="PreviousDataForSomeAccountsCouldNotBe" xml:space="preserve">
+    <value> Previous data for some accounts could not be cleared after repeated attempts. The data may remain on this computer.</value>
+  </data>
+  <data name="SomePreviousAccountsUsageChecksHaveNotStopped" xml:space="preserve">
+    <value> Some previous accounts' usage checks have not stopped. Settings were applied, and cleanup will finish automatically, including after a restart.</value>
+  </data>
+  <data name="AuthorizationToCleanUpPrivateStateAfterImport" xml:space="preserve">
+    <value> Authorization to clean up private state after import is pending. Cleanup work and transaction records were kept and will retry automatically after a restart.</value>
+  </data>
+  <data name="AccountSettingsWereAppliedButTheBackupUpdate" xml:space="preserve">
+    <value>{0} Account settings were applied, but the backup update failed.</value>
+  </data>
+  <data name="AccountSettingsWereNotRestoredAndDisplaySettings" xml:space="preserve">
+    <value>Account settings were not restored, and display settings could not be returned to their post-import state. Restart AI Usage and verify the settings.</value>
+  </data>
+  <data name="SettingsRestorationDidNotCompleteTheImportedAccount" xml:space="preserve">
+    <value>Settings restoration did not complete. The imported account and display settings were kept.</value>
+  </data>
+  <data name="RestoredTheAccountOrderSortingAndUsageDisplay" xml:space="preserve">
+    <value>Restored the account, order, sorting, and usage display settings from before the import.</value>
+  </data>
+  <data name="RestoredTheAccountOrderSortingUsageDisplayAnd" xml:space="preserve">
+    <value>Restored the account, order, sorting, usage display, and widget settings from before the import.</value>
+  </data>
+  <data name="RestoredTheAccountOrderSortingUsageDisplayWidget" xml:space="preserve">
+    <value>Restored the account, order, sorting, usage display, widget settings, and theme from before the import.</value>
+  </data>
+  <data name="SomeUsageMayNeedAnotherCheckToAvoid" xml:space="preserve">
+    <value> Some usage may need another check to avoid displaying data for the wrong imported account.</value>
+  </data>
+  <data name="ClaudeSubscriptionConnectionsWereResetDuringImportReconnect" xml:space="preserve">
+    <value> Claude subscription connections were reset during import. Reconnect each Claude account you need.</value>
+  </data>
+  <data name="CodexConnectionsWereResetDuringImportReconnectEach" xml:space="preserve">
+    <value> Codex connections were reset during import. Reconnect each Codex account you need. Workspace connections require entering the workspace ID again.</value>
+  </data>
+  <data name="CopilotCardConnectionsWereResetDuringImportReconnect" xml:space="preserve">
+    <value> Copilot card connections were reset during import. Reconnect each Copilot account you need.</value>
+  </data>
+  <data name="GrokConnectionsWereResetDuringImportReconnectEach" xml:space="preserve">
+    <value> Grok connections were reset during import. Reconnect each Grok account you need.</value>
+  </data>
+  <data name="SomeImportedUsageCouldNotBeClearedRestart" xml:space="preserve">
+    <value> Some imported usage could not be cleared. Restart AI Usage.</value>
+  </data>
+  <data name="SomeImportedUsageCouldNotBeClearedAfter" xml:space="preserve">
+    <value> Some imported usage could not be cleared after repeated attempts. The data may remain on this computer.</value>
+  </data>
+  <data name="SomeImportedUsageChecksHaveNotStoppedSettings" xml:space="preserve">
+    <value> Some imported usage checks have not stopped. Settings were restored, and cleanup will finish automatically, including after a restart.</value>
+  </data>
+  <data name="AuthorizationToCleanUpPrivateStateAfterRestoration" xml:space="preserve">
+    <value> Authorization to clean up private state after restoration is pending. Cleanup work and transaction records were kept and will retry automatically after a restart.</value>
+  </data>
+  <data name="AccountSettingsWereRestoredButTheBackupUpdate" xml:space="preserve">
+    <value>{0} Account settings were restored, but the backup update failed.</value>
+  </data>
+  <data name="TheAccountIDAlreadyExists" xml:space="preserve">
+    <value>The account ID already exists.</value>
+  </data>
+  <data name="ThePreviousAntigravityConnectionIsStillCancellingAI" xml:space="preserve">
+    <value>The previous Antigravity connection is still cancelling. AI Usage will finish automatically; add the account again afterward.</value>
+  </data>
+  <data name="OnlyOneAntigravityAccountCanBeAddedCurrently" xml:space="preserve">
+    <value>Only one Antigravity account can be added currently.</value>
+  </data>
+  <data name="TheAccountToEditWasNotFound" xml:space="preserve">
+    <value>The account to edit was not found.</value>
+  </data>
+  <data name="AnExistingAccountSServiceCannotChangeRemove" xml:space="preserve">
+    <value>An existing account's service cannot change. Remove it and add another account.</value>
+  </data>
+  <data name="PreviousUsageForCouldNotBeClearedSo" xml:space="preserve">
+    <value>Previous usage for “{0}” could not be cleared, so its checks remain disabled. Verify that the settings folder is writable and try again.</value>
+  </data>
+  <data name="ClaudeUsageAccessConfirmationWasSavedButThe" xml:space="preserve">
+    <value>Claude usage access confirmation was saved, but the backup update failed. Save the account settings again.</value>
+  </data>
+  <data name="TheAccountToRemoveWasNotFound" xml:space="preserve">
+    <value>The account to remove was not found.</value>
+  </data>
+  <data name="SomePreviousDataCouldNotBeClearedAfter" xml:space="preserve">
+    <value> Some previous data could not be cleared after repeated attempts. The data may remain on this computer.</value>
+  </data>
+  <data name="APreviousUsageCheckHasNotStoppedThe" xml:space="preserve">
+    <value> A previous usage check has not stopped. The account was removed, and cleanup will finish automatically, including after a restart.</value>
+  </data>
+  <data name="TheAccountIDCannotBeEmpty" xml:space="preserve">
+    <value>The account ID cannot be empty.</value>
+  </data>
+  <data name="AnAccountCanMoveOnlyOnePlaceUp" xml:space="preserve">
+    <value>An account can move only one place up or down at a time.</value>
+  </data>
+  <data name="AccountsCannotBeMovedManuallyWhileAutomaticSorting" xml:space="preserve">
+    <value>Accounts cannot be moved manually while automatic sorting is enabled. Switch to manual sorting first.</value>
+  </data>
+  <data name="TheAccountToMoveWasNotFound" xml:space="preserve">
+    <value>The account to move was not found.</value>
+  </data>
+  <data name="AccountCleanupFromAPreviousSettingsChangeIs" xml:space="preserve">
+    <value>Account cleanup from a previous settings change is pending. Retry cleanup or restart AI Usage before changing account settings.</value>
+  </data>
+  <data name="TheCleanupStateFromAPreviousSettingsChange" xml:space="preserve">
+    <value>The cleanup state from a previous settings change could not be verified, so account settings were not changed.</value>
+  </data>
+  <data name="AccountCleanupProgressCouldNotBeRecordedSo" xml:space="preserve">
+    <value>Account cleanup progress could not be recorded, so settings were not changed. Verify that the settings folder is writable and try again.</value>
+  </data>
+  <data name="LegacyClaudeUsageCouldNotBeVerifiedSafely" xml:space="preserve">
+    <value>Legacy Claude usage could not be verified safely.</value>
+  </data>
+  <data name="OriginalSettingsFileRetained" xml:space="preserve">
+    <value>{0}
+Original settings file retained: {1}</value>
+  </data>
+  <data name="ShowingLegacyUsageHistoryThatYouAssignedTo" xml:space="preserve">
+    <value>Showing legacy usage history that you assigned to this Claude subscription scope.</value>
+  </data>
+  <data name="TheAccountContainsAnUnsupportedService" xml:space="preserve">
+    <value>The account contains an unsupported service.</value>
+  </data>
+  <data name="TheAccountNicknameCannotBeNull" xml:space="preserve">
+    <value>The account nickname cannot be null.</value>
+  </data>
+  <data name="TheAccountNicknameCannotExceedCharacters" xml:space="preserve">
+    <value>The account nickname cannot exceed {0} characters.</value>
+  </data>
+  <data name="TheAccountNicknameCannotContainControlCharacters" xml:space="preserve">
+    <value>The account nickname cannot contain control characters.</value>
+  </data>
+  <data name="TheImportFileCannotContainMoreThanAccounts" xml:space="preserve">
+    <value>The import file cannot contain more than {0} accounts.</value>
+  </data>
+  <data name="TheImportFileCannotContainANullAccount" xml:space="preserve">
+    <value>The import file cannot contain a null account entry.</value>
+  </data>
+  <data name="TheImportFileCannotContainDuplicateAccountIDs" xml:space="preserve">
+    <value>The import file cannot contain duplicate account IDs.</value>
+  </data>
+  <data name="TheImportFileContainsInvalidAccountDetails" xml:space="preserve">
+    <value>The import file contains invalid account details.</value>
+  </data>
+  <data name="TheImportFileConnectsTheSameSignedIn" xml:space="preserve">
+    <value>The import file connects the same signed-in account to multiple cards.</value>
+  </data>
+  <data name="AnImportedSignedInAccountConflictsWithAnother" xml:space="preserve">
+    <value>An imported signed-in account conflicts with another account on this computer. Original settings were kept.</value>
+  </data>
+  <data name="AccountSettingsCannotCurrentlyBeWrittenResolveThe" xml:space="preserve">
+    <value>Account settings cannot currently be written. Resolve the settings file warning shown in the app first.</value>
+  </data>
+  <data name="AIUsageIsShuttingDownSafelyForAn" xml:space="preserve">
+    <value>AI Usage is shutting down safely for an update. Settings can no longer be changed.</value>
+  </data>
+  <data name="TheAccountIsConnectingWaitForItTo" xml:space="preserve">
+    <value>The account is connecting. Wait for it to finish before editing or removing the account.</value>
+  </data>
+  <data name="WidgetSettingsCouldNotBeVerifiedSoThis" xml:space="preserve">
+    <value>Widget settings could not be verified, so this import cannot be undone.</value>
+  </data>
+  <data name="WidgetSettingsCannotCurrentlyBeSaved" xml:space="preserve">
+    <value>Widget settings cannot currently be saved.</value>
+  </data>
+  <data name="TheImportFileContainsAnUnknownWidgetDocking" xml:space="preserve">
+    <value>The import file contains an unknown widget docking position.</value>
+  </data>
+  <data name="TheImportFileContainsAnUnknownTheme" xml:space="preserve">
+    <value>The import file contains an unknown theme.</value>
+  </data>
+  <data name="TheServiceReturnedADifferentAccountFromThe" xml:space="preserve">
+    <value>The service returned a different account from the current account.</value>
+  </data>
+  <data name="TheServiceIsStillCheckingUsageItsResult" xml:space="preserve">
+    <value>The service is still checking usage; its result cannot be treated as complete.</value>
+  </data>
+  <data name="TheServiceReturnedIncompleteUsageDataOrAn" xml:space="preserve">
+    <value>The service returned incomplete usage data or an unexpected format.</value>
+  </data>
+  <data name="TheServiceDidNotReturnUsageData" xml:space="preserve">
+    <value>The service did not return usage data.</value>
+  </data>
+  <data name="Used4" xml:space="preserve">
+    <value>{0} used</value>
+  </data>
+  <data name="UsedExtraUsageEnabled2" xml:space="preserve">
+    <value>{0} used, extra usage enabled</value>
+  </data>
+  <data name="UsedUsageAllowedAfterQuotaIsExhausted2" xml:space="preserve">
+    <value>{0} used, usage allowed after quota is exhausted</value>
+  </data>
+  <data name="UsedLimitControlledBySharedQuotaAndBudgets" xml:space="preserve">
+    <value>Used {0}; limit controlled by shared quota and budgets</value>
+  </data>
+  <data name="UsedLimitNotProvidedByThisSource2" xml:space="preserve">
+    <value>Used {0}; limit not provided by this source</value>
+  </data>
+  <data name="UsedRequestsUnlimited" xml:space="preserve">
+    <value>Used {0} requests (unlimited)</value>
+  </data>
+  <data name="UsedRequestsLimitNotProvidedByThisSource" xml:space="preserve">
+    <value>Used {0} requests (limit not provided by this source)</value>
+  </data>
+  <data name="NotProvidedByThisPlan" xml:space="preserve">
+    <value>Not provided by this plan</value>
+  </data>
+  <data name="UsedNoQuotaIncludedInThisPlan" xml:space="preserve">
+    <value>{0} used (no quota included in this plan)</value>
+  </data>
+  <data name="AllModels" xml:space="preserve">
+    <value>All models</value>
+  </data>
+  <data name="LimitControlledBySharedQuotaAndBudgetsExtra" xml:space="preserve">
+    <value>{0}; limit controlled by shared quota and budgets, extra usage enabled</value>
+  </data>
+  <data name="Ready2" xml:space="preserve">
+    <value>Ready {0}</value>
+  </data>
+  <data name="PreviousData2" xml:space="preserve">
+    <value>Previous data {0}</value>
+  </data>
+  <data name="Failed2" xml:space="preserve">
+    <value>Failed {0}</value>
+  </data>
+  <data name="SetupRequired2" xml:space="preserve">
+    <value>Setup required {0}</value>
+  </data>
+  <data name="Unsupported2" xml:space="preserve">
+    <value>Unsupported {0}</value>
+  </data>
+  <data name="Other2" xml:space="preserve">
+    <value>Other {0}</value>
+  </data>
+  <data name="UnpairedClaudeSubscriptionConnectionsCouldNotBeVerified" xml:space="preserve">
+    <value>Unpaired Claude subscription connections could not be verified or cleaned up. Previous Claude usage is hidden during this session, and safety checks continue until reconnection. Verify that the AI Usage settings folder is writable.</value>
+  </data>
+  <data name="TheAccountDetailsHaveAnInvalidFormat" xml:space="preserve">
+    <value>The account details have an invalid format.</value>
+  </data>
+  <data name="UnknownUsageDisplayMode" xml:space="preserve">
+    <value>Unknown usage display mode.</value>
+  </data>
+  <data name="AccountConflictResolutionRequiresClearingThePreviousConnection" xml:space="preserve">
+    <value>Account conflict resolution requires clearing the previous connection first.</value>
+  </data>
+  <data name="TheAccountConnectionHasNotFinishedSavingSo" xml:space="preserve">
+    <value>The account connection has not finished saving, so usage cannot be read again.</value>
+  </data>
+  <data name="TheRetainedLegacyClaudeUsageDoesNotMatch" xml:space="preserve">
+    <value>The retained legacy Claude usage does not match the current subscription connection.</value>
+  </data>
+  <data name="TheAntigravityConnectionHasNotBeenSavedDurably" xml:space="preserve">
+    <value>The Antigravity connection has not been saved durably, so another usage read cannot be prepared.</value>
+  </data>
+  <data name="TheAntigravityConnectionHasNotBeenSavedDurably2" xml:space="preserve">
+    <value>The Antigravity connection has not been saved durably, so the account connection cannot complete.</value>
+  </data>
+  <data name="AnAccountUpdateMustRetainItsOriginalID" xml:space="preserve">
+    <value>An account update must retain its original ID and service.</value>
+  </data>
+  <data name="OnlyClaudeCodexCopilotAntigravityOrGrokAccounts" xml:space="preserve">
+    <value>Only Claude, Codex, Copilot, Antigravity, or Grok accounts have local connection state to reset.</value>
+  </data>
+  <data name="UsageDataMustBelongToTheCurrentAccount" xml:space="preserve">
+    <value>Usage data must belong to the current account and service.</value>
+  </data>
+  <data name="UnknownUsageSnapshotStatus" xml:space="preserve">
+    <value>Unknown usage snapshot status.</value>
+  </data>
+  <data name="AccountWritesCannotBeLockedBeforeShutdownFor" xml:space="preserve">
+    <value>Account writes cannot be locked before shutdown for an update is reserved.</value>
+  </data>
+  <data name="TheAntigravitySetupAttemptIDCannotBeEmpty" xml:space="preserve">
+    <value>The Antigravity setup attempt ID cannot be empty.</value>
+  </data>
+  <data name="TheUsageRefreshOperationCountCannotBeNegative" xml:space="preserve">
+    <value>The usage refresh operation count cannot be negative.</value>
+  </data>
+  <data name="ClaudeRestartFailClosedBindingCleanupFailedRead" xml:space="preserve">
+    <value>Claude restart fail-closed binding cleanup failed read-back verification.</value>
+  </data>
+  <data name="CodexRestartFailClosedBindingCleanupFailedRead" xml:space="preserve">
+    <value>Codex restart fail-closed binding cleanup failed read-back verification.</value>
+  </data>
+  <data name="CodexRestartFailClosedQuarantineFailedReadBack" xml:space="preserve">
+    <value>Codex restart fail-closed quarantine failed read-back verification.</value>
+  </data>
+  <data name="GrokRestartFailClosedBindingCleanupFailedRead" xml:space="preserve">
+    <value>Grok restart fail-closed binding cleanup failed read-back verification.</value>
+  </data>
+  <data name="CleanupOfAnUnpairedClaudePrivateBindingFailed" xml:space="preserve">
+    <value>Cleanup of an unpaired Claude private binding failed read-back verification.</value>
+  </data>
+  <data name="CleanupOfAnUnpairedCodexPrivateBindingFailed" xml:space="preserve">
+    <value>Cleanup of an unpaired Codex private binding failed read-back verification.</value>
+  </data>
+  <data name="OnlyClaudeAccountsCanReadLegacySubscriptionCaches" xml:space="preserve">
+    <value>Only Claude accounts can read legacy subscription caches.</value>
+  </data>
+  <data name="AccountUsageSnapshotAndLifecycleCountsMustMatch" xml:space="preserve">
+    <value>Account, usage snapshot, and lifecycle counts must match.</value>
+  </data>
+  <data name="TheAntigravitySetupIntentIsMissingItsAttempt" xml:space="preserve">
+    <value>The Antigravity setup intent is missing its attempt ID.</value>
+  </data>
+  <data name="CompletionOfTheAntigravitySetupIntentIsNot" xml:space="preserve">
+    <value>Completion of the Antigravity setup intent is not verified.</value>
+  </data>
+  <data name="TheAntigravitySetupApprovalRequestHasInvalidContent" xml:space="preserve">
+    <value>The Antigravity setup approval request has invalid content.</value>
+  </data>
+  <data name="TheAntigravityAccountConnectionHasAnInvalidFormat" xml:space="preserve">
+    <value>The Antigravity account connection has an invalid format.</value>
+  </data>
+  <data name="TheClaudeSubscriptionScopeMustBeVerified" xml:space="preserve">
+    <value>The Claude subscription scope must be verified.</value>
+  </data>
+  <data name="TheRetainedLegacyClaudeUsageCannotBeMigrated" xml:space="preserve">
+    <value>The retained legacy Claude usage cannot be migrated safely.</value>
+  </data>
+  <data name="TheGrokAccountConnectionHasAnInvalidFormat" xml:space="preserve">
+    <value>The Grok account connection has an invalid format.</value>
+  </data>
+  <data name="TheCopilotAccountConnectionHasAnInvalidFormat" xml:space="preserve">
+    <value>The Copilot account connection has an invalid format.</value>
+  </data>
+  <data name="TheClaudeSubscriptionConnectionHasAnInvalidFormat" xml:space="preserve">
+    <value>The Claude subscription connection has an invalid format.</value>
+  </data>
+  <data name="DurableLegacyClaudeUsageHistoryFailedReadBack" xml:space="preserve">
+    <value>Durable legacy Claude usage history failed read-back verification.</value>
+  </data>
+  <data name="UnknownUsageSortMode" xml:space="preserve">
+    <value>Unknown usage sort mode.</value>
+  </data>
+  <data name="UnknownUpdatePresentationStatus" xml:space="preserve">
+    <value>Unknown update presentation status.</value>
+  </data>
+  <data name="UnknownUpdateResultStatus" xml:space="preserve">
+    <value>Unknown update result status.</value>
+  </data>
+  <data name="UnknownInstallationType" xml:space="preserve">
+    <value>Unknown installation type.</value>
+  </data>
+  <data name="TheUpdatePresentationIsMissingItsAvailableVersion" xml:space="preserve">
+    <value>The update presentation is missing its available version.</value>
+  </data>
+  <data name="UnknownUpdateCheckResult" xml:space="preserve">
+    <value>Unknown update check result.</value>
+  </data>
+  <data name="UnknownAntigravityConnectionResult" xml:space="preserve">
+    <value>Unknown Antigravity connection result.</value>
+  </data>
+  <data name="TheCodexWorkspaceIDCannotBeEmpty" xml:space="preserve">
+    <value>The Codex workspace ID cannot be empty.</value>
+  </data>
+  <data name="TheCodexWorkspaceSettingsTransactionWasNotCreated" xml:space="preserve">
+    <value>The Codex workspace settings transaction was not created.</value>
+  </data>
+  <data name="TheCodexAccountLevelSignInResultHas" xml:space="preserve">
+    <value>The Codex account-level sign-in result has an invalid format.</value>
+  </data>
+  <data name="TheCodexAccountOrWorkspaceHasAnInvalid" xml:space="preserve">
+    <value>The Codex account or workspace has an invalid format.</value>
+  </data>
+  <data name="TheDurableCodexWorkspaceBindingFailedReadBack" xml:space="preserve">
+    <value>The durable Codex workspace binding failed read-back verification.</value>
+  </data>
+  <data name="TheCodexRestartQuarantineDoesNotMatchThe" xml:space="preserve">
+    <value>The Codex restart quarantine does not match the target account.</value>
+  </data>
+  <data name="TheDurableCodexRestartQuarantineFailedReadBack" xml:space="preserve">
+    <value>The durable Codex restart quarantine failed read-back verification.</value>
+  </data>
+  <data name="DeletionOfTheCodexWorkspaceBindingFailedRead" xml:space="preserve">
+    <value>Deletion of the Codex workspace binding failed read-back verification.</value>
+  </data>
+  <data name="TheLegacyClaudeSubscriptionContextProbeDidNot" xml:space="preserve">
+    <value>The legacy Claude subscription context probe did not return a verified state.</value>
+  </data>
+  <data name="TheDurableClaudePrivateBindingFailedReadBack" xml:space="preserve">
+    <value>The durable Claude private binding failed read-back verification.</value>
+  </data>
+  <data name="DeletionDuringClaudePrivateBindingRollbackFailedRead" xml:space="preserve">
+    <value>Deletion during Claude private binding rollback failed read-back verification.</value>
+  </data>
+  <data name="RestorationDuringClaudePrivateBindingRollbackFailedRead" xml:space="preserve">
+    <value>Restoration during Claude private binding rollback failed read-back verification.</value>
+  </data>
+  <data name="DeletionOfTheClaudePrivateFallbackBindingFailed" xml:space="preserve">
+    <value>Deletion of the Claude private fallback binding failed read-back verification.</value>
+  </data>
+  <data name="TheClaudeSubscriptionContextProbeDidNotReturn" xml:space="preserve">
+    <value>The Claude subscription context probe did not return a verified state.</value>
+  </data>
+  <data name="CleanupOfAClaudePrivateBindingConflictFailed" xml:space="preserve">
+    <value>Cleanup of a Claude private binding conflict failed read-back verification.</value>
+  </data>
+  <data name="CleanupOfAnOrphanGrokPrivateBindingFailed" xml:space="preserve">
+    <value>Cleanup of an orphan Grok private binding failed read-back verification.</value>
+  </data>
+  <data name="TheConcurrentRefreshCountMustBeGreaterThan" xml:space="preserve">
+    <value>The concurrent refresh count must be greater than zero.</value>
+  </data>
+  <data name="ACachedSnapshotMustBelongToAValid" xml:space="preserve">
+    <value>A cached snapshot must belong to a valid account and contain usable usage data.</value>
+  </data>
+  <data name="SentenceSeparator" xml:space="preserve">
+    <value>. </value>
+  </data>
+  <data name="UsageStatusSeparator" xml:space="preserve">
+    <value>, </value>
+  </data>
+  <data name="UnknownImportLanguage" xml:space="preserve">
+    <value>The import file contains an unknown language.</value>
+  </data>
+</root>

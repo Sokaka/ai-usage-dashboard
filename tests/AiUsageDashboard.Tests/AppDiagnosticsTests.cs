@@ -7,6 +7,7 @@ using AiUsageDashboard.Core.Persistence;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class AppDiagnosticsTests
 {
 	[Fact]

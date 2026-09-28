@@ -5,6 +5,8 @@ using System.Windows.Automation.Peers;
 using System.Windows.Interop;
 using System.Windows.Media;
 
+using AiUsageDashboard.Core.Localization;
+
 using FormsScreen = System.Windows.Forms.Screen;
 using WpfClipboard = System.Windows.Clipboard;
 using WpfMessageBox = System.Windows.MessageBox;
@@ -14,12 +16,16 @@ namespace AiUsageDashboard.App;
 public partial class AboutWindow : Window
 {
 	private const double PreferredMinimumWidth = 320;
+	private Func<string>? _updateStatusTextProvider;
+	private bool _canCheck;
+	private bool _isChecking;
 
 	internal event EventHandler? UpdateCheckRequested;
 
 	public AboutWindow()
 	{
 		InitializeComponent();
+		UiText.LanguageChanged += LanguageChanged;
 		VersionTextBox.Text = AppVersionInfo.GetDisplayVersion(typeof(App).Assembly);
 		Loaded += (_, _) => CopyVersionButton.Focus();
 		DpiChanged += (_, _) => UpdateWorkAreaConstraints();
@@ -32,21 +38,40 @@ public partial class AboutWindow : Window
 		UpdateWorkAreaConstraints();
 	}
 
+	protected override void OnClosed(EventArgs e)
+	{
+		UiText.LanguageChanged -= LanguageChanged;
+		base.OnClosed(e);
+	}
+
+	internal void UpdateUpdateStatus(
+		Func<string> statusTextProvider,
+		bool canCheck,
+		bool isChecking)
+	{
+		ArgumentNullException.ThrowIfNull(statusTextProvider);
+		UpdateUpdateStatus(statusTextProvider(), canCheck, isChecking);
+		_updateStatusTextProvider = statusTextProvider;
+	}
+
 	internal void UpdateUpdateStatus(
 		string statusText,
 		bool canCheck,
 		bool isChecking)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(statusText);
+		_updateStatusTextProvider = null;
+		_canCheck = canCheck;
+		_isChecking = isChecking;
 		bool didStatusChange = !string.Equals(
 			UpdateStatusTextBlock.Text,
 			statusText,
 			StringComparison.Ordinal);
 		UpdateStatusTextBlock.Text = statusText;
 		CheckForUpdatesButton.IsEnabled = canCheck && !isChecking;
-		CheckForUpdatesButton.Content = isChecking
-			? "檢查中…"
-			: "檢查更新";
+		CheckForUpdatesButton.SetResourceReference(
+			System.Windows.Controls.ContentControl.ContentProperty,
+			isChecking ? "Windows.Common.Checking" : "Windows.About.CheckForUpdates");
 
 		if (didStatusChange && IsVisible)
 		{
@@ -61,6 +86,20 @@ public partial class AboutWindow : Window
 						AutomationEvents.LiveRegionChanged);
 				},
 				System.Windows.Threading.DispatcherPriority.Loaded);
+		}
+	}
+
+	private void LanguageChanged(object? sender, EventArgs e)
+	{
+		if (!Dispatcher.CheckAccess())
+		{
+			Dispatcher.Invoke(() => LanguageChanged(sender, e));
+			return;
+		}
+
+		if (_updateStatusTextProvider is Func<string> provider)
+		{
+			UpdateUpdateStatus(provider, _canCheck, _isChecking);
 		}
 	}
 
@@ -88,7 +127,9 @@ public partial class AboutWindow : Window
 		try
 		{
 			WpfClipboard.SetText($"AI Usage {VersionTextBox.Text}");
-			CopyStatusTextBlock.Text = "已複製版本。";
+			CopyStatusTextBlock.SetResourceReference(
+				System.Windows.Controls.TextBlock.TextProperty,
+				"Windows.About.VersionCopied");
 			AutomationPeer? peer =
 				UIElementAutomationPeer.FromElement(CopyStatusTextBlock) ??
 				UIElementAutomationPeer.CreatePeerForElement(CopyStatusTextBlock);
@@ -99,8 +140,8 @@ public partial class AboutWindow : Window
 			CopyStatusTextBlock.Text = string.Empty;
 			WpfMessageBox.Show(
 				this,
-				$"無法複製 AI Usage 版本，剪貼簿可能正被其他程式使用。請稍後再試，或選取版本文字手動複製。\n\n{exception.Message}",
-				"無法複製版本",
+				UiText.Format("Windows.About.CouldNotCopyTheAIUsageVersionAnother", exception.Message),
+				UiText.Get("Windows.About.CouldNotCopyVersion"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Warning);
 		}
@@ -118,7 +159,7 @@ public partial class AboutWindow : Window
 		WpfMessageBox.Show(
 			this,
 			LocalUserGuideLauncher.GetFailureMessage(result),
-			"無法開啟使用說明",
+			UiText.Get("Windows.About.CouldNotOpenUserGuide"),
 			MessageBoxButton.OK,
 			MessageBoxImage.Warning);
 	}
@@ -150,8 +191,8 @@ public partial class AboutWindow : Window
 		{
 			WpfMessageBox.Show(
 				this,
-				$"Windows 無法開啟支援頁面。請在瀏覽器開啟：\n{AboutLinkLauncher.GetUrl(link)}\n\n{exception.Message}",
-				"無法開啟支援頁面",
+				UiText.Format("Windows.About.WindowsCouldNotOpenTheSupportPageOpen", AboutLinkLauncher.GetUrl(link), exception.Message),
+				UiText.Get("Windows.About.CouldNotOpenSupportPage"),
 				MessageBoxButton.OK,
 				MessageBoxImage.Warning);
 		}

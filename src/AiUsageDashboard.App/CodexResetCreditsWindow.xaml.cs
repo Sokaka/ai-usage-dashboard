@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 using FormsScreen = System.Windows.Forms.Screen;
@@ -49,8 +50,6 @@ public sealed partial class CodexResetCreditsWindow : Window
 	private const double PreferredMaximumHeight = 600;
 	private const double PreferredWidth = 410;
 	private const double PreferredMinimumWidth = 320;
-	private const string StaleSnapshotText =
-		"資料較舊，請檢查此帳號用量。";
 	private static readonly TimeSpan ExpiryTransitionDelay =
 		TimeSpan.FromMilliseconds(100);
 	private static readonly TimeSpan MaximumExpiryRecheckInterval =
@@ -62,6 +61,9 @@ public sealed partial class CodexResetCreditsWindow : Window
 	private bool _isClosed;
 
 	internal AccountUsageViewModel Account => _account;
+
+	private static string StaleSnapshotText =>
+		UiText.Get("Windows.Credits.ThisDataIsOldCheckUsageForThis");
 
 	public CodexResetCreditsWindow(
 		AccountUsageViewModel account,
@@ -82,7 +84,7 @@ public sealed partial class CodexResetCreditsWindow : Window
 		if (!_account.IsCodex || !_accounts.Contains(_account))
 		{
 			throw new ArgumentException(
-				"重置券視窗需要目前清單中的 Codex 帳號。",
+				UiText.Get("Windows.Credits.TheResetCreditsWindowRequiresACodexAccount"),
 				nameof(account));
 		}
 
@@ -94,6 +96,7 @@ public sealed partial class CodexResetCreditsWindow : Window
 		_expiryTimer = new DispatcherTimer(DispatcherPriority.Background, Dispatcher);
 		_expiryTimer.Tick += ExpiryTimer_Tick;
 		InitializeComponent();
+		UiText.LanguageChanged += LanguageChanged;
 		IsVisibleChanged += Window_IsVisibleChanged;
 		RefreshViewState();
 		Loaded += (_, _) => CloseButton.Focus();
@@ -112,12 +115,18 @@ public sealed partial class CodexResetCreditsWindow : Window
 	protected override void OnClosed(EventArgs e)
 	{
 		_isClosed = true;
+		UiText.LanguageChanged -= LanguageChanged;
 		_expiryTimer.Stop();
 		_expiryTimer.Tick -= ExpiryTimer_Tick;
 		IsVisibleChanged -= Window_IsVisibleChanged;
 		_account.PropertyChanged -= Account_PropertyChanged;
 		_accounts.CollectionChanged -= Accounts_CollectionChanged;
 		base.OnClosed(e);
+	}
+
+	private void LanguageChanged(object? sender, EventArgs e)
+	{
+		RefreshViewState();
 	}
 
 	internal static UsageSnapshot? GetCompatibleSnapshot(
@@ -157,7 +166,7 @@ public sealed partial class CodexResetCreditsWindow : Window
 			AccountText = accountName,
 			FetchedAtText = snapshot is null
 				? string.Empty
-				: $"資料時間 {snapshot.FetchedAt.ToLocalTime():yyyy/MM/dd HH:mm}",
+				: UiText.Format("Windows.Credits.Fetched0G", snapshot.FetchedAt.ToLocalTime()),
 			StaleText = snapshot?.IsStaleAt(now) == true
 				? StaleSnapshotText
 				: string.Empty
@@ -168,7 +177,7 @@ public sealed partial class CodexResetCreditsWindow : Window
 			return state with
 			{
 				DetailStateText =
-					"尚未取得資料，請檢查此帳號用量。"
+					UiText.Get("Windows.Credits.NoDataYetCheckUsageForThisAccount")
 			};
 		}
 
@@ -177,7 +186,7 @@ public sealed partial class CodexResetCreditsWindow : Window
 			return state with
 			{
 				DetailStateText =
-					"目前只有可用張數，沒有逐張資料。"
+					UiText.Get("Windows.Credits.OnlyTheAvailableCountIsProvidedIndividualCredit")
 			};
 		}
 
@@ -186,7 +195,7 @@ public sealed partial class CodexResetCreditsWindow : Window
 			return state with
 			{
 				DetailStateText =
-					"重置券明細與可用張數不一致，請檢查此帳號用量。"
+					UiText.Get("Windows.Credits.CreditDetailsDoNotMatchTheAvailableCount")
 			};
 		}
 
@@ -195,7 +204,7 @@ public sealed partial class CodexResetCreditsWindow : Window
 			return state with
 			{
 				DetailStateText =
-					"目前只有可用張數，沒有逐張資料。"
+					UiText.Get("Windows.Credits.OnlyTheAvailableCountIsProvidedIndividualCredit")
 			};
 		}
 
@@ -210,7 +219,7 @@ public sealed partial class CodexResetCreditsWindow : Window
 			return state with
 			{
 				DetailStateText =
-					"重置券明細與可用張數不一致，請檢查此帳號用量。"
+					UiText.Get("Windows.Credits.CreditDetailsDoNotMatchTheAvailableCount")
 			};
 		}
 
@@ -225,10 +234,10 @@ public sealed partial class CodexResetCreditsWindow : Window
 		return state with
 		{
 			AvailableCountText = hasExpiredCredits
-				? $"上次資料可用 {details.AvailableCount} 張"
+				? UiText.Format("Windows.Credits.LastResult0CreditsAvailable", details.AvailableCount)
 				: state.AvailableCountText,
 			DetailStateText = hasExpiredCredits
-				? "部分重置券已到期，請檢查此帳號用量。"
+				? UiText.Get("Windows.Credits.SomeCreditsHaveExpiredCheckUsageForThis")
 				: GetDetailStateText(details, rows.Length),
 			CreditRows = rows
 		};
@@ -238,14 +247,14 @@ public sealed partial class CodexResetCreditsWindow : Window
 	{
 		if (snapshot?.CodexResetCredits is CodexResetCreditDetails details)
 		{
-			return $"可用 {details.AvailableCount} 張";
+			return UiText.Format("Windows.Credits.0CreditsAvailable", details.AvailableCount);
 		}
 
 		UsageMetric? countMetric = snapshot?.Metrics.FirstOrDefault(metric =>
 			metric.Key == UsageMetricPresentation.CodexResetCreditsKey);
 		return countMetric is null
-			? "可用張數尚未取得"
-			: $"可用 {countMetric.DisplayValue}";
+			? UiText.Get("Windows.Credits.AvailableCountNotYetRetrieved")
+			: UiText.Format("Windows.Credits.Available0", UiText.Translate(countMetric.DisplayValue));
 	}
 
 	private static string GetDetailStateText(
@@ -254,17 +263,17 @@ public sealed partial class CodexResetCreditsWindow : Window
 	{
 		if (details.AvailableCount == 0)
 		{
-			return "目前沒有可用重置券。";
+			return UiText.Get("Windows.Credits.NoResetCreditsAreCurrentlyAvailable");
 		}
 
 		if (!details.IsComplete)
 		{
-			return $"明細不完整，僅顯示已取得的 {visibleAvailableCreditCount} 張可用券。";
+			return UiText.Format("Windows.Credits.DetailsAreIncompleteShowingThe0AvailableCredits", visibleAvailableCreditCount);
 		}
 
 		if (visibleAvailableCreditCount == 0)
 		{
-			return "目前只有可用張數，沒有逐張資料。";
+			return UiText.Get("Windows.Credits.OnlyTheAvailableCountIsProvidedIndividualCredit");
 		}
 
 		return string.Empty;
@@ -276,14 +285,14 @@ public sealed partial class CodexResetCreditsWindow : Window
 		DateTimeOffset now)
 	{
 		string expiresAtText = credit.ExpiresAt is DateTimeOffset expiresAt
-			? $"到期 {expiresAt.ToLocalTime():yyyy/MM/dd HH:mm}"
+			? UiText.Format("Windows.Credits.Expires0G", expiresAt.ToLocalTime())
 			: credit.HasExpiresAtField
-				? "不會到期"
-				: "未提供到期時間";
+				? UiText.Get("Windows.Credits.DoesNotExpire")
+				: UiText.Get("Windows.Credits.ExpiryTimeNotProvided");
 		return new CreditRow
 		{
 			Heading = string.IsNullOrWhiteSpace(credit.Title)
-				? $"重置券 {index + 1}"
+				? UiText.Format("Windows.Credits.ResetCredit0", index + 1)
 				: credit.Title.Trim(),
 			ExpiresAtText = expiresAtText,
 			IsResetImminent = credit.ExpiresAt is DateTimeOffset target &&

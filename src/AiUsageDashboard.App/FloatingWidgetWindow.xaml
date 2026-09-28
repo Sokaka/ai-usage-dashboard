@@ -276,7 +276,7 @@
 
                 <Grid x:Name="ExpandedHeader"
                       Margin="2,0,2,10"
-                      AutomationProperties.HelpText="拖曳此區域可移動浮窗；也可從更多操作選擇停靠角落。"
+                      AutomationProperties.HelpText="{DynamicResource Windows.Widget.DragThisAreaToMoveTheWidgetOr}"
                       Cursor="SizeAll"
                       MouseLeftButtonDown="ExpandedHeader_MouseLeftButtonDown">
                     <Grid.ColumnDefinitions>
@@ -302,7 +302,7 @@
                             <TextBlock Margin="0,2,0,0"
                                        Foreground="{DynamicResource MutedTextBrush}"
                                        FontSize="10"
-                                       Text="帳號用量顯示" />
+                                       Text="{DynamicResource Windows.Widget.AccountUsage}" />
                         </StackPanel>
                     </StackPanel>
 
@@ -310,42 +310,56 @@
                             Margin="0,0,4,0"
                             Padding="9,5"
                             AutomationProperties.HelpText="{Binding LastRefreshText}"
-                            AutomationProperties.Name="檢查全部帳號用量"
+                            AutomationProperties.Name="{DynamicResource Windows.Widget.CheckUsageForAllAccounts}"
                             Click="RefreshButton_Click"
                             Content="{Binding RefreshActionText}"
                             IsEnabled="{Binding CanRefresh}"
                             Style="{StaticResource GhostButtonStyle}"
-                            ToolTip="檢查各服務的最新用量" />
+                            ToolTip="{DynamicResource Windows.Widget.CheckTheLatestUsageForEachService}" />
                     <ToggleButton x:Name="PinButton"
                                   Grid.Column="2"
                                   Margin="0,0,4,0"
-                                  AutomationProperties.Name="視窗置頂"
+                                  AutomationProperties.Name="{DynamicResource Windows.Widget.KeepWindowOnTop}"
                                   Checked="PinButton_Checked"
-                                  Content="置頂"
+                                  Content="{DynamicResource Windows.Widget.OnTop}"
                                   IsChecked="True"
                                   Style="{StaticResource PinButtonStyle}"
-                                  ToolTip="切換永遠置頂"
+                                  ToolTip="{DynamicResource Windows.Widget.ToggleAlwaysOnTop}"
                                   Unchecked="PinButton_Unchecked" />
                     <Button Grid.Column="3"
-                            AutomationProperties.Name="開啟更多操作"
+                            AutomationProperties.Name="{DynamicResource Windows.Widget.OpenMoreActions}"
                             Click="GlobalMenuButton_Click"
                             Content="⋯"
                             Style="{StaticResource WidgetIconButtonStyle}"
-                            ToolTip="更多操作">
+                            ToolTip="{DynamicResource Windows.Widget.MoreActions}">
                         <Button.ContextMenu>
                             <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                 <MenuItem Click="AddAccountMenuItem_Click"
-                                          Header="新增帳號"
+                                          Header="{DynamicResource Windows.Widget.AddAccount}"
                                           IsEnabled="{Binding CanStartAccountManagement}" />
                                 <MenuItem Click="ToggleUsageDisplayModeMenuItem_Click"
                                           Header="{Binding UsageDisplayModeActionText}"
                                           IsEnabled="{Binding CanChangeUsageDisplayMode}"
                                           ToolTip="{Binding UsageDisplayModeToolTip}" />
-                                <MenuItem Header="主題配色">
+                                <MenuItem x:Name="LanguageMenuItem"
+                                          Header="{DynamicResource Windows.Language.Menu}"
+                                          IsEnabled="{Binding CanChangeUsageDisplayMode}">
+                                    <MenuItem x:Name="EnglishLanguageMenuItem"
+                                              Click="LanguageMenuItem_Click"
+                                              Header="{DynamicResource Windows.Language.English}"
+                                              IsCheckable="True"
+                                              Tag="English" />
+                                    <MenuItem x:Name="TraditionalChineseLanguageMenuItem"
+                                              Click="LanguageMenuItem_Click"
+                                              Header="{DynamicResource Windows.Language.TraditionalChinese}"
+                                              IsCheckable="True"
+                                              Tag="TraditionalChinese" />
+                                </MenuItem>
+                                <MenuItem Header="{DynamicResource Windows.Widget.Theme}">
                                     <MenuItem x:Name="ClassicBlueThemeMenuItem"
-                                              AutomationProperties.Name="經典藍主題"
+                                              AutomationProperties.Name="{DynamicResource Windows.Widget.ClassicBlueTheme}"
                                               Click="ThemeMenuItem_Click"
-                                              Header="經典藍"
+                                              Header="{DynamicResource Windows.Widget.ClassicBlue}"
                                               IsCheckable="True"
                                               Tag="ClassicBlue">
                                         <MenuItem.Icon>
@@ -356,9 +370,9 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <MenuItem x:Name="MidnightThemeMenuItem"
-                                              AutomationProperties.Name="曜石黑主題"
+                                              AutomationProperties.Name="{DynamicResource Windows.Widget.MidnightTheme}"
                                               Click="ThemeMenuItem_Click"
-                                              Header="曜石黑"
+                                              Header="{DynamicResource Windows.Widget.Midnight}"
                                               IsCheckable="True"
                                               Tag="Midnight">
                                         <MenuItem.Icon>
@@ -371,9 +385,9 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <MenuItem x:Name="LightThemeMenuItem"
-                                              AutomationProperties.Name="柔霧灰主題"
+                                              AutomationProperties.Name="{DynamicResource Windows.Widget.LightTheme}"
                                               Click="ThemeMenuItem_Click"
-                                              Header="柔霧灰"
+                                              Header="{DynamicResource Windows.Widget.Light}"
                                               IsCheckable="True"
                                               Tag="Light">
                                         <MenuItem.Icon>
@@ -386,9 +400,9 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <MenuItem x:Name="SakuraThemeMenuItem"
-                                              AutomationProperties.Name="櫻花粉主題"
+                                              AutomationProperties.Name="{DynamicResource Windows.Widget.SakuraTheme}"
                                               Click="ThemeMenuItem_Click"
-                                              Header="櫻花粉"
+                                              Header="{DynamicResource Windows.Widget.Sakura}"
                                               IsCheckable="True"
                                               Tag="Sakura">
                                         <MenuItem.Icon>
@@ -404,69 +418,69 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
                                 </MenuItem>
-                                <MenuItem Header="停靠位置">
+                                <MenuItem Header="{DynamicResource Windows.Widget.DockPosition}">
                                     <MenuItem x:Name="TopLeftCornerMenuItem"
                                               Click="CornerMenuItem_Click"
-                                              Header="左上角"
+                                              Header="{DynamicResource Windows.Widget.TopLeft}"
                                               IsCheckable="True"
                                               Tag="TopLeft" />
                                     <MenuItem x:Name="TopRightCornerMenuItem"
                                               Click="CornerMenuItem_Click"
-                                              Header="右上角"
+                                              Header="{DynamicResource Windows.Widget.TopRight}"
                                               IsCheckable="True"
                                               Tag="TopRight" />
                                     <MenuItem x:Name="BottomLeftCornerMenuItem"
                                               Click="CornerMenuItem_Click"
-                                              Header="左下角"
+                                              Header="{DynamicResource Windows.Widget.BottomLeft}"
                                               IsCheckable="True"
                                               Tag="BottomLeft" />
                                     <MenuItem x:Name="BottomRightCornerMenuItem"
                                               Click="CornerMenuItem_Click"
-                                              Header="右下角"
+                                              Header="{DynamicResource Windows.Widget.BottomRight}"
                                               IsCheckable="True"
                                               Tag="BottomRight" />
                                 </MenuItem>
                                 <MenuItem x:Name="HeightFollowsCardCountMenuItem"
-                                          AutomationProperties.Name="視窗高度隨卡片數量調整"
+                                          AutomationProperties.Name="{DynamicResource Windows.Widget.AdjustWindowHeightToFitCards}"
                                           Click="HeightFollowsCardCountMenuItem_Click"
-                                          Header="高度隨卡片數量調整"
+                                          Header="{DynamicResource Windows.Widget.FitHeightToCards}"
                                           IsCheckable="True"
-                                          ToolTip="依目前卡片與提示內容自動縮短視窗；卡片過多時仍可捲動。" />
+                                          ToolTip="{DynamicResource Windows.Widget.AutomaticallyShortenTheWindowToFitCardsAnd}" />
                                 <Separator />
                                 <MenuItem Click="ToggleSortModeMenuItem_Click"
                                           Header="{Binding SortModeActionText}"
                                           IsEnabled="{Binding CanChangeSortMode}"
                                           ToolTip="{Binding SortModeToolTip}" />
                                 <MenuItem AutomationProperties.AutomationId="ShowAutomaticSortRules"
-                                          AutomationProperties.Name="自動排序規則"
+                                          AutomationProperties.Name="{DynamicResource Windows.Widget.AutomaticSortRules}"
                                           Click="ShowAutomaticSortRulesMenuItem_Click"
-                                          Header="自動排序規則" />
+                                          Header="{DynamicResource Windows.Widget.AutomaticSortRules}" />
                                 <Separator />
-                                <MenuItem Header="匯入或匯出設定">
+                                <MenuItem Header="{DynamicResource Windows.Widget.ImportOrExportSettings}">
                                     <MenuItem AutomationProperties.AutomationId="ExportPortableSettings"
                                               Click="ExportSettingsMenuItem_Click"
-                                              Header="匯出設定…"
+                                              Header="{DynamicResource Windows.Widget.ExportSettings}"
                                               IsEnabled="{Binding CanStartAccountManagement}" />
                                     <MenuItem AutomationProperties.AutomationId="ImportPortableSettings"
                                               Click="ImportSettingsMenuItem_Click"
-                                              Header="匯入設定…"
+                                              Header="{DynamicResource Windows.Widget.ImportSettings}"
                                               IsEnabled="{Binding CanStartAccountManagement}" />
                                     <Separator />
                                     <MenuItem AutomationProperties.AutomationId="UndoPortableSettingsImport"
                                               Click="UndoSettingsImportMenuItem_Click"
-                                              Header="還原匯入前設定"
+                                              Header="{DynamicResource Windows.Widget.RestoreSettingsFromBeforeImport}"
                                               IsEnabled="{Binding CanUndoLastPortableSettingsImport}"
-                                              ToolTip="只還原這次匯入取代的帳號、順序與設定。關閉程式後便無法還原。" />
+                                              ToolTip="{DynamicResource Windows.Widget.RestoreTheAccountsOrderAndSettingsReplacedBy}" />
                                 </MenuItem>
                                 <MenuItem AutomationProperties.AutomationId="OpenUserGuide"
                                           Click="OpenUserGuideMenuItem_Click"
-                                          Header="使用說明" />
+                                          Header="{DynamicResource Windows.Widget.UserGuide}" />
                                 <MenuItem AutomationProperties.AutomationId="OpenAbout"
                                           Click="OpenAboutMenuItem_Click"
-                                          Header="關於 AI Usage" />
+                                          Header="{DynamicResource Windows.Widget.AboutAIUsage}" />
                                 <Separator />
                                 <MenuItem Click="HideButton_Click"
-                                          Header="隱藏浮窗" />
+                                          Header="{DynamicResource Windows.Widget.HideWidget}" />
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
@@ -498,25 +512,25 @@
                                     Margin="0,0,8,8"
                                     AutomationProperties.AutomationId="UpdatePrimaryAction"
                                     Click="UpdatePrimaryActionButton_Click"
-                                    Content="檢查更新"
+                                    Content="{DynamicResource Windows.Widget.CheckForUpdates}"
                                     Style="{StaticResource PrimaryButtonStyle}" />
                             <Button x:Name="UpdateReleaseHistoryButton"
                                     Margin="0,0,8,8"
                                     AutomationProperties.AutomationId="UpdateReleaseHistory"
                                     Click="UpdateReleaseHistoryButton_Click"
-                                    Content="版本紀錄"
+                                    Content="{DynamicResource Windows.Widget.ReleaseNotes}"
                                     Style="{StaticResource SecondaryButtonStyle}" />
                             <Button x:Name="UpdateSnoozeButton"
                                     Margin="0,0,8,8"
                                     AutomationProperties.AutomationId="UpdateSnooze"
                                     Click="UpdateSnoozeButton_Click"
-                                    Content="稍後提醒"
+                                    Content="{DynamicResource Windows.Widget.RemindMeLater}"
                                     Style="{StaticResource SecondaryButtonStyle}" />
                             <Button x:Name="DisableAutomaticUpdateChecksButton"
                                     Margin="0,0,0,8"
                                     AutomationProperties.AutomationId="DisableAutomaticUpdateChecks"
                                     Click="DisableAutomaticUpdateChecksButton_Click"
-                                    Content="關閉自動檢查"
+                                    Content="{DynamicResource Windows.Widget.TurnOffAutomaticChecks}"
                                     Style="{StaticResource GhostButtonStyle}"
                                     Visibility="Collapsed" />
                         </WrapPanel>
@@ -525,7 +539,7 @@
 
                 <ScrollViewer x:Name="AccountScrollViewer"
                               Grid.Row="2"
-                              AutomationProperties.HelpText="可用滾輪、捲軸，或按住帳號卡片上下拖曳來捲動畫面。"
+                              AutomationProperties.HelpText="{DynamicResource Windows.Widget.ScrollWithTheMouseWheelScrollbarOrBy}"
                               HorizontalScrollBarVisibility="Disabled"
                               LostMouseCapture="AccountScrollViewer_LostMouseCapture"
                               PanningMode="VerticalOnly"
@@ -620,24 +634,24 @@
                                                         Width="40"
                                                         Height="40"
                                                         Padding="0"
-                                                        AutomationProperties.Name="{Binding AccountName, StringFormat={}{0} 帳號操作}"
+                                                        AutomationProperties.Name="{Binding AccountActionsAutomationName}"
                                                         Click="AccountMenuButton_Click"
                                                         Content="⋯"
                                                         Style="{StaticResource AccountMenuButtonStyle}"
                                                         Tag="{Binding DataContext.IsManagingAccounts, RelativeSource={RelativeSource AncestorType={x:Type local:FloatingWidgetWindow}}}"
-                                                        ToolTip="帳號操作">
+                                                        ToolTip="{DynamicResource Windows.Widget.AccountActions}">
                                                     <Button.ContextMenu>
                                                         <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                                             <MenuItem Click="RefreshAccountMenuItem_Click"
-                                                                      Header="檢查此帳號用量"
+                                                                      Header="{DynamicResource Windows.Widget.CheckUsageForThisAccount}"
                                                                       Style="{StaticResource AccountRefreshMenuItemStyle}" />
                                                             <MenuItem AutomationProperties.AutomationId="ViewCodexResetCredits"
                                                                       Click="ViewCodexResetCreditsMenuItem_Click"
-                                                                      Header="查看重置券"
+                                                                      Header="{DynamicResource Windows.Widget.ViewResetCredits}"
                                                                       Style="{StaticResource AccountDetailsMenuItemStyle}"
                                                                       Visibility="{Binding IsCodex, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                             <MenuItem Click="EditAccountMenuItem_Click"
-                                                                      Header="帳號設定"
+                                                                      Header="{DynamicResource Windows.Widget.AccountSettings}"
                                                                       Style="{StaticResource AccountMutationMenuItemStyle}" />
                                                             <MenuItem AutomationProperties.Name="{Binding SubscriptionContextMenuText}"
                                                                       Click="ToggleSubscriptionContextMenuItem_Click"
@@ -651,27 +665,27 @@
                                                                 <MenuItem.Style>
                                                                     <Style TargetType="{x:Type MenuItem}"
                                                                            BasedOn="{StaticResource AccountMutationMenuItemStyle}">
-                                                                        <Setter Property="Header" Value="開始檢查用量" />
+                                                                        <Setter Property="Header" Value="{DynamicResource Windows.Widget.StartUsageChecks}" />
                                                                         <Style.Triggers>
                                                                             <DataTrigger Binding="{Binding IsEnabled}" Value="True">
-                                                                                <Setter Property="Header" Value="停止檢查用量" />
+                                                                                <Setter Property="Header" Value="{DynamicResource Windows.Widget.StopUsageChecks}" />
                                                                             </DataTrigger>
                                                                         </Style.Triggers>
                                                                     </Style>
                                                                 </MenuItem.Style>
                                                             </MenuItem>
                                                             <Separator />
-                                                            <MenuItem AutomationProperties.Name="{Binding AccountName, StringFormat=將帳號「{0}」向上移動}"
+                                                            <MenuItem AutomationProperties.Name="{Binding MoveAccountUpAutomationName}"
                                                                       Click="MoveAccountUpButton_Click"
-                                                                      Header="向上移動"
+                                                                      Header="{DynamicResource Windows.Widget.MoveUp}"
                                                                       IsEnabled="{Binding CanMoveUp}" />
-                                                            <MenuItem AutomationProperties.Name="{Binding AccountName, StringFormat=將帳號「{0}」向下移動}"
+                                                            <MenuItem AutomationProperties.Name="{Binding MoveAccountDownAutomationName}"
                                                                       Click="MoveAccountDownButton_Click"
-                                                                      Header="向下移動"
+                                                                      Header="{DynamicResource Windows.Widget.MoveDown}"
                                                                       IsEnabled="{Binding CanMoveDown}" />
                                                             <Separator />
                                                             <MenuItem Click="DeleteAccountMenuItem_Click"
-                                                                      Header="從 AI Usage 移除帳號">
+                                                                      Header="{DynamicResource Windows.Widget.RemoveAccountFromAIUsage}">
                                                                 <MenuItem.Style>
                                                                     <Style TargetType="{x:Type MenuItem}"
                                                                            BasedOn="{StaticResource AccountMutationMenuItemStyle}">
@@ -810,11 +824,11 @@
                                                                     Visibility="{Binding HasExecutableRecoveryAction, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                             <Button Margin="0,0,7,5"
                                                                     Click="CopyRecoveryGuidanceButton_Click"
-                                                                    Content="複製處理步驟"
+                                                                    Content="{DynamicResource Windows.Widget.CopyRecoverySteps}"
                                                                     Style="{StaticResource RecoveryGuidanceButtonStyle}" />
                                                             <Button Margin="0,0,0,5"
                                                                     Click="RetryRecoveryButton_Click"
-                                                                    Content="完成後再檢查"
+                                                                    Content="{DynamicResource Windows.Widget.CheckAgainWhenDone}"
                                                                     Style="{StaticResource RecoveryRetryButtonStyle}" />
                                                         </WrapPanel>
                                                     </StackPanel>
@@ -874,7 +888,7 @@
                                            TextAlignment="Center"
                                            TextWrapping="Wrap" />
                                 <Button Click="AddAccountMenuItem_Click"
-                                        Content="新增帳號"
+                                        Content="{DynamicResource Windows.Widget.AddAccount}"
                                         IsEnabled="{Binding CanStartAccountManagement}"
                                         Style="{StaticResource PrimaryButtonStyle}" />
                             </StackPanel>
@@ -896,7 +910,7 @@
                                AutomationProperties.LiveSetting="Polite"
                                Foreground="{DynamicResource InfoBrush}"
                                FontSize="12"
-                               Text="檢查中…"
+                               Text="{DynamicResource Windows.Common.Checking}"
                                Visibility="{Binding IsRefreshing, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     <TextBlock x:Name="CompactRefreshTextBlock"
                                VerticalAlignment="Center"
@@ -926,11 +940,11 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
                 Panel.ZIndex="1"
-                AutomationProperties.Name="收合 AI Usage 到右下角"
+                AutomationProperties.Name="{DynamicResource Windows.Widget.CollapseAIUsageToTheBottomRight}"
                 Click="CollapseButton_Click"
                 Content="↘"
                 Style="{StaticResource AnchorToggleButtonStyle}"
-                ToolTip="收合 AI Usage 到右下角"
+                ToolTip="{DynamicResource Windows.Widget.CollapseAIUsageToTheBottomRight}"
                 Visibility="{Binding Visibility, ElementName=ExpandedView, Mode=OneWay}" />
 
         <Button x:Name="CollapsedButton"
@@ -939,8 +953,8 @@
                 Padding="0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                AutomationProperties.HelpText="按一下展開 AI Usage；拖曳可變更停靠角落。"
-                AutomationProperties.Name="展開 AI Usage 浮窗"
+                AutomationProperties.HelpText="{DynamicResource Windows.Widget.ClickToExpandAIUsageDragToChoose}"
+                AutomationProperties.Name="{DynamicResource Windows.Widget.ExpandAIUsageWidget}"
                 Background="{DynamicResource WindowBackgroundBrush}"
                 BorderBrush="{DynamicResource InfoBrush}"
                 BorderThickness="2"
@@ -950,7 +964,7 @@
                 PreviewMouseLeftButtonDown="CollapsedButton_PreviewMouseLeftButtonDown"
                 PreviewMouseLeftButtonUp="CollapsedButton_PreviewMouseLeftButtonUp"
                 PreviewMouseMove="CollapsedButton_PreviewMouseMove"
-                ToolTip="展開 AI Usage"
+                ToolTip="{DynamicResource Windows.Widget.ExpandAIUsage}"
                 Visibility="Collapsed">
             <Button.Template>
                 <ControlTemplate TargetType="{x:Type Button}">

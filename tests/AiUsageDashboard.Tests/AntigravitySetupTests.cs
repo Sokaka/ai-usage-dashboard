@@ -1,6 +1,7 @@
 using AiUsageDashboard.Antigravity.Setup;
 using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App.Providers;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.Tests;
@@ -305,6 +306,7 @@ public sealed class AntigravitySetupTests
 		double verticalMargin,
 		double expected)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		Assert.Equal(
 			expected,
 			SetupWindow.CalculateMaximumWindowHeight(
@@ -326,6 +328,7 @@ public sealed class AntigravitySetupTests
 		double horizontalMargin,
 		double expected)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		Assert.Equal(
 			expected,
 			SetupWindow.CalculateMaximumWindowWidth(
@@ -346,6 +349,7 @@ public sealed class AntigravitySetupTests
 		int message,
 		bool expected)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		Assert.Equal(
 			expected,
 			SetupWindow.RequiresRefreshForWindowMessage(message));
@@ -354,6 +358,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void GetFailureGuidance_WhenBuildIsUnsupported_HandlesBothVersionCommandOutcomes()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string guidance = SetupWindow.GetFailureGuidance(
 			AntigravityMachineSetupFailureKind.UnsupportedBuild);
 
@@ -366,6 +371,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void GetFailureGuidance_WhenMultipleCliInstallationsAreFound_CoversInstallationsAndPath()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string guidance = SetupWindow.GetFailureGuidance(
 			AntigravityMachineSetupFailureKind.AmbiguousExecutable);
 		string diagnosticNextStep = SetupWindow.GetDiagnosticNextStep(
@@ -388,6 +394,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void GetFailureGuidance_WhenUsageIsRejected_ExplainsValidationFailure()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string guidance = SetupWindow.GetFailureGuidance(
 			AntigravityMachineSetupFailureKind.UsageRejected);
 
@@ -400,6 +407,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void GetFailureGuidance_WhenOfficialExecutionIsBusy_ExplainsTransientContentionWithoutReauthentication()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string guidance = SetupWindow.GetFailureGuidance(
 			AntigravityMachineSetupFailureKind.ExecutionBusy);
 
@@ -416,6 +424,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void GetFailureGuidance_WhenClosingAntigravityIsRequired_GivesDirectSteps()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string guidance = SetupWindow.GetFailureGuidance(
 			AntigravityMachineSetupFailureKind.ExistingProcessDetected);
 
@@ -430,6 +439,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void GetFailureGuidance_WhenSettingsAreRejected_DoesNotRequireStatusLineChanges()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string guidance = SetupWindow.GetFailureGuidance(
 			AntigravityMachineSetupFailureKind.SettingsRejected);
 
@@ -463,6 +473,7 @@ public sealed class AntigravitySetupTests
 	public void ShouldAutoCloseAfterApprovalUncertainty_MatchesApprovalStart(
 		bool hasApprovalStarted)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		Assert.Equal(
 			hasApprovalStarted,
 			SetupWindow.ShouldAutoCloseAfterApprovalUncertainty(
@@ -1188,6 +1199,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void GetProgressText_WhenProfileIsMaterializing_DoesNotClaimItWasSaved()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		Assert.Equal(
 			"正在準備本機連接設定…",
 			SetupWindow.GetProgressText(
@@ -1197,6 +1209,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void SafetyRevalidationFailure_ExposesExplicitOneShotActionAndGuidance()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		Assert.Equal(
 			"重新檢查 Antigravity 用量",
 			SetupWindow.GetFailureActionText(
@@ -1232,6 +1245,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void CreateSafeDiagnosticInfo_ContainsOnlyApprovedDiagnosticFields()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string diagnostic = SetupWindow.CreateSafeDiagnosticInfo(
 			"1.2.3",
 			AntigravityMachineSetupFailureKind.UsageRejected,
@@ -1264,6 +1278,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void CreateSafeDiagnosticInfo_ForUnsupportedDiscovery_IsActionableAndDeterministic()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string first = SetupWindow.CreateSafeDiagnosticInfo(
 			"1.2.3",
 			AntigravityMachineSetupFailureKind.UnsupportedBuild,
@@ -1286,6 +1301,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void CreateSafeDiagnosticInfo_ForBusyOfficialExecution_DoesNotMisdiagnoseBuild()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string diagnostic = SetupWindow.CreateSafeDiagnosticInfo(
 			"1.2.3",
 			AntigravityMachineSetupFailureKind.ExecutionBusy,
@@ -1306,6 +1322,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void ResolveAppVersion_WithProductVersion_UsesFullPackageVersion()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string ProductVersion =
 			"1.0.0-internal.20260811.13.ga30b3a9db7c8.run31476253323.a1+" +
 			"a30b3a9db7c8eb67187d90dc423ba70300380d6c";
@@ -1324,6 +1341,7 @@ public sealed class AntigravitySetupTests
 	public void ResolveAppVersion_WithMissingProductVersion_UsesAssemblyVersion(
 		string? productVersion)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string result = SetupWindow.ResolveAppVersion(
 			() => productVersion,
 			new Version(1, 2, 3, 4));
@@ -1334,6 +1352,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void ResolveAppVersion_WhenProductVersionReadThrows_UsesAssemblyVersion()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string result = SetupWindow.ResolveAppVersion(
 			() => throw new IOException("Synthetic metadata read failure."),
 			new Version(2, 3, 4, 5));
@@ -1344,6 +1363,7 @@ public sealed class AntigravitySetupTests
 	[Fact]
 	public void ResolveAppVersion_WithControlCharacters_RejectsDiagnosticInjection()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string result = SetupWindow.ResolveAppVersion(
 			() => "1.2.3\r\nReference: PRIVATE-SENTINEL",
 			new Version(3, 4, 5, 6));

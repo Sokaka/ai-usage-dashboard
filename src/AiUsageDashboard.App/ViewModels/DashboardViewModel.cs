@@ -10,6 +10,7 @@ using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App.Infrastructure;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Persistence;
 using AiUsageDashboard.Core.Refreshing;
@@ -329,13 +330,13 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 	public bool CanChangeUsageDisplayMode => !IsManagingAccounts &&
 		!_isUpdateShutdownReserved;
 
-	public string EmptyAccountsTitle => CanManageAccounts
+	public string EmptyAccountsTitle => UiText.Translate(CanManageAccounts
 		? "尚未新增帳號"
-		: "帳號設定目前無法載入";
+		: "帳號設定目前無法載入");
 
-	public string EmptyAccountsMessage => CanManageAccounts
+	public string EmptyAccountsMessage => UiText.Translate(CanManageAccounts
 		? "選擇「新增帳號」開始設定。"
-		: "設定檔可能由較新版本建立或目前無法讀取；原檔不會被覆寫。";
+		: "設定檔可能由較新版本建立或目前無法讀取；原檔不會被覆寫。");
 
 	public bool HasAccounts => Accounts.Count > 0;
 
@@ -394,13 +395,13 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 	public string AccountSettingsMessage
 	{
-		get => _accountSettingsMessage;
+		get => LocalizeAccountSettingsMessage();
 		private set => SetField(ref _accountSettingsMessage, value);
 	}
 
 	public string AccountSettingsHealthMessage
 	{
-		get => _accountSettingsHealthMessage;
+		get => UiText.Translate(_accountSettingsHealthMessage);
 		private set
 		{
 			if (_accountSettingsHealthMessage == value)
@@ -419,7 +420,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 	public CompactRefreshStatus CompactRefreshStatus
 	{
-		get => _compactRefreshStatus;
+		get => _compactRefreshStatus with { Text = UiText.Translate(_compactRefreshStatus.Text) };
 		private set
 		{
 			_compactRefreshStatus = value;
@@ -430,39 +431,63 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 	public string LastRefreshText
 	{
-		get => _lastRefreshText;
+		get => LocalizeLastRefreshText();
 		private set => SetField(ref _lastRefreshText, value);
 	}
 
-	public string RefreshActionText => IsRefreshing ? "正在檢查…" : "檢查用量";
+	public string RefreshActionText => UiText.Translate(IsRefreshing ? "正在檢查…" : "檢查用量");
 
 	public UsageSortMode SortMode => _sortMode;
 
-	public string SortModeActionText => IsAutomaticUsageSorting
+	public string SortModeActionText => UiText.Translate(IsAutomaticUsageSorting
 		? "切換為手動排序"
-		: "切換為自動排序";
+		: "切換為自動排序");
 
-	public string SortModeText => IsAutomaticUsageSorting
+	public string SortModeText => UiText.Translate(IsAutomaticUsageSorting
 		? "排序：自動"
-		: "排序：手動";
+		: "排序：手動");
 
-	public string SortModeToolTip => IsAutomaticUsageSorting
+	public string SortModeToolTip => UiText.Translate(IsAutomaticUsageSorting
 		? "先依服務，再依 5 小時、週用量的重置時間排序，不看用量百分比。按一下切換為手動。"
-		: "保留自訂帳號順序。按一下切換為自動。";
+		: "保留自訂帳號順序。按一下切換為自動。");
 
 	public UsageDisplayMode DisplayMode => _usageDisplayMode;
 
-	public string UsageDisplayModeActionText => IsShowingRemainingUsage
+	public string UsageDisplayModeActionText => UiText.Translate(IsShowingRemainingUsage
 		? "改為顯示已使用量"
-		: "改為顯示剩餘用量";
+		: "改為顯示剩餘用量");
 
-	public string UsageDisplayModeText => IsShowingRemainingUsage
+	public string UsageDisplayModeText => UiText.Translate(IsShowingRemainingUsage
 		? "顯示：剩餘"
-		: "顯示：已使用";
+		: "顯示：已使用");
 
-	public string UsageDisplayModeToolTip => IsShowingRemainingUsage
+	public string UsageDisplayModeToolTip => UiText.Translate(IsShowingRemainingUsage
 		? "目前顯示剩餘用量。按一下改為已使用。"
-		: "目前顯示已使用量。按一下改為剩餘。";
+		: "目前顯示已使用量。按一下改為剩餘。");
+
+	public void RefreshLocalizedPresentation()
+	{
+		OnPropertyChanged(string.Empty);
+		foreach (AccountUsageViewModel account in Accounts)
+		{
+			account.RefreshLocalizedPresentation();
+		}
+
+		OnPropertyChanged(nameof(EmptyAccountsTitle));
+		OnPropertyChanged(nameof(EmptyAccountsMessage));
+		OnPropertyChanged(nameof(RefreshActionText));
+		OnPropertyChanged(nameof(SortModeActionText));
+		OnPropertyChanged(nameof(SortModeText));
+		OnPropertyChanged(nameof(SortModeToolTip));
+		OnPropertyChanged(nameof(UsageDisplayModeActionText));
+		OnPropertyChanged(nameof(UsageDisplayModeText));
+		OnPropertyChanged(nameof(UsageDisplayModeToolTip));
+		OnPropertyChanged(nameof(AccountSettingsMessage));
+		OnPropertyChanged(nameof(AccountSettingsHealthMessage));
+		OnPropertyChanged(nameof(LastRefreshText));
+		OnPropertyChanged(nameof(CompactRefreshStatus));
+		OnPropertyChanged(nameof(CanUndoLastPortableSettingsImport));
+	}
 
 	public DashboardViewModel(
 		IAccountProfileStore accountProfileStore,
@@ -920,6 +945,9 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				Theme = settings.WidgetPreferences.Theme is null
 					? null
 					: currentShellPreferences.Theme,
+				Language = settings.WidgetPreferences.Language is null
+					? null
+					: currentShellPreferences.Language,
 				IsHeightFollowingCardCount =
 					settings.WidgetPreferences.IsHeightFollowingCardCount is null
 						? null
@@ -1192,53 +1220,53 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			if (importedMachineLocalProfiles.Any(
 				profile => profile.Provider == ProviderKind.Claude))
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 				" Claude 訂閱連接資料不會隨設定匯入，已重設；請逐一重新連接 Claude 帳號。";
 			}
 
 			if (importedMachineLocalProfiles.Any(
 				profile => profile.Provider == ProviderKind.Codex))
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" Codex 連接不會隨設定匯入，已重設。請逐一重新連接 Codex 帳號。使用 workspace 連接時，要重新輸入 workspace ID。";
 			}
 
 			if (importedMachineLocalProfiles.Any(
 				profile => profile.Provider == ProviderKind.Copilot))
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" Copilot credential 不會隨設定匯入，卡片連接已重設；請逐一重新連接 Copilot 帳號。";
 			}
 
 			if (importedMachineLocalProfiles.Any(
 				profile => profile.Provider == ProviderKind.Antigravity))
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" Antigravity 連接屬於這台電腦，已重設；請在這台電腦重新連接 Antigravity 帳號。";
 			}
 
 			if (importedMachineLocalProfiles.Any(
 				profile => profile.Provider == ProviderKind.Grok))
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" Grok 連接資料不會隨設定匯入，已重設；請逐一重新連接 Grok 帳號。";
 			}
 
 			if (!wereCachedSnapshotsDeleted)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" 部分帳號的上次用量無法清除；資料可能仍保留在這台電腦。";
 			}
 
 			if (!wereRuntimeStatesPurged)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" 多次嘗試後仍無法清除部分帳號的舊資料；資料可能仍保留在這台電腦。";
 			}
 
 			if (!wereRefreshesQuiesced)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" 部分舊帳號的用量檢查尚未停止。設定已套用，稍後會自動完成，重新啟動後也會繼續。";
 			}
 
@@ -1255,14 +1283,14 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 			if (committedCleanupReceiptWarning is not null)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" 匯入後的 private state 清理授權尚未完成；清理工作與交易紀錄已保留，重新啟動後會自動再試。";
 				throw committedCleanupReceiptWarning;
 			}
 
 			ThrowCommittedSaveWarning(
 				committedWarning,
-				$"{AccountSettingsMessage} 帳號設定已套用，但備份更新失敗。");
+				$"{_accountSettingsMessage} 帳號設定已套用，但備份更新失敗。");
 		}
 		finally
 		{
@@ -1507,25 +1535,25 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				" 為避免顯示匯入後的錯誤帳號資料，部分用量可能需要重新檢查。";
 			if (didResetRestoredClaudeConnection)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 				" Claude 訂閱連接資料已在匯入時重設；請逐一重新連接需要使用的 Claude 帳號。";
 			}
 
 			if (didResetRestoredCodexConnection)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" Codex 連接已在匯入時重設。請逐一重新連接需要使用的 Codex 帳號。使用 workspace 連接時，要重新輸入 workspace ID。";
 			}
 
 			if (didResetRestoredCopilotConnection)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" Copilot 卡片連接已在匯入時重設；請逐一重新連接需要使用的 Copilot 帳號。";
 			}
 
 			if (didResetRestoredGrokConnection)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" Grok 連接資料已在匯入時重設；請逐一重新連接需要使用的 Grok 帳號。";
 			}
 
@@ -1575,19 +1603,19 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 			if (!wereCachedSnapshotsDeleted)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" 部分匯入後的上次用量無法清除，建議重新啟動 AI Usage。";
 			}
 
 			if (!wereRuntimeStatesPurged)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" 多次嘗試後仍無法清除部分匯入後的舊資料；資料可能仍保留在這台電腦。";
 			}
 
 			if (!wereRefreshesQuiesced)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" 部分匯入後的用量檢查尚未停止。設定已還原，稍後會自動完成，重新啟動後也會繼續。";
 			}
 
@@ -1604,14 +1632,14 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 			if (committedCleanupReceiptWarning is not null)
 			{
-				AccountSettingsMessage +=
+				AccountSettingsMessage = _accountSettingsMessage +
 					" 還原後的 private state 清理授權尚未完成；清理工作與交易紀錄已保留，重新啟動後會自動再試。";
 				throw committedCleanupReceiptWarning;
 			}
 
 			ThrowCommittedSaveWarning(
 				committedWarning,
-				$"{AccountSettingsMessage} 帳號設定已還原，但備份更新失敗。");
+				$"{_accountSettingsMessage} 帳號設定已還原，但備份更新失敗。");
 		}
 		finally
 		{
@@ -4924,6 +4952,42 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 		}
 	}
 
+	private string LocalizeAccountSettingsMessage()
+	{
+		const string ImportBackupWarning = " 帳號設定已套用，但備份更新失敗。";
+		const string RestoreBackupWarning = " 帳號設定已還原，但備份更新失敗。";
+		if (_accountSettingsMessage.EndsWith(ImportBackupWarning, StringComparison.Ordinal))
+		{
+			return UiText.Format("Status.AccountSettingsWereAppliedButTheBackupUpdate",
+				UiText.Translate(_accountSettingsMessage[..^ImportBackupWarning.Length]));
+		}
+
+		if (_accountSettingsMessage.EndsWith(RestoreBackupWarning, StringComparison.Ordinal))
+		{
+			return UiText.Format("Status.AccountSettingsWereRestoredButTheBackupUpdate",
+				UiText.Translate(_accountSettingsMessage[..^RestoreBackupWarning.Length]));
+		}
+
+		return UiText.Translate(_accountSettingsMessage);
+	}
+
+	private string LocalizeLastRefreshText()
+	{
+		const string ResultPrefix = "檢查完成：";
+		const string DataTimePrefix = "；最舊資料 ";
+		if (UiText.CurrentLanguage == AppLanguage.TraditionalChinese ||
+			!_lastRefreshText.StartsWith(ResultPrefix, StringComparison.Ordinal))
+		{
+			return UiText.Translate(_lastRefreshText);
+		}
+		string summary = _lastRefreshText[ResultPrefix.Length..];
+		int dataTimeIndex = summary.IndexOf(DataTimePrefix, StringComparison.Ordinal);
+		string dataTime = dataTimeIndex < 0 ? string.Empty : UiText.Translate(summary[dataTimeIndex..]);
+		string counts = dataTimeIndex < 0 ? summary : summary[..dataTimeIndex];
+		return UiText.Format("Status.CheckComplete",
+			string.Join(", ", counts.Split('、').Select(UiText.Translate)), dataTime);
+	}
+
 	private void SetRefreshStatus(
 		string fullText,
 		CompactRefreshStatus compactStatus)
@@ -6346,25 +6410,25 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
 	private void AppendAccountSettingsHealthWarning(string warning)
 	{
-		if (AccountSettingsHealthMessage.Contains(warning, StringComparison.Ordinal))
+		if (_accountSettingsHealthMessage.Contains(warning, StringComparison.Ordinal))
 		{
 			return;
 		}
 
 		AccountSettingsHealthMessage = string.IsNullOrWhiteSpace(
-			AccountSettingsHealthMessage)
+			_accountSettingsHealthMessage)
 			? warning
-			: $"{AccountSettingsHealthMessage} {warning}";
+			: $"{_accountSettingsHealthMessage} {warning}";
 	}
 
 	private void ClearAccountSettingsHealthWarning(string warning)
 	{
-		if (!AccountSettingsHealthMessage.Contains(warning, StringComparison.Ordinal))
+		if (!_accountSettingsHealthMessage.Contains(warning, StringComparison.Ordinal))
 		{
 			return;
 		}
 
-		AccountSettingsHealthMessage = AccountSettingsHealthMessage
+		AccountSettingsHealthMessage = _accountSettingsHealthMessage
 			.Replace(warning, string.Empty, StringComparison.Ordinal)
 			.Trim();
 	}
@@ -10152,7 +10216,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				NoRefreshTargetsMessage,
 				CompactRefreshStatus.Hidden);
 		}
-		else if (LastRefreshText == NoRefreshTargetsMessage)
+		else if (_lastRefreshText == NoRefreshTargetsMessage)
 		{
 			SetRefreshStatus(
 				"尚未檢查",
@@ -10401,6 +10465,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				? DashboardStartupSurface.Widget
 				: DashboardStartupSurface.Tray,
 			Theme = widgetPreferences.Theme ?? currentShellPreferences.Theme,
+			Language = widgetPreferences.Language ?? currentShellPreferences.Language,
 			IsHeightFollowingCardCount =
 				widgetPreferences.IsHeightFollowingCardCount ??
 				currentShellPreferences.IsHeightFollowingCardCount
@@ -10415,6 +10480,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			(first.IsTopmost == second.IsTopmost) &&
 			(first.Corner == second.Corner) &&
 			((first.Theme is null) || (first.Theme == second.Theme)) &&
+			((first.Language is null) || (first.Language == second.Language)) &&
 			((first.IsHeightFollowingCardCount is null) ||
 				(first.IsHeightFollowingCardCount ==
 					second.IsHeightFollowingCardCount));
@@ -10429,7 +10495,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 			shellPreferences.IsTopmost,
 			shellPreferences.Corner,
 			shellPreferences.Theme,
-			shellPreferences.IsHeightFollowingCardCount);
+			shellPreferences.IsHeightFollowingCardCount,
+			shellPreferences.Language);
 	}
 
 	private static DashboardShellPreferences? CreateEffectiveShellPreferences(
@@ -10524,6 +10591,15 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 				theme,
 				"匯入檔包含未知的主題設定。");
 		}
+		if ((widgetPreferences.Language is AppLanguage language) &&
+			!Enum.IsDefined(language))
+		{
+			throw new ArgumentOutOfRangeException(
+				nameof(widgetPreferences),
+				language,
+				UiText.Get("Status.UnknownImportLanguage"));
+		}
+
 	}
 
 	private void SetLastPortableSettingsImportUndoState(

@@ -1,7 +1,9 @@
 using AiUsageDashboard.App.Updates;
+using AiUsageDashboard.Core.Localization;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class UpdateUiPresentationFactoryTests
 {
 	private static readonly DateTimeOffset TestNow = new(
@@ -379,6 +381,76 @@ public sealed class UpdateUiPresentationFactoryTests
 		Assert.False(presentation.HasUpdateBadge);
 		Assert.Contains("無法可靠判斷", presentation.BannerText);
 		Assert.Equal("開啟下載頁", presentation.TrayUpdateActionText);
+	}
+
+	[Theory]
+	[InlineData("無法連線到更新服務，請稍後再試。", "Unable to connect to the update service. Try again later", false)]
+	[InlineData("無法連線到更新服務，請稍後再試。", "Unable to connect to the update service. Try again later", true)]
+	[InlineData("更新資訊未通過驗證，已停止本次檢查。", "Update information failed validation. This check has been stopped", false)]
+	[InlineData("更新資訊未通過驗證，已停止本次檢查。", "Update information failed validation. This check has been stopped", true)]
+	[InlineData("無法完成更新檢查，請稍後再試。", "The update check could not complete. Try again later", false)]
+	[InlineData("無法完成更新檢查，請稍後再試。", "The update check could not complete. Try again later", true)]
+	[InlineData("Remote diagnostic: 請保留原文 [raw_834]", "Remote diagnostic: 請保留原文 [raw_834]", false)]
+	[InlineData("Remote diagnostic: 請保留原文 [raw_834]", "Remote diagnostic: 請保留原文 [raw_834]", true)]
+	public void Create_WhenLanguageChanges_ProjectsManualFailureWithoutChangingSource(
+		string sourceMessage,
+		string englishMessage,
+		bool hasKnownUpdate)
+	{
+		UpdatePresentationState state = CreateState(UpdatePresentationStatus.CheckFailed) with
+		{
+			FailureMessage = sourceMessage,
+			IsManualCheck = true
+		};
+		if (!hasKnownUpdate)
+		{
+			state = state with
+			{
+				AvailableVersion = null,
+				ReleaseSequence = null,
+				LastKnownResult = null,
+				LastSuccessfulCheckUtc = null
+			};
+		}
+
+		foreach (AppLanguage language in new[]
+		{
+			AppLanguage.English,
+			AppLanguage.TraditionalChinese,
+			AppLanguage.English
+		})
+		{
+			using IDisposable languageScope = UiText.UseLanguage(language);
+			UpdateUiPresentation presentation = UpdateUiPresentationFactory.Create(
+				state,
+				shouldShowAutomaticCheckNotice: false,
+				AppInstallationKind.Unmanaged,
+				canLaunchUpdater: false,
+				isUpdaterRunning: false,
+				TestNow);
+			string expectedMessage = language == AppLanguage.English
+				? englishMessage
+				: sourceMessage.TrimEnd('。');
+
+			Assert.True(presentation.IsBannerVisible);
+			Assert.Equal(hasKnownUpdate, presentation.HasUpdateBadge);
+			Assert.Equal(sourceMessage, state.FailureMessage);
+			if (hasKnownUpdate)
+			{
+				Assert.StartsWith(expectedMessage, presentation.AboutStatusText);
+				Assert.StartsWith(expectedMessage, presentation.BannerText);
+				Assert.Contains("1.0.4", presentation.AboutStatusText);
+				Assert.Equal(UpdatePrimaryActionKind.OpenReleases, presentation.PrimaryAction);
+			}
+			else
+			{
+				Assert.Equal(expectedMessage, presentation.AboutStatusText);
+				Assert.Equal(expectedMessage, presentation.BannerText);
+				Assert.Equal(UpdatePrimaryActionKind.CheckNow, presentation.PrimaryAction);
+				Assert.Equal(language == AppLanguage.English ? "Check again" : "重新檢查",
+					presentation.PrimaryActionText);
+			}
+		}
 	}
 
 	private static UpdatePresentationState CreateState(

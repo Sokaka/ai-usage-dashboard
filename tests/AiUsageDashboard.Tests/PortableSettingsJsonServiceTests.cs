@@ -5,6 +5,7 @@ using System.ComponentModel;
 using AiUsageDashboard.App;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.Tests;
@@ -22,7 +23,8 @@ public sealed class PortableSettingsJsonServiceTests
 			IsTopmost: true,
 			Corner: FloatingWidgetCorner.BottomRight,
 			Theme: AppTheme.ClassicBlue,
-			IsHeightFollowingCardCount: false);
+			IsHeightFollowingCardCount: false,
+			Language: AppLanguage.English);
 
 	[Fact]
 	public void RemoteIdentityFallback_WhenNormalizedAccessIsDenied_RetriesWithOpenedName()
@@ -117,6 +119,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ExportAndImportAsync_RoundTripsAccountOrderAndPortablePreferences()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
 		PortableSettingsJsonService service = new();
@@ -146,7 +149,8 @@ public sealed class PortableSettingsJsonServiceTests
 				IsTopmost: false,
 				Corner: FloatingWidgetCorner.TopLeft,
 				Theme: AppTheme.Midnight,
-				IsHeightFollowingCardCount: true));
+				IsHeightFollowingCardCount: true,
+				Language: AppLanguage.TraditionalChinese));
 
 		await service.ExportAsync(filePath, snapshot);
 		PortableSettingsSnapshot imported = await service.ImportAsync(filePath);
@@ -296,6 +300,175 @@ public sealed class PortableSettingsJsonServiceTests
 		Assert.Equal(theme, imported.WidgetPreferences?.Theme);
 	}
 
+	[Theory]
+	[InlineData(AppLanguage.English)]
+	[InlineData(AppLanguage.TraditionalChinese)]
+	public async Task ExportAndImportAsync_RoundTripsEveryLanguage(
+		AppLanguage language)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
+		PortableSettingsSnapshot snapshot = CreateSnapshot() with
+		{
+			WidgetPreferences = DefaultWidgetPreferences with
+			{
+				Language = language,
+				Theme = AppTheme.Midnight,
+				IsHeightFollowingCardCount = true
+			}
+		};
+		PortableSettingsJsonService service = new();
+
+		await service.ExportAsync(filePath, snapshot);
+		PortableSettingsSnapshot imported = await service.ImportAsync(filePath);
+
+		Assert.Equal(snapshot.WidgetPreferences, imported.WidgetPreferences);
+		Assert.Equal(snapshot.Accounts, imported.Accounts);
+	}
+
+	[Fact]
+	public async Task ImportAsync_SchemaSixPreservesExistingPreferencesWithoutLanguage()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
+		const string LegacyDocument = """
+			{
+			  "format": "ai-usage-dashboard-settings",
+			  "schemaVersion": 6,
+			  "accounts": [],
+			  "preferences": {
+			    "usageSortMode": "Automatic",
+			    "usageDisplayMode": "Remaining",
+			    "isWidgetVisible": false,
+			    "isCollapsed": true,
+			    "isTopmost": false,
+			    "corner": "TopLeft",
+			    "theme": "Light",
+			    "isHeightFollowingCardCount": true
+			  }
+			}
+			""";
+		await File.WriteAllTextAsync(filePath, LegacyDocument);
+
+		PortableSettingsSnapshot imported = await
+			new PortableSettingsJsonService().ImportAsync(filePath);
+
+		Assert.Equal(UsageSortMode.Automatic, imported.UsageSortMode);
+		Assert.Equal(UsageDisplayMode.Remaining, imported.UsageDisplayMode);
+		Assert.Equal(
+			new PortableWidgetPreferences(
+				IsWidgetVisible: false,
+				IsCollapsed: true,
+				IsTopmost: false,
+				Corner: FloatingWidgetCorner.TopLeft,
+				Theme: AppTheme.Light,
+				IsHeightFollowingCardCount: true,
+				Language: null),
+			imported.WidgetPreferences);
+	}
+
+	[Theory]
+	[InlineData("")]
+	[InlineData(",\"language\":null")]
+	[InlineData(",\"language\":0")]
+	[InlineData(",\"language\":true")]
+	[InlineData(",\"language\":\"english\"")]
+	[InlineData(",\"language\":\"Unknown\"")]
+	[InlineData(",\"language\":\"English\",\"language\":\"TraditionalChinese\"")]
+	public async Task ImportAsync_SchemaSevenRejectsMissingInvalidOrDuplicateLanguage(
+		string languageProperty)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
+		string document = $$"""
+			{
+			  "format": "ai-usage-dashboard-settings",
+			  "schemaVersion": 7,
+			  "accounts": [],
+			  "preferences": {
+			    "usageSortMode": "Manual",
+			    "usageDisplayMode": "Used",
+			    "isWidgetVisible": true,
+			    "isCollapsed": false,
+			    "isTopmost": true,
+			    "corner": "BottomRight",
+			    "theme": "ClassicBlue",
+			    "isHeightFollowingCardCount": false{{languageProperty}}
+			  }
+			}
+			""";
+		await File.WriteAllTextAsync(filePath, document);
+
+		await Assert.ThrowsAsync<PortableSettingsException>(() =>
+			new PortableSettingsJsonService().ImportAsync(filePath));
+
+		Assert.Equal(document, await File.ReadAllTextAsync(filePath));
+	}
+
+	[Theory]
+	[InlineData(6)]
+	[InlineData(7)]
+	public async Task ImportAsync_RejectsLanguageInLegacySchemaAndUnknownCurrentFields(
+		int schemaVersion)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
+		string unknownProperty = schemaVersion == 7
+			? ",\"futureLanguage\":\"unknown\""
+			: string.Empty;
+		string document = $$"""
+			{
+			  "format": "ai-usage-dashboard-settings",
+			  "schemaVersion": {{schemaVersion}},
+			  "accounts": [],
+			  "preferences": {
+			    "usageSortMode": "Manual",
+			    "usageDisplayMode": "Used",
+			    "isWidgetVisible": true,
+			    "isCollapsed": false,
+			    "isTopmost": true,
+			    "corner": "BottomRight",
+			    "theme": "ClassicBlue",
+			    "isHeightFollowingCardCount": false,
+			    "language": "English"{{unknownProperty}}
+			  }
+			}
+			""";
+		await File.WriteAllTextAsync(filePath, document);
+
+		await Assert.ThrowsAsync<PortableSettingsException>(() =>
+			new PortableSettingsJsonService().ImportAsync(filePath));
+	}
+
+	[Theory]
+	[InlineData(AppLanguage.English, "Invalid language setting.")]
+	[InlineData(AppLanguage.TraditionalChinese, "語系設定無效。")]
+	public async Task ExportAsync_InvalidLanguageUsesSelectedLanguageAndPreservesDestination(
+		AppLanguage language,
+		string expectedMessage)
+	{
+		using IDisposable languageScope = UiText.UseLanguage(language);
+		using TemporaryDirectory temporaryDirectory = new();
+		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
+		byte[] originalContents = Encoding.UTF8.GetBytes("original settings export");
+		await File.WriteAllBytesAsync(filePath, originalContents);
+		PortableSettingsSnapshot snapshot = CreateSnapshot() with
+		{
+			WidgetPreferences = DefaultWidgetPreferences with
+			{
+				Language = null
+			}
+		};
+
+		PortableSettingsException exception = await
+			Assert.ThrowsAsync<PortableSettingsException>(() =>
+				new PortableSettingsJsonService().ExportAsync(filePath, snapshot));
+
+		Assert.Equal(expectedMessage, exception.Message);
+		Assert.Equal(originalContents, await File.ReadAllBytesAsync(filePath));
+		Assert.Empty(Directory.GetFiles(temporaryDirectory.Path, "*.tmp"));
+	}
+
 	[Fact]
 	public async Task ExportAsync_WritesExactAllowlistWithoutSecretsOrMachineLocalPreferences()
 	{
@@ -319,7 +492,8 @@ public sealed class PortableSettingsJsonServiceTests
 				IsTopmost: false,
 				Corner: FloatingWidgetCorner.TopLeft,
 				Theme: AppTheme.Light,
-				IsHeightFollowingCardCount: true));
+				IsHeightFollowingCardCount: true,
+				Language: AppLanguage.TraditionalChinese));
 
 		await service.ExportAsync(filePath, snapshot);
 		string json = await File.ReadAllTextAsync(filePath);
@@ -332,7 +506,7 @@ public sealed class PortableSettingsJsonServiceTests
 		Assert.Equal(
 			"ai-usage-dashboard-settings",
 			root.GetProperty("format").GetString());
-		Assert.Equal(6, root.GetProperty("schemaVersion").GetInt32());
+		Assert.Equal(7, root.GetProperty("schemaVersion").GetInt32());
 		JsonElement account = root.GetProperty("accounts")[0];
 		Assert.Equal(
 			[
@@ -356,7 +530,8 @@ public sealed class PortableSettingsJsonServiceTests
 				"isTopmost",
 				"corner",
 				"theme",
-				"isHeightFollowingCardCount"
+				"isHeightFollowingCardCount",
+				"language"
 			],
 			root.GetProperty("preferences")
 				.EnumerateObject()
@@ -369,6 +544,9 @@ public sealed class PortableSettingsJsonServiceTests
 		Assert.Equal("Light", preferences.GetProperty("theme").GetString());
 		Assert.True(
 			preferences.GetProperty("isHeightFollowingCardCount").GetBoolean());
+		Assert.Equal(
+			nameof(AppLanguage.TraditionalChinese),
+			preferences.GetProperty("language").GetString());
 		Assert.DoesNotContain(
 			"hasAcceptedClaudeQuotaRisk",
 			json,
@@ -721,6 +899,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ExportAsync_RejectsCanonicalAppManagedDataDestinations()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string uniqueParentDirectoryName =
 			$".portable-settings-managed-{Guid.NewGuid():N}";
 		string relativeManagedDataDirectoryPath = Path.Combine(
@@ -762,6 +941,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ExportAsync_RejectsExtendedDeviceAliasToManagedDataDirectory()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		if (!OperatingSystem.IsWindows())
 		{
 			return;
@@ -813,6 +993,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ExportAsync_RejectsJunctionAliasToManagedDataDirectory()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string managedDataDirectoryPath = Path.Combine(
 			temporaryDirectory.Path,
@@ -855,6 +1036,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ExportAsync_RejectsPhysicalBackingPathWhenManagedDirectoryIsJunction()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string backingDirectoryPath = Path.Combine(
 			temporaryDirectory.Path,
@@ -898,6 +1080,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ExportAsync_RejectsPhysicalBackingPathWhenManagedAncestorIsJunction()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string backingParentDirectoryPath = Path.Combine(
 			temporaryDirectory.Path,
@@ -948,6 +1131,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ExportAsync_RejectsHardLinkAliasToManagedFile()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string managedDataDirectoryPath = Path.Combine(
 			temporaryDirectory.Path,
@@ -996,6 +1180,7 @@ public sealed class PortableSettingsJsonServiceTests
 	public async Task ImportAsync_RejectsMalformedFutureAndIntegerEnumDocuments(
 		string json)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
 		await File.WriteAllTextAsync(filePath, json);
@@ -1012,12 +1197,13 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ImportAsync_FutureSchemaWithNewFields_ReportsNewerVersionFirst()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
 		const string FutureDocument = """
 			{
 			  "format": "ai-usage-dashboard-settings",
-			  "schemaVersion": 7,
+			  "schemaVersion": 8,
 			  "accounts": [],
 			  "preferences": {
 			    "usageSortMode": "Manual",
@@ -1045,6 +1231,7 @@ public sealed class PortableSettingsJsonServiceTests
 	public async Task ImportAsync_SchemaThreeRejectsNonPortablePreferenceFields(
 		string propertyName)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
 		string document = $$"""
@@ -1133,6 +1320,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public void ImportPreview_SummarizesChangesWithoutDisclosingAccountIdentity()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		PortableSettingsSnapshot current = new(
 			[
 				new AccountProfile(
@@ -1198,6 +1386,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public void ImportPreview_UsesProviderDisplayName()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		PortableSettingsSnapshot current = new(
 			[],
 			UsageSortMode.Manual,
@@ -1223,6 +1412,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ImportAsync_RejectsUnknownAndDuplicateFieldsWithoutEchoingThem()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
 		const string Sentinel = "DO-NOT-ECHO-THIS-VALUE";
@@ -1367,6 +1557,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ImportAsync_NormalizesNamesScrubsIdentityAndRejectsInvalidAccountValues()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "portable.json");
 		string validDocument = CreateDocument(
@@ -1463,6 +1654,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ExportAsync_WhenReplaceMovesOriginalThenFails_RestoresOriginalAndRetainsNewCopy()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string destinationPath = Path.Combine(
 			temporaryDirectory.Path,
@@ -1491,6 +1683,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ExportAsync_WhenReplacePromotesNewFileThenFails_RetainsNewDestinationAndOldBackup()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string destinationPath = Path.Combine(
 			temporaryDirectory.Path,
@@ -1517,6 +1710,7 @@ public sealed class PortableSettingsJsonServiceTests
 	[Fact]
 	public async Task ExportAsync_WhenBackupCleanupFails_StillCommitsAndRetainsBackup()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string destinationPath = Path.Combine(
 			temporaryDirectory.Path,
@@ -1623,6 +1817,26 @@ public sealed class PortableSettingsJsonServiceTests
 					WidgetPreferences = DefaultWidgetPreferences with
 					{
 						Theme = (AppTheme)int.MaxValue
+					}
+				}));
+		await Assert.ThrowsAsync<PortableSettingsException>(
+			() => service.ExportAsync(
+				filePath,
+				CreateSnapshot() with
+				{
+					WidgetPreferences = DefaultWidgetPreferences with
+					{
+						Language = null
+					}
+				}));
+		await Assert.ThrowsAsync<PortableSettingsException>(
+			() => service.ExportAsync(
+				filePath,
+				CreateSnapshot() with
+				{
+					WidgetPreferences = DefaultWidgetPreferences with
+					{
+						Language = (AppLanguage)int.MaxValue
 					}
 				}));
 

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Licensing;
 
 using Button = System.Windows.Controls.Button;
@@ -30,13 +31,13 @@ internal static class LegalTermsDialog
 	{
 		Window window = new()
 		{
-			Title = "AI Usage Dashboard 授權與第三方條款",
 			Width = 820,
 			Height = 680,
 			MinWidth = 520,
 			MinHeight = 360,
 			WindowStartupLocation = WindowStartupLocation.CenterScreen
 		};
+		window.SetResourceReference(Window.TitleProperty, "Windows.Legal.Title");
 		window.SetResourceReference(Window.BackgroundProperty,
 			"WindowBackgroundBrush");
 		window.SetResourceReference(Window.IconProperty,
@@ -44,12 +45,11 @@ internal static class LegalTermsDialog
 		DockPanel panel = new() { Margin = new Thickness(16) };
 		TextBlock explanation = new()
 		{
-			Text = allowAcceptance
-				? "首次使用前，請閱讀適用的第三方條款。接受後會在這個 Windows 使用者的本機保存版本與範圍；背景查詢不會重複詢問。"
-				: "以下是這個程式適用的授權與第三方條款。查看條款不會建立接受紀錄。",
 			TextWrapping = TextWrapping.Wrap,
 			Margin = new Thickness(0, 0, 0, 12)
 		};
+		explanation.SetResourceReference(TextBlock.TextProperty, allowAcceptance
+			? "Windows.Legal.AcceptanceExplanation" : "Windows.Legal.ViewExplanation");
 		explanation.SetResourceReference(TextBlock.ForegroundProperty,
 			"SecondaryTextBrush");
 		DockPanel.SetDock(explanation, Dock.Top);
@@ -62,9 +62,10 @@ internal static class LegalTermsDialog
 		};
 		Button close = new()
 		{
-			Content = allowAcceptance ? "不接受並離開" : "關閉",
 			IsCancel = true
 		};
+		close.SetResourceReference(ContentControl.ContentProperty,
+			allowAcceptance ? "Windows.Legal.Decline" : "Windows.Common.Close");
 		close.SetResourceReference(FrameworkElement.StyleProperty,
 			"SecondaryButtonStyle");
 		close.Click += (_, _) => window.DialogResult = false;
@@ -73,9 +74,9 @@ internal static class LegalTermsDialog
 		{
 			Button accept = new()
 			{
-				Content = "接受並繼續",
 				Margin = new Thickness(12, 0, 0, 0)
 			};
+			accept.SetResourceReference(ContentControl.ContentProperty, "Windows.Legal.Accept");
 			accept.SetResourceReference(FrameworkElement.StyleProperty,
 				"PrimaryButtonStyle");
 			accept.Click += (_, _) => window.DialogResult = true;
@@ -85,7 +86,7 @@ internal static class LegalTermsDialog
 		panel.Children.Add(buttons);
 		TextBox text = new()
 		{
-			Text = catalog.GetReadableText(),
+			Text = GetDisplayText(catalog),
 			IsReadOnly = true,
 			TextWrapping = TextWrapping.Wrap,
 			VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -95,6 +96,35 @@ internal static class LegalTermsDialog
 		};
 		panel.Children.Add(text);
 		window.Content = panel;
-		return window.ShowDialog() == true;
+		EventHandler languageChanged = (_, _) => window.Dispatcher.Invoke(() =>
+		{
+			double scrollOffset = text.VerticalOffset;
+			int selectionStart = text.SelectionStart;
+			int selectionLength = text.SelectionLength;
+			text.Text = GetDisplayText(catalog);
+			text.Select(Math.Min(selectionStart, text.Text.Length),
+				Math.Min(selectionLength, Math.Max(0, text.Text.Length - selectionStart)));
+			text.ScrollToVerticalOffset(scrollOffset);
+		});
+		UiText.LanguageChanged += languageChanged;
+		try
+		{
+			return window.ShowDialog() == true;
+		}
+		finally
+		{
+			UiText.LanguageChanged -= languageChanged;
+		}
+	}
+
+	internal static string GetDisplayText(LegalCatalog catalog)
+	{
+		return catalog.GetReadableText(new LegalDisplayLabels(
+			UiText.Get("Windows.Legal.Title"),
+			UiText.Get("Windows.Legal.TermsVersion"),
+			UiText.Get("Windows.Legal.Scope"),
+			UiText.Get("Windows.Legal.InstallerScope"),
+			UiText.Get("Windows.Legal.CodeAndAcceptance"),
+			UiText.Get("Windows.Legal.Source")));
 	}
 }

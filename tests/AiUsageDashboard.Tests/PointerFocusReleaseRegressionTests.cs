@@ -575,7 +575,7 @@ public sealed class PointerFocusReleaseRegressionTests
 
 		Assert.NotEmpty(buttonBaseActions);
 		Assert.Single(comboBoxActions);
-		Assert.Equal(27, menuItemActions.Length);
+		Assert.Equal(29, menuItemActions.Length);
 		string[] updateActionAutomationIds =
 		[
 			"CheckForUpdates",
@@ -723,11 +723,16 @@ public sealed class PointerFocusReleaseRegressionTests
 				element.Elements(Presentation + "MenuItem").Any())
 			.ToArray();
 
-		Assert.Equal(27, leafActions.Length);
+		Assert.Equal(29, leafActions.Length);
+		XElement[] languageActions = leafActions
+			.Where(element => (string?)element.Attribute("Click") == "LanguageMenuItem_Click")
+			.ToArray();
+		Assert.Equal(new[] { "English", "TraditionalChinese" },
+			languageActions.Select(element => (string?)element.Attribute("Tag")));
 		XElement aboutAction = Assert.Single(leafActions, element =>
 			(string?)element.Attribute("AutomationProperties.AutomationId") == "OpenAbout");
 		Assert.Empty(aboutAction.Elements(Presentation + "MenuItem"));
-		Assert.Equal(3, submenuHeaders.Length);
+		Assert.Equal(4, submenuHeaders.Length);
 		Assert.Contains(
 			"!menuItem.HasItems",
 			policySource,

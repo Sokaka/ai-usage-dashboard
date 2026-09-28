@@ -1,0 +1,1674 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>2.0</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+	</resheader>
+	<data name="Message001" xml:space="preserve">
+		<value> 診斷紀錄無法寫入。</value>
+	</data>
+	<data name="Message002" xml:space="preserve">
+		<value>AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。</value>
+	</data>
+	<data name="Message003" xml:space="preserve">
+		<value>AI Usage 無法恢復 Antigravity 用量檢查。請重新連接 Antigravity 帳號；既有登入不受影響。</value>
+	</data>
+	<data name="Message004" xml:space="preserve">
+		<value>AI Usage 無法確認 Antigravity 的用量讀取。請重新連接 Antigravity 帳號；既有登入不受影響。</value>
+	</data>
+	<data name="Message005" xml:space="preserve">
+		<value>AI Usage 無法確認這次 Antigravity 用量讀取是否仍符合安全條件，稍後會自動重新檢查；既有登入不受影響。</value>
+	</data>
+	<data name="Message006" xml:space="preserve">
+		<value>AI Usage 目前無法讀取 Antigravity 回傳的用量格式。請更新 AI Usage；既有登入不受影響。</value>
+	</data>
+	<data name="Message007" xml:space="preserve">
+		<value>AI Usage 目前無法透過 Codex 讀取用量，請更新或修復 Codex。</value>
+	</data>
+	<data name="Message008" xml:space="preserve">
+		<value>Antigravity provider 只能讀取 Antigravity 帳號。</value>
+	</data>
+	<data name="Message009" xml:space="preserve">
+		<value>Antigravity 回傳的用量資料無法辨識</value>
+	</data>
+	<data name="Message010" xml:space="preserve">
+		<value>Antigravity 回報的帳號與目前連接的帳號不同，已忽略這次用量。請重新連接正確的帳號。</value>
+	</data>
+	<data name="Message011" xml:space="preserve">
+		<value>Antigravity 執行狀態清理服務尚未設定。</value>
+	</data>
+	<data name="Message012" xml:space="preserve">
+		<value>Antigravity 帳號識別碼不可為空。</value>
+	</data>
+	<data name="Message013" xml:space="preserve">
+		<value>Antigravity 指令啟動後沒有正常結束</value>
+	</data>
+	<data name="Message014" xml:space="preserve">
+		<value>Antigravity 指令回傳的資料量太大，無法確認結果</value>
+	</data>
+	<data name="Message015" xml:space="preserve">
+		<value>Antigravity 指令回報錯誤</value>
+	</data>
+	<data name="Message016" xml:space="preserve">
+		<value>Antigravity 指令沒有回傳資料</value>
+	</data>
+	<data name="Message017" xml:space="preserve">
+		<value>Antigravity 用量安全狀態重設服務尚未設定。</value>
+	</data>
+	<data name="Message018" xml:space="preserve">
+		<value>Antigravity 用量檢查尚未完成。AI Usage 稍後會自動再試，並保留現有帳號與用量資料。</value>
+	</data>
+	<data name="Message019" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：{0}。AI Usage 不會自動再試。{1}</value>
+	</data>
+	<data name="Message020" xml:space="preserve">
+		<value>Antigravity 用量檢查未完成，稍後會自動再試。</value>
+	</data>
+	<data name="Message021" xml:space="preserve">
+		<value>Claude CLI JSON 含有重複欄位：{0}。</value>
+	</data>
+	<data name="Message022" xml:space="preserve">
+		<value>Claude CLI process stream 設定不符合預期。</value>
+	</data>
+	<data name="Message023" xml:space="preserve">
+		<value>Claude CLI 執行檔必須是本機絕對路徑，設定目錄必須使用絕對路徑。</value>
+	</data>
+	<data name="Message024" xml:space="preserve">
+		<value>Claude CLI 版本輸出未確認產品身分。</value>
+	</data>
+	<data name="Message025" xml:space="preserve">
+		<value>Claude CLI 輸出超過安全大小上限。</value>
+	</data>
+	<data name="Message026" xml:space="preserve">
+		<value>Claude Code CLI 執行逾時。</value>
+	</data>
+	<data name="Message027" xml:space="preserve">
+		<value>Claude Code CLI 未通過官方簽章、路徑或版本驗證；請從 Anthropic 官方來源重新安裝或更新。</value>
+	</data>
+	<data name="Message028" xml:space="preserve">
+		<value>Claude Code CLI 路徑解析逾時。</value>
+	</data>
+	<data name="Message029" xml:space="preserve">
+		<value>Claude Code `--version` 執行失敗。</value>
+	</data>
+	<data name="Message030" xml:space="preserve">
+		<value>Claude Code `/usage` 尚未確認是否產生用量就中斷。</value>
+	</data>
+	<data name="Message031" xml:space="preserve">
+		<value>Claude Code `auth status` 執行失敗。</value>
+	</data>
+	<data name="Message032" xml:space="preserve">
+		<value>Claude Code {0} 不支援目前的用量檢查方式，請更新至 {1} 或更新版本。</value>
+	</data>
+	<data name="Message033" xml:space="preserve">
+		<value>Claude Code {0} 回傳的用量格式暫時無法辨識。</value>
+	</data>
+	<data name="Message034" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 可能產生用量，或結果需要人工確認。</value>
+	</data>
+	<data name="Message035" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 回報錯誤，但用量結果顯示成功，暫時無法確認這次結果。</value>
+	</data>
+	<data name="Message036" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 尚未確認是否產生用量就取消。</value>
+	</data>
+	<data name="Message037" xml:space="preserve">
+		<value>Claude Code 已登入有效訂閱，但暫時無法確認目前登入的帳號。AI Usage 稍後會自動再試。</value>
+	</data>
+	<data name="Message038" xml:space="preserve">
+		<value>Claude Code 已登入有效訂閱，但暫時無法確認目前的組織。AI Usage 稍後會自動再試。</value>
+	</data>
+	<data name="Message039" xml:space="preserve">
+		<value>Claude Code 已登入有效訂閱，但暫時無法確認目前的訂閱範圍。AI Usage 稍後會自動再試。</value>
+	</data>
+	<data name="Message040" xml:space="preserve">
+		<value>Claude Code 帳號尚未登入。</value>
+	</data>
+	<data name="Message041" xml:space="preserve">
+		<value>Claude Code 版本不支援安全的訂閱範圍確認；請先更新後再試一次。</value>
+	</data>
+	<data name="Message042" xml:space="preserve">
+		<value>Claude Code 目前不是以支援的 claude.ai subscription 帳號登入。</value>
+	</data>
+	<data name="Message043" xml:space="preserve">
+		<value>Claude Code 目前回報 Free，AI Usage 暫不支援顯示 Claude Free 用量。請到 Claude 的 Settings &gt; Billing 確認登入帳號、訂閱與付款狀態。</value>
+	</data>
+	<data name="Message044" xml:space="preserve">
+		<value>Claude Code 目前的帳號或組織與這張卡片的訂閱範圍不同；請切換或重新連接。</value>
+	</data>
+	<data name="Message045" xml:space="preserve">
+		<value>Claude Code 訂閱範圍格式無效。</value>
+	</data>
+	<data name="Message046" xml:space="preserve">
+		<value>Claude `--version` 輸出不可為空。</value>
+	</data>
+	<data name="Message047" xml:space="preserve">
+		<value>Claude `/usage` JSON 不可為空。</value>
+	</data>
+	<data name="Message048" xml:space="preserve">
+		<value>Claude `/usage` envelope 顯示非零 turn、非零 cost，或格式不符。</value>
+	</data>
+	<data name="Message049" xml:space="preserve">
+		<value>Claude `/usage` model usage 不是嚴格的零用量物件。</value>
+	</data>
+	<data name="Message050" xml:space="preserve">
+		<value>Claude `/usage` percentage 超出範圍。</value>
+	</data>
+	<data name="Message051" xml:space="preserve">
+		<value>Claude `/usage` quota 格式已變更。</value>
+	</data>
+	<data name="Message052" xml:space="preserve">
+		<value>Claude `/usage` subagent stats 不是嚴格的零活動物件。</value>
+	</data>
+	<data name="Message053" xml:space="preserve">
+		<value>Claude `/usage` token usage 不是嚴格的零用量結果。</value>
+	</data>
+	<data name="Message054" xml:space="preserve">
+		<value>Claude `/usage` 包含不支援的控制字元。</value>
+	</data>
+	<data name="Message055" xml:space="preserve">
+		<value>Claude `/usage` 包含衝突的重複 quota。</value>
+	</data>
+	<data name="Message056" xml:space="preserve">
+		<value>Claude `/usage` 只有訂閱提示，未回傳 quota。</value>
+	</data>
+	<data name="Message057" xml:space="preserve">
+		<value>Claude `/usage` 回傳的內容不是 claude.ai 訂閱用量。</value>
+	</data>
+	<data name="Message058" xml:space="preserve">
+		<value>Claude `/usage` 回報了 permission denial。</value>
+	</data>
+	<data name="Message059" xml:space="preserve">
+		<value>Claude `/usage` 回報了非零 cost。</value>
+	</data>
+	<data name="Message060" xml:space="preserve">
+		<value>Claude `/usage` 回報了非零 model usage。</value>
+	</data>
+	<data name="Message061" xml:space="preserve">
+		<value>Claude `/usage` 回報了非零 queued turn。</value>
+	</data>
+	<data name="Message062" xml:space="preserve">
+		<value>Claude `/usage` 回報了非零 subagent activity。</value>
+	</data>
+	<data name="Message063" xml:space="preserve">
+		<value>Claude `/usage` 回報了非零 token usage。</value>
+	</data>
+	<data name="Message064" xml:space="preserve">
+		<value>Claude `/usage` 回報了非零 turn。</value>
+	</data>
+	<data name="Message065" xml:space="preserve">
+		<value>Claude `/usage` 文字結果不可為空。</value>
+	</data>
+	<data name="Message066" xml:space="preserve">
+		<value>Claude `/usage` 發生 permission denial。</value>
+	</data>
+	<data name="Message067" xml:space="preserve">
+		<value>Claude `/usage` 缺少文字結果。</value>
+	</data>
+	<data name="Message068" xml:space="preserve">
+		<value>Claude `/usage` 缺少核心 session／week quota。</value>
+	</data>
+	<data name="Message069" xml:space="preserve">
+		<value>Claude `/usage` 非零 quota 缺少 reset time。</value>
+	</data>
+	<data name="Message070" xml:space="preserve">
+		<value>Claude `auth status` JSON 不可為空。</value>
+	</data>
+	<data name="Message071" xml:space="preserve">
+		<value>Claude `auth status` envelope 不符合預期。</value>
+	</data>
+	<data name="Message072" xml:space="preserve">
+		<value>Claude `auth status` 暫時缺少可驗證的訂閱資訊。AI Usage 稍後會自動再試。</value>
+	</data>
+	<data name="Message073" xml:space="preserve">
+		<value>Claude `auth status` 的 exit code 與登入狀態互相衝突。</value>
+	</data>
+	<data name="Message074" xml:space="preserve">
+		<value>Claude bound poll 缺少 private binding store。</value>
+	</data>
+	<data name="Message075" xml:space="preserve">
+		<value>Claude fallback marker 路徑無效。</value>
+	</data>
+	<data name="Message076" xml:space="preserve">
+		<value>Claude fallback provider 必須屬於 Claude。</value>
+	</data>
+	<data name="Message077" xml:space="preserve">
+		<value>Claude fallback provider 無法安全停用舊 capture。</value>
+	</data>
+	<data name="Message078" xml:space="preserve">
+		<value>Claude private binding 清理未通過 read-back 驗證。</value>
+	</data>
+	<data name="Message079" xml:space="preserve">
+		<value>Claude provider 只能讀取 Claude 帳號。</value>
+	</data>
+	<data name="Message080" xml:space="preserve">
+		<value>Claude public binding identity 格式無效。</value>
+	</data>
+	<data name="Message081" xml:space="preserve">
+		<value>Claude {0} 訂閱範圍已確認，但這個方案的 /usage 格式尚未經驗證；AI Usage 不會猜測用量。</value>
+	</data>
+	<data name="Message082" xml:space="preserve">
+		<value>Claude 已登入，但 AI Usage 無法完成帳號連接。請再試一次。</value>
+	</data>
+	<data name="Message083" xml:space="preserve">
+		<value>Claude 帳號設定目錄尚未建立。</value>
+	</data>
+	<data name="Message084" xml:space="preserve">
+		<value>Claude 帳號識別碼不可為空。</value>
+	</data>
+	<data name="Message085" xml:space="preserve">
+		<value>Claude 帳號資訊格式無效。</value>
+	</data>
+	<data name="Message086" xml:space="preserve">
+		<value>Claude 暫時未回傳用量額度；AI Usage 稍後會自動再試，不需要操作。</value>
+	</data>
+	<data name="Message087" xml:space="preserve">
+		<value>Claude 用量安全狀態存取逾時。</value>
+	</data>
+	<data name="Message088" xml:space="preserve">
+		<value>Claude 登入完成，但無法確認目前登入的帳號。</value>
+	</data>
+	<data name="Message089" xml:space="preserve">
+		<value>Claude 登入未完成，請再試一次。</value>
+	</data>
+	<data name="Message090" xml:space="preserve">
+		<value>Claude 登入逾時，請再試一次。</value>
+	</data>
+	<data name="Message091" xml:space="preserve">
+		<value>Claude 訂閱範圍尚未連接。</value>
+	</data>
+	<data name="Message092" xml:space="preserve">
+		<value>Claude 訂閱範圍已確認，但此方案的用量格式尚未驗證。</value>
+	</data>
+	<data name="Message093" xml:space="preserve">
+		<value>Claude 訂閱範圍格式無效。</value>
+	</data>
+	<data name="Message094" xml:space="preserve">
+		<value>Claude 訂閱範圍與帳號卡片的連接不同。</value>
+	</data>
+	<data name="Message095" xml:space="preserve">
+		<value>Claude 訂閱範圍顯示名稱格式無效。</value>
+	</data>
+	<data name="Message096" xml:space="preserve">
+		<value>Claude 訂閱連接資料不完整；請重新連接原本的帳號，確認訂閱範圍。</value>
+	</data>
+	<data name="Message098" xml:space="preserve">
+		<value>Claude 訂閱連接資料無效；請重新連接這張帳號卡片。</value>
+	</data>
+	<data name="Message099" xml:space="preserve">
+		<value>Codex CLI 未通過官方簽章、路徑或版本驗證；請從 OpenAI 官方來源重新安裝或更新。</value>
+	</data>
+	<data name="Message100" xml:space="preserve">
+		<value>Codex CLI 版本檢查未提供可用的診斷結果。</value>
+	</data>
+	<data name="Message101" xml:space="preserve">
+		<value>Codex account/read response 缺少 requiresOpenaiAuth。</value>
+	</data>
+	<data name="Message102" xml:space="preserve">
+		<value>Codex app-server JSON 包含重複欄位：{0}。</value>
+	</data>
+	<data name="Message103" xml:space="preserve">
+		<value>Codex app-server stderr 超過允許大小。</value>
+	</data>
+	<data name="Message104" xml:space="preserve">
+		<value>Codex app-server {0} error 缺少整數 code。</value>
+	</data>
+	<data name="Message105" xml:space="preserve">
+		<value>Codex app-server {0} response 缺少 result。</value>
+	</data>
+	<data name="Message106" xml:space="preserve">
+		<value>Codex app-server {0} 回傳錯誤（code {1}）：{2}</value>
+	</data>
+	<data name="Message107" xml:space="preserve">
+		<value>Codex app-server 回傳非預期的 response id。</value>
+	</data>
+	<data name="Message108" xml:space="preserve">
+		<value>Codex app-server 回應超過允許大小。</value>
+	</data>
+	<data name="Message109" xml:space="preserve">
+		<value>Codex app-server 回應逾時。</value>
+	</data>
+	<data name="Message110" xml:space="preserve">
+		<value>Codex app-server 在回應 {0} 前結束。</value>
+	</data>
+	<data name="Message111" xml:space="preserve">
+		<value>Codex app-server 在送出 {0} 前結束。</value>
+	</data>
+	<data name="Message112" xml:space="preserve">
+		<value>Codex app-server 訊息必須是 JSON object。</value>
+	</data>
+	<data name="Message113" xml:space="preserve">
+		<value>Codex bound poll 缺少 private binding store 或 commit gate。</value>
+	</data>
+	<data name="Message114" xml:space="preserve">
+		<value>Codex executable 必須是本機完整路徑，home 必須是完整路徑。</value>
+	</data>
+	<data name="Message115" xml:space="preserve">
+		<value>Codex forced ChatGPT workspace 必須只有一個 UUID。</value>
+	</data>
+	<data name="Message116" xml:space="preserve">
+		<value>Codex forced ChatGPT workspace 必須是 UUID 或 UUID 清單。</value>
+	</data>
+	<data name="Message117" xml:space="preserve">
+		<value>Codex forced ChatGPT workspace 必須是單一 UUID。</value>
+	</data>
+	<data name="Message118" xml:space="preserve">
+		<value>Codex notification 缺少 method。</value>
+	</data>
+	<data name="Message119" xml:space="preserve">
+		<value>Codex private binding 清理未通過 read-back 驗證。</value>
+	</data>
+	<data name="Message120" xml:space="preserve">
+		<value>Codex private home 仍套用 forced ChatGPT workspace 設定。</value>
+	</data>
+	<data name="Message121" xml:space="preserve">
+		<value>Codex private home 的 workspace 設定資料無法辨識。</value>
+	</data>
+	<data name="Message122" xml:space="preserve">
+		<value>Codex private home 缺少有效的 forced ChatGPT workspace 設定。</value>
+	</data>
+	<data name="Message123" xml:space="preserve">
+		<value>Codex provider 只能讀取 Codex 帳號。</value>
+	</data>
+	<data name="Message124" xml:space="preserve">
+		<value>Codex public binding identity 格式無效。</value>
+	</data>
+	<data name="Message125" xml:space="preserve">
+		<value>Codex rate-limit bucket key 與 limitId 不一致。</value>
+	</data>
+	<data name="Message126" xml:space="preserve">
+		<value>Codex rate-limit bucket 數量或內容無效。</value>
+	</data>
+	<data name="Message127" xml:space="preserve">
+		<value>Codex rate-limit response 沒有可用的 window。</value>
+	</data>
+	<data name="Message128" xml:space="preserve">
+		<value>Codex rate-limit response 缺少 rateLimits。</value>
+	</data>
+	<data name="Message129" xml:space="preserve">
+		<value>Codex rate-limit 項目不得超過 {0} 個。</value>
+	</data>
+	<data name="Message130" xml:space="preserve">
+		<value>Codex rateLimitResetCredits.availableCount 必須是非負整數。</value>
+	</data>
+	<data name="Message131" xml:space="preserve">
+		<value>Codex rateLimitsByLimitId 不得超過 {0} 個 bucket。</value>
+	</data>
+	<data name="Message132" xml:space="preserve">
+		<value>Codex resetsAt 超出 Unix timestamp 範圍。</value>
+	</data>
+	<data name="Message133" xml:space="preserve">
+		<value>Codex usedPercent 必須是 0 到 100 的整數。</value>
+	</data>
+	<data name="Message134" xml:space="preserve">
+		<value>Codex windowDurationMins 必須大於 0。</value>
+	</data>
+	<data name="Message136" xml:space="preserve">
+		<value>Codex workspace binding 格式無效。</value>
+	</data>
+	<data name="Message137" xml:space="preserve">
+		<value>Codex workspace 尚未綁定。</value>
+	</data>
+	<data name="Message138" xml:space="preserve">
+		<value>Codex workspace 與帳號卡片的綁定不同。</value>
+	</data>
+	<data name="Message139" xml:space="preserve">
+		<value>Codex workspace 設定 transaction 只能取得一次。</value>
+	</data>
+	<data name="Message140" xml:space="preserve">
+		<value>Codex workspace 設定 transaction 已不可用。</value>
+	</data>
+	<data name="Message141" xml:space="preserve">
+		<value>Codex workspace 設定回傳了無效路徑。</value>
+	</data>
+	<data name="Message142" xml:space="preserve">
+		<value>Codex workspace 設定寫入結果無法辨識。</value>
+	</data>
+	<data name="Message143" xml:space="preserve">
+		<value>Codex workspace 設定復原後的內容與原設定不符。</value>
+	</data>
+	<data name="Message144" xml:space="preserve">
+		<value>Codex workspace 設定未寫入帳號卡片的 private home。</value>
+	</data>
+	<data name="Message145" xml:space="preserve">
+		<value>Codex workspace 連接資料已損壞；請重新連接這張帳號卡片。</value>
+	</data>
+	<data name="Message146" xml:space="preserve">
+		<value>Codex {0} notification 缺少 params。</value>
+	</data>
+	<data name="Message147" xml:space="preserve">
+		<value>Codex {0} 不得包含控制字元。</value>
+	</data>
+	<data name="Message148" xml:space="preserve">
+		<value>Codex {0} 不得超過 {1} 個字元。</value>
+	</data>
+	<data name="Message149" xml:space="preserve">
+		<value>Codex {0} 必須是 string 或 null。</value>
+	</data>
+	<data name="Message150" xml:space="preserve">
+		<value>Codex {0} 必須是整數或 null。</value>
+	</data>
+	<data name="Message151" xml:space="preserve">
+		<value>Codex {0} 必須是非空字串。</value>
+	</data>
+	<data name="Message152" xml:space="preserve">
+		<value>Codex 回傳無法辨識的錯誤；AI Usage 稍後會自動再試，不需要操作。</value>
+	</data>
+	<data name="Message153" xml:space="preserve">
+		<value>Codex 回傳的登入狀態與這次操作不符。請重新連接。</value>
+	</data>
+	<data name="Message154" xml:space="preserve">
+		<value>Codex 回傳的登入網址無效。</value>
+	</data>
+	<data name="Message155" xml:space="preserve">
+		<value>Codex 回傳的登入資料無法辨識。請更新 Codex CLI 後再重新連接。</value>
+	</data>
+	<data name="Message156" xml:space="preserve">
+		<value>Codex 已回報帳號資料，但 AI Usage 無法確認目前登入的帳號。</value>
+	</data>
+	<data name="Message157" xml:space="preserve">
+		<value>Codex 已登入 ChatGPT，但 AI Usage 無法確認目前登入的帳號。請改用其他 ChatGPT 帳號重新連接。</value>
+	</data>
+	<data name="Message158" xml:space="preserve">
+		<value>Codex 已登入，但 AI Usage 暫時無法確認目前登入的帳號。請稍後重新連接。</value>
+	</data>
+	<data name="Message159" xml:space="preserve">
+		<value>Codex 帳號尚未登入 ChatGPT。</value>
+	</data>
+	<data name="Message160" xml:space="preserve">
+		<value>Codex 帳號尚未連接；請先完成此帳號的 ChatGPT 登入。</value>
+	</data>
+	<data name="Message161" xml:space="preserve">
+		<value>Codex 帳號或方案格式無效。</value>
+	</data>
+	<data name="Message162" xml:space="preserve">
+		<value>Codex 帳號設定目錄尚未建立。</value>
+	</data>
+	<data name="Message163" xml:space="preserve">
+		<value>Codex 帳號識別碼不可為空。</value>
+	</data>
+	<data name="Message164" xml:space="preserve">
+		<value>Codex 帳號識別讀取失敗。</value>
+	</data>
+	<data name="Message165" xml:space="preserve">
+		<value>Codex 未回傳可顯示的 rate-limit window。</value>
+	</data>
+	<data name="Message166" xml:space="preserve">
+		<value>Codex 沒有提供可用的 ChatGPT 登入方式。請更新 Codex CLI 後再重新連接。</value>
+	</data>
+	<data name="Message167" xml:space="preserve">
+		<value>Codex 用量項目不得超過 {0} 個。</value>
+	</data>
+	<data name="Message168" xml:space="preserve">
+		<value>Codex 用量項目格式無效。</value>
+	</data>
+	<data name="Message169" xml:space="preserve">
+		<value>Codex 登入啟動逾時，請再試一次。</value>
+	</data>
+	<data name="Message170" xml:space="preserve">
+		<value>Codex 登入完成狀態只能等待一次。</value>
+	</data>
+	<data name="Message171" xml:space="preserve">
+		<value>Codex 登入尚未完成，不能提交 workspace 設定。</value>
+	</data>
+	<data name="Message172" xml:space="preserve">
+		<value>Codex 登入已失效；請重新連接此帳號。</value>
+	</data>
+	<data name="Message173" xml:space="preserve">
+		<value>Codex 登入未啟動，且無法復原這張卡片原本的 workspace 設定。請重新連接。</value>
+	</data>
+	<data name="Message174" xml:space="preserve">
+		<value>Codex 登入未完成，請再試一次。</value>
+	</data>
+	<data name="Message175" xml:space="preserve">
+		<value>Codex 登入程序清理失敗，請再試一次。</value>
+	</data>
+	<data name="Message176" xml:space="preserve">
+		<value>Codex 登入逾時，請再試一次。</value>
+	</data>
+	<data name="Message177" xml:space="preserve">
+		<value>Codex 目前不是以 ChatGPT 訂閱帳號登入。</value>
+	</data>
+	<data name="Message178" xml:space="preserve">
+		<value>Codex 目前登入的帳號與這張卡片不同；請切換或重新連接。</value>
+	</data>
+	<data name="Message179" xml:space="preserve">
+		<value>Codex 目前的帳號或 workspace 與這張卡片的連接不同；請切換或重新連接。</value>
+	</data>
+	<data name="Message180" xml:space="preserve">
+		<value>Codex 目前的登入方式不會使用 ChatGPT 帳號，因此沒有可讀取的 ChatGPT 訂閱用量。請在 Codex 切換成 ChatGPT 登入，再重新連接帳號。</value>
+	</data>
+	<data name="Message181" xml:space="preserve">
+		<value>Codex 連接未完成，且無法復原這張卡片原本的 workspace 設定。請重新連接。</value>
+	</data>
+	<data name="Message182" xml:space="preserve">
+		<value>Copilot CLI 候選必須是絕對 EXE 路徑：{0}</value>
+	</data>
+	<data name="Message183" xml:space="preserve">
+		<value>Copilot CLI 候選路徑超過安全上限 {0}。</value>
+	</data>
+	<data name="Message184" xml:space="preserve">
+		<value>Copilot CLI 尚未取得受保護的執行檔鎖：{0}</value>
+	</data>
+	<data name="Message185" xml:space="preserve">
+		<value>Copilot CLI 搜尋只接受本機固定磁碟的絕對路徑：{0}</value>
+	</data>
+	<data name="Message186" xml:space="preserve">
+		<value>Copilot CLI 未使用受保護的 credential store，已取消連接。</value>
+	</data>
+	<data name="Message187" xml:space="preserve">
+		<value>Copilot CLI 未提供可安全隔離的帳號 credential，請再試一次。</value>
+	</data>
+	<data name="Message188" xml:space="preserve">
+		<value>Copilot CLI 未提供可驗證的帳號 credential。</value>
+	</data>
+	<data name="Message189" xml:space="preserve">
+		<value>Copilot CLI 產品或版本不相容：{0}；</value>
+	</data>
+	<data name="Message190" xml:space="preserve">
+		<value>Copilot CLI 產品或版本不相容：{0}；ProductName={1}, FileVersion={2}, ProductVersion={3}。</value>
+	</data>
+	<data name="Message191" xml:space="preserve">
+		<value>Copilot CLI 產品或版本不相容：{0}；ProductName={1}, FileVersion={2}, ProductVersion={3}。需要 GitHub Copilot CLI 三段式正式版 1.0.79 以上且低於 2.0.0。</value>
+	</data>
+	<data name="Message192" xml:space="preserve">
+		<value>Copilot CLI 的 PATH 目錄數超過安全上限 {0}。</value>
+	</data>
+	<data name="Message193" xml:space="preserve">
+		<value>Copilot WinGet package 目錄超過安全上限 {0}：{1}</value>
+	</data>
+	<data name="Message194" xml:space="preserve">
+		<value>Copilot access token 格式無效。</value>
+	</data>
+	<data name="Message195" xml:space="preserve">
+		<value>Copilot account 目錄無效。</value>
+	</data>
+	<data name="Message196" xml:space="preserve">
+		<value>Copilot account.getCurrentAuth transport 尚未連線。</value>
+	</data>
+	<data name="Message197" xml:space="preserve">
+		<value>Copilot account.getCurrentAuth 的 SDK task 契約不相容。</value>
+	</data>
+	<data name="Message198" xml:space="preserve">
+		<value>Copilot account.getCurrentAuth 的 SDK transport 契約不相容。</value>
+	</data>
+	<data name="Message199" xml:space="preserve">
+		<value>Copilot account.getCurrentAuth 的 SDK 呼叫契約不相容。</value>
+	</data>
+	<data name="Message200" xml:space="preserve">
+		<value>Copilot account.getCurrentAuth 的 SDK 回傳契約不相容。</value>
+	</data>
+	<data name="Message201" xml:space="preserve">
+		<value>Copilot bootstrap attempt 路徑無法安全清理。</value>
+	</data>
+	<data name="Message202" xml:space="preserve">
+		<value>Copilot bootstrap credential 超過安全驗證大小。</value>
+	</data>
+	<data name="Message203" xml:space="preserve">
+		<value>Copilot bootstrap internet cache link 無法安全清理。</value>
+	</data>
+	<data name="Message204" xml:space="preserve">
+		<value>Copilot bootstrap root 不可為 reparse point。</value>
+	</data>
+	<data name="Message205" xml:space="preserve">
+		<value>Copilot bootstrap root 含有無法安全辨識的內容。</value>
+	</data>
+	<data name="Message206" xml:space="preserve">
+		<value>Copilot bootstrap root 超過安全清理數量。</value>
+	</data>
+	<data name="Message207" xml:space="preserve">
+		<value>Copilot bootstrap runtime 啟動輸出超過安全上限。</value>
+	</data>
+	<data name="Message208" xml:space="preserve">
+		<value>Copilot bootstrap runtime 尚未連線。</value>
+	</data>
+	<data name="Message209" xml:space="preserve">
+		<value>Copilot bootstrap runtime 已啟動過。</value>
+	</data>
+	<data name="Message210" xml:space="preserve">
+		<value>Copilot bootstrap runtime 未在期限內提供安全的 loopback endpoint。</value>
+	</data>
+	<data name="Message211" xml:space="preserve">
+		<value>Copilot bootstrap runtime 未提供安全的 loopback endpoint。</value>
+	</data>
+	<data name="Message212" xml:space="preserve">
+		<value>Copilot bootstrap runtime 連線逾時。</value>
+	</data>
+	<data name="Message213" xml:space="preserve">
+		<value>Copilot bootstrap 內容無法安全驗證。</value>
+	</data>
+	<data name="Message214" xml:space="preserve">
+		<value>Copilot bootstrap 內容超過安全驗證大小。</value>
+	</data>
+	<data name="Message215" xml:space="preserve">
+		<value>Copilot bootstrap 內容類型無效。</value>
+	</data>
+	<data name="Message216" xml:space="preserve">
+		<value>Copilot bootstrap 檔案在安全驗證期間發生變更。</value>
+	</data>
+	<data name="Message217" xml:space="preserve">
+		<value>Copilot bootstrap 檔案無法安全清理。</value>
+	</data>
+	<data name="Message218" xml:space="preserve">
+		<value>Copilot bootstrap 檔案無法安全驗證。</value>
+	</data>
+	<data name="Message219" xml:space="preserve">
+		<value>Copilot bootstrap 檔案超過安全驗證大小。</value>
+	</data>
+	<data name="Message220" xml:space="preserve">
+		<value>Copilot bootstrap 目錄不可為 reparse point。</value>
+	</data>
+	<data name="Message221" xml:space="preserve">
+		<value>Copilot bootstrap 目錄無法安全清理。</value>
+	</data>
+	<data name="Message222" xml:space="preserve">
+		<value>Copilot connection candidate 缺少 account lease。</value>
+	</data>
+	<data name="Message223" xml:space="preserve">
+		<value>Copilot connection candidate 缺少 global login lease。</value>
+	</data>
+	<data name="Message224" xml:space="preserve">
+		<value>Copilot credential binding 格式無效。</value>
+	</data>
+	<data name="Message225" xml:space="preserve">
+		<value>Copilot credential 格式無效。</value>
+	</data>
+	<data name="Message226" xml:space="preserve">
+		<value>Copilot credential 格式無效，請重新連接帳號。</value>
+	</data>
+	<data name="Message227" xml:space="preserve">
+		<value>Copilot credential 與卡片身分不同。</value>
+	</data>
+	<data name="Message228" xml:space="preserve">
+		<value>Copilot data 目錄無效。</value>
+	</data>
+	<data name="Message229" xml:space="preserve">
+		<value>Copilot expected provider account identity 格式無效。</value>
+	</data>
+	<data name="Message230" xml:space="preserve">
+		<value>Copilot late cleanup 缺少必要的 operation lease。</value>
+	</data>
+	<data name="Message231" xml:space="preserve">
+		<value>Copilot login lock 路徑無效。</value>
+	</data>
+	<data name="Message232" xml:space="preserve">
+		<value>Copilot login process 尚未結束。</value>
+	</data>
+	<data name="Message233" xml:space="preserve">
+		<value>Copilot pending credential 與卡片身分不同。</value>
+	</data>
+	<data name="Message234" xml:space="preserve">
+		<value>Copilot provider account identity 格式無效。</value>
+	</data>
+	<data name="Message235" xml:space="preserve">
+		<value>Copilot provider 只能讀取 Copilot 帳號。</value>
+	</data>
+	<data name="Message236" xml:space="preserve">
+		<value>Copilot runtime connection token 不可包含空白或控制字元。</value>
+	</data>
+	<data name="Message237" xml:space="preserve">
+		<value>Copilot 執行狀態清理服務尚未設定。</value>
+	</data>
+	<data name="Message238" xml:space="preserve">
+		<value>Copilot 尚未登入。</value>
+	</data>
+	<data name="Message239" xml:space="preserve">
+		<value>Copilot 帳號識別碼不可為空。</value>
+	</data>
+	<data name="Message240" xml:space="preserve">
+		<value>Copilot 未提供訂閱資訊；用量仍可使用。</value>
+	</data>
+	<data name="Message241" xml:space="preserve">
+		<value>Copilot 登入未完成（exit code: {0}），請再試一次。</value>
+	</data>
+	<data name="Message242" xml:space="preserve">
+		<value>Copilot 登入程序的安全狀態無法確認。請重新啟動 AI Usage 後再試。</value>
+	</data>
+	<data name="Message243" xml:space="preserve">
+		<value>Copilot 登入驗證程序尚未安全結束，請稍後再試。</value>
+	</data>
+	<data name="Message244" xml:space="preserve">
+		<value>Copilot 訂閱查詢介面不相容；用量仍可使用。</value>
+	</data>
+	<data name="Message245" xml:space="preserve">
+		<value>Copilot 訂閱資訊暫時無法讀取；用量仍可使用。</value>
+	</data>
+	<data name="Message246" xml:space="preserve">
+		<value>Copilot 訂閱資訊查詢逾時；用量仍可使用。</value>
+	</data>
+	<data name="Message247" xml:space="preserve">
+		<value>Copilot 訂閱資訊格式或帳號無法確認；用量仍可使用。</value>
+	</data>
+	<data name="Message248" xml:space="preserve">
+		<value>GitHub Copilot CLI runtime 無法使用。</value>
+	</data>
+	<data name="Message249" xml:space="preserve">
+		<value>GitHub Copilot bootstrap runtime 未能在受驗證的 Job Object 中啟動。</value>
+	</data>
+	<data name="Message250" xml:space="preserve">
+		<value>GitHub Copilot credential 已失效。</value>
+	</data>
+	<data name="Message251" xml:space="preserve">
+		<value>GitHub Copilot credential 無權讀取用量。</value>
+	</data>
+	<data name="Message252" xml:space="preserve">
+		<value>GitHub Copilot quota snapshot 無法辨識。</value>
+	</data>
+	<data name="Message253" xml:space="preserve">
+		<value>GitHub Copilot quota 程序尚未安全結束，請稍後再試。</value>
+	</data>
+	<data name="Message254" xml:space="preserve">
+		<value>GitHub Copilot 帳號身分格式無效。</value>
+	</data>
+	<data name="Message255" xml:space="preserve">
+		<value>GitHub Copilot 未回傳 quota snapshots。</value>
+	</data>
+	<data name="Message256" xml:space="preserve">
+		<value>GitHub Copilot 未回傳用量資料。</value>
+	</data>
+	<data name="Message257" xml:space="preserve">
+		<value>GitHub Copilot 用量查詢已達速率限制。</value>
+	</data>
+	<data name="Message258" xml:space="preserve">
+		<value>GitHub Copilot 用量資料無法辨識。</value>
+	</data>
+	<data name="Message259" xml:space="preserve">
+		<value>GitHub authenticated user 查詢失敗。</value>
+	</data>
+	<data name="Message260" xml:space="preserve">
+		<value>GitHub credential 已失效。</value>
+	</data>
+	<data name="Message261" xml:space="preserve">
+		<value>GitHub credential 無權讀取 authenticated user。</value>
+	</data>
+	<data name="Message262" xml:space="preserve">
+		<value>GitHub host 格式無效。</value>
+	</data>
+	<data name="Message263" xml:space="preserve">
+		<value>GitHub user response 缺少必要身分欄位。</value>
+	</data>
+	<data name="Message264" xml:space="preserve">
+		<value>GitHub user response 超過允許大小。</value>
+	</data>
+	<data name="Message265" xml:space="preserve">
+		<value>GitHub 暫時限制用量查詢。</value>
+	</data>
+	<data name="Message266" xml:space="preserve">
+		<value>GitHub 暫時限制身分查詢。</value>
+	</data>
+	<data name="Message267" xml:space="preserve">
+		<value>Grok ACP JSON line 超過安全上限。</value>
+	</data>
+	<data name="Message268" xml:space="preserve">
+		<value>Grok ACP JSON 含有重複欄位。</value>
+	</data>
+	<data name="Message269" xml:space="preserve">
+		<value>Grok ACP principal 格式無效。</value>
+	</data>
+	<data name="Message270" xml:space="preserve">
+		<value>Grok ACP response count 超過安全上限。</value>
+	</data>
+	<data name="Message271" xml:space="preserve">
+		<value>Grok ACP stderr 超過安全上限。</value>
+	</data>
+	<data name="Message272" xml:space="preserve">
+		<value>Grok ACP stdout 超過安全上限。</value>
+	</data>
+	<data name="Message273" xml:space="preserve">
+		<value>Grok ACP {0} 回應不是有效的 bounded JSON：{1}。</value>
+	</data>
+	<data name="Message274" xml:space="preserve">
+		<value>Grok ACP {0} 缺少 result。</value>
+	</data>
+	<data name="Message275" xml:space="preserve">
+		<value>Grok ACP 回應 envelope 格式無效。</value>
+	</data>
+	<data name="Message276" xml:space="preserve">
+		<value>Grok ACP 回應 id 或 protocol version 不符。</value>
+	</data>
+	<data name="Message277" xml:space="preserve">
+		<value>Grok ACP 回應不是有效 UTF-8。</value>
+	</data>
+	<data name="Message278" xml:space="preserve">
+		<value>Grok ACP 回應含空行或 NUL。</value>
+	</data>
+	<data name="Message279" xml:space="preserve">
+		<value>Grok ACP 回應必須且只能包含 result 或 error。</value>
+	</data>
+	<data name="Message280" xml:space="preserve">
+		<value>Grok Build CLI 必須位於本機固定磁碟的絕對 EXE 路徑。</value>
+	</data>
+	<data name="Message281" xml:space="preserve">
+		<value>Grok Build CLI 提供的帳號資料格式無效。</value>
+	</data>
+	<data name="Message282" xml:space="preserve">
+		<value>Grok Build CLI 未通過 X.AI LLC 官方簽章驗證。</value>
+	</data>
+	<data name="Message283" xml:space="preserve">
+		<value>Grok Build CLI 沒有提供可用來確認帳號的資料。</value>
+	</data>
+	<data name="Message284" xml:space="preserve">
+		<value>Grok Build CLI 目前登入的帳號與這裡連接的帳號不同。請切換 Grok 帳號或重新連接。</value>
+	</data>
+	<data name="Message285" xml:space="preserve">
+		<value>Grok Build CLI 路徑、擁有者或存取權限不符合要求。</value>
+	</data>
+	<data name="Message286" xml:space="preserve">
+		<value>Grok Build CLI 路徑格式無效。</value>
+	</data>
+	<data name="Message287" xml:space="preserve">
+		<value>Grok billing current period 不是有效的 weekly period。</value>
+	</data>
+	<data name="Message288" xml:space="preserve">
+		<value>Grok billing current period 未提供有效的 type。</value>
+	</data>
+	<data name="Message289" xml:space="preserve">
+		<value>Grok billing 不是 unified current-period 結構。</value>
+	</data>
+	<data name="Message290" xml:space="preserve">
+		<value>Grok billing 未提供有效的 unified billing 設定。</value>
+	</data>
+	<data name="Message292" xml:space="preserve">
+		<value>Grok principal 格式無效。</value>
+	</data>
+	<data name="Message293" xml:space="preserve">
+		<value>Grok provider 只能讀取 Grok 帳號。</value>
+	</data>
+	<data name="Message294" xml:space="preserve">
+		<value>Grok usage 與 authentication 狀態互相矛盾。</value>
+	</data>
+	<data name="Message295" xml:space="preserve">
+		<value>Grok weekly period 時間範圍無效或已過期。</value>
+	</data>
+	<data name="Message296" xml:space="preserve">
+		<value>Grok weekly usage percent 超出有效範圍。</value>
+	</data>
+	<data name="Message297" xml:space="preserve">
+		<value>Grok 執行狀態清理服務尚未設定。</value>
+	</data>
+	<data name="Message298" xml:space="preserve">
+		<value>Grok 帳號未提供 unified billing 用量。</value>
+	</data>
+	<data name="Message299" xml:space="preserve">
+		<value>Grok 帳號未提供 weekly billing period。</value>
+	</data>
+	<data name="Message300" xml:space="preserve">
+		<value>Grok 帳號的連接資料已損壞，請重新連接。</value>
+	</data>
+	<data name="Message301" xml:space="preserve">
+		<value>Grok 帳號識別碼不可為空。</value>
+	</data>
+	<data name="Message302" xml:space="preserve">
+		<value>Grok 登入未完成，請再試一次。</value>
+	</data>
+	<data name="Message303" xml:space="preserve">
+		<value>Grok 登入逾時，請再試一次。</value>
+	</data>
+	<data name="Message304" xml:space="preserve">
+		<value>Provider {0} 尚未註冊。</value>
+	</data>
+	<data name="Message305" xml:space="preserve">
+		<value>Provider {0} 重複註冊。</value>
+	</data>
+	<data name="Message306" xml:space="preserve">
+		<value>Provider 清單不可包含 null。</value>
+	</data>
+	<data name="Message307" xml:space="preserve">
+		<value>Provider 清單包含無效的 ProviderKind。</value>
+	</data>
+	<data name="Message308" xml:space="preserve">
+		<value>Provider 的最短刷新間隔不可小於零。</value>
+	</data>
+	<data name="Message309" xml:space="preserve">
+		<value>{0} / {1} 已使用</value>
+	</data>
+	<data name="Message310" xml:space="preserve">
+		<value>{0} CLI 版本診斷：{1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="Message311" xml:space="preserve">
+		<value>{0} private account 路徑含不安全的 reparse point。</value>
+	</data>
+	<data name="Message312" xml:space="preserve">
+		<value>{0} private account 路徑無效。</value>
+	</data>
+	<data name="Message315" xml:space="preserve">
+		<value>{0} 必須是 JSON object。</value>
+	</data>
+	<data name="Message316" xml:space="preserve">
+		<value>上次檢查在啟動 Antigravity 後被取消</value>
+	</data>
+	<data name="Message317" xml:space="preserve">
+		<value>上次檢查在完成前中斷</value>
+	</data>
+	<data name="Message318" xml:space="preserve">
+		<value>上次檢查逾時</value>
+	</data>
+	<data name="Message319" xml:space="preserve">
+		<value>偵測到 {0} {1}</value>
+	</data>
+	<data name="Message320" xml:space="preserve">
+		<value>偵測到這次檢查可能產生用量</value>
+	</data>
+	<data name="Message321" xml:space="preserve">
+		<value>剛登入的 GitHub 帳號與這張卡片不同。</value>
+	</data>
+	<data name="Message322" xml:space="preserve">
+		<value>卡片與登入資料會保留，不必重新登入：</value>
+	</data>
+	<data name="Message323" xml:space="preserve">
+		<value>只有 Claude 或 Antigravity 帳號具有可重設的用量安全狀態。</value>
+	</data>
+	<data name="Message325" xml:space="preserve">
+		<value>尚未收到 Claude 用量資料；請使用卡片上的「連接 Claude 帳號」。</value>
+	</data>
+	<data name="Message326" xml:space="preserve">
+		<value>尚未確認這張卡片的 Claude 訂閱。請使用原本的帳號，確認組織與訂閱方案。</value>
+	</data>
+	<data name="Message327" xml:space="preserve">
+		<value>尚未連接 Antigravity 帳號。</value>
+	</data>
+	<data name="Message328" xml:space="preserve">
+		<value>尚未連接 Claude 帳號；請使用卡片上的「連接 Claude 帳號」。</value>
+	</data>
+	<data name="Message329" xml:space="preserve">
+		<value>尚未連接 Copilot。</value>
+	</data>
+	<data name="Message330" xml:space="preserve">
+		<value>尚未連接 Grok 帳號。</value>
+	</data>
+	<data name="Message331" xml:space="preserve">
+		<value>尚未連接這張卡片的 Codex 帳號；請連接或重新連接。</value>
+	</data>
+	<data name="Message332" xml:space="preserve">
+		<value>已使用 {0} 次（{1}）</value>
+	</data>
+	<data name="Message333" xml:space="preserve">
+		<value>已使用 {0}%</value>
+	</data>
+	<data name="Message336" xml:space="preserve">
+		<value>已取消 Copilot 登入。</value>
+	</data>
+	<data name="Message337" xml:space="preserve">
+		<value>已確認這張卡片的 Grok 帳號，但目前訂閱沒有提供可驗證的週用量；AI Usage 不會猜測用量。</value>
+	</data>
+	<data name="Message339" xml:space="preserve">
+		<value>復原 Codex workspace 設定逾時。</value>
+	</data>
+	<data name="Message341" xml:space="preserve">
+		<value>找不到 Antigravity CLI 或執行所需檔案。請確認 Antigravity 已安裝且可正常啟動；既有登入不受影響。</value>
+	</data>
+	<data name="Message342" xml:space="preserve">
+		<value>找不到 Claude Code CLI。</value>
+	</data>
+	<data name="Message343" xml:space="preserve">
+		<value>找不到 Claude Code CLI，請先安裝或更新 Claude Code。</value>
+	</data>
+	<data name="Message344" xml:space="preserve">
+		<value>找不到 Claude Code CLI；請先安裝或更新 Claude Code。AI Usage 稍後會自動再試。</value>
+	</data>
+	<data name="Message345" xml:space="preserve">
+		<value>找不到 Codex CLI。</value>
+	</data>
+	<data name="Message346" xml:space="preserve">
+		<value>找不到 Codex CLI，請先安裝或更新 Codex。</value>
+	</data>
+	<data name="Message347" xml:space="preserve">
+		<value>找不到 Codex CLI；請安裝或修復 Codex 後重試。</value>
+	</data>
+	<data name="Message348" xml:space="preserve">
+		<value>找不到可用且受支援的 Grok Build CLI；請安裝、更新或修復 Grok Build CLI 後再試。</value>
+	</data>
+	<data name="Message349" xml:space="preserve">
+		<value>找不到官方 Grok Build CLI。</value>
+	</data>
+	<data name="Message350" xml:space="preserve">
+		<value>找不到待提交的 Copilot credential。</value>
+	</data>
+	<data name="Message351" xml:space="preserve">
+		<value>找不到本機 GitHub Copilot CLI。請安裝官方 CLI 後重試，原有帳號設定會保留。</value>
+	</data>
+	<data name="Message352" xml:space="preserve">
+		<value>找不到這張卡片的 Copilot credential。</value>
+	</data>
+	<data name="Message353" xml:space="preserve">
+		<value>暫時無法確認 Codex CLI 版本，稍後會自動再試。</value>
+	</data>
+	<data name="Message354" xml:space="preserve">
+		<value>暫時無法確認 Codex CLI 版本，請稍後再試。</value>
+	</data>
+	<data name="Message355" xml:space="preserve">
+		<value>暫時無法確認 Codex 帳號與 workspace，稍後會自動再試。</value>
+	</data>
+	<data name="Message356" xml:space="preserve">
+		<value>暫時無法讀取 Antigravity 用量，稍後會自動再試。</value>
+	</data>
+	<data name="Message357" xml:space="preserve">
+		<value>暫時無法讀取 Claude 用量，稍後會自動再試。</value>
+	</data>
+	<data name="Message358" xml:space="preserve">
+		<value>暫時無法讀取 Codex 用量，稍後會自動再試。</value>
+	</data>
+	<data name="Message359" xml:space="preserve">
+		<value>暫時無法讀取 Copilot 用量。</value>
+	</data>
+	<data name="Message360" xml:space="preserve">
+		<value>暫時無法讀取 GitHub Copilot 用量。</value>
+	</data>
+	<data name="Message361" xml:space="preserve">
+		<value>暫時無法讀取 Grok 用量，稍後會自動再試。</value>
+	</data>
+	<data name="Message366" xml:space="preserve">
+		<value>未知的 Antigravity 連接視窗結果。</value>
+	</data>
+	<data name="Message367" xml:space="preserve">
+		<value>本機 GitHub Copilot CLI 無法使用。請安裝或更新官方 CLI 後重試，原有帳號設定會保留。</value>
+	</data>
+	<data name="Message368" xml:space="preserve">
+		<value>本機 GitHub Copilot CLI 路徑無效，請安裝或更新官方 CLI。</value>
+	</data>
+	<data name="Message369" xml:space="preserve">
+		<value>本機官方 GitHub Copilot CLI 無法使用。請依 GitHub 官方安裝說明安裝或更新後重試；</value>
+	</data>
+	<data name="Message370" xml:space="preserve">
+		<value>本機官方 GitHub Copilot CLI 無法使用。請依 GitHub 官方安裝說明安裝或更新後重試；卡片與登入資料會保留，不必重新登入：</value>
+	</data>
+	<data name="Message371" xml:space="preserve">
+		<value>本機官方 GitHub Copilot CLI 無法使用。請依 GitHub 官方安裝說明安裝或更新後重試；卡片與登入資料會保留，不必重新登入：https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli</value>
+	</data>
+	<data name="Message372" xml:space="preserve">
+		<value>正在準備 Claude 用量資料，稍後再試。</value>
+	</data>
+	<data name="Message373" xml:space="preserve">
+		<value>正在確認 Claude 帳號，暫時不顯示先前未連接帳號的用量。</value>
+	</data>
+	<data name="Message374" xml:space="preserve">
+		<value>此來源未提供上限</value>
+	</data>
+	<data name="Message376" xml:space="preserve">
+		<value>此服務尚未連接。</value>
+	</data>
+	<data name="Message377" xml:space="preserve">
+		<value>此服務目前尚未支援用量顯示。</value>
+	</data>
+	<data name="Message378" xml:space="preserve">
+		<value>準備 Claude 登入環境逾時，請再試一次。</value>
+	</data>
+	<data name="Message379" xml:space="preserve">
+		<value>無法使用 Copilot CLI 候選：{0}</value>
+	</data>
+	<data name="Message380" xml:space="preserve">
+		<value>無法唯一確認剛登入的 Copilot 帳號，請再試一次。</value>
+	</data>
+	<data name="Message381" xml:space="preserve">
+		<value>無法啟動 Claude Code CLI。</value>
+	</data>
+	<data name="Message382" xml:space="preserve">
+		<value>無法啟動 Claude 登入，請再試一次。</value>
+	</data>
+	<data name="Message383" xml:space="preserve">
+		<value>無法啟動 Codex app-server。</value>
+	</data>
+	<data name="Message384" xml:space="preserve">
+		<value>無法啟動 Codex 登入，請再試一次。</value>
+	</data>
+	<data name="Message385" xml:space="preserve">
+		<value>無法安全清理上一次 Copilot 登入資料，因此未啟動新的登入。請重新啟動 AI Usage 後再試。</value>
+	</data>
+	<data name="Message386" xml:space="preserve">
+		<value>無法安全驗證 Copilot 登入結果，請再試一次。</value>
+	</data>
+	<data name="Message387" xml:space="preserve">
+		<value>無法將 Copilot credential 寫入 Windows Credential Manager。</value>
+	</data>
+	<data name="Message388" xml:space="preserve">
+		<value>無法建立或驗證 Claude Code CLI 的受保護執行副本。</value>
+	</data>
+	<data name="Message389" xml:space="preserve">
+		<value>無法建立或驗證 Codex CLI 的受保護執行副本。</value>
+	</data>
+	<data name="Message390" xml:space="preserve">
+		<value>無法建立或驗證 Grok Build CLI 的受保護執行副本。</value>
+	</data>
+	<data name="Message391" xml:space="preserve">
+		<value>無法建立或驗證 Grok private home。</value>
+	</data>
+	<data name="Message392" xml:space="preserve">
+		<value>無法從 Windows Credential Manager 刪除 Copilot credential。</value>
+	</data>
+	<data name="Message393" xml:space="preserve">
+		<value>無法從 Windows Credential Manager 讀取 Copilot credential。</value>
+	</data>
+	<data name="Message394" xml:space="preserve">
+		<value>無法復原 Codex workspace 設定。</value>
+	</data>
+	<data name="Message395" xml:space="preserve">
+		<value>無法找到可安全使用的本機 Copilot CLI；搜尋位置或候選的來源、簽章、版本檢查失敗。</value>
+	</data>
+	<data name="Message396" xml:space="preserve">
+		<value>無法檢查 Copilot CLI 搜尋路徑：{0}</value>
+	</data>
+	<data name="Message397" xml:space="preserve">
+		<value>無法清理 Copilot disposable login context。</value>
+	</data>
+	<data name="Message398" xml:space="preserve">
+		<value>無法清除 Grok 連接續做狀態。</value>
+	</data>
+	<data name="Message399" xml:space="preserve">
+		<value>無法準備 Claude 帳號的獨立設定目錄。</value>
+	</data>
+	<data name="Message400" xml:space="preserve">
+		<value>無法確認 Antigravity 回傳的內容</value>
+	</data>
+	<data name="Message401" xml:space="preserve">
+		<value>無法確認 Claude CLI 程序是否已完全結束；請重新啟動 AI Usage 後再試。</value>
+	</data>
+	<data name="Message402" xml:space="preserve">
+		<value>無法確認 Claude Code CLI 的受保護執行目錄。</value>
+	</data>
+	<data name="Message403" xml:space="preserve">
+		<value>無法確認 Claude Code {0} 的 `/usage` 是否產生用量。</value>
+	</data>
+	<data name="Message404" xml:space="preserve">
+		<value>無法確認 Claude Code 版本，請先更新後再試一次。</value>
+	</data>
+	<data name="Message405" xml:space="preserve">
+		<value>無法確認 Claude Code 版本，請再試一次。</value>
+	</data>
+	<data name="Message406" xml:space="preserve">
+		<value>無法確認 Claude 登入狀態，請再試一次。</value>
+	</data>
+	<data name="Message407" xml:space="preserve">
+		<value>無法確認 Claude 登入，請確認使用 claude.ai 訂閱帳號。</value>
+	</data>
+	<data name="Message408" xml:space="preserve">
+		<value>無法確認 Codex CLI 的受保護執行目錄。</value>
+	</data>
+	<data name="Message409" xml:space="preserve">
+		<value>無法確認 Codex CLI 的版本檢查程序是否已完全結束；請重新啟動 AI Usage 後再試。</value>
+	</data>
+	<data name="Message410" xml:space="preserve">
+		<value>無法確認 Codex CLI 程序是否已完全結束；請重新啟動 AI Usage 後再試。</value>
+	</data>
+	<data name="Message411" xml:space="preserve">
+		<value>無法確認 Copilot CLI 的受保護執行目錄與 Windows 使用者。</value>
+	</data>
+	<data name="Message412" xml:space="preserve">
+		<value>無法確認 Copilot 登入已安全關閉；完成清理前不會啟動其他 Copilot 登入。</value>
+	</data>
+	<data name="Message413" xml:space="preserve">
+		<value>無法確認 Copilot 登入程序狀態；完成清理前不會啟動其他 Copilot 登入。</value>
+	</data>
+	<data name="Message414" xml:space="preserve">
+		<value>無法確認 Copilot 登入資料夾，請確認 AI Usage 有寫入權限。</value>
+	</data>
+	<data name="Message415" xml:space="preserve">
+		<value>無法確認 Grok Build CLI 是否已完全結束，因此已停止檢查用量。請重新啟動 AI Usage。</value>
+	</data>
+	<data name="Message416" xml:space="preserve">
+		<value>無法確認 Grok Build CLI 的受保護執行目錄。</value>
+	</data>
+	<data name="Message417" xml:space="preserve">
+		<value>無法確認上次 Claude 用量檢查是否完成。</value>
+	</data>
+	<data name="Message418" xml:space="preserve">
+		<value>無法確認上次檢查是否完成</value>
+	</data>
+	<data name="Message419" xml:space="preserve">
+		<value>無法確認官方 Grok Build CLI 的安裝路徑。</value>
+	</data>
+	<data name="Message420" xml:space="preserve">
+		<value>無法解析 GitHub user response。</value>
+	</data>
+	<data name="Message421" xml:space="preserve">
+		<value>無法讀取或儲存上次 Claude 用量檢查的狀態。</value>
+	</data>
+	<data name="Message422" xml:space="preserve">
+		<value>無法讀取或儲存上次檢查的狀態</value>
+	</data>
+	<data name="Message423" xml:space="preserve">
+		<value>無法辨識 Claude Code CLI 版本格式。</value>
+	</data>
+	<data name="Message424" xml:space="preserve">
+		<value>無法辨識 Copilot 用量資料。</value>
+	</data>
+	<data name="Message425" xml:space="preserve">
+		<value>無法辨識 {0} 版號</value>
+	</data>
+	<data name="Message426" xml:space="preserve">
+		<value>無法開啟 Copilot 登入，請安裝或更新本機官方 GitHub Copilot CLI 後重試。</value>
+	</data>
+	<data name="Message427" xml:space="preserve">
+		<value>無法開啟或完成 Grok 登入，請再試一次。</value>
+	</data>
+	<data name="Message429" xml:space="preserve">
+		<value>目前只支援 github.com 帳號。</value>
+	</data>
+	<data name="Message430" xml:space="preserve">
+		<value>目前登入無權讀取 Copilot 用量。</value>
+	</data>
+	<data name="Message431" xml:space="preserve">
+		<value>目前登入的帳號沒有提供 claude.ai Pro／Max 用量資料。</value>
+	</data>
+	<data name="Message432" xml:space="preserve">
+		<value>目前的 Antigravity 版本或 AI Usage 尚未支援用量檢查。請更新 Antigravity 或 AI Usage；既有登入不受影響。</value>
+	</data>
+	<data name="Message433" xml:space="preserve">
+		<value>目前顯示 Claude 上次成功讀取的用量（時間不明）。</value>
+	</data>
+	<data name="Message434" xml:space="preserve">
+		<value>確認 Claude Code 版本逾時，請再試一次。</value>
+	</data>
+	<data name="Message435" xml:space="preserve">
+		<value>確認 Claude 登入狀態逾時，請再試一次。</value>
+	</data>
+	<data name="Message436" xml:space="preserve">
+		<value>等待 Codex notification 時收到非預期的 request／response。</value>
+	</data>
+	<data name="Message437" xml:space="preserve">
+		<value>等待 Codex workspace binding 作業逾時。</value>
+	</data>
+	<data name="Message438" xml:space="preserve">
+		<value>等待前一個 Claude 帳號作業逾時。</value>
+	</data>
+	<data name="Message439" xml:space="preserve">
+		<value>等待前一個 Claude 帳號作業逾時，請再試一次。</value>
+	</data>
+	<data name="Message440" xml:space="preserve">
+		<value>等待前一個 Claude 訂閱範圍 probe 逾時。</value>
+	</data>
+	<data name="Message441" xml:space="preserve">
+		<value>等待前一個 Codex 帳號作業逾時。</value>
+	</data>
+	<data name="Message442" xml:space="preserve">
+		<value>等待前一個 Codex 帳號作業逾時，請再試一次。</value>
+	</data>
+	<data name="Message443" xml:space="preserve">
+		<value>等待復原 Codex workspace 設定逾時。</value>
+	</data>
+	<data name="Message444" xml:space="preserve">
+		<value>請先確認 Claude 用量讀取的風險；確認後會自動更新，不會重新登入。</value>
+	</data>
+	<data name="Message445" xml:space="preserve">
+		<value>請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="Message446" xml:space="preserve">
+		<value>請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="Message447" xml:space="preserve">
+		<value>這個 Claude Code 版本無法提供用量資料，請更新至 2.1.80 或更新版本。</value>
+	</data>
+	<data name="Message448" xml:space="preserve">
+		<value>這個 Copilot 帳號沒有可顯示的用量資料。</value>
+	</data>
+	<data name="Message449" xml:space="preserve">
+		<value>週用量（{0}）</value>
+	</data>
+	<data name="Message450" xml:space="preserve">
+		<value>週用量（所有模型）</value>
+	</data>
+	<data name="Message451" xml:space="preserve">
+		<value>需要 GitHub Copilot CLI 三段式正式版 1.0.79 以上且低於 2.0.0。</value>
+	</data>
+	<data name="Message452" xml:space="preserve">
+		<value>顯示上次確認的 Claude 用量 · 更新於 {0}</value>
+	</data>
+	<data name="Message453" xml:space="preserve">
+		<value>，額外用量已開啟</value>
+	</data>
+	<data name="Message454" xml:space="preserve">
+		<value>，額度用完後仍可使用</value>
+	</data>
+	<data name="AntigravitySafety01Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：上次檢查在完成前中斷。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety01Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：上次檢查在完成前中斷。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety02Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：上次檢查逾時。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety02Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：上次檢查逾時。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety03Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：上次檢查在啟動 Antigravity 後被取消。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety03Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：上次檢查在啟動 Antigravity 後被取消。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety04Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令啟動後沒有正常結束。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety04Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令啟動後沒有正常結束。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety05Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令回報錯誤。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety05Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令回報錯誤。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety06Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令沒有回傳資料。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety06Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令沒有回傳資料。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety07Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令回傳的資料量太大，無法確認結果。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety07Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令回傳的資料量太大，無法確認結果。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety08Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：無法確認 Antigravity 回傳的內容。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety08Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：無法確認 Antigravity 回傳的內容。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety09Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 回傳的用量資料無法辨識。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety09Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 回傳的用量資料無法辨識。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety10Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：偵測到這次檢查可能產生用量。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety10Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：偵測到這次檢查可能產生用量。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety11Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：無法讀取或儲存上次檢查的狀態。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety11Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：無法讀取或儲存上次檢查的狀態。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="AntigravitySafety12Recheck" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：無法確認上次檢查是否完成。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。</value>
+	</data>
+	<data name="AntigravitySafety12Reconnect" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：無法確認上次檢查是否完成。AI Usage 不會自動再試。請重新連接 Antigravity 帳號。</value>
+	</data>
+	<data name="ClaudeSafety01Automatic" xml:space="preserve">
+		<value>Claude Code `/usage` 尚未確認是否產生用量就中斷。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。</value>
+	</data>
+	<data name="ClaudeSafety01Manual" xml:space="preserve">
+		<value>Claude Code `/usage` 尚未確認是否產生用量就中斷。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。</value>
+	</data>
+	<data name="ClaudeSafety02Automatic" xml:space="preserve">
+		<value>無法讀取或儲存上次 Claude 用量檢查的狀態。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。</value>
+	</data>
+	<data name="ClaudeSafety02Manual" xml:space="preserve">
+		<value>無法讀取或儲存上次 Claude 用量檢查的狀態。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。</value>
+	</data>
+	<data name="ClaudeSafety03Automatic" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 尚未確認是否產生用量就取消。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。</value>
+	</data>
+	<data name="ClaudeSafety03Manual" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 尚未確認是否產生用量就取消。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。</value>
+	</data>
+	<data name="ClaudeSafety04Automatic" xml:space="preserve">
+		<value>無法確認 Claude Code {0} 的 `/usage` 是否產生用量。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。</value>
+	</data>
+	<data name="ClaudeSafety04Manual" xml:space="preserve">
+		<value>無法確認 Claude Code {0} 的 `/usage` 是否產生用量。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。</value>
+	</data>
+	<data name="ClaudeSafety05Automatic" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 可能產生用量，或結果需要人工確認。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。</value>
+	</data>
+	<data name="ClaudeSafety05Manual" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 可能產生用量，或結果需要人工確認。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。</value>
+	</data>
+	<data name="ClaudeSafety06Automatic" xml:space="preserve">
+		<value>Claude Code {0} 回傳的用量格式暫時無法辨識。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。</value>
+	</data>
+	<data name="ClaudeSafety06Manual" xml:space="preserve">
+		<value>Claude Code {0} 回傳的用量格式暫時無法辨識。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。</value>
+	</data>
+	<data name="ClaudeSafety07Automatic" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 回報錯誤，但用量結果顯示成功，暫時無法確認這次結果。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。</value>
+	</data>
+	<data name="ClaudeSafety07Manual" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 回報錯誤，但用量結果顯示成功，暫時無法確認這次結果。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。</value>
+	</data>
+	<data name="ClaudeSafety08Automatic" xml:space="preserve">
+		<value>無法確認上次 Claude 用量檢查是否完成。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。</value>
+	</data>
+	<data name="ClaudeSafety08Manual" xml:space="preserve">
+		<value>無法確認上次 Claude 用量檢查是否完成。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。</value>
+	</data>
+	<data name="CopilotUsage01ExtraUsage" xml:space="preserve">
+		<value>已使用 {0}；上限由共用額度與預算控制，額外用量已開啟</value>
+	</data>
+	<data name="CopilotUsage01StillAllowed" xml:space="preserve">
+		<value>已使用 {0}；上限由共用額度與預算控制，額度用完後仍可使用</value>
+	</data>
+	<data name="CopilotUsage02ExtraUsage" xml:space="preserve">
+		<value>已使用 {0}；此來源未提供上限，額外用量已開啟</value>
+	</data>
+	<data name="CopilotUsage02StillAllowed" xml:space="preserve">
+		<value>已使用 {0}；此來源未提供上限，額度用完後仍可使用</value>
+	</data>
+	<data name="CopilotUsage03ExtraUsage" xml:space="preserve">
+		<value>此方案未提供，額外用量已開啟</value>
+	</data>
+	<data name="CopilotUsage03StillAllowed" xml:space="preserve">
+		<value>此方案未提供，額度用完後仍可使用</value>
+	</data>
+	<data name="CopilotUsage04ExtraUsage" xml:space="preserve">
+		<value>{0} 已使用（方案未包含額度），額外用量已開啟</value>
+	</data>
+	<data name="CopilotUsage04StillAllowed" xml:space="preserve">
+		<value>{0} 已使用（方案未包含額度），額度用完後仍可使用</value>
+	</data>
+	<data name="CopilotUsage05ExtraUsage" xml:space="preserve">
+		<value>{0} / {1} 已使用，額外用量已開啟</value>
+	</data>
+	<data name="CopilotUsage05StillAllowed" xml:space="preserve">
+		<value>{0} / {1} 已使用，額度用完後仍可使用</value>
+	</data>
+	<data name="CopilotUsage06ExtraUsage" xml:space="preserve">
+		<value>已使用 {0} 次（此來源未提供上限），額外用量已開啟</value>
+	</data>
+	<data name="CopilotUsage06StillAllowed" xml:space="preserve">
+		<value>已使用 {0} 次（此來源未提供上限），額度用完後仍可使用</value>
+	</data>
+	<data name="CopilotUsage07ExtraUsage" xml:space="preserve">
+		<value>已使用 {0} 次（無上限），額外用量已開啟</value>
+	</data>
+	<data name="CopilotUsage07StillAllowed" xml:space="preserve">
+		<value>已使用 {0} 次（無上限），額度用完後仍可使用</value>
+	</data>
+	<data name="CodexBucketDay" xml:space="preserve">
+		<value>{0} · {1} 天用量</value>
+	</data>
+	<data name="CodexBucketHour" xml:space="preserve">
+		<value>{0} · {1} 小時用量</value>
+	</data>
+	<data name="CodexBucketMinute" xml:space="preserve">
+		<value>{0} · {1} 分鐘用量</value>
+	</data>
+	<data name="CodexBucketPrimary" xml:space="preserve">
+		<value>{0} · 主要用量</value>
+	</data>
+	<data name="CodexBucketSecondary" xml:space="preserve">
+		<value>{0} · 次要用量</value>
+	</data>
+	<data name="CliDiagnosticCodexWorkspaceDetected" xml:space="preserve">
+		<value>暫時無法確認 Codex 帳號與 workspace，稍後會自動再試。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticCodexWorkspaceUnknown" xml:space="preserve">
+		<value>暫時無法確認 Codex 帳號與 workspace，稍後會自動再試。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticCodexRetryDetected" xml:space="preserve">
+		<value>暫時無法讀取 Codex 用量，稍後會自動再試。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticCodexRetryUnknown" xml:space="preserve">
+		<value>暫時無法讀取 Codex 用量，稍後會自動再試。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticCodexRepairDetected" xml:space="preserve">
+		<value>AI Usage 目前無法透過 Codex 讀取用量，請更新或修復 Codex。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticCodexRepairUnknown" xml:space="preserve">
+		<value>AI Usage 目前無法透過 Codex 讀取用量，請更新或修復 Codex。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticCodexUnknownErrorDetected" xml:space="preserve">
+		<value>Codex 回傳無法辨識的錯誤；AI Usage 稍後會自動再試，不需要操作。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticCodexUnknownErrorUnknown" xml:space="preserve">
+		<value>Codex 回傳無法辨識的錯誤；AI Usage 稍後會自動再試，不需要操作。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticGrokRetryDetected" xml:space="preserve">
+		<value>暫時無法讀取 Grok 用量，稍後會自動再試。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticGrokRetryUnknown" xml:space="preserve">
+		<value>暫時無法讀取 Grok 用量，稍後會自動再試。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticGrokRepairDetected" xml:space="preserve">
+		<value>找不到可用且受支援的 Grok Build CLI；請安裝、更新或修復 Grok Build CLI 後再試。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticGrokRepairUnknown" xml:space="preserve">
+		<value>找不到可用且受支援的 Grok Build CLI；請安裝、更新或修復 Grok Build CLI 後再試。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeRetryDetected" xml:space="preserve">
+		<value>暫時無法讀取 Claude 用量，稍後會自動再試。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeRetryUnknown" xml:space="preserve">
+		<value>暫時無法讀取 Claude 用量，稍後會自動再試。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety01Detected" xml:space="preserve">
+		<value>Claude Code `/usage` 尚未確認是否產生用量就中斷。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety01Unknown" xml:space="preserve">
+		<value>Claude Code `/usage` 尚未確認是否產生用量就中斷。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety02Detected" xml:space="preserve">
+		<value>Claude Code `/usage` 尚未確認是否產生用量就中斷。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety02Unknown" xml:space="preserve">
+		<value>Claude Code `/usage` 尚未確認是否產生用量就中斷。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety03Detected" xml:space="preserve">
+		<value>無法讀取或儲存上次 Claude 用量檢查的狀態。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety03Unknown" xml:space="preserve">
+		<value>無法讀取或儲存上次 Claude 用量檢查的狀態。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety04Detected" xml:space="preserve">
+		<value>無法讀取或儲存上次 Claude 用量檢查的狀態。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety04Unknown" xml:space="preserve">
+		<value>無法讀取或儲存上次 Claude 用量檢查的狀態。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety05Detected" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 尚未確認是否產生用量就取消。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety05Unknown" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 尚未確認是否產生用量就取消。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety06Detected" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 尚未確認是否產生用量就取消。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety06Unknown" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 尚未確認是否產生用量就取消。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety07Detected" xml:space="preserve">
+		<value>無法確認 Claude Code {0} 的 `/usage` 是否產生用量。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety07Unknown" xml:space="preserve">
+		<value>無法確認 Claude Code {0} 的 `/usage` 是否產生用量。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety08Detected" xml:space="preserve">
+		<value>無法確認 Claude Code {0} 的 `/usage` 是否產生用量。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety08Unknown" xml:space="preserve">
+		<value>無法確認 Claude Code {0} 的 `/usage` 是否產生用量。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety09Detected" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 可能產生用量，或結果需要人工確認。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety09Unknown" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 可能產生用量，或結果需要人工確認。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety10Detected" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 可能產生用量，或結果需要人工確認。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety10Unknown" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 可能產生用量，或結果需要人工確認。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety11Detected" xml:space="preserve">
+		<value>Claude Code {0} 回傳的用量格式暫時無法辨識。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety11Unknown" xml:space="preserve">
+		<value>Claude Code {0} 回傳的用量格式暫時無法辨識。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety12Detected" xml:space="preserve">
+		<value>Claude Code {0} 回傳的用量格式暫時無法辨識。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety12Unknown" xml:space="preserve">
+		<value>Claude Code {0} 回傳的用量格式暫時無法辨識。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety13Detected" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 回報錯誤，但用量結果顯示成功，暫時無法確認這次結果。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety13Unknown" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 回報錯誤，但用量結果顯示成功，暫時無法確認這次結果。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety14Detected" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 回報錯誤，但用量結果顯示成功，暫時無法確認這次結果。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety14Unknown" xml:space="preserve">
+		<value>Claude Code {0} 的 `/usage` 回報錯誤，但用量結果顯示成功，暫時無法確認這次結果。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety15Detected" xml:space="preserve">
+		<value>無法確認上次 Claude 用量檢查是否完成。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety15Unknown" xml:space="preserve">
+		<value>無法確認上次 Claude 用量檢查是否完成。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety16Detected" xml:space="preserve">
+		<value>無法確認上次 Claude 用量檢查是否完成。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticClaudeSafety16Unknown" xml:space="preserve">
+		<value>無法確認上次 Claude 用量檢查是否完成。AI Usage 不會自動再試。請按「重新檢查 Claude 用量」再試一次。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety01Detected" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令回報錯誤。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety01Unknown" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令回報錯誤。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety02Detected" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令沒有回傳資料。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety02Unknown" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 指令沒有回傳資料。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety03Detected" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：無法確認 Antigravity 回傳的內容。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety03Unknown" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：無法確認 Antigravity 回傳的內容。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety04Detected" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 回傳的用量資料無法辨識。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticAntigravitySafety04Unknown" xml:space="preserve">
+		<value>Antigravity 用量檢查已暫停：Antigravity 回傳的用量資料無法辨識。AI Usage 不會自動再試。請按「重新檢查 Antigravity 用量」再試一次。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticAntigravityAutomaticDetected" xml:space="preserve">
+		<value>Antigravity 用量檢查尚未完成。AI Usage 稍後會自動再試，並保留現有帳號與用量資料。 CLI 版本診斷：偵測到 {0} {1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticAntigravityAutomaticUnknown" xml:space="preserve">
+		<value>Antigravity 用量檢查尚未完成。AI Usage 稍後會自動再試，並保留現有帳號與用量資料。 CLI 版本診斷：無法辨識 {0} 版號；本版相容性基準為 {1}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+</root>

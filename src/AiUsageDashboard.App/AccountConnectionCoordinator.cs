@@ -6,9 +6,11 @@ using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 using WpfMessageBox = System.Windows.MessageBox;
+
 
 namespace AiUsageDashboard.App;
 
@@ -46,10 +48,11 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		bool WasProfileDisconnectPersisted,
 		GrokConflictCleanupResult CleanupResult);
 
-	internal const string AntigravityPreflightMessage =
-		"請先登入 Antigravity。AI Usage 會確認這台電腦上的 Antigravity CLI 與既有連接，再讀取目前帳號的四項用量。" +
-		"AI Usage 只接受 1.1.11 以上、2.0.0 未滿且支援官方唯讀 /usage 的版本。" +
-		"這張卡會跟隨這台電腦目前的 Antigravity 登入；AI Usage 無法確認或固定企業專案範圍。這項操作不會讀取登入憑證。";
+	internal static string AntigravityPreflightMessage => string.Join(
+		UiText.CurrentLanguage == AppLanguage.English ? " " : string.Empty,
+		UiText.Translate("請先登入 Antigravity。AI Usage 會確認這台電腦上的 Antigravity CLI 與既有連接，再讀取目前帳號的四項用量。"),
+		UiText.Translate("AI Usage 只接受 1.1.11 以上、2.0.0 未滿且支援官方唯讀 /usage 的版本。"),
+		UiText.Translate("這張卡會跟隨這台電腦目前的 Antigravity 登入；AI Usage 無法確認或固定企業專案範圍。這項操作不會讀取登入憑證。"));
 	private static readonly TimeSpan DefaultAntigravityRefreshQuiesceTimeout =
 		TimeSpan.FromSeconds(30);
 	private static readonly TimeSpan[] AuthenticatedBindingUsageRetryDelays =
@@ -525,7 +528,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		try
 		{
 			reportStatus?.Invoke(
-				$"正在連接「{account.AccountName}」的 Antigravity 帳號…");
+				UiText.Translate($"正在連接「{account.AccountName}」的 Antigravity 帳號…"));
 			await viewModel
 				.QuiesceAccountRefreshAsync(account.Id, lifetimeToken)
 				.WaitAsync(
@@ -538,7 +541,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					lifetimeToken))
 			{
 				reportStatus?.Invoke(
-					"Antigravity 連接尚未開始；暫時無法記錄連接進度。AI Usage 稍後會自動再試。");
+					UiText.Translate("Antigravity 連接尚未開始；暫時無法記錄連接進度。AI Usage 稍後會自動再試。"));
 				return;
 			}
 			didCreateSetupIntent = true;
@@ -577,29 +580,29 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				case AntigravityAccountSetupOutcome.Cancelled:
 					shouldRetainSetupIntent = false;
 					reportStatus?.Invoke(
-						$"已取消「{account.AccountName}」的 Antigravity 帳號連接。");
+						UiText.Translate($"已取消「{account.AccountName}」的 Antigravity 帳號連接。"));
 					break;
 				case AntigravityAccountSetupOutcome.Failed:
 					shouldRetainSetupIntent = false;
 					reportStatus?.Invoke(
-						$"「{account.AccountName}」的 Antigravity 帳號連接未完成。Antigravity 連接視窗已顯示這次失敗的具體原因與處理方式；AI Usage 已保留原本顯示的用量。");
+						UiText.Translate($"「{account.AccountName}」的 Antigravity 帳號連接未完成。Antigravity 連接視窗已顯示這次失敗的具體原因與處理方式；AI Usage 已保留原本顯示的用量。"));
 					break;
 				case AntigravityAccountSetupOutcome.CompletionUnknown:
 					reportStatus?.Invoke(
-						"Antigravity 連接視窗尚未回報完成。AI Usage 已記錄連接進度，稍後會自動確認，重新啟動後也會繼續。");
+						UiText.Translate("Antigravity 連接視窗尚未回報完成。AI Usage 已記錄連接進度，稍後會自動確認，重新啟動後也會繼續。"));
 					break;
 				default:
 					throw new ArgumentOutOfRangeException(
 						nameof(outcome),
 						outcome,
-						"未知的 Antigravity 連接結果。");
+						UiText.Translate("未知的 Antigravity 連接結果。"));
 			}
 		}
 		catch (TimeoutException)
 		{
 			reportNotice?.Invoke(
-				"AI Usage 尚未完成目前的 Antigravity 用量檢查，因此沒有啟動帳號連接。請稍後再試。",
-				"Antigravity 仍在使用中",
+				UiText.Translate("AI Usage 尚未完成目前的 Antigravity 用量檢查，因此沒有啟動帳號連接。請稍後再試。"),
+				UiText.Translate("Antigravity 仍在使用中"),
 				MessageBoxImage.Warning);
 		}
 		catch (OperationCanceledException) when (lifetimeToken.IsCancellationRequested)
@@ -628,8 +631,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				"stage=coordinator;result=failed",
 				exception);
 			reportNotice?.Invoke(
-				"無法完成 Antigravity 帳號連接。原本的用量仍會保留，請稍後再試。",
-				"Antigravity 連接失敗",
+				UiText.Translate("無法完成 Antigravity 帳號連接。原本的用量仍會保留，請稍後再試。"),
+				UiText.Translate("Antigravity 連接失敗"),
 				MessageBoxImage.Error);
 		}
 		finally
@@ -670,8 +673,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			viewModel,
 			() => WpfMessageBox.Show(
 				owner,
-				"Claude /usage 查詢狀態時也可能計入少量用量。AI Usage 只會採用未產生模型請求、token 或費用的結果，但這些項目只能在執行後確認，已產生的用量或費用無法撤回。\n\n是否開始檢查？",
-				"確認 Claude 用量讀取",
+				UiText.Translate("Claude /usage 查詢狀態時也可能計入少量用量。AI Usage 只會採用未產生模型請求、token 或費用的結果，但這些項目只能在執行後確認，已產生的用量或費用無法撤回。\n\n是否開始檢查？"),
+				UiText.Translate("確認 Claude 用量讀取"),
 				MessageBoxButton.YesNo,
 				MessageBoxImage.Warning,
 				MessageBoxResult.No),
@@ -688,12 +691,12 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			{
 				MessageBoxResult result = WpfMessageBox.Show(
 					owner,
-					$"這張卡片有舊版 Claude 用量資料。請確認新觀察到的訂閱範圍：\n\n" +
-					$"帳號：{confirmation.AccountIdentity}\n" +
-					$"組織：{confirmation.SubscriptionScopeDisplayName}\n" +
-					$"方案：{confirmation.PlanTier}\n\n" +
-					"選「是」會把舊用量保留為這個訂閱範圍的歷史資料；選「否」會清除舊用量；選「取消」會保留舊資料並停止這次連接，讓你另建卡片。",
-					"確認 Claude 訂閱範圍",
+					UiText.Translate($"這張卡片有舊版 Claude 用量資料。請確認新觀察到的訂閱範圍：\n\n") +
+					UiText.Translate($"帳號：{confirmation.AccountIdentity}\n") +
+					UiText.Translate($"組織：{confirmation.SubscriptionScopeDisplayName}\n") +
+					UiText.Translate($"方案：{confirmation.PlanTier}\n\n") +
+					UiText.Translate("選「是」會把舊用量保留為這個訂閱範圍的歷史資料；選「否」會清除舊用量；選「取消」會保留舊資料並停止這次連接，讓你另建卡片。"),
+					UiText.Translate("確認 Claude 訂閱範圍"),
 					MessageBoxButton.YesNoCancel,
 					MessageBoxImage.Question,
 					MessageBoxResult.Cancel);
@@ -792,7 +795,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			{
 				UsageSnapshot? snapshotBeforeRefresh = account.CurrentSnapshot;
 				reportStatus?.Invoke(
-					$"正在確認「{account.AccountName}」原本的 Claude 帳號…");
+					UiText.Translate($"正在確認「{account.AccountName}」原本的 Claude 帳號…"));
 				await viewModel.RefreshAccountUsageAsync(
 					account.Id,
 					operationToken);
@@ -813,12 +816,12 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				{
 					string resumeMessage = account.HasConfirmedProviderAccountBinding &&
 						(account.CurrentSnapshot?.Status == SnapshotStatus.Ready)
-						? $"「{account.AccountName}」已沿用原本的 Claude 帳號，並已重新讀取用量。"
+						? UiText.Translate($"「{account.AccountName}」已沿用原本的 Claude 帳號，並已重新讀取用量。")
 						: account.RecoveryAction == UsageRecoveryAction.Retry
-							? $"「{account.AccountName}」已保留原本的 Claude 帳號，AI Usage 稍後會自動再檢查用量。"
+							? UiText.Translate($"「{account.AccountName}」已保留原本的 Claude 帳號，AI Usage 稍後會自動再檢查用量。")
 							: account.RecoveryAction == UsageRecoveryAction.RevalidateUsage
-								? $"「{account.AccountName}」已保留原本的 Claude 帳號；上次用量檢查未完成。請按卡片上的「重新檢查 Claude 用量」。"
-								: $"「{account.AccountName}」已保留原本的 Claude 帳號；請依卡片提示處理用量檢查。";
+								? UiText.Translate($"「{account.AccountName}」已保留原本的 Claude 帳號；上次用量檢查未完成。請按卡片上的「重新檢查 Claude 用量」。")
+								: UiText.Translate($"「{account.AccountName}」已保留原本的 Claude 帳號；請依卡片提示處理用量檢查。");
 					reportStatus?.Invoke(resumeMessage);
 					return;
 				}
@@ -832,7 +835,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			}
 
 			reportStatus?.Invoke(
-				$"正在連接「{account.AccountName}」的 Claude 帳號…");
+				UiText.Translate($"正在連接「{account.AccountName}」的 Claude 帳號…"));
 			ClaudeAccountLoginResult loginResult = await _claudeAccountLogin.LoginAsync(
 				account.Id,
 				operationToken);
@@ -848,7 +851,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					ClaudeSubscriptionContext subscriptionContext)
 				{
 					throw new ClaudeAccountLoginException(
-						"Claude 登入完成，但無法確認訂閱範圍。");
+						UiText.Translate("Claude 登入完成，但無法確認訂閱範圍。"));
 				}
 
 				bool isLegacyProfile =
@@ -866,14 +869,14 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					if (confirmLegacyCache is null)
 					{
 						throw new ClaudeAccountLoginException(
-							"這張卡片有舊版 Claude 用量，必須先確認訂閱範圍與舊資料處理方式。");
+							UiText.Translate("這張卡片有舊版 Claude 用量，必須先確認訂閱範圍與舊資料處理方式。"));
 					}
 
 					ClaudeLegacyCacheDisposition disposition =
 						confirmLegacyCache(new ClaudeLegacyCacheConfirmation(
 							subscriptionContext.AccountIdentity,
 							subscriptionContext.SubscriptionScopeDisplayName ??
-								"已確認的組織（未提供名稱）",
+								UiText.Translate("已確認的組織（未提供名稱）"),
 							subscriptionContext.PlanTier));
 
 					if (disposition == ClaudeLegacyCacheDisposition.Separate)
@@ -882,13 +885,13 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 						{
 							Status = SnapshotStatus.Stale,
 							Error =
-								"目前顯示尚未連接到訂閱範圍的舊版歷史用量；本次連接未完成。",
+								UiText.Translate("目前顯示尚未連接到訂閱範圍的舊版歷史用量；本次連接未完成。"),
 							RecoveryAction = UsageRecoveryAction.ConfirmSubscription,
 							SubscriptionVerificationState =
 								SubscriptionVerificationState.Unverified
 						});
 						reportStatus?.Invoke(
-							$"已保留「{account.AccountName}」的舊版 Claude 用量，且未更改連接；請另建卡片連接新的訂閱範圍。");
+							UiText.Translate($"已保留「{account.AccountName}」的舊版 Claude 用量，且未更改連接；請另建卡片連接新的訂閱範圍。"));
 						return;
 					}
 
@@ -946,7 +949,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					GetAuthenticatedProviderBindingCommitFailureMessage(
 						account,
 						bindingResult,
-						$"「{account.AccountName}」無法連接：這個 Claude 訂閱範圍已連接到另一張帳號卡片。"));
+						UiText.Translate($"「{account.AccountName}」無法連接：這個 Claude 訂閱範圍已連接到另一張帳號卡片。")));
 				return;
 			}
 			didPersistAuthenticatedBinding = true;
@@ -1003,7 +1006,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			connectionCancellationSource?.IsCancellationRequested == true)
 		{
 			reportStatus?.Invoke(
-				$"已取消「{account.AccountName}」的 Claude 帳號連接。");
+				UiText.Translate($"已取消「{account.AccountName}」的 Claude 帳號連接。"));
 		}
 		catch (Exception exception) when (
 			connectionCancellationSource?.IsCancellationRequested == true)
@@ -1014,7 +1017,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				"stage=cancel-cleanup;result=failed",
 				exception);
 			reportStatus?.Invoke(
-				$"已取消「{account.AccountName}」的 Claude 帳號連接。");
+				UiText.Translate($"已取消「{account.AccountName}」的 Claude 帳號連接。"));
 		}
 		catch (Exception exception) when (
 			!IsAttachedAndEnabled(viewModel, account))
@@ -1040,8 +1043,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				"stage=coordinator;result=failed",
 				exception);
 			reportNotice?.Invoke(
-				"無法完成 Claude 登入或重新讀取用量。原本的用量仍會保留，請稍後再試。",
-				"Claude 連接失敗",
+				UiText.Translate("無法完成 Claude 登入或重新讀取用量。原本的用量仍會保留，請稍後再試。"),
+				UiText.Translate("Claude 連接失敗"),
 				MessageBoxImage.Error);
 		}
 		finally
@@ -1126,7 +1129,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		if (workspaceId == Guid.Empty)
 		{
 			throw new ArgumentException(
-				"Codex workspace ID 不可為空。",
+				UiText.Translate("Codex workspace ID 不可為空。"),
 				nameof(workspaceId));
 		}
 
@@ -1145,8 +1148,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		{
 			_activeCodexLogins.Remove(account.Id);
 			reportNotice?.Invoke(
-				"這份 AI Usage 尚未包含完整的 Codex workspace 綁定元件，請更新後再試。",
-				"Codex 連接元件不可用",
+				UiText.Translate("這份 AI Usage 尚未包含完整的 Codex workspace 綁定元件，請更新後再試。"),
+				UiText.Translate("Codex 連接元件不可用"),
 				MessageBoxImage.Warning);
 			return;
 		}
@@ -1185,7 +1188,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		try
 		{
 			reportStatus?.Invoke(
-				$"正在連接「{account.AccountName}」的 Codex 帳號…");
+				UiText.Translate($"正在連接「{account.AccountName}」的 Codex 帳號…"));
 			CodexAccountLoginResult loginResult;
 			bool didBeginCommit;
 			ICodexWorkspaceConfigurationTransaction?
@@ -1208,7 +1211,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 						!confirmAuthorizationUri(session.AuthorizationUri))
 					{
 						reportStatus?.Invoke(
-							$"已取消「{account.AccountName}」的 Codex 帳號連接。");
+							UiText.Translate($"已取消「{account.AccountName}」的 Codex 帳號連接。"));
 						return;
 					}
 
@@ -1219,7 +1222,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					if (loginResult.WorkspaceId != workspaceId)
 					{
 						throw new CodexAccountLoginException(
-							"Codex 回傳的 workspace 與這次連接不符。請重新連接。");
+							UiText.Translate("Codex 回傳的 workspace 與這次連接不符。請重新連接。"));
 					}
 					accountChangeCancellationRegistration.Dispose();
 					didBeginCommit =
@@ -1264,14 +1267,14 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 							account,
 							bindingResult,
 							workspaceId is null
-								? $"「{account.AccountName}」無法連接。這個 Codex 帳號已連到另一張卡片。若要用多張卡片分別顯示不同 workspace，每張卡片（包含原本第一張）都要用自己的 workspace ID 重新連接。"
-								: $"「{account.AccountName}」無法連接。這個 Codex 帳號已有一般連接，或這個 workspace 已連到另一張卡片。若要用多張卡片分別顯示不同 workspace，每張卡片（包含原本第一張）都要填自己的 workspace ID。"));
+								? UiText.Translate($"「{account.AccountName}」無法連接。這個 Codex 帳號已連到另一張卡片。若要用多張卡片分別顯示不同 workspace，每張卡片（包含原本第一張）都要用自己的 workspace ID 重新連接。")
+								: UiText.Translate($"「{account.AccountName}」無法連接。這個 Codex 帳號已有一般連接，或這個 workspace 已連到另一張卡片。若要用多張卡片分別顯示不同 workspace，每張卡片（包含原本第一張）都要填自己的 workspace ID。")));
 					return;
 				}
 
 				(workspaceConfigurationTransaction ??
 					throw new InvalidOperationException(
-						"Codex workspace 設定 transaction 未建立。"))
+						UiText.Translate("Codex workspace 設定 transaction 未建立。")))
 					.Commit();
 				didPersistAuthenticatedBinding = true;
 			}
@@ -1336,7 +1339,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			connectionCancellationSource.IsCancellationRequested)
 		{
 			reportStatus?.Invoke(
-				$"已取消「{account.AccountName}」的 Codex 帳號連接。");
+				UiText.Translate($"已取消「{account.AccountName}」的 Codex 帳號連接。"));
 		}
 		catch (Exception exception) when (
 			connectionCancellationSource.IsCancellationRequested)
@@ -1347,7 +1350,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				"stage=cancel-cleanup;result=failed",
 				exception);
 			reportStatus?.Invoke(
-				$"已取消「{account.AccountName}」的 Codex 帳號連接。");
+				UiText.Translate($"已取消「{account.AccountName}」的 Codex 帳號連接。"));
 		}
 		catch (Exception exception) when (
 			!IsAttachedAndEnabled(viewModel, account))
@@ -1370,8 +1373,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				"stage=coordinator;result=failed",
 				exception);
 			reportNotice?.Invoke(
-				"無法開啟或完成 Codex 登入，請再試一次。",
-				"Codex 登入失敗",
+				UiText.Translate("無法開啟或完成 Codex 登入，請再試一次。"),
+				UiText.Translate("Codex 登入失敗"),
 				MessageBoxImage.Error);
 		}
 		finally
@@ -1410,7 +1413,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			(loginResult.WorkspaceId is not null))
 		{
 			throw new InvalidDataException(
-				"Codex 帳號層級登入結果格式無效。");
+				UiText.Translate("Codex 帳號層級登入結果格式無效。"));
 		}
 
 		if (_codexWorkspaceBindingStore is null)
@@ -1573,7 +1576,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 						(workspaceId == Guid.Empty))
 					{
 						throw new InvalidDataException(
-							"Codex 帳號或 workspace 格式無效。");
+							UiText.Translate("Codex 帳號或 workspace 格式無效。"));
 					}
 
 					restartQuarantine =
@@ -1672,7 +1675,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					if (!Equals(binding, persistedBinding))
 					{
 						throw new IOException(
-							"Codex workspace binding 未通過持久化 read-back 驗證。");
+							UiText.Translate("Codex workspace binding 未通過持久化 read-back 驗證。"));
 					}
 
 					string publicBindingIdentity =
@@ -1860,7 +1863,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			(restartQuarantine.AccountId != account.Id)))
 		{
 			throw new ArgumentException(
-				"Codex restart quarantine 與目標帳號不符。",
+				UiText.Translate("Codex restart quarantine 與目標帳號不符。"),
 				nameof(restartQuarantine));
 		}
 
@@ -1917,7 +1920,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		if (!Equals(restartQuarantine, persistedBinding))
 		{
 			throw new IOException(
-				"Codex restart quarantine 未通過持久化 read-back 驗證。");
+				UiText.Translate("Codex restart quarantine 未通過持久化 read-back 驗證。"));
 		}
 	}
 
@@ -1930,7 +1933,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		if (await bindingStore.LoadAsync(accountId, cancellationToken) is not null)
 		{
 			throw new IOException(
-				"Codex workspace binding 刪除未通過 read-back 驗證。");
+				UiText.Translate("Codex workspace binding 刪除未通過 read-back 驗證。"));
 		}
 	}
 
@@ -1985,8 +1988,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		{
 			_activeCopilotLogins.Remove(account.Id);
 			reportNotice?.Invoke(
-				"本機 GitHub Copilot CLI 尚未就緒，請安裝或更新官方 CLI。",
-				"Copilot 無法使用",
+				UiText.Translate("本機 GitHub Copilot CLI 尚未就緒，請安裝或更新官方 CLI。"),
+				UiText.Translate("Copilot 無法使用"),
 				MessageBoxImage.Information);
 			return;
 		}
@@ -2029,7 +2032,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			}
 
 			reportStatus?.Invoke(
-				$"正在登入「{account.AccountName}」的 Copilot 帳號…");
+				UiText.Translate($"正在登入「{account.AccountName}」的 Copilot 帳號…"));
 			await using ICopilotConnectionCandidate candidate =
 				await _copilotAccountConnector.BeginConnectAsync(
 					account.Id,
@@ -2041,7 +2044,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			CopilotUsageReport usageReport = candidate.UsageReport ??
 				throw new CopilotClientException(
 					CopilotFailureKind.InvalidResponse,
-					"Copilot 未回傳可驗證的帳號資訊。");
+					UiText.Translate("Copilot 未回傳可驗證的帳號資訊。"));
 			string providerAccountIdentity = CopilotAccountIdentityRules.Create(
 				usageReport.Account);
 			bool isNewAccount = string.IsNullOrWhiteSpace(
@@ -2050,7 +2053,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				((confirmNewAccount is null) || !confirmNewAccount(usageReport)))
 			{
 				reportStatus?.Invoke(
-					$"已取消「{account.AccountName}」的 Copilot 帳號連接。");
+					UiText.Translate($"已取消「{account.AccountName}」的 Copilot 帳號連接。"));
 				return;
 			}
 
@@ -2079,7 +2082,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					GetAuthenticatedProviderBindingCommitFailureMessage(
 						account,
 						bindingResult,
-						$"「{account.AccountName}」無法連接。這個 GitHub 帳號已連到另一張 Copilot 卡片；原本的卡片連接不受影響。"));
+						UiText.Translate($"「{account.AccountName}」無法連接。這個 GitHub 帳號已連到另一張 Copilot 卡片；原本的卡片連接不受影響。")));
 				return;
 			}
 
@@ -2115,9 +2118,9 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 
 				reportNotice?.Invoke(
 					didFailClosed
-						? "Copilot 登入已完成，但無法安全完成 credential 儲存。這張卡片已停止用量檢查，請重新連接。"
-						: "Copilot credential 儲存未完成，且無法完整保存安全狀態。AI Usage 不會使用這次登入結果；請重新啟動後再連接。",
-					"Copilot 連接未完成",
+						? UiText.Translate("Copilot 登入已完成，但無法安全完成 credential 儲存。這張卡片已停止用量檢查，請重新連接。")
+						: UiText.Translate("Copilot credential 儲存未完成，且無法完整保存安全狀態。AI Usage 不會使用這次登入結果；請重新啟動後再連接。"),
+					UiText.Translate("Copilot 連接未完成"),
 					MessageBoxImage.Error);
 				return;
 			}
@@ -2170,13 +2173,13 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			connectionCancellationSource?.IsCancellationRequested == true)
 		{
 			reportStatus?.Invoke(
-				$"已取消「{account.AccountName}」的 Copilot 帳號連接。");
+				UiText.Translate($"已取消「{account.AccountName}」的 Copilot 帳號連接。"));
 		}
 		catch (CopilotAccountLoginException exception) when (
 			exception.Kind == CopilotAccountLoginFailureKind.Cancelled)
 		{
 			reportStatus?.Invoke(
-				$"已取消「{account.AccountName}」的 Copilot 帳號連接。");
+				UiText.Translate($"已取消「{account.AccountName}」的 Copilot 帳號連接。"));
 		}
 		catch (CopilotClientException exception)
 		{
@@ -2205,8 +2208,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				"stage=coordinator;result=failed",
 				exception);
 			reportNotice?.Invoke(
-				"無法完成 Copilot 登入。原本的卡片連接不受影響，請稍後再試。",
-				"Copilot 連接失敗",
+				UiText.Translate("無法完成 Copilot 登入。原本的卡片連接不受影響，請稍後再試。"),
+				UiText.Translate("Copilot 連接失敗"),
 				MessageBoxImage.Error);
 		}
 		finally
@@ -2276,8 +2279,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		{
 			_activeGrokLogins.Remove(account.Id);
 			reportNotice?.Invoke(
-				"這份 AI Usage 尚未包含完整的 Grok 連接元件，請更新後再試。",
-				"Grok 連接元件不可用",
+				UiText.Translate("這份 AI Usage 尚未包含完整的 Grok 連接元件，請更新後再試。"),
+				UiText.Translate("Grok 連接元件不可用"),
 				MessageBoxImage.Warning);
 			return;
 		}
@@ -2327,8 +2330,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				GrokConnectionBeginResult.BlockedByExistingRecoverableWork)
 			{
 				reportNotice?.Invoke(
-					"這個帳號有尚未完成的 Grok 連接。為避免覆寫可能已切換的帳號，這次不會開始新的登入。請重新啟動 AI Usage，完成後再試。",
-					"Grok 帳號連接仍待恢復",
+					UiText.Translate("這個帳號有尚未完成的 Grok 連接。為避免覆寫可能已切換的帳號，這次不會開始新的登入。請重新啟動 AI Usage，完成後再試。"),
+					UiText.Translate("Grok 帳號連接仍待恢復"),
 					MessageBoxImage.Warning);
 				return;
 			}
@@ -2338,19 +2341,19 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				GrokConnectionBeginResult.StartedAfterCorruptStateQuarantined)
 			{
 				reportNotice?.Invoke(
-					"上次 Grok 連接進度已損壞。AI Usage 已保留原檔，這次會重新登入，不會套用無法確認的資料。",
-					"已保留損壞的 Grok 連接資料",
+					UiText.Translate("上次 Grok 連接進度已損壞。AI Usage 已保留原檔，這次會重新登入，不會套用無法確認的資料。"),
+					UiText.Translate("已保留損壞的 Grok 連接資料"),
 					MessageBoxImage.Warning);
 			}
 			else if (beginResult ==
 				GrokConnectionBeginResult.ReplacedIncompleteAttempt)
 			{
 				reportStatus?.Invoke(
-					"先前尚未完成的 Grok 登入已由這次重新連接取代。");
+					UiText.Translate("先前尚未完成的 Grok 登入已由這次重新連接取代。"));
 			}
 
 			reportStatus?.Invoke(
-				$"已開啟「{account.AccountName}」的 Grok 登入終端機。請依終端機提示完成瀏覽器登入；若網頁要求複製內容，請把授權碼或完整回呼網址貼回終端機並按 Enter。");
+				UiText.Translate($"已開啟「{account.AccountName}」的 Grok 登入終端機。請依終端機提示完成瀏覽器登入；若網頁要求複製內容，請把授權碼或完整回呼網址貼回終端機並按 Enter。"));
 			didStartExternalLogin = true;
 			await _grokAccountLogin.LoginAsync(account.Id, operationToken);
 			didExternalLoginSucceed = true;
@@ -2373,7 +2376,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					account))
 			{
 				reportStatus?.Invoke(
-					"Grok 登入已完成，但 AI Usage 暫時無法儲存連接資料。重新啟動後會自動再試。");
+					UiText.Translate("Grok 登入已完成，但 AI Usage 暫時無法儲存連接資料。重新啟動後會自動再試。"));
 				return;
 			}
 
@@ -2420,7 +2423,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 								reportStatus?.Invoke(GetGrokConflictCleanupMessage(
 									account,
 									reconciliationResult.CleanupResult,
-									"這個 Grok 帳號已連接到另一張帳號卡片",
+									UiText.Translate("這個 Grok 帳號已連接到另一張帳號卡片"),
 									reconciliationResult.WasProfileDisconnectPersisted));
 								return false;
 							}
@@ -2476,7 +2479,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 									reportStatus?.Invoke(GetGrokConflictCleanupMessage(
 										account,
 										cleanupResult,
-										"這個 Grok 帳號已連接到另一張帳號卡片",
+										UiText.Translate("這個 Grok 帳號已連接到另一張帳號卡片"),
 										bindingResult == AuthenticatedProviderBindingCommitResult
 											.IdentityConflict));
 									return false;
@@ -2486,7 +2489,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 									GetAuthenticatedProviderBindingCommitFailureMessage(
 										account,
 										bindingResult,
-										$"「{account.AccountName}」無法連接：這個 Grok 帳號已連接到另一張帳號卡片。"));
+										UiText.Translate($"「{account.AccountName}」無法連接：這個 Grok 帳號已連接到另一張帳號卡片。")));
 								return false;
 							}
 							didPersistAuthenticatedBinding = true;
@@ -2561,7 +2564,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			connectionCancellationSource.IsCancellationRequested)
 		{
 			reportStatus?.Invoke(
-				$"已取消「{account.AccountName}」的 Grok 帳號連接。");
+				UiText.Translate($"已取消「{account.AccountName}」的 Grok 帳號連接。"));
 		}
 		catch (GrokProcessContainmentException exception)
 		{
@@ -2570,8 +2573,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				"stage=process-containment;result=failed",
 				exception);
 			reportNotice?.Invoke(
-				"AI Usage 無法確認先前的 Grok 程序是否已結束，因此這次不會再嘗試連接。請重新啟動 AI Usage 後再連接這個帳號。",
-				"必須重新啟動 AI Usage",
+				UiText.Translate("AI Usage 無法確認先前的 Grok 程序是否已結束，因此這次不會再嘗試連接。請重新啟動 AI Usage 後再連接這個帳號。"),
+				UiText.Translate("必須重新啟動 AI Usage"),
 				MessageBoxImage.Error);
 		}
 		catch (Exception exception) when (
@@ -2585,7 +2588,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				"stage=cancel-cleanup;result=failed",
 				exception);
 			reportStatus?.Invoke(
-				$"已取消「{account.AccountName}」的 Grok 帳號連接。");
+				UiText.Translate($"已取消「{account.AccountName}」的 Grok 帳號連接。"));
 		}
 		catch (Exception exception) when (
 			!IsAttachedAndEnabled(viewModel, account))
@@ -2606,8 +2609,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			}
 
 			reportNotice?.Invoke(
-				"找不到官方 Grok Build CLI。請從 xAI 官方來源安裝或更新後再重新連接。",
-				"需要安裝或更新 Grok Build CLI",
+				UiText.Translate("找不到官方 Grok Build CLI。請從 xAI 官方來源安裝或更新後再重新連接。"),
+				UiText.Translate("需要安裝或更新 Grok Build CLI"),
 				MessageBoxImage.Warning);
 		}
 		catch (GrokCliUntrustedException)
@@ -2618,23 +2621,23 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			}
 
 			reportNotice?.Invoke(
-				"目前的 Grok Build CLI 不是受支援的官方版本，或安裝位置不符合要求。請從 xAI 官方來源重新安裝或更新後再試。",
-				"需要安裝或更新 Grok Build CLI",
+				UiText.Translate("目前的 Grok Build CLI 不是受支援的官方版本，或安裝位置不符合要求。請從 xAI 官方來源重新安裝或更新後再試。"),
+				UiText.Translate("需要安裝或更新 Grok Build CLI"),
 				MessageBoxImage.Warning);
 		}
 		catch (GrokAcpFailureException exception) when (
 			exception.Category == GrokAcpFailureCategory.Authentication)
 		{
 			reportNotice?.Invoke(
-				"Grok 登入程序已結束，但仍無法確認官方帳號。AI Usage 已記錄進度，重新啟動後會再確認；若仍顯示此訊息，請重新連接。",
-				"Grok 帳號尚未驗證",
+				UiText.Translate("Grok 登入程序已結束，但仍無法確認官方帳號。AI Usage 已記錄進度，重新啟動後會再確認；若仍顯示此訊息，請重新連接。"),
+				UiText.Translate("Grok 帳號尚未驗證"),
 				MessageBoxImage.Warning);
 		}
 		catch (GrokUsageNotConfiguredException)
 		{
 			reportNotice?.Invoke(
-				"Grok 登入程序已結束，但尚未確認可讀取用量的帳號。AI Usage 已記錄進度，重新啟動後會再確認；若仍顯示此訊息，請重新連接。",
-				"Grok 帳號尚未驗證",
+				UiText.Translate("Grok 登入程序已結束，但尚未確認可讀取用量的帳號。AI Usage 已記錄進度，重新啟動後會再確認；若仍顯示此訊息，請重新連接。"),
+				UiText.Translate("Grok 帳號尚未驗證"),
 				MessageBoxImage.Warning);
 		}
 		catch (GrokAccountLoginException exception)
@@ -2656,9 +2659,9 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 
 			reportNotice?.Invoke(
 				didExternalLoginSucceed
-					? "Grok 登入可能已完成，但 AI Usage 尚未確認帳號連接。AI Usage 已記錄進度，重新啟動後會自動繼續處理；若仍顯示此訊息，請重新連接。"
-					: "無法開啟或完成 Grok 登入，請再試一次。",
-				"Grok 帳號連接未完成",
+					? UiText.Translate("Grok 登入可能已完成，但 AI Usage 尚未確認帳號連接。AI Usage 已記錄進度，重新啟動後會自動繼續處理；若仍顯示此訊息，請重新連接。")
+					: UiText.Translate("無法開啟或完成 Grok 登入，請再試一次。"),
+				UiText.Translate("Grok 帳號連接未完成"),
 				MessageBoxImage.Error);
 		}
 		finally
@@ -3056,7 +3059,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			if (_claudeSubscriptionContextProbe is null)
 			{
 				throw new ClaudeAccountLoginException(
-						"另一張舊版 Claude 卡片可能屬於相同登入帳號，但目前無法安全重新確認它的訂閱範圍。");
+						UiText.Translate("另一張舊版 Claude 卡片可能屬於相同登入帳號，但目前無法安全重新確認它的訂閱範圍。"));
 			}
 
 			try
@@ -3069,7 +3072,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					SubscriptionVerificationState.Verified)
 				{
 					throw new InvalidDataException(
-						"Claude legacy subscription context probe 未回傳已驗證狀態。");
+						UiText.Translate("Claude legacy subscription context probe 未回傳已驗證狀態。"));
 				}
 
 				observations.Add(candidate.Id, observation.Context);
@@ -3086,7 +3089,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					$"stage=legacy-owner-revalidation;account={candidate.Id:N};result=failed",
 					exception);
 				throw new ClaudeAccountLoginException(
-					"另一張舊版 Claude 卡片可能屬於相同登入帳號，但暫時無法確認它的訂閱範圍。請稍後再試。");
+					UiText.Translate("另一張舊版 Claude 卡片可能屬於相同登入帳號，但暫時無法確認它的訂閱範圍。請稍後再試。"));
 			}
 		}
 
@@ -3124,7 +3127,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					!Equals(loginSubscriptionContext, subscriptionContext)))
 			{
 				throw new ClaudeAccountLoginException(
-					"Claude 登入狀態在確認期間已改變；這次未儲存訂閱範圍，請重新連接並確認。");
+					UiText.Translate("Claude 登入狀態在確認期間已改變；這次未儲存訂閱範圍，請重新連接並確認。"));
 			}
 
 			candidateBinding = ClaudeAccountBinding.Create(
@@ -3252,7 +3255,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			if (!Equals(candidateBinding, persistedBinding))
 			{
 				throw new IOException(
-					"Claude private binding 未通過持久化 read-back 驗證。");
+					UiText.Translate("Claude private binding 未通過持久化 read-back 驗證。"));
 			}
 		}
 		catch (OperationCanceledException) when (
@@ -3340,7 +3343,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			if (deletedBinding is not null)
 			{
 				throw new IOException(
-					"未配對的 Claude private binding 清理未通過 read-back 驗證。");
+					UiText.Translate("未配對的 Claude private binding 清理未通過 read-back 驗證。"));
 			}
 		}
 
@@ -3365,7 +3368,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				if (deletedBinding is not null)
 				{
 					throw new IOException(
-						"Claude private binding rollback delete 未通過 read-back 驗證。");
+						UiText.Translate("Claude private binding rollback delete 未通過 read-back 驗證。"));
 				}
 
 				return true;
@@ -3381,7 +3384,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			if (!Equals(previousBinding, restoredBinding))
 			{
 				throw new IOException(
-					"Claude private binding rollback restore 未通過 read-back 驗證。");
+					UiText.Translate("Claude private binding rollback restore 未通過 read-back 驗證。"));
 			}
 
 			return true;
@@ -3408,7 +3411,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				if (deletedBinding is not null)
 				{
 					throw new IOException(
-						"Claude private binding fallback delete 未通過 read-back 驗證。");
+						UiText.Translate("Claude private binding fallback delete 未通過 read-back 驗證。"));
 				}
 			}
 			catch (Exception exception)
@@ -3438,7 +3441,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				SubscriptionVerificationState.Verified)
 			{
 				throw new InvalidDataException(
-					"Claude subscription context probe 未回傳已驗證狀態。");
+					UiText.Translate("Claude subscription context probe 未回傳已驗證狀態。"));
 			}
 
 			return observation.Context;
@@ -3455,7 +3458,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				$"stage=target-context-revalidation;account={accountId:N};result=failed",
 				exception);
 			throw new ClaudeAccountLoginException(
-				"Claude 登入完成後暫時無法再次確認訂閱範圍；這次未儲存連接，請稍後再試。",
+				UiText.Translate("Claude 登入完成後暫時無法再次確認訂閱範圍；這次未儲存連接，請稍後再試。"),
 				exception);
 		}
 	}
@@ -3485,7 +3488,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			if (deletedBinding is not null)
 			{
 				throw new IOException(
-					"Claude private binding conflict cleanup 未通過 read-back 驗證。");
+					UiText.Translate("Claude private binding conflict cleanup 未通過 read-back 驗證。"));
 			}
 		}
 		catch (Exception exception)
@@ -3535,7 +3538,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				if (deletedBinding is not null)
 				{
 					throw new IOException(
-						"Grok orphan private binding 清理未通過 read-back 驗證。");
+						UiText.Translate("Grok orphan private binding 清理未通過 read-back 驗證。"));
 				}
 			}
 		}
@@ -3698,13 +3701,13 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 	private static string GetCodexBindingPersistenceFailureMessage(
 		AccountUsageViewModel account)
 	{
-		return $"「{account.AccountName}」的 Codex 登入已完成，但 AI Usage 無法儲存 Codex 帳號連接資料。這次已停止檢查這張卡片，也不會顯示上次用量；請確認 AI Usage 設定資料夾可寫入，再重新連接。";
+		return UiText.Translate($"「{account.AccountName}」的 Codex 登入已完成，但 AI Usage 無法儲存 Codex 帳號連接資料。這次已停止檢查這張卡片，也不會顯示上次用量；請確認 AI Usage 設定資料夾可寫入，再重新連接。");
 	}
 
 	private static string GetClaudePrivateBindingRollbackFailureMessage(
 		AccountUsageViewModel account)
 	{
-		return $"「{account.AccountName}」的 Claude 登入未完成，而且 AI Usage 無法安全還原本機訂閱連接資料。這次不會更改連接或顯示新的用量；請確認 AI Usage 設定資料夾可寫入，再重新連接原卡片。";
+		return UiText.Translate($"「{account.AccountName}」的 Claude 登入未完成，而且 AI Usage 無法安全還原本機訂閱連接資料。這次不會更改連接或顯示新的用量；請確認 AI Usage 設定資料夾可寫入，再重新連接原卡片。");
 	}
 
 	private static string GetAuthenticatedProviderConflictRuntimeFailClosedMessage(
@@ -3717,7 +3720,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				: account.IsCopilot
 					? "Copilot"
 					: "Grok";
-		return $"「{account.AccountName}」的 {providerName} 登入已完成，但 AI Usage 無法儲存帳號衝突後的狀態。這次已停止檢查這個帳號，也不會顯示上次用量；重新啟動後可能再次顯示原本的連接資料。請確認 AI Usage 設定資料夾可寫入，再重新連接帳號。";
+		return UiText.Translate($"「{account.AccountName}」的 {providerName} 登入已完成，但 AI Usage 無法儲存帳號衝突後的狀態。這次已停止檢查這個帳號，也不會顯示上次用量；重新啟動後可能再次顯示原本的連接資料。請確認 AI Usage 設定資料夾可寫入，再重新連接帳號。");
 	}
 
 	private static string GetGrokConflictCleanupMessage(
@@ -3731,11 +3734,11 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			string cleanupStatus = result switch
 			{
 				GrokConflictCleanupResult.Succeeded =>
-					"Grok 帳號衝突與未完成的連接資料已清除。",
+					UiText.Translate("Grok 帳號衝突與未完成的連接資料已清除。"),
 				GrokConflictCleanupResult.BindingRestoreFailed =>
-					"也無法還原原本的 Grok 連接資料。AI Usage 已保留處理紀錄；重新啟動後若仍未恢復，請保留設定資料並聯絡維護人員。",
+					UiText.Translate("也無法還原原本的 Grok 連接資料。AI Usage 已保留處理紀錄；重新啟動後若仍未恢復，請保留設定資料並聯絡維護人員。"),
 				_ =>
-					"Grok 本機清理仍待完成，請重新啟動 AI Usage 後再試。"
+					UiText.Translate("Grok 本機清理仍待完成，請重新啟動 AI Usage 後再試。")
 			};
 			return
 				$"{GetAuthenticatedProviderConflictRuntimeFailClosedMessage(account)} {cleanupStatus}";
@@ -3744,11 +3747,11 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		return result switch
 		{
 			GrokConflictCleanupResult.Succeeded =>
-				$"「{account.AccountName}」無法連接：{conflictReason}。",
+				UiText.Translate($"「{account.AccountName}」無法連接：{conflictReason}。"),
 			GrokConflictCleanupResult.BindingRestoreFailed =>
-				$"「{account.AccountName}」無法連接：{conflictReason}；也無法還原原本的 Grok 連接資料。AI Usage 已保留處理紀錄；重新啟動後若仍未恢復，請保留設定資料並聯絡維護人員。",
+				UiText.Translate($"「{account.AccountName}」無法連接：{conflictReason}；也無法還原原本的 Grok 連接資料。AI Usage 已保留處理紀錄；重新啟動後若仍未恢復，請保留設定資料並聯絡維護人員。"),
 			_ =>
-				$"「{account.AccountName}」無法連接：{conflictReason}；本機清理仍待完成，請重新啟動 AI Usage 後再試。"
+				UiText.Translate($"「{account.AccountName}」無法連接：{conflictReason}；本機清理仍待完成，請重新啟動 AI Usage 後再試。")
 		};
 	}
 
@@ -3770,10 +3773,10 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			UriFormat.UriEscaped);
 		MessageBoxResult result = WpfMessageBox.Show(
 			owner,
-			"Codex 要求在瀏覽器開啟以下登入網站：\n\n" +
+			UiText.Translate("Codex 要求在瀏覽器開啟以下登入網站：\n\n") +
 			$"{authorizationOrigin}\n\n" +
-			"請確認這是你預期的網站，再選擇「是」。",
-			"確認 Codex 登入網站",
+			UiText.Translate("請確認這是你預期的網站，再選擇「是」。"),
+			UiText.Translate("確認 Codex 登入網站"),
 			MessageBoxButton.YesNo,
 			MessageBoxImage.Question,
 			MessageBoxResult.No);
@@ -3788,7 +3791,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		ArgumentNullException.ThrowIfNull(usageReport);
 		CopilotAccountIdentity identity = usageReport.Account ??
 			throw new ArgumentException(
-				"Copilot 未回傳可驗證的帳號資訊。",
+				UiText.Translate("Copilot 未回傳可驗證的帳號資訊。"),
 				nameof(usageReport));
 		if (!CopilotAccountIdentityRules.TryNormalizeHost(
 				identity.Host,
@@ -3796,16 +3799,16 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			string.IsNullOrWhiteSpace(identity.Login))
 		{
 			throw new ArgumentException(
-				"Copilot 未回傳可驗證的帳號資訊。",
+				UiText.Translate("Copilot 未回傳可驗證的帳號資訊。"),
 				nameof(usageReport));
 		}
 
 		MessageBoxResult result = WpfMessageBox.Show(
 			owner,
-			"即將把這張卡片連接到以下 GitHub 帳號：\n\n" +
+			UiText.Translate("即將把這張卡片連接到以下 GitHub 帳號：\n\n") +
 			$"@{identity.Login.Trim()}\n{normalizedHost}\n\n" +
-			"確認要使用這個帳號嗎？",
-			"確認 Copilot 帳號",
+			UiText.Translate("確認要使用這個帳號嗎？"),
+			UiText.Translate("確認 Copilot 帳號"),
 			MessageBoxButton.YesNo,
 			MessageBoxImage.Question,
 			MessageBoxResult.No);
@@ -3825,13 +3828,13 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 					? "Copilot"
 					: account.IsGrok
 						? "Grok"
-						: "服務";
+						: UiText.Translate("服務");
 		if (account.IsCopilot)
 		{
-			return $"「{account.AccountName}」的 Copilot 登入已完成，但 AI Usage 無法儲存卡片連接資料。這次 staged credential 未套用，原本的卡片連接不受影響；請確認 AI Usage 設定資料夾可寫入，再重新連接。";
+			return UiText.Translate($"「{account.AccountName}」的 Copilot 登入已完成，但 AI Usage 無法儲存卡片連接資料。這次 staged credential 未套用，原本的卡片連接不受影響；請確認 AI Usage 設定資料夾可寫入，再重新連接。");
 		}
 
-		return $"「{account.AccountName}」的 {providerName} 登入已完成，但多次嘗試後仍無法儲存帳號連接。{providerName} 可能已切換到新帳號，但 AI Usage 仍保留原本的連接資料。請確認 AI Usage 設定資料夾可寫入，再重新連接。";
+		return UiText.Translate($"「{account.AccountName}」的 {providerName} 登入已完成，但多次嘗試後仍無法儲存帳號連接。{providerName} 可能已切換到新帳號，但 AI Usage 仍保留原本的連接資料。請確認 AI Usage 設定資料夾可寫入，再重新連接。");
 	}
 
 	private static string GetAuthenticatedProviderBindingRefreshDeferredMessage(
@@ -3844,7 +3847,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				: account.IsCopilot
 					? "Copilot"
 					: "Grok";
-		return $"「{account.AccountName}」的 {providerName} 帳號已連接；稍後會自動再檢查用量。";
+		return UiText.Translate($"「{account.AccountName}」的 {providerName} 帳號已連接；稍後會自動再檢查用量。");
 	}
 
 	private static async Task RefreshAuthenticatedProviderUsageAfterBindingAsync(
@@ -3888,7 +3891,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 				"antigravity-account-connection",
 				"stage=official-commit-gate;result=rejected");
 			reportStatus?.Invoke(
-				"Antigravity 帳號已確認，但暫時無法儲存連接資料。稍後會自動再試。");
+				UiText.Translate("Antigravity 帳號已確認，但暫時無法儲存連接資料。稍後會自動再試。"));
 			return false;
 		}
 
@@ -3922,10 +3925,10 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		{
 			string persistenceFailure = string.IsNullOrWhiteSpace(
 				viewModel.AccountSettingsHealthMessage)
-				? "多次嘗試後仍無法更新帳號的連接資料。"
+				? UiText.Translate("多次嘗試後仍無法更新帳號的連接資料。")
 				: viewModel.AccountSettingsHealthMessage;
 			reportStatus?.Invoke(
-				$"Antigravity 帳號已完成驗證，但連接尚未套用。{persistenceFailure}");
+				UiText.Translate($"Antigravity 帳號已完成驗證，但連接尚未套用。{persistenceFailure}"));
 			return;
 		}
 
@@ -3995,26 +3998,26 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 
 		if (hasFreshUsage)
 		{
-			return "Antigravity 帳號已連接，並已重新讀取用量。";
+			return UiText.Translate("Antigravity 帳號已連接，並已重新讀取用量。");
 		}
 
 		return account.RecoveryAction switch
 		{
 			UsageRecoveryAction.Retry =>
-				"Antigravity 帳號已連接；目前暫時無法讀取用量，稍後會自動再試。",
+				UiText.Translate("Antigravity 帳號已連接；目前暫時無法讀取用量，稍後會自動再試。"),
 			UsageRecoveryAction.RevalidateUsage =>
-				"Antigravity 帳號已連接；上次用量檢查未完成。請按卡片上的「重新檢查 Antigravity 用量」。",
+				UiText.Translate("Antigravity 帳號已連接；上次用量檢查未完成。請按卡片上的「重新檢查 Antigravity 用量」。"),
 			UsageRecoveryAction.UpdateApplication =>
-				"Antigravity 帳號已連接；AI Usage 尚未支援目前的用量格式。請更新 AI Usage。既有連接通常可沿用；若卡片後續要求，請重新確認連接。",
+				UiText.Translate("Antigravity 帳號已連接；AI Usage 尚未支援目前的用量格式。請更新 AI Usage。既有連接通常可沿用；若卡片後續要求，請重新確認連接。"),
 			UsageRecoveryAction.InstallOrUpdate =>
-				"Antigravity 帳號已連接；找不到支援的 Antigravity CLI。請確認安裝與版本。既有連接通常可沿用；若卡片後續要求，請重新確認連接。",
+				UiText.Translate("Antigravity 帳號已連接；找不到支援的 Antigravity CLI。請確認安裝與版本。既有連接通常可沿用；若卡片後續要求，請重新確認連接。"),
 			UsageRecoveryAction.ReconfigureUsageSource =>
-				"Antigravity 帳號已連接；需要重新確認用量讀取。請依卡片提示操作，既有登入不受影響。",
+				UiText.Translate("Antigravity 帳號已連接；需要重新確認用量讀取。請依卡片提示操作，既有登入不受影響。"),
 			UsageRecoveryAction.ConnectAccount or
 				UsageRecoveryAction.SwitchAccount =>
-				"Antigravity 帳號連接尚未完成；請依卡片提示確認帳號。",
+				UiText.Translate("Antigravity 帳號連接尚未完成；請依卡片提示確認帳號。"),
 			_ =>
-				"Antigravity 帳號已連接；目前沒有可顯示的新用量，請查看卡片狀態。"
+				UiText.Translate("Antigravity 帳號已連接；目前沒有可顯示的新用量，請查看卡片狀態。")
 		};
 	}
 
@@ -4042,8 +4045,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			{
 				RecoveryAction: UsageRecoveryAction.ConfirmSubscription
 			}
-			? "需要確認 Claude 訂閱"
-			: "Claude 登入失敗";
+			? UiText.Translate("需要確認 Claude 訂閱")
+			: UiText.Translate("Claude 登入失敗");
 		return (
 			BuildTypedLoginFailureMessage(exception.Message),
 			caption,
@@ -4056,7 +4059,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		ArgumentNullException.ThrowIfNull(exception);
 		return (
 			BuildTypedLoginFailureMessage(exception.Message),
-			"Codex 登入失敗",
+			UiText.Translate("Codex 登入失敗"),
 			MessageBoxImage.Warning);
 	}
 
@@ -4067,32 +4070,32 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		return exception.Kind switch
 		{
 			CopilotFailureKind.AuthenticationRequired => (
-				"Copilot 尚未登入，請連接帳號後再試。",
-				"Copilot 尚未登入",
+				UiText.Translate("Copilot 尚未登入，請連接帳號後再試。"),
+				UiText.Translate("Copilot 尚未登入"),
 				MessageBoxImage.Information),
 			CopilotFailureKind.AccountMismatch => (
-				"登入的 GitHub 帳號與這張 Copilot 卡片不同。這次結果未儲存，請確認後再試。",
-				"Copilot 帳號不同",
+				UiText.Translate("登入的 GitHub 帳號與這張 Copilot 卡片不同。這次結果未儲存，請確認後再試。"),
+				UiText.Translate("Copilot 帳號不同"),
 				MessageBoxImage.Warning),
 			CopilotFailureKind.PermissionDenied => (
-				"GitHub 已登入，但此帳號目前不允許讀取 Copilot quota。請確認方案或改用其他帳號。",
-				"Copilot 權限不足",
+				UiText.Translate("GitHub 已登入，但此帳號目前不允許讀取 Copilot quota。請確認方案或改用其他帳號。"),
+				UiText.Translate("Copilot 權限不足"),
 				MessageBoxImage.Warning),
 			CopilotFailureKind.RateLimited => (
-				"GitHub 暫時限制 Copilot quota 查詢，請稍後再試。",
-				"GitHub 暫時限制請求",
+				UiText.Translate("GitHub 暫時限制 Copilot quota 查詢，請稍後再試。"),
+				UiText.Translate("GitHub 暫時限制請求"),
 				MessageBoxImage.Warning),
 			CopilotFailureKind.RuntimeUnavailable => (
-				"本機 GitHub Copilot CLI 無法使用，請安裝或更新官方 CLI。",
-				"Copilot 無法使用",
+				UiText.Translate("本機 GitHub Copilot CLI 無法使用，請安裝或更新官方 CLI。"),
+				UiText.Translate("Copilot 無法使用"),
 				MessageBoxImage.Warning),
 			CopilotFailureKind.InvalidResponse => (
-				"無法辨識 Copilot quota 資料，請更新 AI Usage 後再試。",
-				"Copilot 用量無法讀取",
+				UiText.Translate("無法辨識 Copilot quota 資料，請更新 AI Usage 後再試。"),
+				UiText.Translate("Copilot 用量無法讀取"),
 				MessageBoxImage.Warning),
 			_ => (
-				"暫時無法讀取 Copilot quota，原本的卡片連接不受影響。",
-				"Copilot 連接失敗",
+				UiText.Translate("暫時無法讀取 Copilot quota，原本的卡片連接不受影響。"),
+				UiText.Translate("Copilot 連接失敗"),
 				MessageBoxImage.Warning)
 		};
 	}
@@ -4101,9 +4104,10 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		GetCopilotLoginFailureNotice(CopilotAccountLoginException exception)
 	{
 		ArgumentNullException.ThrowIfNull(exception);
+		string displayReason = UiText.Translate(exception.Message);
 		return (
-			$"{exception.Message}\n\n原本的卡片連接不受影響。",
-			"Copilot 登入失敗",
+			UiText.Format("Status.TheCardSExistingConnectionIsUnaffected", displayReason),
+			UiText.Translate("Copilot 登入失敗"),
 			MessageBoxImage.Warning);
 	}
 
@@ -4113,7 +4117,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		ArgumentNullException.ThrowIfNull(exception);
 		return (
 			BuildTypedLoginFailureMessage(exception.Message),
-			"Grok 登入失敗",
+			UiText.Translate("Grok 登入失敗"),
 			MessageBoxImage.Warning);
 	}
 
@@ -4126,46 +4130,46 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		{
 			case UsageRecoveryAction.RestartApplication:
 				return (
-					"Claude 帳號已連接，但用量檢查已暫停。請重新啟動 AI Usage 後再試。",
-					"Claude 用量檢查已暫停",
+					UiText.Translate("Claude 帳號已連接，但用量檢查已暫停。請重新啟動 AI Usage 後再試。"),
+					UiText.Translate("Claude 用量檢查已暫停"),
 					MessageBoxImage.Warning);
 			case UsageRecoveryAction.RevalidateUsage:
 				return (
-					"Claude 帳號已連接，但上次用量檢查未完成。請按卡片上的「重新檢查 Claude 用量」。",
-					"Claude 用量檢查已暫停",
+					UiText.Translate("Claude 帳號已連接，但上次用量檢查未完成。請按卡片上的「重新檢查 Claude 用量」。"),
+					UiText.Translate("Claude 用量檢查已暫停"),
 					MessageBoxImage.Warning);
 			case UsageRecoveryAction.InstallOrUpdate:
 				return (
-					"Claude 登入已完成，但目前找不到可用的 Claude Code CLI；請先安裝或更新 Claude Code，再重新檢查。",
-					"Claude Code CLI 需要更新",
+					UiText.Translate("Claude 登入已完成，但目前找不到可用的 Claude Code CLI；請先安裝或更新 Claude Code，再重新檢查。"),
+					UiText.Translate("Claude Code CLI 需要更新"),
 					MessageBoxImage.Warning);
 			case UsageRecoveryAction.ConfirmSubscription:
 				return (
-					"Claude 登入已完成，但訂閱確認尚未完成。請使用原本的帳號，確認組織與訂閱方案。",
-					"需要確認 Claude 訂閱",
+					UiText.Translate("Claude 登入已完成，但訂閱確認尚未完成。請使用原本的帳號，確認組織與訂閱方案。"),
+					UiText.Translate("需要確認 Claude 訂閱"),
 					MessageBoxImage.Warning);
 			case UsageRecoveryAction.ConnectAccount:
 				return (
-					"Claude 登入已完成，但多次重新檢查後仍無法確認可用的訂閱帳號；請確認登入的是支援的 Claude 訂閱帳號，再重新連接。",
-					"Claude 狀態待確認",
+					UiText.Translate("Claude 登入已完成，但多次重新檢查後仍無法確認可用的訂閱帳號；請確認登入的是支援的 Claude 訂閱帳號，再重新連接。"),
+					UiText.Translate("Claude 狀態待確認"),
 					MessageBoxImage.Warning);
 			case UsageRecoveryAction.SwitchAccount:
 				return (
-					"Claude 登入已完成，但目前的帳號或登入方式無法讀取用量；請切換至支援的 Claude 訂閱帳號。",
-					"Claude 帳號需要切換",
+					UiText.Translate("Claude 登入已完成，但目前的帳號或登入方式無法讀取用量；請切換至支援的 Claude 訂閱帳號。"),
+					UiText.Translate("Claude 帳號需要切換"),
 					MessageBoxImage.Warning);
 			case UsageRecoveryAction.ReconfigureUsageSource:
 				return (
-					"Claude 帳號已連接，但需要重新確認用量讀取；帳號不必重新登入。",
-					"需要確認 Claude 用量讀取",
+					UiText.Translate("Claude 帳號已連接，但需要重新確認用量讀取；帳號不必重新登入。"),
+					UiText.Translate("需要確認 Claude 用量讀取"),
 					MessageBoxImage.Warning);
 			case UsageRecoveryAction.Retry:
 			case UsageRecoveryAction.None:
 				break;
 			default:
 				return (
-					"Claude 登入已完成，但目前無法繼續檢查用量。請重新啟動 AI Usage 後再試。",
-					"Claude 用量待確認",
+					UiText.Translate("Claude 登入已完成，但目前無法繼續檢查用量。請重新啟動 AI Usage 後再試。"),
+					UiText.Translate("Claude 用量待確認"),
 					MessageBoxImage.Warning);
 		}
 
@@ -4174,8 +4178,8 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			(account.CurrentSnapshot.Status == SnapshotStatus.NotConfigured))
 		{
 			return (
-				"Claude 登入已完成，但尚未能確認最新帳號狀態；稍後會自動再試。",
-				"Claude 狀態待確認",
+				UiText.Translate("Claude 登入已完成，但尚未能確認最新帳號狀態；稍後會自動再試。"),
+				UiText.Translate("Claude 狀態待確認"),
 				MessageBoxImage.Warning);
 		}
 
@@ -4183,24 +4187,24 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 			SubscriptionVerificationState.UsageUnavailable)
 		{
 			return (
-				"Claude 訂閱範圍已連接並確認，但這個方案的 /usage 格式尚未經驗證；AI Usage 不會猜測或顯示額度。",
-				"Claude 訂閱範圍已確認",
+				UiText.Translate("Claude 訂閱範圍已連接並確認，但這個方案的 /usage 格式尚未經驗證；AI Usage 不會猜測或顯示額度。"),
+				UiText.Translate("Claude 訂閱範圍已確認"),
 				MessageBoxImage.Warning);
 		}
 
 		return account.CurrentSnapshot.Status switch
 		{
 			SnapshotStatus.Error => (
-				"Claude 帳號已連接；目前無法讀取用量，稍後會自動再試。",
-				"Claude 登入完成",
+				UiText.Translate("Claude 帳號已連接；目前無法讀取用量，稍後會自動再試。"),
+				UiText.Translate("Claude 登入完成"),
 				MessageBoxImage.Warning),
 			SnapshotStatus.Stale => (
-				"Claude 帳號已連接；目前顯示上次確認的用量，稍後將自動更新。",
-				"Claude 登入完成",
+				UiText.Translate("Claude 帳號已連接；目前顯示上次確認的用量，稍後將自動更新。"),
+				UiText.Translate("Claude 登入完成"),
 				MessageBoxImage.Warning),
 			_ => (
-				"Claude 帳號已連接，並已重新讀取用量。",
-				"Claude 登入完成",
+				UiText.Translate("Claude 帳號已連接，並已重新讀取用量。"),
+				UiText.Translate("Claude 登入完成"),
 				MessageBoxImage.Information)
 		};
 	}
@@ -4211,15 +4215,15 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		return outcome switch
 		{
 			CodexLoginRefreshOutcome.Ready =>
-				"Codex 帳號已連接，並已重新讀取用量。",
+				UiText.Translate("Codex 帳號已連接，並已重新讀取用量。"),
 			CodexLoginRefreshOutcome.Stale =>
-				"Codex 帳號已連接；目前顯示上次確認的用量，稍後將自動更新。",
+				UiText.Translate("Codex 帳號已連接；目前顯示上次確認的用量，稍後將自動更新。"),
 			CodexLoginRefreshOutcome.Error =>
-				"Codex 登入已完成，但目前無法確認帳號用量；稍後會自動再試。",
+				UiText.Translate("Codex 登入已完成，但目前無法確認帳號用量；稍後會自動再試。"),
 			CodexLoginRefreshOutcome.NotConfigured =>
-				"Codex 登入已完成，但尚未確認可用的 ChatGPT 訂閱帳號；稍後會自動再試。",
+				UiText.Translate("Codex 登入已完成，但尚未確認可用的 ChatGPT 訂閱帳號；稍後會自動再試。"),
 			_ =>
-				"Codex 登入已完成，但尚未能確認目前登入的帳號；稍後會自動再試。"
+				UiText.Translate("Codex 登入已完成，但尚未能確認目前登入的帳號；稍後會自動再試。")
 		};
 	}
 
@@ -4231,15 +4235,15 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		return account.RecoveryAction switch
 		{
 			UsageRecoveryAction.ConnectAccount =>
-				"Codex 登入已完成，但多次重新檢查後仍無法確認可用的 ChatGPT 訂閱帳號。請依卡片提示重新連接。",
+				UiText.Translate("Codex 登入已完成，但多次重新檢查後仍無法確認可用的 ChatGPT 訂閱帳號。請依卡片提示重新連接。"),
 			UsageRecoveryAction.SwitchAccount =>
-				"Codex 帳號已連接，但這次用量檢查取得了不同帳號。已忽略結果，請依卡片提示確認帳號。",
+				UiText.Translate("Codex 帳號已連接，但這次用量檢查取得了不同帳號。已忽略結果，請依卡片提示確認帳號。"),
 			UsageRecoveryAction.InstallOrUpdate =>
-				"Codex 帳號已連接，但 Codex CLI 需要安裝或更新；完成後 AI Usage 會繼續檢查。",
+				UiText.Translate("Codex 帳號已連接，但 Codex CLI 需要安裝或更新；完成後 AI Usage 會繼續檢查。"),
 			UsageRecoveryAction.ReconfigureUsageSource =>
-				"Codex 帳號已連接，但需要重新確認用量讀取；帳號不必重新登入。",
+				UiText.Translate("Codex 帳號已連接，但需要重新確認用量讀取；帳號不必重新登入。"),
 			UsageRecoveryAction.RevalidateUsage =>
-				"Codex 帳號已連接，但用量檢查需要重新確認。請依卡片提示處理。",
+				UiText.Translate("Codex 帳號已連接，但用量檢查需要重新確認。請依卡片提示處理。"),
 			_ => GetCodexLoginCompletionMessage(
 				GetCodexLoginRefreshOutcome(account))
 		};
@@ -4253,21 +4257,21 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		return account.RecoveryAction switch
 		{
 			UsageRecoveryAction.ConnectAccount =>
-				"Copilot 登入已完成，但尚未確認可讀取 quota 的 GitHub 帳號。請依卡片提示重新連接。",
+				UiText.Translate("Copilot 登入已完成，但尚未確認可讀取 quota 的 GitHub 帳號。請依卡片提示重新連接。"),
 			UsageRecoveryAction.SwitchAccount =>
-				"Copilot 帳號已連接，但這次 quota 檢查取得不同帳號。已忽略結果，請依卡片提示確認帳號。",
+				UiText.Translate("Copilot 帳號已連接，但這次 quota 檢查取得不同帳號。已忽略結果，請依卡片提示確認帳號。"),
 			UsageRecoveryAction.InstallOrUpdate =>
-				"Copilot 帳號已連接，請安裝或更新本機官方 GitHub Copilot CLI；完成後 AI Usage 會繼續檢查。",
+				UiText.Translate("Copilot 帳號已連接，請安裝或更新本機官方 GitHub Copilot CLI；完成後 AI Usage 會繼續檢查。"),
 			UsageRecoveryAction.Retry =>
-				"Copilot 帳號已連接；目前暫時無法讀取 quota，稍後會自動再試。",
+				UiText.Translate("Copilot 帳號已連接；目前暫時無法讀取 quota，稍後會自動再試。"),
 			_ when (account.CurrentSnapshot?.Status == SnapshotStatus.Unsupported) =>
-				"Copilot 帳號已連接並確認方案，但目前沒有可顯示的 quota。",
+				UiText.Translate("Copilot 帳號已連接並確認方案，但目前沒有可顯示的 quota。"),
 			_ when (account.CurrentSnapshot?.Status == SnapshotStatus.Stale) =>
-				"Copilot 帳號已連接；目前顯示上次確認的用量，稍後將自動更新。",
+				UiText.Translate("Copilot 帳號已連接；目前顯示上次確認的用量，稍後將自動更新。"),
 			_ when (account.CurrentSnapshot?.Status == SnapshotStatus.Ready) =>
-				"Copilot 帳號已連接，並已重新讀取用量。",
+				UiText.Translate("Copilot 帳號已連接，並已重新讀取用量。"),
 			_ =>
-				"Copilot 帳號已連接；稍後會自動確認最新用量。"
+				UiText.Translate("Copilot 帳號已連接；稍後會自動確認最新用量。")
 		};
 	}
 
@@ -4279,19 +4283,19 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 		return account.RecoveryAction switch
 		{
 			UsageRecoveryAction.ConnectAccount =>
-				"Grok 登入已完成，但尚未確認可讀取用量的帳號。請依卡片提示重新連接。",
+				UiText.Translate("Grok 登入已完成，但尚未確認可讀取用量的帳號。請依卡片提示重新連接。"),
 			UsageRecoveryAction.SwitchAccount =>
-				"Grok 帳號已連接，但目前無法讀取這個帳號的週用量。請依卡片提示確認或切換帳號。",
+				UiText.Translate("Grok 帳號已連接，但目前無法讀取這個帳號的週用量。請依卡片提示確認或切換帳號。"),
 			UsageRecoveryAction.InstallOrUpdate =>
-				"Grok 帳號已連接，但 Grok Build CLI 需要安裝或更新；完成後 AI Usage 會繼續檢查。",
+				UiText.Translate("Grok 帳號已連接，但 Grok Build CLI 需要安裝或更新；完成後 AI Usage 會繼續檢查。"),
 			UsageRecoveryAction.Retry =>
-				"Grok 帳號已連接；目前暫時無法讀取用量，稍後會自動再試。",
+				UiText.Translate("Grok 帳號已連接；目前暫時無法讀取用量，稍後會自動再試。"),
 			_ when (account.CurrentSnapshot?.Status == SnapshotStatus.Stale) =>
-				"Grok 帳號已連接；目前顯示上次確認的用量，稍後將自動更新。",
+				UiText.Translate("Grok 帳號已連接；目前顯示上次確認的用量，稍後將自動更新。"),
 			_ when (account.CurrentSnapshot?.Status == SnapshotStatus.Ready) =>
-				"Grok 帳號已連接，並已重新讀取用量。",
+				UiText.Translate("Grok 帳號已連接，並已重新讀取用量。"),
 			_ =>
-				"Grok 帳號已連接；稍後會自動確認最新用量。"
+				UiText.Translate("Grok 帳號已連接；稍後會自動確認最新用量。")
 		};
 	}
 
@@ -4317,6 +4321,7 @@ internal sealed class AccountConnectionCoordinator : IDisposable
 	private static string BuildTypedLoginFailureMessage(string reason)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(reason);
-		return $"{reason}\n\n原本顯示的用量不會被清除；依照上方說明處理後可重新連接。";
+		string displayReason = UiText.Translate(reason);
+		return UiText.Format("Status.ThePreviousUsageIsKeptFollowTheInstructions", displayReason);
 	}
 }

@@ -1,9 +1,11 @@
 using AiUsageDashboard.App.Providers;
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class CopilotPlanPresentationTests
 {
 	private static readonly DateTimeOffset ObservedAt =
@@ -20,12 +22,26 @@ public sealed class CopilotPlanPresentationTests
 	{
 		AccountProfile profile = CreateProfile();
 		AccountUsageViewModel viewModel = new(profile, canManage: true);
+		UsageSnapshot snapshot = CreateReadySnapshot(profile, "individual_pro");
 
-		viewModel.ApplySnapshot(CreateReadySnapshot(profile, "individual_pro"));
+		viewModel.ApplySnapshot(snapshot);
 
 		Assert.Equal("Pro+", viewModel.SubscriptionPlanDisplayText);
 		Assert.Equal("GitHub Copilot · Pro+", viewModel.AccountHeaderText);
 		Assert.Equal("@octocat · 方案 Pro+", viewModel.AccountDisplayText);
+
+		UsageSnapshot projectedSnapshot = Assert.IsType<UsageSnapshot>(viewModel.CurrentSnapshot);
+		using (UiText.UseLanguage(AppLanguage.English))
+		{
+			viewModel.RefreshLocalizedPresentation();
+			Assert.Equal("Pro+", viewModel.SubscriptionPlanDisplayText);
+			Assert.Equal("@octocat · Plan Pro+", viewModel.AccountDisplayText);
+			Assert.Same(projectedSnapshot, viewModel.CurrentSnapshot);
+			Assert.Equal("individual_pro", snapshot.PlanTier);
+			Assert.Equal(AccountIdentity, snapshot.ProviderAccountIdentity);
+			Assert.Equal("@octocat", snapshot.ProviderAccountDisplayIdentity);
+			Assert.Equal("25 / 100 已使用", Assert.Single(snapshot.Metrics).DisplayValue);
+		}
 	}
 
 	[Fact]

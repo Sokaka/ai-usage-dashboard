@@ -7,6 +7,8 @@ using AiUsageDashboard.Core.Persistence;
 using System.Security.Cryptography;
 using System.Text;
 
+using AiUsageDashboard.Core.Localization;
+
 namespace AiUsageDashboard.Tests;
 
 public sealed class PortableSettingsImportTransactionTests
@@ -385,6 +387,7 @@ public sealed class PortableSettingsImportTransactionTests
 	[Fact]
 	public async Task RecoverInterruptedImportAsync_WhenBothTerminalMarkersExist_FailsClosedAndPreservesJournal()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string targetPath = Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string transactionPath = Path.Combine(temporaryDirectory.Path, "transaction");
@@ -410,9 +413,14 @@ public sealed class PortableSettingsImportTransactionTests
 		Assert.True(File.Exists(Path.Combine(transactionPath, "restored")));
 	}
 
-	[Fact]
-	public async Task ExecuteAsync_WhenExistingTargetExceedsLimit_RejectsBeforeCopy()
+	[Theory]
+	[InlineData(AppLanguage.English, "8 bytes")]
+	[InlineData(AppLanguage.TraditionalChinese, "8 位元組")]
+	public async Task ExecuteAsync_WhenExistingTargetExceedsLimit_RejectsBeforeCopy(
+		AppLanguage language,
+		string limitText)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(language);
 		using TemporaryDirectory temporaryDirectory = new();
 		string targetPath = Path.Combine(temporaryDirectory.Path, "preferences.json");
 		string transactionPath = Path.Combine(temporaryDirectory.Path, "transaction");
@@ -430,7 +438,7 @@ public sealed class PortableSettingsImportTransactionTests
 				return Task.CompletedTask;
 			}));
 
-		Assert.Contains("8 位元組", exception.Message, StringComparison.Ordinal);
+		Assert.Contains(limitText, exception.Message, StringComparison.Ordinal);
 		Assert.False(operationWasInvoked);
 		Assert.Equal(
 			"oversized-preferences",
@@ -444,6 +452,7 @@ public sealed class PortableSettingsImportTransactionTests
 	[Fact]
 	public async Task RecoverInterruptedImportAsync_WhenCurrentTargetExceedsLimit_RejectsBeforeHash()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string targetPath = Path.Combine(temporaryDirectory.Path, "preferences.json");
 		string transactionPath = Path.Combine(temporaryDirectory.Path, "transaction");
@@ -1195,6 +1204,7 @@ public sealed class PortableSettingsImportTransactionTests
 	[Fact]
 	public async Task ExecuteAsync_WhenAccountFileWasAlreadyChangedExternally_DoesNotClearStaleWriterProtection()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string accountPath = Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string transactionPath = Path.Combine(temporaryDirectory.Path, "transaction");
@@ -1320,6 +1330,7 @@ public sealed class PortableSettingsImportTransactionTests
 	[Fact]
 	public async Task ExecuteAsync_WhenCommittedAccountIsReplacedExternally_PreservesStaleWriterProtection()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string accountPath = Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string transactionPath = Path.Combine(temporaryDirectory.Path, "transaction");
@@ -1725,6 +1736,7 @@ public sealed class PortableSettingsImportTransactionTests
 	[Fact]
 	public async Task RecoverInterruptedImportAsync_WhenAnotherProcessOwnsTransactionLock_FailsWithoutMutatingTarget()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string targetPath = Path.Combine(
 			temporaryDirectory.Path,

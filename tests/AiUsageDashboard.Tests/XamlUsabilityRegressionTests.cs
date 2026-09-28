@@ -1,12 +1,16 @@
 using System.Text.RegularExpressions;
+using System.Text.Json;
+using System.Text.Encodings.Web;
 using System.Xml.Linq;
 
 using AiUsageDashboard.App;
 using AiUsageDashboard.App.Persistence;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class XamlUsabilityRegressionTests
 {
 	private static readonly XNamespace Presentation =
@@ -524,7 +528,8 @@ public sealed class XamlUsabilityRegressionTests
 			"CheckForUpdatesButton.IsEnabled = canCheck && !isChecking;",
 			statusUpdater,
 			StringComparison.Ordinal);
-		Assert.Contains("檢查中…", statusUpdater, StringComparison.Ordinal);
+		Assert.Contains("Windows.Common.Checking", statusUpdater, StringComparison.Ordinal);
+		Assert.Equal("檢查中…", UiText.Get("Windows.Common.Checking"));
 
 		string clickHandler = GetMethodSource(
 			source,
@@ -710,8 +715,8 @@ public sealed class XamlUsabilityRegressionTests
 			source);
 		Assert.Matches(
 			new Regex(
-				@"ProgressTextBlock\.Text\s*=\s*closingStatus;\s*" +
-					@"FooterStatusTextBlock\.Text\s*=\s*closingStatus;\s*" +
+				@"SetProgressText\(\(\)\s*=>\s*UiText\.Get\(closingStatusKey\)\);\s*" +
+					@"SetFooterText\(\(\)\s*=>\s*UiText\.Get\(closingStatusKey\)\);\s*" +
 					@"CancelButton\.IsEnabled\s*=\s*false;\s*" +
 					@"FocusProgressIndicator\(\);",
 				RegexOptions.CultureInvariant),
@@ -814,7 +819,7 @@ public sealed class XamlUsabilityRegressionTests
 	[InlineData("FloatingWidgetWindow.xaml")]
 	public void AccountRemovalMenu_DescribesAccountRemoval(string fileName)
 	{
-		string xaml = File.ReadAllText(GetAppXamlPath(fileName));
+		string xaml = LoadAppSource(fileName);
 
 		Assert.Contains(
 			"Header=\"從 AI Usage 移除帳號\"",
@@ -867,14 +872,10 @@ public sealed class XamlUsabilityRegressionTests
 			(string?)toggleSubscriptionContext.Attribute("Visibility"));
 		Assert.Equal("向上移動", (string?)moveUp.Attribute("Header"));
 		Assert.Equal("向下移動", (string?)moveDown.Attribute("Header"));
-		Assert.Contains(
-			"向上移動",
-			(string?)moveUp.Attribute("AutomationProperties.Name"),
-			StringComparison.Ordinal);
-		Assert.Contains(
-			"向下移動",
-			(string?)moveDown.Attribute("AutomationProperties.Name"),
-			StringComparison.Ordinal);
+		Assert.Equal("{Binding MoveAccountUpAutomationName}",
+			(string?)moveUp.Attribute("AutomationProperties.Name"));
+		Assert.Equal("{Binding MoveAccountDownAutomationName}",
+			(string?)moveDown.Attribute("AutomationProperties.Name"));
 		Assert.Contains(
 			toggleEnabled.Descendants(Presentation + "Setter"),
 			setter =>
@@ -1031,18 +1032,19 @@ public sealed class XamlUsabilityRegressionTests
 		Assert.Equal(
 			"ToggleUsageDisplayModeMenuItem_Click",
 			(string?)menuItems[1].Attribute("Click"));
-		Assert.Equal(2, Array.IndexOf(menuItems, theme));
-		Assert.Equal(3, Array.IndexOf(menuItems, dockPosition));
-		Assert.Equal(4, Array.IndexOf(menuItems, heightFollowingCardCount));
+		Assert.Equal("語系", (string?)menuItems[2].Attribute("Header"));
+		Assert.Equal(3, Array.IndexOf(menuItems, theme));
+		Assert.Equal(4, Array.IndexOf(menuItems, dockPosition));
+		Assert.Equal(5, Array.IndexOf(menuItems, heightFollowingCardCount));
 		Assert.Equal(
 			"ToggleSortModeMenuItem_Click",
-			(string?)menuItems[5].Attribute("Click"));
-		Assert.Equal(
-			"ShowAutomaticSortRulesMenuItem_Click",
 			(string?)menuItems[6].Attribute("Click"));
 		Assert.Equal(
+			"ShowAutomaticSortRulesMenuItem_Click",
+			(string?)menuItems[7].Attribute("Click"));
+		Assert.Equal(
 			Presentation + "Separator",
-			menuItems[6].ElementsAfterSelf().First().Name);
+			menuItems[7].ElementsAfterSelf().First().Name);
 		XElement[] themeChoices = theme
 			.Elements(Presentation + "MenuItem")
 			.ToArray();
@@ -1147,17 +1149,14 @@ public sealed class XamlUsabilityRegressionTests
 			source,
 			StringComparison.Ordinal);
 		Assert.Contains(
-			"用量顯示方式、浮窗設定與主題",
+			"浮窗、主題與語系設定",
 			source,
 			StringComparison.Ordinal);
 		Assert.Contains(
-			"舊版檔案沒有主題設定，因此會保留目前主題",
+			"舊版檔案未包含的設定會保留目前值",
 			source,
 			StringComparison.Ordinal);
-		Assert.Contains(
-			"舊版檔案沒有視窗高度設定，因此會保留目前高度設定",
-			source,
-			StringComparison.Ordinal);
+		Assert.Contains("GetPortableLanguagePreview", source, StringComparison.Ordinal);
 		Assert.Matches(
 			new Regex(
 				"ReportPortableSettingsImportCompleted\\s*\\(\\s*" +
@@ -1167,7 +1166,7 @@ public sealed class XamlUsabilityRegressionTests
 				RegexOptions.CultureInvariant),
 			source);
 		Assert.Contains(
-			"匯入後有 {claudeAccountCount} 個 Claude 帳號需要重新確認用量讀取",
+			"匯入後有 {0} 個 Claude 帳號需要重新確認用量讀取",
 			source,
 			StringComparison.Ordinal);
 		Assert.Matches(
@@ -1213,7 +1212,7 @@ public sealed class XamlUsabilityRegressionTests
 			source,
 			StringComparison.Ordinal);
 		Assert.Contains(
-			"ReportInlineStatus($\"無法{operation}設定：{reason}\");",
+			"ReportInlineStatus(UiText.Format(\"無法{0}設定：{1}\", operation, displayReason));",
 			source,
 			StringComparison.Ordinal);
 		Assert.Contains(
@@ -2002,7 +2001,7 @@ public sealed class XamlUsabilityRegressionTests
 	[Fact]
 	public void AccountEditorDisclosure_ListsStoredDataAndCredentialExclusion()
 	{
-		string xaml = File.ReadAllText(GetAppXamlPath("AccountEditorWindow.xaml"));
+		string xaml = LoadAppSource("AccountEditorWindow.xaml");
 		string source = LoadAppSource("AccountEditorWindow.xaml.cs");
 		string claudeStoredData =
 			AccountEditorWindow.GetProviderStoredDataText(ProviderKind.Claude);
@@ -2020,7 +2019,7 @@ public sealed class XamlUsabilityRegressionTests
 		Assert.Contains("帳號設定", xaml, StringComparison.Ordinal);
 		Assert.Contains("Title = \"帳號設定\";", source, StringComparison.Ordinal);
 		Assert.Contains(
-			"TitleTextBlock.Text = \"帳號設定\";",
+			"TitleTextBlock.Text = UiText.Get(_isEditing",
 			source,
 			StringComparison.Ordinal);
 		Assert.Contains("帳號資訊", xaml, StringComparison.Ordinal);
@@ -2362,7 +2361,7 @@ public sealed class XamlUsabilityRegressionTests
 	[Fact]
 	public void AccountEditorNickname_IsOptionalAndDoesNotPromiseAutomaticNaming()
 	{
-		string xaml = File.ReadAllText(GetAppXamlPath("AccountEditorWindow.xaml"));
+		string xaml = LoadAppSource("AccountEditorWindow.xaml");
 
 		Assert.Contains("Content=\"暱稱（選填）\"", xaml, StringComparison.Ordinal);
 		Assert.Contains("留白時不顯示暱稱", xaml, StringComparison.Ordinal);
@@ -2658,11 +2657,8 @@ public sealed class XamlUsabilityRegressionTests
 	{
 		string accountEditorDisclosure =
 			AccountEditorWindow.GetProviderNoticeText(ProviderKind.Antigravity)!;
-		string setupDisclosure = File.ReadAllText(Path.Combine(
-			RepositoryTestPaths.Root,
-			"src",
-			"AiUsageDashboard.Antigravity.Setup",
-			"SetupWindow.xaml"));
+		string setupDisclosure = ExpandLocalizedText(
+			File.ReadAllText(GetSetupXamlPath("SetupWindow.xaml")), isXaml: true);
 
 		Assert.Contains(
 			"請先在這台電腦登入 Antigravity",
@@ -2866,12 +2862,13 @@ public sealed class XamlUsabilityRegressionTests
 
 	private static XDocument LoadAppXaml(params string[] pathParts)
 	{
-		return XDocument.Load(GetAppXamlPath(pathParts));
+		return XDocument.Parse(ExpandLocalizedText(File.ReadAllText(GetAppXamlPath(pathParts)), isXaml: true));
 	}
 
 	private static string LoadAppSource(params string[] pathParts)
 	{
-		return File.ReadAllText(GetAppXamlPath(pathParts));
+		return ExpandLocalizedText(File.ReadAllText(GetAppXamlPath(pathParts)),
+			isXaml: pathParts[^1].EndsWith(".xaml", StringComparison.Ordinal));
 	}
 
 	private static string GetAppXamlPath(params string[] pathParts)
@@ -2887,12 +2884,35 @@ public sealed class XamlUsabilityRegressionTests
 
 	private static XDocument LoadSetupXaml(params string[] pathParts)
 	{
-		return XDocument.Load(GetSetupXamlPath(pathParts));
+		return XDocument.Parse(ExpandLocalizedText(File.ReadAllText(GetSetupXamlPath(pathParts)), isXaml: true));
 	}
 
 	private static string LoadSetupSource(params string[] pathParts)
 	{
-		return File.ReadAllText(GetSetupXamlPath(pathParts));
+		return ExpandLocalizedText(File.ReadAllText(GetSetupXamlPath(pathParts)), isXaml: false);
+	}
+
+	private static string ExpandLocalizedText(string source, bool isXaml)
+	{
+		using var languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
+		if (isXaml)
+		{
+			return Regex.Replace(source,
+				@"\{DynamicResource ((?:Windows|Shell|Status)\.[\w.]+)\}",
+				match => System.Security.SecurityElement.Escape(UiText.Get(match.Groups[1].Value))
+					?? throw new InvalidOperationException("A localized XAML value could not be escaped."));
+		}
+
+		var jsonOptions = new JsonSerializerOptions
+		{
+			Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+		};
+		source = Regex.Replace(source,
+			"UiText.Get\\(\"((?:Windows|Shell|Status|Persistence)\\.[\\w.]+)\"\\)",
+			match => JsonSerializer.Serialize(UiText.Get(match.Groups[1].Value), jsonOptions));
+		return Regex.Replace(source,
+			"UiText.Format\\(\"((?:Windows|Shell|Status|Persistence)\\.[\\w.]+)\"",
+			match => "UiText.Format(" + JsonSerializer.Serialize(UiText.Get(match.Groups[1].Value), jsonOptions));
 	}
 
 	private static string GetSetupXamlPath(params string[] pathParts)

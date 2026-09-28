@@ -4,6 +4,8 @@ using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Persistence;
 
+using AiUsageDashboard.Core.Localization;
+
 namespace AiUsageDashboard.Tests;
 
 public sealed class JsonAccountProfileStoreTests
@@ -26,6 +28,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task SaveAsync_WhenAccountCountExceedsLimit_RejectsWithoutCreatingFile()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(temporaryDirectory.Path, "accounts.json");
 		JsonAccountProfileStore store = new(filePath);
@@ -49,6 +52,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task SaveAsync_WhenDisplayNameContainsControlCharacter_RejectsWithoutCreatingFile()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(temporaryDirectory.Path, "accounts.json");
 		JsonAccountProfileStore store = new(filePath);
@@ -99,6 +103,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task SaveAsync_WhenDisplayNameIsNull_RejectsWithoutCreatingFile()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(
 			temporaryDirectory.Path,
@@ -186,6 +191,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task LoadAsync_WhenPrimaryExceedsSizeLimit_PreservesFileAndBlocksSave()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(temporaryDirectory.Path, "accounts.json");
 		byte[] oversizedContents = new byte[(1024 * 1024) + 1];
@@ -245,6 +251,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task LoadAsync_WhenValidPrimaryHasMalformedBackup_QuarantinesAndRepairsBackup()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string backupPath = $"{filePath}.bak";
@@ -291,6 +298,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task LoadAsync_WhenValidPrimaryHasFutureBackup_PreservesBackup()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string backupPath = $"{filePath}.bak";
@@ -337,6 +345,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task LoadAsync_WhenBackupExceedsSizeLimit_PreservesBackupAndBlocksSave()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string backupPath = $"{filePath}.bak";
@@ -842,6 +851,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task SaveAsync_WithRawGrokIdentity_RejectsSnapshot()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(
 			temporaryDirectory.Path,
@@ -1127,9 +1137,16 @@ public sealed class JsonAccountProfileStoreTests
 			SearchOption.TopDirectoryOnly));
 	}
 
-	[Fact]
-	public async Task SaveAsync_WhenMainCommitsButBackupUpdateFails_TracksCommittedFingerprintForRetry()
+	[Theory]
+	[InlineData(AppLanguage.English, "Account settings were applied", "backup update failed", "save the account settings again")]
+	[InlineData(AppLanguage.TraditionalChinese, "帳號設定已套用", "備份更新失敗", "再次儲存帳號設定")]
+	public async Task SaveAsync_WhenMainCommitsButBackupUpdateFails_TracksCommittedFingerprintForRetry(
+		AppLanguage language,
+		string appliedText,
+		string failedText,
+		string retryText)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(language);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string backupPath = $"{filePath}.bak";
@@ -1154,9 +1171,9 @@ public sealed class JsonAccountProfileStoreTests
 					() => store.SaveAsync(new[] { updatedAccount }));
 
 			Assert.True(exception.HasCommittedChanges);
-			Assert.Contains("帳號設定已套用", exception.Message);
-			Assert.Contains("備份更新失敗", exception.Message);
-			Assert.Contains("再次儲存帳號設定", exception.Message);
+			Assert.Contains(appliedText, exception.Message);
+			Assert.Contains(failedText, exception.Message);
+			Assert.Contains(retryText, exception.Message);
 			using JsonDocument committedDocument = JsonDocument.Parse(
 				await File.ReadAllTextAsync(filePath));
 			Assert.Equal(
@@ -1180,6 +1197,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task LoadAsync_WhenBackupStayedStaleAfterPartialCommit_RepairsBeforeFutureRecovery()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string backupPath = $"{filePath}.bak";
@@ -1402,6 +1420,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task LoadAsync_WhenPrimaryAndBackupAreCorrupt_QuarantinesBothAndUsesEmptySettings()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string backupPath = $"{filePath}.bak";
@@ -1576,6 +1595,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task SaveAsync_WhenBackupHasNewerSchema_DoesNotOverwriteEitherFile()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = System.IO.Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string backupPath = $"{filePath}.bak";
@@ -1658,6 +1678,7 @@ public sealed class JsonAccountProfileStoreTests
 	[Fact]
 	public async Task LoadAsync_WhenBackupPathIsDirectory_PreservesAccountsAndBlocksSave()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		using TemporaryDirectory temporaryDirectory = new();
 		string filePath = Path.Combine(temporaryDirectory.Path, "accounts.json");
 		string backupPath = $"{filePath}.bak";

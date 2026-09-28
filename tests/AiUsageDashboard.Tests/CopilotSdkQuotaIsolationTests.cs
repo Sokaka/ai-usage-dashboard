@@ -8,12 +8,14 @@ using AiUsageDashboard.App;
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 using GitHub.Copilot.Rpc;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class CopilotSdkQuotaIsolationTests
 {
 	private sealed class SubscriptionTestTimeProvider : TimeProvider
@@ -458,6 +460,26 @@ public sealed class CopilotSdkQuotaIsolationTests
 			metric.Key == "copilot-quota-completions");
 		Assert.Equal("已使用 0 次（無上限）", completions.DisplayValue);
 		Assert.Equal("已使用 0 次（無上限）", completions.ToolTipValue);
+
+		UsageSnapshot projectedSnapshot = Assert.IsType<UsageSnapshot>(viewModel.CurrentSnapshot);
+		using (UiText.UseLanguage(AppLanguage.English))
+		{
+			viewModel.RefreshLocalizedPresentation();
+			Assert.Equal("@business-user · Plan Business", viewModel.AccountDisplayText);
+			Assert.Equal("Business", viewModel.SubscriptionPlanDisplayText);
+			UsageMetricViewModel localizedPremium = viewModel.UsageMetrics.Single(metric =>
+				metric.Key == "copilot-quota-premium-interactions");
+			Assert.Contains("shared quota", localizedPremium.DisplayValue, StringComparison.Ordinal);
+			Assert.Contains("extra usage enabled", localizedPremium.ToolTipValue, StringComparison.OrdinalIgnoreCase);
+			Assert.Same(projectedSnapshot, viewModel.CurrentSnapshot);
+			Assert.Equal("Business", snapshot.PlanTier);
+			Assert.Equal("@business-user", snapshot.ProviderAccountDisplayIdentity);
+			Assert.Equal(account.ProviderAccountIdentity, snapshot.ProviderAccountIdentity);
+			Assert.Equal(
+				"已使用 0；上限由共用額度與預算控制，額外用量已開啟",
+				snapshot.Metrics.Single(metric => metric.Key == "copilot-quota-premium-interactions").DisplayValue);
+		}
+		Assert.Equal(AppLanguage.TraditionalChinese, UiText.CurrentLanguage);
 	}
 
 	[Theory]

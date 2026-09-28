@@ -1,3 +1,5 @@
+using AiUsageDashboard.Core.Localization;
+
 namespace AiUsageDashboard.App.Updates;
 
 internal enum ManualUpdateCheckInvocationSurface
@@ -33,8 +35,8 @@ internal static class ManualUpdateCheckFeedbackPolicy
 			UpdateCheckExecutionOutcome.Completed when
 				result.State.Status == UpdatePresentationStatus.UpToDate =>
 				new ManualUpdateCheckFeedback(
-					"更新檢查完成",
-					"目前已是最新版。",
+					UiText.Translate("更新檢查完成"),
+					UiText.Translate("目前已是最新版。"),
 					IsWarning: false),
 			UpdateCheckExecutionOutcome.Completed => null,
 			UpdateCheckExecutionOutcome.Failed when !canShowInlineFailure =>
@@ -47,7 +49,7 @@ internal static class ManualUpdateCheckFeedbackPolicy
 			_ => throw new ArgumentOutOfRangeException(
 				nameof(result),
 				result.Outcome,
-				"未知的更新檢查結果。")
+				UiText.Translate("未知的更新檢查結果。"))
 		};
 	}
 
@@ -55,14 +57,14 @@ internal static class ManualUpdateCheckFeedbackPolicy
 		UpdatePresentationState state)
 	{
 		string failureMessage = string.IsNullOrWhiteSpace(state.FailureMessage)
-			? "無法完成更新檢查，請稍後再試。"
-			: state.FailureMessage.Trim();
+			? UiText.Translate("無法完成更新檢查，請稍後再試。")
+			: UiText.Translate(state.FailureMessage.Trim());
 		string knownUpdateGuidance =
 			state.LastKnownResult?.IsUpdateAvailable == true
-				? "\n\n上次確認的更新操作仍可從 tray 使用。"
+				? UiText.Translate("\n\n上次確認的更新操作仍可從 tray 使用。")
 				: string.Empty;
 		return new ManualUpdateCheckFeedback(
-			"無法檢查更新",
+			UiText.Translate("無法檢查更新"),
 			$"{failureMessage}{knownUpdateGuidance}",
 			IsWarning: true);
 	}

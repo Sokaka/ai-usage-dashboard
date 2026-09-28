@@ -918,6 +918,8 @@ public sealed class InternalPackageInvariantsTests
 		string repositoryRoot = RepositoryTestPaths.Root;
 		string readme = File.ReadAllText(
 			Path.Combine(repositoryRoot, "README.md"));
+		string chineseReadme = File.ReadAllText(
+			Path.Combine(repositoryRoot, "README.zh-TW.md"));
 		string technicalOverview = File.ReadAllText(Path.Combine(
 			repositoryRoot,
 			"docs",
@@ -931,19 +933,22 @@ public sealed class InternalPackageInvariantsTests
 		string userGuide = File.ReadAllText(
 			Path.Combine(repositoryRoot, "使用說明.md"));
 
-		foreach ((string platform, string accountCards) in new[]
+		foreach ((string platform, string accountCards, string englishAccountCards) in new[]
 		{
-			("Claude", "多帳號；同帳號依不同組織分卡"),
-			("Codex", "多帳號；同帳號依不同工作區分卡"),
-			("GitHub Copilot", "多帳號；同帳號限一張卡片"),
-			("Grok", "多帳號；同帳號限一張卡片"),
-			("Antigravity", "限一個帳號")
+			("Claude", "多帳號；同帳號依不同組織分卡", "Multiple; split by organization"),
+			("Codex", "多帳號；同帳號依不同工作區分卡", "Multiple; split by workspace"),
+			("GitHub Copilot", "多帳號；同帳號限一張卡片", "Multiple; one card per account"),
+			("Grok", "多帳號；同帳號限一張卡片", "Multiple; one card per account"),
+			("Antigravity", "限一個帳號", "One account")
 		})
 		{
 			string rowPattern =
 				$@"(?m)^\| {Regex.Escape(platform)} \|[^\r\n|]*\| {Regex.Escape(accountCards)} \|\r?$";
-			Assert.Matches(rowPattern, readme);
+			Assert.Matches(rowPattern, chineseReadme);
 			Assert.Matches(rowPattern, userGuide);
+			string englishRowPattern =
+				$@"(?m)^\| {Regex.Escape(platform)} \|[^\r\n|]*\| {Regex.Escape(englishAccountCards)} \|\r?$";
+			Assert.Matches(englishRowPattern, readme);
 		}
 		Assert.Contains("| Grok |", technicalOverview);
 		Assert.Contains("| Grok |", implementationChecklist);
@@ -977,6 +982,8 @@ public sealed class InternalPackageInvariantsTests
 	{
 		string repositoryRoot = RepositoryTestPaths.Root;
 		string readme = File.ReadAllText(
+			Path.Combine(repositoryRoot, "README.zh-TW.md"));
+		string englishReadme = File.ReadAllText(
 			Path.Combine(repositoryRoot, "README.md"));
 		string userGuide = File.ReadAllText(
 			Path.Combine(repositoryRoot, "使用說明.md"));
@@ -1038,6 +1045,10 @@ public sealed class InternalPackageInvariantsTests
 		Assert.DoesNotContain(
 			"Grok Build CLI `1.0.3` 以上版本",
 			readme,
+			StringComparison.Ordinal);
+		Assert.DoesNotContain(
+			"Grok Build CLI `1.0.3` or later",
+			englishReadme,
 			StringComparison.Ordinal);
 		Assert.DoesNotContain(
 			"Grok Build CLI `1.0.3` 以上版本",

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 
 namespace AiUsageDashboard.App.Persistence;
 
@@ -34,13 +35,13 @@ internal sealed class DashboardPreferencesSaveBlockedException :
 		return reason switch
 		{
 			DashboardPreferencesSaveBlockReason.NewerSchema =>
-				"AI Usage 顯示設定檔由較新版本建立。為避免覆寫，目前無法變更顯示設定。",
+				UiText.Get("Persistence.PreferencesNewerSchema"),
 			DashboardPreferencesSaveBlockReason.DocumentTooLarge =>
-				"AI Usage 顯示設定檔超過 64 KiB。為避免覆寫，目前無法變更顯示設定。",
+				UiText.Get("Persistence.PreferencesTooLarge"),
 			DashboardPreferencesSaveBlockReason.ExistingSettingsUnavailable =>
-				"目前仍無法讀取浮窗設定。為避免覆寫原設定，尚未儲存變更。",
+				UiText.Get("Persistence.PreferencesUnavailable"),
 			DashboardPreferencesSaveBlockReason.UnsafePath =>
-				"AI Usage 顯示設定檔路徑不安全。為保護本機資料，目前無法變更顯示設定。",
+				UiText.Get("Persistence.PreferencesUnsafePath"),
 			_ => throw new ArgumentOutOfRangeException(nameof(reason))
 		};
 	}
@@ -65,6 +66,7 @@ internal sealed class JsonDashboardPreferencesStore :
 		StartupSurface = 1 << 7,
 		Theme = 1 << 8,
 		IsHeightFollowingCardCount = 1 << 9,
+		Language = 1 << 10,
 		AllShellPreferences = IsWidgetVisible |
 			IsCollapsed |
 			IsTopmost |
@@ -72,7 +74,8 @@ internal sealed class JsonDashboardPreferencesStore :
 			Corner |
 			StartupSurface |
 			Theme |
-			IsHeightFollowingCardCount
+			IsHeightFollowingCardCount |
+			Language
 	}
 
 	private sealed record DashboardPreferencesRecoveryState(
@@ -123,16 +126,20 @@ internal sealed class JsonDashboardPreferencesStore :
 		public double? CollapsedPositionXRatio { get; init; }
 
 		public double? CollapsedPositionYRatio { get; init; }
+
+		public AppLanguage Language { get; init; } = AppLanguage.English;
 	}
 
 	internal event Action? RecoveryRequested;
 
-	private const int CurrentSchemaVersion = 7;
+	private const int CurrentSchemaVersion = 8;
+	private const int LanguageSchemaVersion = 8;
 	private const int HeightFollowingCardCountSchemaVersion = 6;
 	private const int CollapsedPositionSchemaVersion = 7;
 	private const int LegacySortOnlySchemaVersion = 1;
 	private const int LegacySchemaVersionFive = 5;
-	private const int PreviousSchemaVersion = 6;
+	private const int LegacySchemaVersionSix = 6;
+	private const int PreviousSchemaVersion = 7;
 	private const long MaximumDocumentSizeBytes = 64 * 1024;
 	private const int MaximumMonitorDeviceNameLength = 260;
 	private const string ManagedPathDescription = "The dashboard preferences path";
@@ -303,7 +310,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(displayMode),
 				displayMode,
-				"未知的用量顯示方式。");
+				UiText.Get("Persistence.UnknownDisplayMode"));
 		}
 
 		bool shouldRequestRecovery = false;
@@ -353,7 +360,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(sortMode),
 				sortMode,
-				"未知的用量排序方式。");
+				UiText.Get("Persistence.UnknownSortMode"));
 		}
 
 		bool shouldRequestRecovery = false;
@@ -404,7 +411,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(sortMode),
 				sortMode,
-				"未知的用量排序方式。");
+				UiText.Get("Persistence.UnknownSortMode"));
 		}
 
 		if (!Enum.IsDefined(displayMode))
@@ -412,7 +419,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(displayMode),
 				displayMode,
-				"未知的用量顯示方式。");
+				UiText.Get("Persistence.UnknownDisplayMode"));
 		}
 
 		bool shouldRequestRecovery = false;
@@ -500,7 +507,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(sortMode),
 				sortMode,
-				"未知的用量排序方式。");
+				UiText.Get("Persistence.UnknownSortMode"));
 		}
 
 		if (!Enum.IsDefined(displayMode))
@@ -508,7 +515,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(displayMode),
 				displayMode,
-				"未知的用量顯示方式。");
+				UiText.Get("Persistence.UnknownDisplayMode"));
 		}
 
 		ArgumentNullException.ThrowIfNull(shellPreferences);
@@ -855,7 +862,8 @@ internal sealed class JsonDashboardPreferencesStore :
 			CollapsedPositionXRatio =
 				shellPreferences.CollapsedPositionXRatio,
 			CollapsedPositionYRatio =
-				shellPreferences.CollapsedPositionYRatio
+				shellPreferences.CollapsedPositionYRatio,
+			Language = shellPreferences.Language
 		};
 	}
 
@@ -866,6 +874,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			(document.SchemaVersion is UsageDisplayModeSchemaVersion or
 				ThemeSchemaVersion or
 				LegacySchemaVersionFive or
+				LegacySchemaVersionSix or
 				PreviousSchemaVersion or
 				CurrentSchemaVersion) &&
 			Enum.IsDefined(document!.UsageDisplayMode)
@@ -902,15 +911,19 @@ internal sealed class JsonDashboardPreferencesStore :
 				UsageDisplayModeSchemaVersion or
 				ThemeSchemaVersion or
 				LegacySchemaVersionFive or
+				LegacySchemaVersionSix or
 				PreviousSchemaVersion or
 				CurrentSchemaVersion)) ||
 			!Enum.IsDefined(document.Corner) ||
 			!Enum.IsDefined(document.StartupSurface) ||
 			((document.SchemaVersion is ThemeSchemaVersion or
 				LegacySchemaVersionFive or
+				LegacySchemaVersionSix or
 				PreviousSchemaVersion or
 				CurrentSchemaVersion) &&
 				!Enum.IsDefined(document.Theme)) ||
+			((document.SchemaVersion >= LanguageSchemaVersion) &&
+				!Enum.IsDefined(document.Language)) ||
 			(document.MonitorDeviceName is null) ||
 			(document.MonitorDeviceName.Length > MaximumMonitorDeviceNameLength) ||
 			((document.SchemaVersion >= CollapsedPositionSchemaVersion) &&
@@ -931,6 +944,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			document.StartupSurface,
 			document.SchemaVersion is ThemeSchemaVersion or
 				LegacySchemaVersionFive or
+				LegacySchemaVersionSix or
 				PreviousSchemaVersion or
 				CurrentSchemaVersion
 				? document.Theme
@@ -942,7 +956,10 @@ internal sealed class JsonDashboardPreferencesStore :
 				: null,
 			document.SchemaVersion >= CollapsedPositionSchemaVersion
 				? document.CollapsedPositionYRatio
-				: null);
+				: null,
+			document.SchemaVersion >= LanguageSchemaVersion
+				? document.Language
+				: AppLanguage.English);
 		return true;
 	}
 
@@ -954,6 +971,7 @@ internal sealed class JsonDashboardPreferencesStore :
 				UsageDisplayModeSchemaVersion or
 				ThemeSchemaVersion or
 				LegacySchemaVersionFive or
+				LegacySchemaVersionSix or
 				PreviousSchemaVersion or
 				CurrentSchemaVersion);
 	}
@@ -978,7 +996,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(preferences),
 				preferences.Corner,
-				"未知的浮窗停靠位置。");
+				UiText.Get("Persistence.UnknownWidgetCorner"));
 		}
 
 		if (!Enum.IsDefined(preferences.StartupSurface))
@@ -986,7 +1004,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(preferences),
 				preferences.StartupSurface,
-				"未知的啟動介面。");
+				UiText.Get("Persistence.UnknownStartupSurface"));
 		}
 
 		ArgumentNullException.ThrowIfNull(preferences.MonitorDeviceName);
@@ -995,7 +1013,7 @@ internal sealed class JsonDashboardPreferencesStore :
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(preferences),
-				"螢幕識別名稱過長。");
+				UiText.Get("Persistence.MonitorNameTooLong"));
 		}
 
 		if (!IsValidCollapsedPosition(
@@ -1004,7 +1022,7 @@ internal sealed class JsonDashboardPreferencesStore :
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(preferences),
-				"收合浮窗位置比例必須成對且介於 0 與 1 之間。");
+				UiText.Get("Persistence.InvalidCollapsedPosition"));
 		}
 
 		if (!Enum.IsDefined(preferences.Theme))
@@ -1012,7 +1030,15 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(preferences),
 				preferences.Theme,
-				"未知的應用程式主題。");
+				UiText.Get("Persistence.UnknownTheme"));
+		}
+
+		if (!Enum.IsDefined(preferences.Language))
+		{
+			throw new ArgumentOutOfRangeException(
+				nameof(preferences),
+				preferences.Language,
+				UiText.Get("Persistence.UnknownLanguage"));
 		}
 	}
 
@@ -1039,7 +1065,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(preferences),
 				preferences.UsageSortMode,
-				"未知的用量排序方式。");
+				UiText.Get("Persistence.UnknownSortMode"));
 		}
 
 		if (!Enum.IsDefined(preferences.UsageDisplayMode))
@@ -1047,7 +1073,7 @@ internal sealed class JsonDashboardPreferencesStore :
 			throw new ArgumentOutOfRangeException(
 				nameof(preferences),
 				preferences.UsageDisplayMode,
-				"未知的用量顯示方式。");
+				UiText.Get("Persistence.UnknownDisplayMode"));
 		}
 
 		ValidateShellPreferences(preferences.ShellPreferences);
@@ -1109,6 +1135,11 @@ internal sealed class JsonDashboardPreferencesStore :
 				DashboardPreferencesField.IsHeightFollowingCardCount;
 		}
 
+		if (previousPreferences.Language != currentPreferences.Language)
+		{
+			changedFields |= DashboardPreferencesField.Language;
+		}
+
 		return changedFields;
 	}
 
@@ -1164,7 +1195,10 @@ internal sealed class JsonDashboardPreferencesStore :
 				changedFields,
 				DashboardPreferencesField.MonitorAndCollapsedPosition)
 				? currentPreferences.CollapsedPositionYRatio
-				: existingPreferences.CollapsedPositionYRatio
+				: existingPreferences.CollapsedPositionYRatio,
+			Language = HasChanged(changedFields, DashboardPreferencesField.Language)
+				? currentPreferences.Language
+				: existingPreferences.Language
 		};
 	}
 
@@ -1288,7 +1322,7 @@ internal sealed class JsonDashboardPreferencesStore :
 
 		if (string.IsNullOrWhiteSpace(directoryPath))
 		{
-			throw new InvalidOperationException("顯示設定檔缺少所在資料夾。");
+			throw new InvalidOperationException(UiText.Get("Persistence.PreferencesParentMissing"));
 		}
 
 		CreateManagedDirectoryForSave(

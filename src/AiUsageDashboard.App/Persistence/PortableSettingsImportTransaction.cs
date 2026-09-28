@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 
+using AiUsageDashboard.Core.Localization;
+
 namespace AiUsageDashboard.App.Persistence;
 
 internal interface IPortableSettingsImportTransaction
@@ -65,7 +67,7 @@ internal sealed class PortableSettingsImportRestoreResult
 		}
 
 		throw new ArgumentException(
-			"指定的檔案不屬於這次設定匯入交易。",
+			UiText.Get("Persistence.TransactionTargetOutside"),
 			nameof(targetFilePath));
 	}
 }
@@ -175,7 +177,7 @@ internal sealed class PortableSettingsImportTransaction :
 		if (targetFilePaths.Count == 0)
 		{
 			throw new ArgumentException(
-				"交易至少需要一個目標檔案。",
+				UiText.Get("Persistence.TransactionTargetsMissing"),
 				nameof(targetFilePaths));
 		}
 
@@ -224,7 +226,7 @@ internal sealed class PortableSettingsImportTransaction :
 			(_onTargetsRestoredWithResult is not null))
 		{
 			throw new ArgumentException(
-				"設定匯入的還原方式重複。");
+				UiText.Get("Persistence.TransactionRestoreDuplicate"));
 		}
 		_maximumTargetFileSizes = maximumTargetFileSizes is null
 			? Enumerable.Repeat(
@@ -235,7 +237,7 @@ internal sealed class PortableSettingsImportTransaction :
 		if (_maximumTargetFileSizes.Length != _targetFilePaths.Length)
 		{
 			throw new ArgumentException(
-				"每個交易目標都必須有且只能有一個檔案大小上限。",
+				UiText.Get("Persistence.TransactionLimitsInvalid"),
 				nameof(maximumTargetFileSizes));
 		}
 
@@ -243,7 +245,7 @@ internal sealed class PortableSettingsImportTransaction :
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(maximumTargetFileSizes),
-				"交易目標檔案大小上限必須大於零。");
+				UiText.Get("Persistence.TransactionLimitNonpositive"));
 		}
 
 		if (_targetFilePaths.Distinct(
@@ -251,7 +253,7 @@ internal sealed class PortableSettingsImportTransaction :
 			_targetFilePaths.Length)
 		{
 			throw new ArgumentException(
-				"交易目標檔案不可重複。",
+				UiText.Get("Persistence.TransactionDuplicateTargets"),
 				nameof(targetFilePaths));
 		}
 	}
@@ -288,7 +290,7 @@ internal sealed class PortableSettingsImportTransaction :
 		if (string.IsNullOrWhiteSpace(parentDirectoryPath))
 		{
 			throw new InvalidOperationException(
-				"設定匯入交易缺少有效的父目錄。");
+				UiText.Get("Persistence.TransactionParentMissing"));
 		}
 
 		Directory.CreateDirectory(parentDirectoryPath);
@@ -319,7 +321,7 @@ internal sealed class PortableSettingsImportTransaction :
 				{
 					await lockStream.DisposeAsync().ConfigureAwait(false);
 					throw new IOException(
-						"設定匯入交易鎖定檔不可為連結或重新解析點。");
+						UiText.Get("Persistence.TransactionUnsafeLock"));
 				}
 
 				return new RecoveryMutationLease(lockStream);
@@ -344,7 +346,7 @@ internal sealed class PortableSettingsImportTransaction :
 				exception is IOException or UnauthorizedAccessException)
 			{
 				throw new IOException(
-					"另一個 AI Usage 正在匯入或還原設定；請稍後再試。",
+					UiText.Get("Persistence.TransactionBusy"),
 					exception);
 			}
 		}
@@ -473,7 +475,7 @@ internal sealed class PortableSettingsImportTransaction :
 			catch (Exception rollbackException)
 			{
 				throw new InvalidOperationException(
-					"設定匯入未完成，也無法立即還原原本設定。重新啟動 AI Usage 後會自動再試。",
+					UiText.Get("Persistence.ImportRollbackPending"),
 					new AggregateException(
 						operationException,
 						rollbackException));
@@ -500,7 +502,7 @@ internal sealed class PortableSettingsImportTransaction :
 			}
 
 			throw new PortableSettingsImportCommittedException(
-				"設定匯入已提交，但無法記錄匯入後的帳號清理授權。重新啟動 AI Usage 後會自動再試。",
+				UiText.Get("Persistence.ImportCleanupAuthorizationPending"),
 				exception);
 		}
 
@@ -515,7 +517,7 @@ internal sealed class PortableSettingsImportTransaction :
 		if (string.IsNullOrWhiteSpace(parentDirectoryPath))
 		{
 			throw new InvalidOperationException(
-				"設定匯入交易缺少有效的父目錄。");
+				UiText.Get("Persistence.TransactionParentMissing"));
 		}
 
 		Directory.CreateDirectory(parentDirectoryPath);
@@ -613,14 +615,14 @@ internal sealed class PortableSettingsImportTransaction :
 		if (targetIndex < 0)
 		{
 			throw new InvalidOperationException(
-				"設定匯入嘗試寫入交易範圍以外的檔案。");
+				UiText.Get("Persistence.TransactionWriteOutside"));
 		}
 
 		string normalizedPreparedPath = Path.GetFullPath(preparedFilePath);
 		if (!File.Exists(normalizedPreparedPath))
 		{
 			throw new FileNotFoundException(
-				"設定匯入的待寫入檔案不存在。",
+				UiText.Get("Persistence.TransactionPreparedFileMissing"),
 				normalizedPreparedPath);
 		}
 
@@ -662,13 +664,13 @@ internal sealed class PortableSettingsImportTransaction :
 			(restoredMarkerExists || restoreCallbackCompletedMarkerExists))
 		{
 			throw new InvalidDataException(
-				"設定匯入交易同時包含互相衝突的 committed 與 restored 狀態。");
+				UiText.Get("Persistence.TransactionConflictingCommitRestore"));
 		}
 		if (commitCallbackCompletedMarkerExists &&
 			(restoredMarkerExists || restoreCallbackCompletedMarkerExists))
 		{
 			throw new InvalidDataException(
-				"設定匯入交易同時包含互相衝突的 commit callback 與 restored 狀態。");
+				UiText.Get("Persistence.TransactionConflictingCallbackRestore"));
 		}
 
 		if (committedMarkerExists)
@@ -830,7 +832,7 @@ internal sealed class PortableSettingsImportTransaction :
 			if (backupExists == absentMarkerExists)
 			{
 				throw new InvalidDataException(
-					"設定匯入缺少可用的還原資料。");
+					UiText.Get("Persistence.TransactionRecoveryUnavailable"));
 			}
 
 			if (backupExists)
@@ -867,7 +869,7 @@ internal sealed class PortableSettingsImportTransaction :
 			}
 
 			throw new InvalidDataException(
-				"設定匯入缺少還原資料。");
+				UiText.Get("Persistence.TransactionRecoveryMissing"));
 		}
 	}
 
@@ -890,7 +892,7 @@ internal sealed class PortableSettingsImportTransaction :
 			if (backupExists == absentMarkerExists)
 			{
 				throw new InvalidDataException(
-					"設定匯入缺少可用的還原資料。");
+					UiText.Get("Persistence.TransactionRecoveryUnavailable"));
 			}
 
 			EnsureFileIsNotReparsePoint(
@@ -978,7 +980,7 @@ internal sealed class PortableSettingsImportTransaction :
 		if (backupExists && absentMarkerExists)
 		{
 			throw new InvalidDataException(
-				"設定匯入的還原資料互相衝突。");
+				UiText.Get("Persistence.TransactionRecoveryConflicting"));
 		}
 
 		if (!backupExists && !absentMarkerExists)
@@ -986,7 +988,7 @@ internal sealed class PortableSettingsImportTransaction :
 			if (!allowUnverifiableRollbackBaseline)
 			{
 				throw new InvalidDataException(
-					"設定匯入缺少還原資料。");
+					UiText.Get("Persistence.TransactionRecoveryMissing"));
 			}
 
 			// Older versions could delete part of a restored journal before cleanup
@@ -1107,7 +1109,7 @@ internal sealed class PortableSettingsImportTransaction :
 
 		if (string.IsNullOrWhiteSpace(targetDirectoryPath))
 		{
-			throw new InvalidOperationException("還原位置缺少有效的所在資料夾。");
+			throw new InvalidOperationException(UiText.Get("Persistence.RestoreParentMissing"));
 		}
 
 		Directory.CreateDirectory(targetDirectoryPath);
@@ -1217,8 +1219,9 @@ internal sealed class PortableSettingsImportTransaction :
 		if (stream.Length > maximumFileSize)
 		{
 			throw new InvalidDataException(
-				$"設定匯入檔案 {Path.GetFileName(stream.Name)} 太大；" +
-				$"上限為 {maximumFileSize:N0} 位元組。");
+				UiText.Format("Persistence.TransactionFileTooLarge",
+					Path.GetFileName(stream.Name),
+					maximumFileSize.ToString("N0", UiText.Culture)));
 		}
 	}
 
@@ -1590,7 +1593,7 @@ internal sealed class PortableSettingsImportTransaction :
 
 		if ((attributes & FileAttributes.ReparsePoint) != 0)
 		{
-			throw new IOException("設定匯入交易目錄不可為連結或重新解析點。");
+			throw new IOException(UiText.Get("Persistence.TransactionUnsafeDirectory"));
 		}
 	}
 
@@ -1600,7 +1603,7 @@ internal sealed class PortableSettingsImportTransaction :
 
 		if ((attributes & FileAttributes.ReparsePoint) != 0)
 		{
-			throw new IOException("設定匯入檔案不可為連結的檔案。");
+			throw new IOException(UiText.Get("Persistence.TransactionUnsafeFile"));
 		}
 	}
 

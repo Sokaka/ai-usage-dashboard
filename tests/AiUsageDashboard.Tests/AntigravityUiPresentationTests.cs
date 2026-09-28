@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -5,6 +6,7 @@ using AiUsageDashboard.Antigravity.Setup;
 using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App;
 using AiUsageDashboard.App.ViewModels;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Core.Models;
 
 namespace AiUsageDashboard.Tests;
@@ -14,12 +16,14 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void SetupDisclosure_ExplainsSourceBoundaryWithoutUnverifiedGuarantees()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string xaml = File.ReadAllText(Path.Combine(
 			RepositoryTestPaths.Root,
 			"src",
 			"AiUsageDashboard.Antigravity.Setup",
 			"SetupWindow.xaml"));
 
+		xaml = ResolveResourceReferences(xaml);
 		Assert.Contains("官方 Antigravity CLI", xaml, StringComparison.Ordinal);
 		Assert.Contains(
 			"只接受支援官方唯讀 /usage 的版本",
@@ -63,6 +67,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void SetupCopy_UsesPlainTraditionalChineseForRecoveryAndTechnicalInfo()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string setupDirectory = Path.Combine(
 			RepositoryTestPaths.Root,
 			"src",
@@ -74,6 +79,7 @@ public sealed class AntigravityUiPresentationTests
 			setupDirectory,
 			"App.xaml.cs");
 
+		setupWindowSource = ResolveResourceReferences(setupWindowSource);
 		Assert.Contains("agy --version", setupWindowSource, StringComparison.Ordinal);
 		Assert.Contains("已登入且能顯示用量", setupWindowSource, StringComparison.Ordinal);
 		Assert.DoesNotContain("agy -p /usage", setupWindowSource, StringComparison.Ordinal);
@@ -117,6 +123,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountEditorDisclosure_ExplainsAntigravityBoundaries()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string notice =
 			AccountEditorWindow.GetProviderNoticeText(ProviderKind.Antigravity)!;
 		string storedData =
@@ -160,7 +167,7 @@ public sealed class AntigravityUiPresentationTests
 			StringComparison.Ordinal);
 		Assert.DoesNotContain("不會開啟對話", disclosure, StringComparison.Ordinal);
 		Assert.DoesNotContain("送出模型請求", disclosure, StringComparison.Ordinal);
-		Assert.Contains("不會儲存密碼", xaml, StringComparison.Ordinal);
+		Assert.Contains("不會儲存密碼", ResolveResourceReferences(xaml), StringComparison.Ordinal);
 		Assert.DoesNotContain("Grok Build CLI", disclosure, StringComparison.Ordinal);
 		Assert.DoesNotContain(
 			"只會儲存該電子郵件",
@@ -183,6 +190,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountEditorProviderOptions_WhenAntigravityCardExists_KeepDisabledAnnotatedOption()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		IReadOnlyList<AccountEditorWindow.ProviderOption> options =
 			AccountEditorWindow.GetProviderOptionsForNewAccount(
 				canAddAntigravity: false);
@@ -231,6 +239,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountEditorProviderOptions_WhenAntigravityCanBeAdded_EnableEveryOption()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		IReadOnlyList<AccountEditorWindow.ProviderOption> options =
 			AccountEditorWindow.GetProviderOptionsForNewAccount(
 				canAddAntigravity: true);
@@ -253,6 +262,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public async Task AccountEditorProviderComboBox_TypeSearchSkipsDisabledOption()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		await RunOnStaThreadAsync(() =>
 		{
 			IReadOnlyList<AccountEditorWindow.ProviderOption> options =
@@ -285,6 +295,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void SetupReview_WhenAgyDoesNotReturnEmail_UsesLocalLoginLabel()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		Assert.Equal(
 			"目前登入的 Antigravity 帳號（未取得電子郵件）",
 			SetupWindow.GetAccountIdentityDisplayText(
@@ -304,6 +315,7 @@ public sealed class AntigravityUiPresentationTests
 		string stableWindowId,
 		string expected)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		Assert.Equal(
 			expected,
 			SetupWindow.GetUsageWindowDisplayName(stableWindowId));
@@ -312,6 +324,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AntigravityPreflight_ExplainsNewAndExistingConnectionBoundaries()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string message = AccountConnectionCoordinator.AntigravityPreflightMessage;
 
 		Assert.Contains("請先登入 Antigravity", message, StringComparison.Ordinal);
@@ -342,6 +355,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void DashboardCard_DoesNotShowAntigravityLocalLoginScope()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		string xaml = File.ReadAllText(Path.Combine(
 			RepositoryTestPaths.Root,
 			"src",
@@ -361,6 +375,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountPresentation_WithLocalSessionIdentity_HidesSentinelButKeepsBinding()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string Identity =
 			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = new(
@@ -406,6 +421,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountRecovery_WhenOfficialUsageHasHardSafetyLatch_OffersExplicitRecheck()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		AccountProfile profile = new(
 			Guid.NewGuid(),
 			ProviderKind.Antigravity,
@@ -440,6 +456,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountRecovery_WhenAutomaticRetryIsPending_StaysNonIntrusive()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		AccountProfile profile = new(
 			Guid.NewGuid(),
 			ProviderKind.Antigravity,
@@ -465,6 +482,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountPresentation_WithRecentAgyEmail_UsesDisplayMetadataButKeepsBinding()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string Identity =
 			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = new(
@@ -498,6 +516,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountPresentation_WithStaleAgyEmail_LabelsEveryDisplayEntry()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string Identity =
 			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = new(
@@ -531,6 +550,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountPresentation_WhenAgyQuotaSnapshotGenerationChanges_PreservesEmailUntilReconciliation()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string Identity =
 			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = new(
@@ -562,6 +582,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountPresentation_WhenProfileAliasChanges_PreservesAssociatedAgyEmail()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string Identity =
 			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = new(
@@ -592,6 +613,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountFallbackNotice_WithLocalSessionIdentity_HidesSentinel()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string Identity =
 			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		AccountProfile profile = new(
@@ -651,6 +673,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountPresentation_WhenAgyEmailIsNewerThanQuota_DoesNotAssociateIt()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string Identity =
 			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		DateTimeOffset observedAt = DateTimeOffset.UtcNow;
@@ -679,6 +702,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountPresentation_WhenReplacementAgyEmailIsRejected_PreservesExistingReport()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string Identity =
 			AntigravityOfficialPrintUsageClient.LocalSessionIdentity;
 		DateTimeOffset observedAt = DateTimeOffset.UtcNow;
@@ -709,6 +733,7 @@ public sealed class AntigravityUiPresentationTests
 	[Fact]
 	public void AccountSnapshot_WithLegacyBinding_DoesNotMigrateFromNonLiveProjection()
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string LegacyIdentity = "legacy@example.com";
 		AccountProfile profile = new(
 			Guid.NewGuid(),
@@ -738,6 +763,7 @@ public sealed class AntigravityUiPresentationTests
 		ProviderKind provider,
 		string snapshotIdentity)
 	{
+		using IDisposable languageScope = UiText.UseLanguage(AppLanguage.TraditionalChinese);
 		const string BoundIdentity = "bound@example.com";
 		AccountProfile profile = new(
 			Guid.NewGuid(),
@@ -766,6 +792,14 @@ public sealed class AntigravityUiPresentationTests
 		Assert.True(viewModel.DidRejectProviderAccountSnapshot);
 		Assert.Equal(BoundIdentity, viewModel.Profile.ProviderAccountIdentity);
 		Assert.Equal(BoundIdentity, viewModel.ProviderAccountIdentity);
+	}
+
+	private static string ResolveResourceReferences(string source)
+	{
+		source = Regex.Replace(source, @"\{DynamicResource (?<key>Windows\.[^}]+)\}",
+			match => UiText.Get(match.Groups["key"].Value));
+		return Regex.Replace(source, "UiText\\.(?:Get|Format)\\(\"(?<key>Windows\\.[^\"]+)\"",
+			match => UiText.Get(match.Groups["key"].Value));
 	}
 
 	private static UsageSnapshot CreateReadySnapshot(

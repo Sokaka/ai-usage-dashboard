@@ -5,6 +5,7 @@ using AiUsageDashboard.App;
 
 namespace AiUsageDashboard.Tests;
 
+[LegacyChineseUiTest]
 public sealed class AppVersionInfoTests
 {
 	[Theory]
