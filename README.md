@@ -7,7 +7,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.13-0078D4" alt="目前正式版本 1.0.13"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.14-0078D4" alt="目前正式版本 1.0.14"></a>
 </p>
 
 <p align="center">
@@ -29,9 +29,11 @@
 
 ## 目前版本
 
-目前正式版本為 **`1.0.13`**。浮窗右上角選單的「自動排序規則」改為純文字，移除資訊圖示與名稱末尾的省略號；點擊後仍開啟排序依據視窗，排序行為未變。本版沿用前一正式版已簽署的 `1.0.12` Updater。從 [v1.0.13 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.13) 下載；成品資訊見 [1.0.13 版本說明](docs/releases/1.0.13.md)。
+目前正式版本為 **`1.0.14`**。背景每 10 秒檢查已啟用並連接的卡片是否到期，同時最多查詢四張卡片；已綁定的非 Antigravity 卡片各自完成更新，慢速卡片不會擋住其他卡片的下一輪。本版沿用 `v1.0.13` 正式版中的 `1.0.12` Updater 原始 bytes。從 [v1.0.14 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.14) 下載；成品資訊見 [1.0.14 版本說明](docs/releases/1.0.14.md)。
 
-`1.0.13` 的[同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36232019499)已通過 Release 建置（0 warnings／0 errors）與 4,320 項自動測試（0 failed／0 skipped），production line coverage 為 74.27%（48,540／65,360）。[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36232360073/attempts/1) attempt 1 也通過 4,320 項測試與 74.27% 覆蓋率；正式公開後已匿名核對六件凍結成品、三份 sidecar 及 latest stable feed 簽章。乾淨 Windows 初裝、舊 Updater 交接、既有標準安裝從 `1.0.12` 的 App 一鍵線上更新、五個平台官方 CLI 的真人登入與用量，以及完整 UI／無障礙驗收尚未以本版完成。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#1013)。
+`1.0.14` 的[同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36387172532)及[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36388741696/attempts/1) attempt 1 均通過 Release 建置（0 warnings／0 errors）、4,368 項自動測試（0 failed／0 skipped）及 production line coverage 74.35%（48,810／65,645）。乾淨 Windows 初裝與條款接受／拒絕、既有標準安裝從 `1.0.13` 的 App 一鍵線上更新、五個平台官方 CLI 的真人登入與用量，以及完整 UI／無障礙驗收尚未以本版完成。詳見[實作與驗證清單](IMPLEMENTATION_CHECKLIST.md#目前正式版本)及 [CLI 實測表](docs/CLI_COMPATIBILITY.md#1014)。
+
+正式公開後已匿名下載並核對六件凍結成品、三份 sidecar 與 latest stable feed，production public trust 驗簽通過；這些結果不代替上述真人與安裝驗收。
 
 ## 支援平台
 
@@ -75,7 +77,7 @@
 | **一般安裝：Updater** | `AiUsageDashboard-Updater-<version>-win-x64.exe` | Updater 也能首次安裝。以一般使用者權限執行，安裝後從開始選單搜尋 **AI Usage**；保留 Updater 供日後更新。 |
 | **免安裝：完整 ZIP** | `AiUsageDashboard-<version>-win-x64.zip` | 完整解壓到新資料夾後，執行其中的 App；不要下載 GitHub 自動產生的 Source code ZIP。 |
 
-`1.0.13` 沿用的 Updater 檔名是 `AiUsageDashboard-Updater-1.0.12-win-x64.exe`；請依 Release 上的實際檔名下載。
+`1.0.14` 沿用的 Updater 檔名是 `AiUsageDashboard-Updater-1.0.12-win-x64.exe`；請依 Release 上的實際檔名下載。
 
 依[安裝與第一次啟動](使用說明.md#安裝與第一次啟動)操作、閱讀並接受適用條款，再新增帳號，透過服務的官方登入流程完成連接。
 

@@ -1,8 +1,8 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.13` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.13` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.14` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.14` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
-`1.0.14` 目前為背景用量更新修正版候選，尚未正式公開；本版實測狀態見 [1.0.14](#1014)。正式版本與下載資訊仍以 [README](../README.md#目前版本) 為準。
+本版調整背景用量更新與服務排隊；逐平台實測狀態見 [1.0.14](#1014)，正式版本與下載資訊見 [README](../README.md#目前版本)。
 
 ## 版本要求
 
@@ -27,7 +27,7 @@
 
 ### 1.0.14
 
-本表記錄 `1.0.14` 候選 source 提交時的真人 CLI 驗證狀態，只適用於本版候選成品。完整 source SHA、sequence 與成品身分由候選 freeze receipt 登錄。CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
+本表只對應 `1.0.14 / sequence 1028`（[source `15cf33aa20c029003e9fa43f282e63d34d71cb3b`](https://github.com/Sokaka/ai-usage-dashboard/commit/15cf33aa20c029003e9fa43f282e63d34d71cb3b)）的同一組正式公開成品。原始建置為 [run `36388741696` attempt 1](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36388741696/attempts/1)，Release ID `398013563`；本版沿用 `v1.0.13` 的 `1.0.12` Updater 原始 bytes。CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
 
 | 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
 | --- | --- | --- | --- |
@@ -37,7 +37,11 @@
 | Grok | 未以本版實測 | 未驗證 | 未驗證 |
 | Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
 
-本版調整背景排程，以及 Claude、Codex、Copilot 查詢期限的起算位置；受影響的真人背景更新、排隊、取消與失敗處理仍待驗證。一般 CI、合成回歸、安裝測試與歷史真人結果不代替本表實測。功能與驗證範圍見 [1.0.14 候選版本說明](releases/1.0.14.md)。
+本版調整背景排程，以及 Claude、Codex、Copilot 查詢期限的起算位置；受影響的真人背景更新、排隊、取消與失敗處理仍待驗證。[同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36387172532)及[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36388741696/attempts/1) attempt 1 均通過 Release 建置（0 warnings／0 errors）、完整測試（4,368 passed／0 failed／0 skipped）與 production line coverage 74.35%（48,810／65,645）；候選由同一 attempt 簽署、驗證及凍結六件成品。
+
+正式公開後已匿名下載六件原凍結成品，核對 Release／asset 身分、大小、SHA256、三份 sidecar 與 latest stable feed bytes，production public trust 驗簽通過。
+
+一般 CI、合成回歸、安裝測試、匿名下載與驗簽以及歷史真人結果，不代替本表的真人登入、用量或 App 一鍵線上更新實測。功能與驗證範圍見 [1.0.14 版本說明](releases/1.0.14.md)。
 
 ### 1.0.13
 

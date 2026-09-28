@@ -8,7 +8,7 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.13 / sequence 1027`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.14 / sequence 1028`。
 
 ### AGY official-only 與封裝縮減
 
@@ -88,28 +88,26 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 上述公開入口及 Copilot 相容性修正已在 `1.0.3` 凍結，真人 CLI 登入／用量驗收仍暫緩；歷史候選的成品與驗收只適用於各自 source，不代替目前正式版本的結果。
 
-## 1.0.14 候選版
-
-`1.0.14` 為背景用量更新修正版候選，尚未正式公開；目前正式版本仍為 `1.0.13`。功能範圍見 [1.0.14 候選版本說明](docs/releases/1.0.14.md)。
-
-- [x] Source 已實作各卡片背景排程、同卡片工作合併，以及停止與關機時的工作追蹤。
-- [x] Source 已調整服務排隊及查詢期限起算，保留身分、帳號隔離與用量安全檢查。
-- [x] Source 已加入較舊結果、帳號異動、晚到快取寫入及 reset／stale 邊界的回歸案例。
-
-以下為候選 source 提交時的待驗項目；後續結果按同一 source、run／attempt 與成品登錄在候選 Release 驗證紀錄中。
-
-- [ ] 同 source Windows CI：歷史隱私、restore、Release 建置、完整測試、coverage 與封裝 gates。
-- [ ] 候選 workflow：同一 attempt 完成建置、簽署、驗簽與六件成品凍結。
-- [ ] 獨立核對 freeze receipt、Release／asset 身分、大小、SHA256、三份 sidecar 與 feed 簽章。
-- [ ] 乾淨 Windows 初裝與條款接受／拒絕、`1.0.13` → `1.0.14` App 一鍵更新及適用的 Updater 交接。
-- [ ] 五平台真人登入、手動／背景用量、基準與最新正式 CLI、帳號隔離、取消與失敗處理；見 [1.0.14 CLI 表](docs/CLI_COMPATIBILITY.md#1014)。
-- [ ] 完整 UI／無障礙驗收，以及正式公開後的匿名下載與簽章 smoke。
-
-歷史版本與其他 source 的驗證結果保持原紀錄，不改列為本候選通過。
-
 ## 目前正式版本
 
-`1.0.13 / sequence 1027` 已沿用原凍結候選正式公開（[source `f98b36cc9efd78b6ae2a7cf38956241f1690aef8`](https://github.com/Sokaka/ai-usage-dashboard/commit/f98b36cc9efd78b6ae2a7cf38956241f1690aef8)）。[v1.0.13 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.13) 現為 stable／latest；Release ID `397172037`，六件成品資料見 [1.0.13 版本說明](docs/releases/1.0.13.md)。本版只調整浮窗選單的「自動排序規則」標示，沿用前一正式版已簽署的 `1.0.12` Updater 原始 bytes。
+`1.0.14 / sequence 1028` 已沿用原凍結候選正式公開（[source `15cf33aa20c029003e9fa43f282e63d34d71cb3b`](https://github.com/Sokaka/ai-usage-dashboard/commit/15cf33aa20c029003e9fa43f282e63d34d71cb3b)）。[v1.0.14 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.14) 現為 stable／latest；Release ID `398013563`，六件成品資料見 [1.0.14 版本說明](docs/releases/1.0.14.md)。本版調整各卡片背景刷新與服務排隊，沿用 `v1.0.13` 正式版中的 `1.0.12` Updater 原始 bytes。
+
+- [x] Source 已實作每 10 秒檢查卡片是否到期、最多四張卡片並行、同卡片工作合併，以及停止與關機時的工作追蹤。
+- [x] Source 已調整服務排隊及查詢期限起算，保留身分、帳號隔離與用量安全檢查；較舊結果、帳號異動、晚到快取寫入及 reset／stale 邊界已有回歸案例。
+- [x] 同 source 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36387172532) 通過 history privacy、restore、Release 建置（0 warnings／0 errors）、完整測試（4,368 passed／0 failed／0 skipped）、production line coverage 74.35%（48,810／65,645，門檻 70%）與封裝 gates。
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36388741696/attempts/1) attempt 1 通過相同測試數與覆蓋率，並在同一 attempt 建置、簽署、驗簽及凍結六件成品；SDK `8.0.425`、runtime `8.0.31`。
+- [x] 原始 freeze receipt、Release ID `398013563`、run `36388741696` attempt 1、source、sequence `1028`、六件 asset ID／大小／SHA256、三份 sidecar 與 production key feed 簽章已獨立核對；沿用 Updater 與 `v1.0.13` 的 `1.0.12` 原 bytes 相同。
+
+- [x] 正式公開後以無 token／cookie 的 client 匿名下載六件原凍結成品，前後核對同一 Release／latest／tag target、asset ID／名稱／大小／SHA256、三份 sidecar 與 latest stable feed `1928` bytes／SHA256 `83ce24d92c9f39ab0f418235d6d7e38a73364c5319e474fc89fdc744609024a0`；production public trust 驗簽通過，六件合計 `106806192` bytes。
+- [ ] 乾淨 Windows 初裝與條款接受／拒絕、`1.0.13` → `1.0.14` App 一鍵更新及適用的 Updater 交接。
+- [ ] 五平台真人登入、手動／背景用量、基準與最新正式 CLI、帳號隔離、取消與失敗處理；見 [1.0.14 CLI 表](docs/CLI_COMPATIBILITY.md#1014)。
+- [ ] 完整 UI／無障礙驗收。
+
+匿名下載與驗簽不代替安裝或 App 更新按鈕驗收；歷史版本與其他 source 的實機結果不改列為本版通過。
+
+### 1.0.13 歷史正式版
+
+`1.0.13 / sequence 1027` 已沿用原凍結候選正式公開（[source `f98b36cc9efd78b6ae2a7cf38956241f1690aef8`](https://github.com/Sokaka/ai-usage-dashboard/commit/f98b36cc9efd78b6ae2a7cf38956241f1690aef8)）。[v1.0.13 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.13) 公開時為 stable／latest；Release ID `397172037`，六件成品資料見 [1.0.13 版本說明](docs/releases/1.0.13.md)。本版只調整浮窗選單的「自動排序規則」標示，沿用前一正式版已簽署的 `1.0.12` Updater 原始 bytes。
 
 - [x] 同 source 的 [Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36232019499) 通過 Release 建置（0 warnings／0 errors）、完整測試（4,320 passed／0 failed／0 skipped）與 production line coverage 74.27%（48,540／65,360）。
 - [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36232360073/attempts/1) attempt 1 通過 Release 建置（0 warnings／0 errors）、完整測試（4,320 passed／0 failed／0 skipped）與 production line coverage 74.27%（48,540／65,360），並簽署、驗證及凍結六件成品。
