@@ -1,6 +1,7 @@
 #pragma warning disable GHCP001
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text.Json;
 
 using AiUsageDashboard.App;
@@ -848,6 +849,114 @@ public sealed class CopilotSdkQuotaIsolationTests
 	}
 
 	[Fact]
+	public async Task GetAccountQuotaAsync_RealTiming_WhenResolverWaitExceedsSdkDeadline_QueriesSuccessfully()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		using ManualResetEventSlim releaseResolver = new(false);
+		using CancellationTokenSource callerCancellation = new();
+		TaskCompletionSource<bool> resolverEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> resolverExited = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TimeSpan operationTimeout = TimeSpan.FromSeconds(1);
+		string executablePath = Path.Combine(temporaryDirectory.Path, "synthetic-copilot.exe");
+		File.WriteAllBytes(executablePath, [0x4d, 0x5a]);
+		using DisposalObservedFileStream executableStream = new(executablePath);
+		using WindowsOfficialCliExecutableLease executableLease =
+			WindowsOfficialCliExecutableLease.CreateProtected(executablePath, executableStream);
+		Guid accountId = Guid.NewGuid();
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_STAGING_WAIT", "staging-wait-user", 1008);
+		CopilotStoredCredential credential = CreateCredential(principal, "synthetic-staging-wait-token");
+		FakeCredentialStore credentialStore = new(new Dictionary<Guid, CopilotStoredCredential>
+		{
+			[accountId] = credential
+		});
+		FakeSdkClient sdkClient = new();
+		int factoryCalls = 0;
+		CopilotSdkQuotaClient client = new(
+			id => GetExpectedHome(temporaryDirectory.Path, id),
+			new CopilotAccountOperationGate(),
+			credentialStore,
+			new FakeGitHubUserClient(new Dictionary<string, CopilotAccountIdentity>
+			{
+				[credential.AccessToken] = principal
+			}),
+			() =>
+			{
+				resolverEntered.TrySetResult(true);
+				try
+				{
+					releaseResolver.Wait();
+					return executableLease;
+				}
+				finally
+				{
+					resolverExited.TrySetResult(true);
+				}
+			},
+			(_, _, resolvedExecutablePath) =>
+			{
+				Assert.Equal(executablePath, resolvedExecutablePath);
+				Assert.True(executableLease.IsProtected);
+				Interlocked.Increment(ref factoryCalls);
+				return sdkClient;
+			},
+			operationTimeout: operationTimeout);
+		Task<CopilotUsageReport> request = client.GetAccountQuotaAsync(
+			accountId,
+			credential.ProviderAccountIdentity,
+			callerCancellation.Token);
+
+		try
+		{
+			await resolverEntered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+			Stopwatch resolverWait = Stopwatch.StartNew();
+			await Task.Delay(operationTimeout + TimeSpan.FromMilliseconds(250));
+			resolverWait.Stop();
+			bool wasPendingAfterDeadline = !request.IsCompleted;
+			int factoryCallsWhileWaiting = Volatile.Read(ref factoryCalls);
+			int startsWhileWaiting = sdkClient.StartCount;
+			releaseResolver.Set();
+
+			CopilotUsageReport report = await request.WaitAsync(TimeSpan.FromSeconds(10));
+			await executableStream.Disposed.WaitAsync(TimeSpan.FromSeconds(10));
+			Assert.True(resolverWait.Elapsed > operationTimeout);
+			Assert.True(wasPendingAfterDeadline);
+			Assert.Equal(0, factoryCallsWhileWaiting);
+			Assert.Equal(0, startsWhileWaiting);
+			Assert.Equal(principal, report.Account);
+			Assert.NotEmpty(report.Quotas);
+			Assert.Equal(1, Volatile.Read(ref factoryCalls));
+			Assert.Equal(1, sdkClient.StartCount);
+			Assert.Same(credential, credentialStore.Read(accountId));
+			Assert.False(executableLease.IsProtected);
+			using FileStream writable = new(executablePath, FileMode.Open, FileAccess.Write, FileShare.None);
+		}
+		finally
+		{
+			callerCancellation.Cancel();
+			releaseResolver.Set();
+			try
+			{
+				try
+				{
+					await request.WaitAsync(TimeSpan.FromSeconds(10));
+				}
+				catch (OperationCanceledException) when (callerCancellation.IsCancellationRequested)
+				{
+					// 失敗路徑取消 request 後，仍觀察它並釋放 resolver fixture。
+				}
+			}
+			finally
+			{
+				if (resolverEntered.Task.IsCompleted)
+				{
+					await resolverExited.Task.WaitAsync(TimeSpan.FromSeconds(10));
+					await executableStream.Disposed.WaitAsync(TimeSpan.FromSeconds(10));
+				}
+			}
+		}
+	}
+
+	[Fact]
 	public async Task GetAccountQuotaAsync_WhenResolverBlocks_CancelsWithoutHoldingCallerAndReleasesLateLease()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
@@ -1070,11 +1179,82 @@ public sealed class CopilotSdkQuotaIsolationTests
 		}
 	}
 
+	[Fact]
+	public async Task ProbeTokenWithLifecycleAsync_RealTiming_WhenSdkStartupExceedsDeadline_CancelsAndReleasesLease()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		using WindowsOfficialCliExecutableLease executableLease = CreateExecutableLease(temporaryDirectory.Path);
+		using CancellationTokenSource callerCancellation = new();
+		TaskCompletionSource<bool> startEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> startCanceled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		CopilotAccountIdentity principal = CreatePrincipal("NODE_SDK_DEADLINE", "sdk-deadline-user", 1009);
+		int stopCalls = 0;
+		int disposeCalls = 0;
+		FakeSdkClient sdkClient = new(
+			startAction: async token =>
+			{
+				startEntered.TrySetResult(true);
+				try
+				{
+					await Task.Delay(Timeout.InfiniteTimeSpan, token);
+				}
+				finally
+				{
+					startCanceled.TrySetResult(token.IsCancellationRequested);
+				}
+			},
+			stopAction: () =>
+			{
+				Interlocked.Increment(ref stopCalls);
+				return Task.CompletedTask;
+			},
+			disposeAction: () =>
+			{
+				Interlocked.Increment(ref disposeCalls);
+				return ValueTask.CompletedTask;
+			});
+		CopilotSdkQuotaClient client = CreateRuntimeClient(
+			temporaryDirectory.Path,
+			principal,
+			() => executableLease,
+			(_, _, _) => sdkClient,
+			operationTimeout: TimeSpan.FromMilliseconds(500));
+		var probe = client.ProbeTokenWithLifecycleAsync(
+			Guid.NewGuid(),
+			"synthetic-runtime-token",
+			"github.com",
+			callerCancellation.Token);
+
+		try
+		{
+			await startEntered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+			var result = await probe.WaitAsync(TimeSpan.FromSeconds(10));
+			TimeoutException failure = Assert.IsType<TimeoutException>(result.Failure);
+			Assert.IsAssignableFrom<OperationCanceledException>(failure.InnerException);
+			Assert.Null(result.Report);
+			Assert.False(callerCancellation.IsCancellationRequested);
+			await result.LifecycleCompletion.WaitAsync(TimeSpan.FromSeconds(10));
+			Assert.True(await startCanceled.Task.WaitAsync(TimeSpan.FromSeconds(10)));
+			Assert.Equal(1, sdkClient.StartCount);
+			Assert.Equal(1, Volatile.Read(ref stopCalls));
+			Assert.Equal(1, Volatile.Read(ref disposeCalls));
+			Assert.False(executableLease.IsProtected);
+			using FileStream writable = new(executableLease.ExecutablePath, FileMode.Open, FileAccess.Write, FileShare.None);
+		}
+		finally
+		{
+			callerCancellation.Cancel();
+			var result = await probe.WaitAsync(TimeSpan.FromSeconds(10));
+			await result.LifecycleCompletion.WaitAsync(TimeSpan.FromSeconds(10));
+		}
+	}
+
 	private static CopilotSdkQuotaClient CreateRuntimeClient(
 		string testRoot,
 		CopilotAccountIdentity principal,
 		Func<WindowsOfficialCliExecutableLease?> executableResolver,
-		Func<string, string, string, ICopilotSdkClient> clientFactory)
+		Func<string, string, string, ICopilotSdkClient> clientFactory,
+		TimeSpan? operationTimeout = null)
 	{
 		return new CopilotSdkQuotaClient(
 			accountId => GetExpectedHome(testRoot, accountId),
@@ -1086,7 +1266,7 @@ public sealed class CopilotSdkQuotaIsolationTests
 			}),
 			executableResolver,
 			clientFactory,
-			operationTimeout: TimeSpan.FromSeconds(10),
+			operationTimeout: operationTimeout ?? TimeSpan.FromSeconds(10),
 			cleanupTimeout: TimeSpan.FromMilliseconds(30));
 	}
 

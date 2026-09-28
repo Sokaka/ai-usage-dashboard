@@ -1,5 +1,9 @@
+using System.Collections.Concurrent;
+
 using AiUsageDashboard.App.Providers;
 using AiUsageDashboard.Core.Models;
+using AiUsageDashboard.Core.Providers;
+using AiUsageDashboard.Core.Refreshing;
 
 namespace AiUsageDashboard.Tests;
 
@@ -13,11 +17,18 @@ public sealed class CodexUsageProviderTests
 
 	private sealed class FakeCodexUsagePoller : ICodexUsagePoller
 	{
+		private readonly ConcurrentDictionary<Guid, string> _expectedPublicBindingIdentities = new();
 		private readonly Func<Guid, CancellationToken, Task<CodexUsagePollResult>> _poll;
+		private int _callCount;
+		private int _rawCallCount;
+		private int _boundCallCount;
 
-		internal int CallCount { get; private set; }
-		internal int RawCallCount { get; private set; }
-		internal int BoundCallCount { get; private set; }
+		internal int CallCount => Volatile.Read(ref _callCount);
+		internal int RawCallCount => Volatile.Read(ref _rawCallCount);
+		internal int BoundCallCount => Volatile.Read(ref _boundCallCount);
+
+		internal IReadOnlyDictionary<Guid, string> ExpectedPublicBindingIdentities =>
+			_expectedPublicBindingIdentities;
 
 		internal string? LastExpectedPublicBindingIdentity { get; private set; }
 
@@ -31,8 +42,8 @@ public sealed class CodexUsageProviderTests
 			Guid accountId,
 			CancellationToken cancellationToken = default)
 		{
-			CallCount++;
-			RawCallCount++;
+			Interlocked.Increment(ref _callCount);
+			Interlocked.Increment(ref _rawCallCount);
 			return await _poll(accountId, cancellationToken);
 		}
 
@@ -41,16 +52,19 @@ public sealed class CodexUsageProviderTests
 			string expectedPublicBindingIdentity,
 			CancellationToken cancellationToken = default)
 		{
-			CallCount++;
-			BoundCallCount++;
+			Interlocked.Increment(ref _callCount);
+			Interlocked.Increment(ref _boundCallCount);
 			LastExpectedPublicBindingIdentity = expectedPublicBindingIdentity;
+			_expectedPublicBindingIdentities[accountId] = expectedPublicBindingIdentity;
 			CodexUsagePollResult result = await _poll(
 				accountId,
 				cancellationToken);
 			return result with
 			{
 				PublicBindingIdentity = expectedPublicBindingIdentity,
-				WorkspaceId = ValidWorkspaceId
+				WorkspaceId = result.WorkspaceId == Guid.Empty
+					? ValidWorkspaceId
+					: result.WorkspaceId
 			};
 		}
 	}
@@ -67,6 +81,222 @@ public sealed class CodexUsageProviderTests
 		public override DateTimeOffset GetUtcNow()
 		{
 			return _utcNow;
+		}
+	}
+
+	private sealed class FakeOtherUsageProvider : IUsageProvider
+	{
+		private readonly DateTimeOffset _observedAt;
+		private int _callCount;
+
+		public ProviderKind Provider => ProviderKind.Copilot;
+
+		public TimeSpan MinimumRefreshInterval => TimeSpan.Zero;
+
+		internal int CallCount => Volatile.Read(ref _callCount);
+
+		internal FakeOtherUsageProvider(DateTimeOffset observedAt)
+		{
+			_observedAt = observedAt;
+		}
+
+		public Task<UsageSnapshot> GetUsageAsync(
+			AccountProfile account,
+			CancellationToken cancellationToken)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			Interlocked.Increment(ref _callCount);
+			return Task.FromResult(new UsageSnapshot(
+				account,
+				new[] { new UsageMetric("copilot", "Copilot", 25, "25%") },
+				SourceTrust.Official,
+				SnapshotStatus.Ready,
+				_observedAt));
+		}
+	}
+
+	[Theory]
+	[InlineData(ValidPublicBindingIdentity, true)]
+	[InlineData("abcdefabcdefabcdefabcdefabcdefab", true)]
+	[InlineData(ValidAccountIdentity, false)]
+	[InlineData(null, false)]
+	[InlineData("", false)]
+	[InlineData("   ", false)]
+	[InlineData("not-a-workspace-binding", false)]
+	[InlineData("00000000000000000000000000000000", false)]
+	[InlineData("11111111-1111-1111-1111-111111111111", false)]
+	[InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false)]
+	public void RequiresSerializedRefresh_OnlyUsesCanonicalWorkspaceBinding(
+		string? providerAccountIdentity,
+		bool expected)
+	{
+		FakeCodexUsagePoller poller = new((_, _) =>
+			throw new InvalidOperationException("Admission must not poll Codex."));
+		IUsageProviderRefreshAdmission provider = new CodexUsageProvider(poller);
+		AccountProfile account = CreateAccount() with
+		{
+			ProviderAccountIdentity = providerAccountIdentity
+		};
+
+		Assert.Equal(expected, provider.RequiresSerializedRefresh(account));
+		Assert.Equal(0, poller.CallCount);
+	}
+
+	[Fact]
+	public void RequiresSerializedRefresh_WhenAccountIsNull_ThrowsArgumentNullException()
+	{
+		FakeCodexUsagePoller poller = new((_, _) =>
+			throw new InvalidOperationException("Admission must not poll Codex."));
+		IUsageProviderRefreshAdmission provider = new CodexUsageProvider(poller);
+
+		ArgumentNullException exception = Assert.Throws<ArgumentNullException>(
+			() => provider.RequiresSerializedRefresh(null!));
+
+		Assert.Equal("account", exception.ParamName);
+	}
+
+	[Theory]
+	[InlineData(2)]
+	[InlineData(4)]
+	public async Task RefreshAsync_WhenBoundCodexAccountsQueue_CompletesOtherProviderAndEveryCard(
+		int maximumConcurrentRefreshes)
+	{
+		DateTimeOffset now = new(2026, 7, 15, 2, 30, 0, TimeSpan.Zero);
+		FakeTimeProvider timeProvider = new(now);
+		var fixtures = Enumerable.Range(0, 12)
+			.Select(index => (
+				Account: CreateAccount() with
+				{
+					DisplayName = $"Codex {index + 1}",
+					ProviderAccountIdentity = Guid.NewGuid().ToString("N")
+				},
+				WorkspaceId: Guid.NewGuid(),
+				DisplayIdentity: $"codex-{index}@example.com",
+				PrimaryUsedPercent: index + 1,
+				SecondaryUsedPercent: index + 31,
+				PrimaryReset: now.AddMinutes((index + 1) * 5)))
+			.ToArray();
+		var fixturesByAccount = fixtures.ToDictionary(fixture => fixture.Account.Id);
+		TaskCompletionSource<bool> firstPollStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> releaseFirstPoll = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		object pollingCountGate = new();
+		int activeCodexPolls = 0;
+		int peakCodexPolls = 0;
+		FakeCodexUsagePoller poller = new(async (accountId, cancellationToken) =>
+		{
+			lock (pollingCountGate)
+			{
+				activeCodexPolls++;
+				peakCodexPolls = Math.Max(peakCodexPolls, activeCodexPolls);
+			}
+
+			try
+			{
+				if (accountId == fixtures[0].Account.Id)
+				{
+					firstPollStarted.TrySetResult(true);
+					await releaseFirstPoll.Task.WaitAsync(cancellationToken);
+				}
+
+				var fixture = fixturesByAccount[accountId];
+				return new CodexUsagePollResult(
+					"plus",
+					new[]
+					{
+						new CodexRateLimitBucket(
+							"codex",
+							"Codex",
+							new CodexRateLimitWindow(
+								fixture.PrimaryUsedPercent, 300, fixture.PrimaryReset),
+							new CodexRateLimitWindow(
+								fixture.SecondaryUsedPercent, 10080, now.AddDays(1)))
+					},
+					null,
+					now,
+					fixture.DisplayIdentity,
+					PublicBindingIdentity: fixture.Account.ProviderAccountIdentity,
+					WorkspaceId: fixture.WorkspaceId);
+			}
+			finally
+			{
+				lock (pollingCountGate)
+				{
+					activeCodexPolls--;
+				}
+			}
+		});
+		CodexUsageProvider codexProvider = new(poller, timeProvider);
+		FakeOtherUsageProvider otherProvider = new(now);
+		UsageRefreshCoordinator coordinator = new(
+			new UsageProviderRegistry(new IUsageProvider[] { codexProvider, otherProvider }),
+			timeProvider,
+			maximumConcurrentRefreshes);
+		List<Task<UsageSnapshot>> refreshes = new();
+
+		try
+		{
+			foreach (var fixture in fixtures)
+			{
+				refreshes.Add(coordinator.RefreshAsync(fixture.Account));
+			}
+			await firstPollStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+			Assert.Equal(1, poller.BoundCallCount);
+			Assert.All(refreshes, refresh => Assert.False(refresh.IsCompleted));
+			AccountProfile otherAccount = new(Guid.NewGuid(), ProviderKind.Copilot, "Copilot");
+			Task<UsageSnapshot> otherRefresh = coordinator.RefreshAsync(otherAccount);
+			refreshes.Add(otherRefresh);
+			UsageSnapshot otherSnapshot = await otherRefresh.WaitAsync(TimeSpan.FromSeconds(5));
+
+			Assert.Equal(otherAccount.Id, otherSnapshot.Account.Id);
+			Assert.Equal(SnapshotStatus.Ready, otherSnapshot.Status);
+			Assert.Equal(1, otherProvider.CallCount);
+			Assert.Equal(1, poller.BoundCallCount);
+			releaseFirstPoll.TrySetResult(true);
+			UsageSnapshot[] snapshots = await Task.WhenAll(refreshes)
+				.WaitAsync(TimeSpan.FromSeconds(5));
+
+			for (int index = 0; index < fixtures.Length; index++)
+			{
+				var fixture = fixtures[index];
+				UsageSnapshot snapshot = snapshots[index];
+				Assert.Equal(fixture.Account.Id, snapshot.Account.Id);
+				Assert.Equal(SnapshotStatus.Ready, snapshot.Status);
+				Assert.Equal(SourceTrust.OfficialExperimental, snapshot.SourceTrust);
+				Assert.Equal(fixture.Account.ProviderAccountIdentity, snapshot.ProviderAccountIdentity);
+				Assert.Equal(fixture.DisplayIdentity, snapshot.ProviderAccountDisplayIdentity);
+				Assert.Equal(SubscriptionVerificationState.Verified, snapshot.SubscriptionVerificationState);
+				Assert.Null(snapshot.Error);
+				Assert.Equal(2, snapshot.Metrics.Count);
+				UsageMetric primary = Assert.Single(snapshot.Metrics,
+					metric => metric.Key == "codex:codex:primary");
+				UsageMetric secondary = Assert.Single(snapshot.Metrics,
+					metric => metric.Key == "codex:codex:secondary");
+				Assert.Equal((double)fixture.PrimaryUsedPercent, primary.UsedPercent);
+				Assert.Equal(fixture.PrimaryReset, primary.ResetsAt);
+				Assert.Equal((double)fixture.SecondaryUsedPercent, secondary.UsedPercent);
+				Assert.Equal(now.AddDays(1), secondary.ResetsAt);
+				Assert.Equal(fixture.Account.ProviderAccountIdentity,
+					poller.ExpectedPublicBindingIdentities[fixture.Account.Id]);
+			}
+
+			Assert.Equal(fixtures.Length, poller.CallCount);
+			Assert.Equal(fixtures.Length, poller.BoundCallCount);
+			Assert.Equal(fixtures.Length, poller.ExpectedPublicBindingIdentities.Count);
+			Assert.Equal(0, poller.RawCallCount);
+			Assert.Equal(1, peakCodexPolls);
+			Assert.Equal(0, activeCodexPolls);
+		}
+		finally
+		{
+			releaseFirstPoll.TrySetResult(true);
+			foreach (var fixture in fixtures)
+			{
+				coordinator.Invalidate(fixture.Account.Id);
+			}
+			await Task.WhenAll(refreshes).WaitAsync(TimeSpan.FromSeconds(5));
 		}
 	}
 

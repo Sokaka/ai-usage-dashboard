@@ -9,7 +9,9 @@ using AiUsageDashboard.Core.Providers;
 
 namespace AiUsageDashboard.App.Providers;
 
-internal sealed class ClaudeUsageProvider : IUsageProvider, IUsageProviderInvalidator
+internal sealed class ClaudeUsageProvider : IUsageProvider,
+	IUsageProviderInvalidator,
+	IUsageProviderRefreshAdmission
 {
 	private sealed class AccountPollingState
 	{
@@ -70,6 +72,12 @@ internal sealed class ClaudeUsageProvider : IUsageProvider, IUsageProviderInvali
 				"Claude fallback provider 必須屬於 Claude。",
 				nameof(fallbackProvider));
 		}
+	}
+
+	public bool RequiresSerializedRefresh(AccountProfile account)
+	{
+		ArgumentNullException.ThrowIfNull(account);
+		return (_bindingStore is not null) && (account.HasAcceptedClaudeQuotaRisk);
 	}
 
 	internal async Task CompleteAccountLoginAsync(

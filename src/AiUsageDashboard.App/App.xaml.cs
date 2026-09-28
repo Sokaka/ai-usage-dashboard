@@ -136,7 +136,7 @@ public partial class App : System.Windows.Application
 	private HttpClient? _updateHttpClient;
 	private bool _hasReportedShellPreferencesSaveFailure;
 	private bool _isDashboardPreferencesRecoveryRequested;
-	private bool _isPeriodicRefreshRunning;
+	private bool _isPostStartupRecoveryRunning;
 	private bool _isRestoringShellPreferences = true;
 	private bool _isUpdateAutomaticCheckRunning;
 	private bool _isUpdateAutomaticNoticePresentationRunning;
@@ -896,12 +896,12 @@ public partial class App : System.Windows.Application
 		AccountRuntimeStatePurger accountRuntimeStatePurger,
 		IGrokStartupRecovery grokStartupRecovery)
 	{
-		if (_isPeriodicRefreshRunning || IsQuitting)
+		if (_isPostStartupRecoveryRunning || IsQuitting)
 		{
 			return;
 		}
 
-		_isPeriodicRefreshRunning = true;
+		_isPostStartupRecoveryRunning = true;
 		_ = Dispatcher.BeginInvoke(
 			DispatcherPriority.Background,
 			new Action(() =>
@@ -909,7 +909,7 @@ public partial class App : System.Windows.Application
 				if (IsQuitting ||
 					_startupRecoverySource.IsCancellationRequested)
 				{
-					_isPeriodicRefreshRunning = false;
+					_isPostStartupRecoveryRunning = false;
 					return;
 				}
 
@@ -967,7 +967,7 @@ public partial class App : System.Windows.Application
 			}
 
 			cancellationToken.ThrowIfCancellationRequested();
-			await viewModel.RefreshUsageInBackgroundAsync(cancellationToken);
+			viewModel.ScheduleUsageRefreshInBackground();
 		}
 		catch (OperationCanceledException) when (
 			cancellationToken.IsCancellationRequested)
@@ -984,7 +984,7 @@ public partial class App : System.Windows.Application
 		}
 		finally
 		{
-			_isPeriodicRefreshRunning = false;
+			_isPostStartupRecoveryRunning = false;
 		}
 	}
 
@@ -4384,20 +4384,14 @@ public partial class App : System.Windows.Application
 
 	private void BeginPeriodicRefresh(DashboardViewModel viewModel)
 	{
-		if (_isPeriodicRefreshRunning || IsQuitting)
+		if (_isPostStartupRecoveryRunning || IsQuitting)
 		{
 			return;
 		}
 
-		_isPeriodicRefreshRunning = true;
-		_ = CompletePeriodicRefreshAsync(viewModel);
-	}
-
-	private async Task CompletePeriodicRefreshAsync(DashboardViewModel viewModel)
-	{
 		try
 		{
-			await viewModel.RefreshUsageInBackgroundAsync();
+			viewModel.ScheduleUsageRefreshInBackground();
 		}
 		catch (Exception exception)
 		{
@@ -4406,10 +4400,6 @@ public partial class App : System.Windows.Application
 				"stage=outer-boundary;result=failed",
 				exception);
 			viewModel.ReportRefreshFailure();
-		}
-		finally
-		{
-			_isPeriodicRefreshRunning = false;
 		}
 	}
 }

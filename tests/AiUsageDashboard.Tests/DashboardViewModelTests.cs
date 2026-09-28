@@ -1,3 +1,6 @@
+using System.Collections.Concurrent;
+using System.ComponentModel;
+
 using AiUsageDashboard.AntigravitySpike;
 using AiUsageDashboard.App;
 using AiUsageDashboard.App.Persistence;
@@ -1321,6 +1324,69 @@ public sealed class DashboardViewModelTests
 		public void Invalidate(Guid accountId)
 		{
 			InvalidatedAccountIds.Add(accountId);
+		}
+	}
+
+	private sealed class ControlledPeriodicUsageProvider : IUsageProvider
+	{
+		private readonly Func<AccountProfile, CancellationToken, Task<UsageSnapshot>>
+			_handler;
+
+		public ProviderKind Provider { get; }
+
+		public TimeSpan MinimumRefreshInterval => TimeSpan.FromMinutes(1);
+
+		internal ControlledPeriodicUsageProvider(
+			ProviderKind provider,
+			Func<AccountProfile, CancellationToken, Task<UsageSnapshot>> handler)
+		{
+			Provider = provider;
+			_handler = handler;
+		}
+
+		public Task<UsageSnapshot> GetUsageAsync(
+			AccountProfile account,
+			CancellationToken cancellationToken)
+		{
+			return _handler(account, cancellationToken);
+		}
+	}
+
+	private sealed class UsageDisplayObservation : IDisposable
+	{
+		private readonly AccountUsageViewModel _account;
+		private readonly TaskCompletionSource _completion = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		private readonly Func<AccountUsageViewModel, bool> _isExpectedDisplay;
+
+		internal Task Completion => _completion.Task;
+
+		internal UsageDisplayObservation(
+			AccountUsageViewModel account,
+			Func<AccountUsageViewModel, bool> isExpectedDisplay)
+		{
+			_account = account;
+			_isExpectedDisplay = isExpectedDisplay;
+			_account.PropertyChanged += OnPropertyChanged;
+			CheckDisplay();
+		}
+
+		public void Dispose()
+		{
+			_account.PropertyChanged -= OnPropertyChanged;
+		}
+
+		private void OnPropertyChanged(object? sender, PropertyChangedEventArgs args)
+		{
+			CheckDisplay();
+		}
+
+		private void CheckDisplay()
+		{
+			if (_isExpectedDisplay(_account))
+			{
+				_completion.TrySetResult();
+			}
 		}
 	}
 
@@ -16430,6 +16496,760 @@ public sealed class DashboardViewModelTests
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			() => viewModel.ToggleUsageDisplayModeAsync(timeoutSource.Token));
+	}
+
+	[Fact]
+	public async Task ScheduleUsageRefreshInBackground_WhenAnotherCardIsStillQuerying_RefreshesDueCardAndKeepsNewerResult()
+	{
+		ManualRefreshTimeProvider timeProvider = new(
+			new DateTimeOffset(2026, 9, 28, 0, 0, 0, TimeSpan.Zero));
+		AccountProfile slowProfile = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Slow Codex",
+			ProviderAccountIdentity: Guid.NewGuid().ToString("N"));
+		AccountProfile fastProfile = new(
+			Guid.NewGuid(), ProviderKind.Codex, "Fast Codex",
+			ProviderAccountIdentity: Guid.NewGuid().ToString("N"));
+		TaskCompletionSource slowStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource releaseSlow = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		ConcurrentDictionary<Guid, int> requestCounts = new();
+		ControlledPeriodicUsageProvider provider = new(
+			ProviderKind.Codex,
+			async (account, cancellationToken) =>
+			{
+				int callCount = requestCounts.AddOrUpdate(account.Id, 1, (_, count) => count + 1);
+				if (account.Id == slowProfile.Id)
+				{
+					slowStarted.TrySetResult();
+					await releaseSlow.Task.WaitAsync(cancellationToken);
+				}
+				return CreateReadySnapshot(account, callCount * 21) with
+				{
+					FetchedAt = timeProvider.GetUtcNow(),
+					ObservedAt = timeProvider.GetUtcNow()
+				};
+			});
+		UsageRefreshCoordinator coordinator = new(
+			new UsageProviderRegistry([provider]), timeProvider);
+		using DashboardViewModel viewModel = new(
+			new FakeAccountProfileStore(slowProfile, fastProfile), coordinator,
+			usageSnapshotStore: null, dashboardPreferencesStore: null,
+			accountRuntimeStatePurger: null, timeProvider: timeProvider);
+		await viewModel.InitializeAsync();
+		AccountUsageViewModel fastAccount = viewModel.Accounts.Single(
+			account => account.Id == fastProfile.Id);
+		using UsageDisplayObservation firstDisplay = new(fastAccount,
+			account => (account.StatusKind == AccountStatusKind.Ready) &&
+				(account.UsedPercent == 21));
+		using UsageDisplayObservation secondDisplay = new(fastAccount,
+			account => (account.StatusKind == AccountStatusKind.Ready) &&
+				(account.UsedPercent == 42));
+		Task firstBatch = viewModel.RefreshUsageAsync();
+		try
+		{
+			await Task.WhenAll(slowStarted.Task, firstDisplay.Completion)
+				.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.False(firstBatch.IsCompleted);
+			Assert.Equal(TimeSpan.FromMinutes(1), coordinator.GetRemainingCooldown(fastProfile));
+
+			timeProvider.Advance(TimeSpan.FromMinutes(1));
+			viewModel.ScheduleUsageRefreshInBackground();
+			await secondDisplay.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+
+			Assert.False(firstBatch.IsCompleted);
+			Assert.False(releaseSlow.Task.IsCompleted);
+			Assert.Equal(1, requestCounts[slowProfile.Id]);
+			Assert.Equal(2, requestCounts[fastProfile.Id]);
+			for (int tick = 0; tick < 3; tick++)
+			{
+				timeProvider.Advance(TimeSpan.FromSeconds(10));
+				viewModel.ScheduleUsageRefreshInBackground();
+			}
+			Assert.Equal(TimeSpan.FromSeconds(30), coordinator.GetRemainingCooldown(fastProfile));
+			Assert.Equal(1, requestCounts[slowProfile.Id]);
+			Assert.Equal(2, requestCounts[fastProfile.Id]);
+			releaseSlow.TrySetResult();
+			await firstBatch.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+			Assert.Equal(42, fastAccount.UsedPercent);
+			Assert.Equal(AccountStatusKind.Ready, fastAccount.StatusKind);
+			Assert.Equal(fastProfile.ProviderAccountIdentity,
+				fastAccount.CurrentSnapshot?.ProviderAccountIdentity);
+			Assert.Equal(2, requestCounts[fastProfile.Id]);
+		}
+		finally
+		{
+			releaseSlow.TrySetResult();
+			viewModel.StopRefreshing();
+			await firstBatch.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+		}
+	}
+
+	[Fact]
+	public async Task ScheduleUsageRefreshInBackground_WithManyMixedCards_UsesFourSlotsAndEventuallyDisplaysEveryCard()
+	{
+		ManualRefreshTimeProvider timeProvider = new(
+			new DateTimeOffset(2026, 9, 28, 0, 0, 0, TimeSpan.Zero));
+		ProviderKind[] providerKinds =
+			[ProviderKind.Claude, ProviderKind.Codex, ProviderKind.Copilot, ProviderKind.Grok];
+		AccountProfile[] profiles = Enumerable.Range(0, 12)
+			.Select(index => new AccountProfile(
+				Guid.NewGuid(), providerKinds[index % providerKinds.Length], $"Mixed {index}",
+				ProviderAccountIdentity: providerKinds[index % providerKinds.Length] == ProviderKind.Copilot
+					? CopilotAccountIdentityRules.Create(new CopilotAccountIdentity(
+						"github.com", $"synthetic-node-{index}", index + 1, $"synthetic-{index}"))
+					: Guid.NewGuid().ToString("N"),
+				HasAcceptedClaudeQuotaRisk: true))
+			.ToArray();
+		Dictionary<Guid, int> expectedUsage = profiles
+			.Select((account, index) => (account.Id, UsedPercent: index + 11))
+			.ToDictionary(item => item.Id, item => item.UsedPercent);
+		TaskCompletionSource fourQueriesStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource releaseQueries = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		ConcurrentDictionary<Guid, int> requestCounts = new();
+		object countGate = new();
+		int activeQueries = 0;
+		int peakQueries = 0;
+		ControlledPeriodicUsageProvider[] providers = providerKinds
+			.Select(kind => new ControlledPeriodicUsageProvider(kind,
+				async (account, cancellationToken) =>
+				{
+					requestCounts.AddOrUpdate(account.Id, 1, (_, count) => count + 1);
+					lock (countGate)
+					{
+						activeQueries++;
+						peakQueries = Math.Max(peakQueries, activeQueries);
+						if (activeQueries == 4)
+						{
+							fourQueriesStarted.TrySetResult();
+						}
+					}
+					try
+					{
+						await releaseQueries.Task.WaitAsync(cancellationToken);
+						return CreateReadySnapshot(account, expectedUsage[account.Id]) with
+						{
+							FetchedAt = timeProvider.GetUtcNow(),
+							ObservedAt = timeProvider.GetUtcNow()
+						};
+					}
+					finally
+					{
+						lock (countGate)
+						{
+							activeQueries--;
+						}
+					}
+				}))
+			.ToArray();
+		UsageRefreshCoordinator coordinator = new(
+			new UsageProviderRegistry(providers), timeProvider);
+		using DashboardViewModel viewModel = new(
+			new FakeAccountProfileStore(profiles), coordinator,
+			usageSnapshotStore: null, dashboardPreferencesStore: null,
+			accountRuntimeStatePurger: null, timeProvider: timeProvider);
+		await viewModel.InitializeAsync();
+		UsageDisplayObservation[] displays = viewModel.Accounts.Select(account =>
+			new UsageDisplayObservation(account, candidate =>
+				(candidate.StatusKind == AccountStatusKind.Ready) &&
+				(candidate.UsedPercent == expectedUsage[candidate.Id])))
+			.ToArray();
+		try
+		{
+			viewModel.ScheduleUsageRefreshInBackground();
+			await fourQueriesStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.Equal(4, requestCounts.Count);
+			Assert.All(displays, display => Assert.False(display.Completion.IsCompleted));
+			for (int tick = 0; tick < 3; tick++)
+			{
+				timeProvider.Advance(TimeSpan.FromSeconds(10));
+				viewModel.ScheduleUsageRefreshInBackground();
+			}
+			Assert.Equal(4, requestCounts.Count);
+			releaseQueries.TrySetResult();
+			await Task.WhenAll(displays.Select(display => display.Completion))
+				.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+
+			Assert.Equal(4, peakQueries);
+			Assert.Equal(0, activeQueries);
+			Assert.Equal(profiles.Length, requestCounts.Count);
+			Assert.All(profiles, profile => Assert.Equal(1, requestCounts[profile.Id]));
+			Assert.All(viewModel.Accounts, account =>
+			{
+				Assert.Equal(expectedUsage[account.Id], account.UsedPercent);
+				Assert.Equal(account.Profile.ProviderAccountIdentity,
+					account.CurrentSnapshot?.ProviderAccountIdentity);
+				Assert.Equal(account.Id, account.CurrentSnapshot?.Account.Id);
+			});
+		}
+		finally
+		{
+			try
+			{
+				releaseQueries.TrySetResult();
+				viewModel.StopRefreshing();
+				Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+			}
+			finally
+			{
+				foreach (UsageDisplayObservation display in displays)
+				{
+					display.Dispose();
+				}
+			}
+		}
+	}
+
+	[Fact]
+	public async Task ScheduleUsageRefreshInBackground_AcrossTicks_CoalescesWorkersAndDrainsEachOne()
+	{
+		AccountProfile[] profiles = Enumerable.Range(0, 3).Select(index => new AccountProfile(
+			Guid.NewGuid(), ProviderKind.Codex, $"Codex {index}",
+			ProviderAccountIdentity: Guid.NewGuid().ToString("N"))).ToArray();
+		Dictionary<Guid, TaskCompletionSource<UsageSnapshot>> results = profiles
+			.ToDictionary(account => account.Id, _ => new TaskCompletionSource<UsageSnapshot>(
+				TaskCreationOptions.RunContinuationsAsynchronously));
+		TaskCompletionSource allStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		ConcurrentDictionary<Guid, int> requestCounts = new();
+		FakeUsageRefreshCoordinator coordinator = new()
+		{
+			RefreshHandler = account =>
+			{
+				requestCounts.AddOrUpdate(account.Id, 1, (_, count) => count + 1);
+				if (requestCounts.Count == profiles.Length)
+				{
+					allStarted.TrySetResult();
+				}
+				return results[account.Id].Task;
+			}
+		};
+		using DashboardViewModel viewModel = new(new FakeAccountProfileStore(profiles), coordinator);
+		await viewModel.InitializeAsync();
+		Task<bool>? drainTask = null;
+		try
+		{
+			viewModel.ScheduleUsageRefreshInBackground();
+			await allStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			for (int tick = 0; tick < 20; tick++)
+			{
+				viewModel.ScheduleUsageRefreshInBackground();
+			}
+			Assert.All(profiles, profile => Assert.Equal(1, requestCounts[profile.Id]));
+			drainTask = viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5));
+			Assert.False(drainTask.IsCompleted);
+			Assert.Empty(coordinator.InvalidatedAccountIds);
+			results[profiles[0].Id].TrySetResult(CreateReadySnapshot(profiles[0]));
+			viewModel.ScheduleUsageRefreshInBackground();
+			Assert.False(drainTask.IsCompleted);
+			Assert.All(profiles, profile => Assert.Equal(1, requestCounts[profile.Id]));
+			foreach (AccountProfile profile in profiles.Skip(1))
+			{
+				results[profile.Id].TrySetResult(CreateReadySnapshot(profile));
+			}
+			Assert.True(await drainTask.WaitAsync(TimeSpan.FromSeconds(5)));
+			Assert.Equal(profiles.Select(profile => profile.Id).Order(),
+				coordinator.InvalidatedAccountIds.Order());
+			Assert.False(viewModel.IsRefreshing);
+		}
+		finally
+		{
+			foreach (AccountProfile profile in profiles)
+			{
+				results[profile.Id].TrySetResult(CreateReadySnapshot(profile));
+			}
+			if (drainTask is not null)
+			{
+				await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
+			}
+			viewModel.StopRefreshing();
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+		}
+	}
+
+	[Fact]
+	public async Task ScheduleUsageRefreshInBackground_WithUnboundCardsAndLegacyAgy_PreservesIdentityIsolation()
+	{
+		const string SharedClaudeIdentity = "shared-periodic@example.invalid";
+		AccountProfile firstClaude = new(Guid.NewGuid(), ProviderKind.Claude, "Claude 1",
+			HasAcceptedClaudeQuotaRisk: true);
+		AccountProfile secondClaude = new(Guid.NewGuid(), ProviderKind.Claude, "Claude 2",
+			HasAcceptedClaudeQuotaRisk: true);
+		AccountProfile primaryAgy = new(Guid.NewGuid(), ProviderKind.Antigravity, "Primary AGY",
+			ProviderAccountIdentity: AntigravityOfficialPrintUsageClient.LocalSessionIdentity);
+		AccountProfile inactiveAgy = new(Guid.NewGuid(), ProviderKind.Antigravity, "Legacy AGY",
+			ProviderAccountIdentity: "inactive-periodic@example.invalid");
+		AccountProfile codex = new(Guid.NewGuid(), ProviderKind.Codex, "Bound Codex",
+			ProviderAccountIdentity: Guid.NewGuid().ToString("N"));
+		TaskCompletionSource firstClaudeStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource secondClaudeStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<UsageSnapshot> firstClaudeResult = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		ConcurrentDictionary<Guid, int> requestCounts = new();
+		FakeUsageRefreshCoordinator coordinator = new()
+		{
+			RefreshHandler = account =>
+			{
+				requestCounts.AddOrUpdate(account.Id, 1, (_, count) => count + 1);
+				if (account.Id == firstClaude.Id)
+				{
+					firstClaudeStarted.TrySetResult();
+					return firstClaudeResult.Task;
+				}
+				if (account.Id == secondClaude.Id)
+				{
+					secondClaudeStarted.TrySetResult();
+					return Task.FromResult(CreateReadySnapshot(account, 72) with
+					{
+						ProviderAccountIdentity = SharedClaudeIdentity
+					});
+				}
+				return Task.FromResult(account.Provider == ProviderKind.Antigravity
+					? CreateReadyAntigravitySnapshot(account, DateTimeOffset.UtcNow)
+					: CreateReadySnapshot(account, 31));
+			}
+		};
+		FakeAccountProfileStore profileStore = new(firstClaude, secondClaude, primaryAgy, inactiveAgy, codex);
+		using DashboardViewModel viewModel = new(profileStore, coordinator);
+		await viewModel.InitializeAsync();
+		AccountUsageViewModel firstCard = viewModel.Accounts.Single(account => account.Id == firstClaude.Id);
+		AccountUsageViewModel secondCard = viewModel.Accounts.Single(account => account.Id == secondClaude.Id);
+		using UsageDisplayObservation secondReady = new(secondCard,
+			account => account.StatusKind == AccountStatusKind.Ready);
+		using UsageDisplayObservation firstReady = new(firstCard,
+			account => account.StatusKind == AccountStatusKind.Ready);
+		using UsageDisplayObservation secondRejected = new(secondCard,
+			account => account.StatusKind == AccountStatusKind.Error);
+		using UsageDisplayObservation codexReady = new(
+			viewModel.Accounts.Single(account => account.Id == codex.Id),
+			account => account.StatusKind == AccountStatusKind.Ready);
+		using UsageDisplayObservation agyReady = new(
+			viewModel.Accounts.Single(account => account.Id == primaryAgy.Id),
+			account => account.StatusKind == AccountStatusKind.Ready);
+		try
+		{
+			viewModel.ScheduleUsageRefreshInBackground();
+			await Task.WhenAll(firstClaudeStarted.Task, secondClaudeStarted.Task,
+				codexReady.Completion, agyReady.Completion).WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.False(secondReady.Completion.IsCompleted);
+			Assert.False(firstClaudeResult.Task.IsCompleted);
+			Assert.False(requestCounts.ContainsKey(inactiveAgy.Id));
+			for (int tick = 0; tick < 3; tick++)
+			{
+				viewModel.ScheduleUsageRefreshInBackground();
+			}
+			Assert.Equal(1, requestCounts[firstClaude.Id]);
+			Assert.Equal(1, requestCounts[secondClaude.Id]);
+			Assert.False(secondReady.Completion.IsCompleted);
+			firstClaudeResult.TrySetResult(CreateReadySnapshot(firstClaude, 18) with
+			{
+				ProviderAccountIdentity = SharedClaudeIdentity
+			});
+			await Task.WhenAll(firstReady.Completion, secondRejected.Completion)
+				.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+
+			Assert.False(secondReady.Completion.IsCompleted);
+			Assert.Equal(SharedClaudeIdentity, firstCard.Profile.ProviderAccountIdentity);
+			Assert.Null(secondCard.Profile.ProviderAccountIdentity);
+			Assert.Empty(secondCard.UsageMetrics);
+			Assert.Equal(UsageRecoveryAction.SwitchAccount, secondCard.RecoveryAction);
+			Assert.False(requestCounts.ContainsKey(inactiveAgy.Id));
+			Assert.DoesNotContain(profileStore.SavedSnapshots,
+				profiles => profiles.Single(account => account.Id == secondClaude.Id)
+					.ProviderAccountIdentity is not null);
+		}
+		finally
+		{
+			firstClaudeResult.TrySetResult(CreateReadySnapshot(firstClaude) with
+			{
+				ProviderAccountIdentity = SharedClaudeIdentity
+			});
+			viewModel.StopRefreshing();
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+		}
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task ScheduleUsageRefreshInBackground_WhenAccountIsDisabledOrChanging_CancelsAndQuiescesOnlyItsWorker(
+		bool isProviderAccountChange)
+	{
+		AccountProfile target = new(Guid.NewGuid(), ProviderKind.Codex, "Target Codex",
+			ProviderAccountIdentity: Guid.NewGuid().ToString("N"));
+		AccountProfile unrelated = new(Guid.NewGuid(), ProviderKind.Codex, "Other Codex",
+			ProviderAccountIdentity: Guid.NewGuid().ToString("N"));
+		Dictionary<Guid, TaskCompletionSource> started = new[] { target, unrelated }.ToDictionary(
+			account => account.Id, _ => new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+		Dictionary<Guid, TaskCompletionSource> cancelled = new[] { target, unrelated }.ToDictionary(
+			account => account.Id, _ => new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+		Dictionary<Guid, TaskCompletionSource> releaseCleanup = new[] { target, unrelated }.ToDictionary(
+			account => account.Id, _ => new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+		TaskCompletionSource releaseQuery = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		ConcurrentDictionary<Guid, int> requestCounts = new();
+		ControlledPeriodicUsageProvider provider = new(ProviderKind.Codex,
+			async (account, cancellationToken) =>
+			{
+				requestCounts.AddOrUpdate(account.Id, 1, (_, count) => count + 1);
+				started[account.Id].TrySetResult();
+				try
+				{
+					await releaseQuery.Task.WaitAsync(cancellationToken);
+					return CreateReadySnapshot(account, 88);
+				}
+				catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+				{
+					cancelled[account.Id].TrySetResult();
+					throw;
+				}
+				finally
+				{
+					await releaseCleanup[account.Id].Task;
+				}
+			});
+		UsageRefreshCoordinator coordinator = new(new UsageProviderRegistry([provider]));
+		using DashboardViewModel viewModel = new(new FakeAccountProfileStore(target, unrelated), coordinator);
+		await viewModel.InitializeAsync();
+		AccountUsageViewModel targetCard = viewModel.Accounts.Single(account => account.Id == target.Id);
+		using UsageDisplayObservation oldTargetShown = new(targetCard,
+			account => account.StatusKind == AccountStatusKind.Ready);
+		Task? quiesceTask = null;
+		Task<bool>? drainTask = null;
+		try
+		{
+			viewModel.ScheduleUsageRefreshInBackground();
+			await Task.WhenAll(started.Values.Select(signal => signal.Task))
+				.WaitAsync(TimeSpan.FromSeconds(5));
+			if (isProviderAccountChange)
+			{
+				Assert.True(viewModel.TryBeginProviderAccountChange(targetCard));
+			}
+			else
+			{
+				await viewModel.UpdateAccountAsync(target with { IsEnabled = false });
+			}
+			quiesceTask = viewModel.QuiesceAccountRefreshAsync(target.Id);
+			await cancelled[target.Id].Task.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.False(quiesceTask.IsCompleted);
+			Assert.False(cancelled[unrelated.Id].Task.IsCompleted);
+			viewModel.ScheduleUsageRefreshInBackground();
+			Assert.Equal(1, requestCounts[target.Id]);
+			Assert.Equal(1, requestCounts[unrelated.Id]);
+			releaseCleanup[target.Id].TrySetResult();
+			await quiesceTask.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.False(oldTargetShown.Completion.IsCompleted);
+			Assert.Equal(0, targetCard.UsedPercent);
+			Assert.Equal(isProviderAccountChange, targetCard.IsProviderAccountChangeInProgress);
+			Assert.Equal(isProviderAccountChange, targetCard.IsEnabled);
+
+			viewModel.StopRefreshing();
+			await cancelled[unrelated.Id].Task.WaitAsync(TimeSpan.FromSeconds(5));
+			drainTask = viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5));
+			Assert.False(drainTask.IsCompleted);
+			viewModel.ScheduleUsageRefreshInBackground();
+			releaseCleanup[unrelated.Id].TrySetResult();
+			Assert.True(await drainTask.WaitAsync(TimeSpan.FromSeconds(5)));
+			Assert.All(requestCounts.Values, count => Assert.Equal(1, count));
+			Assert.False(viewModel.IsRefreshing);
+		}
+		finally
+		{
+			releaseQuery.TrySetResult();
+			foreach (TaskCompletionSource signal in releaseCleanup.Values)
+			{
+				signal.TrySetResult();
+			}
+			viewModel.StopRefreshing();
+			if (quiesceTask is not null)
+			{
+				await quiesceTask.WaitAsync(TimeSpan.FromSeconds(5));
+			}
+			if (drainTask is not null)
+			{
+				await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
+			}
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+		}
+	}
+
+	[Fact]
+	public async Task RefreshUsageAfterInvalidationAsync_WhenPeriodicCacheWriteFinishesLate_DeletesItBeforeNewRefresh()
+	{
+		AccountProfile profile = new(Guid.NewGuid(), ProviderKind.Claude, "Claude",
+			ProviderAccountIdentity: "old-periodic@example.invalid", HasAcceptedClaudeQuotaRisk: true);
+		TaskCompletionSource saveStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource releaseSave = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		int requestCount = 0;
+		FakeUsageRefreshCoordinator coordinator = new()
+		{
+			RefreshHandler = account => Interlocked.Increment(ref requestCount) == 1
+				? Task.FromResult(CreateReadySnapshot(account, 60))
+				: Task.FromResult(new UsageSnapshot(account, Array.Empty<UsageMetric>(),
+					SourceTrust.Unavailable, SnapshotStatus.Error, DateTimeOffset.UtcNow,
+					Error: "測試用查詢失敗。"))
+		};
+		FakeUsageSnapshotStore snapshotStore = new()
+		{
+			SaveHandler = async (_, _) =>
+			{
+				saveStarted.TrySetResult();
+				await releaseSave.Task;
+			}
+		};
+		using DashboardViewModel viewModel = new(new FakeAccountProfileStore(profile), coordinator, snapshotStore);
+		await viewModel.InitializeAsync();
+		Task? forcedRefresh = null;
+		try
+		{
+			viewModel.ScheduleUsageRefreshInBackground();
+			await saveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			AccountUsageViewModel account = Assert.Single(viewModel.Accounts);
+			Assert.True(viewModel.TryBeginProviderAccountChange(account));
+			account.SeedProviderAccountIdentity("new-periodic@example.invalid");
+			forcedRefresh = viewModel.RefreshUsageAfterInvalidationAsync(profile.Id);
+
+			Assert.Single(snapshotStore.DeletedSnapshots);
+			Assert.False(forcedRefresh.IsCompleted);
+			Assert.Equal(1, Volatile.Read(ref requestCount));
+			releaseSave.TrySetResult();
+			await forcedRefresh.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+
+			Assert.Equal(2, snapshotStore.DeletedSnapshots.Count);
+			Assert.Null(await snapshotStore.LoadAsync(profile));
+			Assert.Equal(2, Volatile.Read(ref requestCount));
+			Assert.Equal(AccountStatusKind.Error, account.StatusKind);
+			Assert.Equal("new-periodic@example.invalid", account.ProviderAccountIdentity);
+		}
+		finally
+		{
+			releaseSave.TrySetResult();
+			if (forcedRefresh is not null)
+			{
+				await forcedRefresh.WaitAsync(TimeSpan.FromSeconds(5));
+			}
+			viewModel.StopRefreshing();
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+		}
+	}
+
+	[Fact]
+	public async Task RemoveAccountAsync_WhenPeriodicIdentityPersistenceWaitsForMutationGate_DrainsWithoutDeadlock()
+	{
+		AccountProfile profile = new(Guid.NewGuid(), ProviderKind.Claude, "Unbound Claude",
+			HasAcceptedClaudeQuotaRisk: true);
+		TaskCompletionSource queryStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<UsageSnapshot> queryResult = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource removalSaveStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource releaseRemovalSave = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		FakeAccountProfileStore profileStore = new(profile)
+		{
+			SaveHandler = async (profiles, _) =>
+			{
+				if (profiles.Count == 0)
+				{
+					removalSaveStarted.TrySetResult();
+					await releaseRemovalSave.Task;
+				}
+			}
+		};
+		FakeUsageRefreshCoordinator coordinator = new()
+		{
+			RefreshHandler = _ =>
+			{
+				queryStarted.TrySetResult();
+				return queryResult.Task;
+			}
+		};
+		FakeUsageSnapshotStore snapshotStore = new();
+		FakeAccountRuntimeStatePurger purger = new();
+		using DashboardViewModel viewModel = new(profileStore, coordinator, snapshotStore,
+			dashboardPreferencesStore: null, accountRuntimeStatePurger: purger);
+		await viewModel.InitializeAsync();
+		using UsageDisplayObservation queryApplied = new(Assert.Single(viewModel.Accounts),
+			account => account.StatusKind == AccountStatusKind.Ready);
+		Task? removalTask = null;
+		Task? providerDrainTask = null;
+		try
+		{
+			viewModel.ScheduleUsageRefreshInBackground();
+			await queryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			removalTask = viewModel.RemoveAccountAsync(profile.Id);
+			await removalSaveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			queryResult.TrySetResult(CreateReadySnapshot(profile, 39));
+			await queryApplied.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.False(removalTask.IsCompleted);
+			Assert.Empty(purger.PurgedAccounts);
+			providerDrainTask = viewModel.QuiesceAccountRefreshAsync(profile.Id);
+			await providerDrainTask.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.False(removalTask.IsCompleted);
+			Assert.Empty(snapshotStore.SavedSnapshots);
+			releaseRemovalSave.TrySetResult();
+			await removalTask.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+
+			Assert.Empty(viewModel.Accounts);
+			Assert.Empty(Assert.Single(profileStore.SavedSnapshots));
+			Assert.Equal((profile.Id, profile.Provider), Assert.Single(purger.PurgedAccounts));
+			Assert.Null(await snapshotStore.LoadAsync(profile));
+			Assert.DoesNotContain("舊用量檢查尚未停止", viewModel.AccountSettingsMessage, StringComparison.Ordinal);
+		}
+		finally
+		{
+			queryResult.TrySetResult(CreateReadySnapshot(profile, 39));
+			releaseRemovalSave.TrySetResult();
+			if (removalTask is not null)
+			{
+				await removalTask.WaitAsync(TimeSpan.FromSeconds(5));
+			}
+			if (providerDrainTask is not null)
+			{
+				await providerDrainTask.WaitAsync(TimeSpan.FromSeconds(5));
+			}
+			viewModel.StopRefreshing();
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+		}
+	}
+
+	[Fact]
+	public async Task ScheduleUsageRefreshInBackground_WhenFirstUnboundOwnerIsCoolingAfterSaveFailure_RejectsSecondIdentityClaim()
+	{
+		const string SharedIdentity = "cooled-first-owner@example.invalid";
+		ManualRefreshTimeProvider timeProvider = new(
+			new DateTimeOffset(2026, 9, 28, 0, 0, 0, TimeSpan.Zero));
+		AccountProfile first = new(Guid.NewGuid(), ProviderKind.Claude, "First Claude",
+			HasAcceptedClaudeQuotaRisk: true);
+		AccountProfile second = new(Guid.NewGuid(), ProviderKind.Claude, "Second Claude",
+			IsEnabled: false, HasAcceptedClaudeQuotaRisk: true);
+		ConcurrentDictionary<Guid, int> requestCounts = new();
+		ControlledPeriodicUsageProvider provider = new(ProviderKind.Claude,
+			(account, _) =>
+			{
+				requestCounts.AddOrUpdate(account.Id, 1, (_, count) => count + 1);
+				return Task.FromResult(CreateReadySnapshot(account, account.Id == first.Id ? 24 : 71) with
+				{
+					FetchedAt = timeProvider.GetUtcNow(),
+					ObservedAt = timeProvider.GetUtcNow(),
+					ProviderAccountIdentity = SharedIdentity
+				});
+			});
+		UsageRefreshCoordinator coordinator = new(new UsageProviderRegistry([provider]), timeProvider);
+		FakeAccountProfileStore profileStore = new(first, second) { ShouldFailSave = true };
+		using DashboardViewModel viewModel = new(profileStore, coordinator,
+			usageSnapshotStore: null, dashboardPreferencesStore: null,
+			accountRuntimeStatePurger: null, timeProvider: timeProvider);
+		await viewModel.InitializeAsync();
+		AccountUsageViewModel firstCard = viewModel.Accounts.Single(account => account.Id == first.Id);
+		AccountUsageViewModel secondCard = viewModel.Accounts.Single(account => account.Id == second.Id);
+		using UsageDisplayObservation secondReady = new(secondCard,
+			account => account.StatusKind == AccountStatusKind.Ready);
+		using UsageDisplayObservation secondRejected = new(secondCard,
+			account => account.StatusKind == AccountStatusKind.Error);
+		try
+		{
+			await viewModel.RefreshUsageAsync();
+			Assert.True(firstCard.DidRejectProviderAccountSnapshot);
+			Assert.Null(firstCard.Profile.ProviderAccountIdentity);
+			Assert.Null(firstCard.ProviderAccountIdentity);
+			Assert.Equal(TimeSpan.FromMinutes(1), coordinator.GetRemainingCooldown(first));
+			Assert.Equal(1, requestCounts[first.Id]);
+			profileStore.ShouldFailSave = false;
+			await viewModel.UpdateAccountAsync(second with { IsEnabled = true });
+			Assert.Null(coordinator.GetRemainingCooldown(second));
+
+			viewModel.ScheduleUsageRefreshInBackground();
+			await secondRejected.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+
+			Assert.Equal(1, requestCounts[first.Id]);
+			Assert.Equal(1, requestCounts[second.Id]);
+			Assert.False(secondReady.Completion.IsCompleted);
+			Assert.Null(secondCard.Profile.ProviderAccountIdentity);
+			Assert.Empty(secondCard.UsageMetrics);
+			Assert.Equal(UsageRecoveryAction.SwitchAccount, secondCard.RecoveryAction);
+			Assert.DoesNotContain(profileStore.SavedSnapshots, profiles =>
+				profiles.Single(account => account.Id == second.Id).ProviderAccountIdentity is not null);
+		}
+		finally
+		{
+			viewModel.StopRefreshing();
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+		}
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task ScheduleUsageRefreshInBackground_WithinCooldown_ProjectsResetOrStaleBoundaryWithoutQuery(
+		bool isMetricReset)
+	{
+		DateTimeOffset now = new(2026, 9, 28, 0, 0, 0, TimeSpan.Zero);
+		ManualRefreshTimeProvider timeProvider = new(now);
+		AccountProfile profile = new(Guid.NewGuid(), ProviderKind.Codex, "Bound Codex",
+			ProviderAccountIdentity: Guid.NewGuid().ToString("N"));
+		int requestCount = 0;
+		ControlledPeriodicUsageProvider provider = new(ProviderKind.Codex,
+			(account, _) =>
+			{
+				Interlocked.Increment(ref requestCount);
+				return Task.FromResult(new UsageSnapshot(account,
+					[
+						new UsageMetric("short_window", "Short window", 19, "19%",
+							ResetsAt: now.AddSeconds(isMetricReset ? 30 : 120)),
+						new UsageMetric("long_window", "Long window", 37, "37%",
+							ResetsAt: now.AddMinutes(3))
+					],
+					SourceTrust.Official, SnapshotStatus.Ready, now, ObservedAt: now,
+					StaleAfter: isMetricReset ? null : now.AddSeconds(30),
+					ProviderAccountIdentity: account.ProviderAccountIdentity));
+			});
+		UsageRefreshCoordinator coordinator = new(new UsageProviderRegistry([provider]), timeProvider);
+		FakeUsageSnapshotStore snapshotStore = new();
+		using DashboardViewModel viewModel = new(new FakeAccountProfileStore(profile), coordinator,
+			usageSnapshotStore: snapshotStore, dashboardPreferencesStore: null,
+			accountRuntimeStatePurger: null, timeProvider: timeProvider);
+		await viewModel.InitializeAsync();
+		try
+		{
+			await viewModel.RefreshUsageAsync();
+			AccountUsageViewModel card = Assert.Single(viewModel.Accounts);
+			UsageSnapshot original = Assert.IsType<UsageSnapshot>(card.CurrentSnapshot);
+			Assert.Equal(AccountStatusKind.Ready, card.StatusKind);
+			Assert.Equal(19, card.UsedPercent);
+			Assert.Equal(2, original.Metrics.Count);
+			using UsageDisplayObservation boundaryDisplay = new(card, account => isMetricReset
+				? (account.StatusKind == AccountStatusKind.Ready) &&
+					(account.CurrentSnapshot?.Metrics.Count == 1) && (account.UsedPercent == 37)
+				: (account.StatusKind == AccountStatusKind.Stale) && (account.UsedPercent == 19));
+
+			timeProvider.Advance(TimeSpan.FromSeconds(10));
+			viewModel.ScheduleUsageRefreshInBackground();
+			Assert.Equal(TimeSpan.FromSeconds(50), coordinator.GetRemainingCooldown(profile));
+			timeProvider.Advance(TimeSpan.FromSeconds(20));
+			viewModel.ScheduleUsageRefreshInBackground();
+			await boundaryDisplay.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+			Assert.Equal(TimeSpan.FromSeconds(30), coordinator.GetRemainingCooldown(profile));
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+
+			UsageSnapshot updated = Assert.IsType<UsageSnapshot>(card.CurrentSnapshot);
+			Assert.NotSame(original, updated);
+			Assert.Equal(1, Volatile.Read(ref requestCount));
+			Assert.Equal(original.FetchedAt, updated.FetchedAt);
+			Assert.Equal(profile.ProviderAccountIdentity, updated.ProviderAccountIdentity);
+			Assert.Equal(isMetricReset ? SnapshotStatus.Ready : SnapshotStatus.Stale, updated.Status);
+			Assert.Equal(isMetricReset ? new[] { "long_window" } : new[] { "short_window", "long_window" },
+				updated.Metrics.Select(metric => metric.Key));
+		}
+		finally
+		{
+			viewModel.StopRefreshing();
+			Assert.True(await viewModel.StopAndDrainRefreshingAsync(TimeSpan.FromSeconds(5)));
+		}
 	}
 
 	[Fact]
