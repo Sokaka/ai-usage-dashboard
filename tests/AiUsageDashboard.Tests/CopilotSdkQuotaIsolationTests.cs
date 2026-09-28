@@ -448,7 +448,9 @@ public sealed class CopilotSdkQuotaIsolationTests
 		Assert.Equal(
 			"已使用 0；上限由共用額度與預算控制",
 			premium.DisplayValue);
-		Assert.Equal(premium.DisplayValue, premium.ToolTipValue);
+		Assert.Equal(
+			"已使用 0；上限由共用額度與預算控制，額外用量已開啟",
+			premium.ToolTipValue);
 		Assert.DoesNotContain(
 			viewModel.UsageMetrics,
 			metric => metric.Key == "copilot-quota-chat");

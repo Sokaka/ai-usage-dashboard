@@ -68,9 +68,9 @@
     <Color x:Key="InfoSurfaceColor">#2438BDF8</Color>
 
     <!-- Scrolling and selection -->
-    <Color x:Key="ScrollBarThumbColor">#26344B</Color>
-    <Color x:Key="ScrollBarThumbHoverColor">#34445C</Color>
-    <Color x:Key="ScrollBarThumbPressedColor">#42546D</Color>
+    <Color x:Key="ScrollBarThumbColor">#6D7E98</Color>
+    <Color x:Key="ScrollBarThumbHoverColor">#8193AF</Color>
+    <Color x:Key="ScrollBarThumbPressedColor">#93A5C0</Color>
     <Color x:Key="SelectionColor">#662563EB</Color>
 
     <SolidColorBrush x:Key="WindowBackgroundBrush"

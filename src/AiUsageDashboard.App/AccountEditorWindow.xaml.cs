@@ -515,7 +515,8 @@ public partial class AccountEditorWindow : Window
 		{
 			ProviderKind.Claude => JoinParagraphs(
 				"第一次讀取會執行 Claude /usage，可能產生少量用量。",
-				"連接前會再請你確認。已產生的用量或費用不能取消。"),
+				"AI Usage 只能在執行後確認是否產生模型請求、token 或費用，已產生的用量或費用不能取消。",
+				"按「儲存並連接」即表示接受以上風險；若要稍後決定，請按「儲存」。"),
 			ProviderKind.Codex => JoinParagraphs(
 				"一般帳號連接不需要 workspace ID。",
 				"同一個 ChatGPT 帳號若要顯示多個 workspace，每張卡片都要填入對應的 workspace ID，原本的第一張也一樣。"),

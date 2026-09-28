@@ -27,11 +27,13 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel>
-                    <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
+                    <TextBlock x:Name="HeadingTextBlock"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
                                FontSize="23"
                                FontWeight="SemiBold"
                                Text="選擇連接方式" />
-                    <TextBlock Margin="0,7,0,0"
+                    <TextBlock x:Name="ConnectionHintTextBlock"
+                               Margin="0,7,0,0"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                Text="只需要一張 Codex 卡片時，選「一般帳號連接」。"
                                TextWrapping="Wrap" />
@@ -41,14 +43,22 @@
                                TextWrapping="Wrap" />
                 </StackPanel>
 
-                <Button x:Name="DefaultConnectionButton"
-                        Grid.Row="1"
-                        Margin="0,22,0,0"
-                        Padding="14,10"
-                        Click="ContinueWithoutWorkspaceButton_Click"
-                        Content="一般帳號連接"
-                        IsDefault="True"
-                        Style="{StaticResource PrimaryButtonStyle}" />
+                <StackPanel Grid.Row="1"
+                            Margin="0,22,0,0">
+                    <Button x:Name="DefaultConnectionButton"
+                            Padding="14,10"
+                            Click="ContinueWithoutWorkspaceButton_Click"
+                            Content="一般帳號連接"
+                            IsDefault="True"
+                            Style="{StaticResource PrimaryButtonStyle}" />
+                    <TextBlock x:Name="WorkspaceScopeChangeTextBlock"
+                               Margin="0,7,0,0"
+                               Foreground="{DynamicResource WarningTextBrush}"
+                               FontSize="12"
+                               Text="改為一般帳號連接會解除這張卡片原本的 workspace 限定；同帳號已有其他 workspace 卡片時，可能無法完成連接。"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed" />
+                </StackPanel>
 
                 <StackPanel Grid.Row="2"
                             Margin="0,24,0,0">
@@ -92,7 +102,8 @@
                                FontSize="12"
                                Text="ID 不會放進匯出的設定檔。重新連接時要再輸入一次。"
                                TextWrapping="Wrap" />
-                    <Button Margin="0,14,0,0"
+                    <Button x:Name="WorkspaceConnectionButton"
+                            Margin="0,14,0,0"
                             HorizontalAlignment="Left"
                             Background="{DynamicResource AccentSurfaceBrush}"
                             BorderBrush="{DynamicResource AccentBrush}"

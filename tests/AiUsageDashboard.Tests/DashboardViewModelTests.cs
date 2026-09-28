@@ -14397,14 +14397,18 @@ public sealed class DashboardViewModelTests
 			refreshProgress);
 	}
 
-	[Fact]
-	public async Task RefreshAccountUsageAsync_WhenSameTargetRefreshIsActive_CoalescesRequest()
+	[Theory]
+	[InlineData(null)]
+	[InlineData(SnapshotStatus.Ready)]
+	[InlineData(SnapshotStatus.Stale)]
+	public async Task RefreshAccountUsageAsync_WhenSameTargetRefreshIsActive_CoalescesRequest(
+		SnapshotStatus? initialStatus)
 	{
 		AccountProfile account = new(
 			Guid.NewGuid(),
-			ProviderKind.Claude,
-			"Claude",
-			HasAcceptedClaudeQuotaRisk: true);
+			ProviderKind.Codex,
+			"Codex",
+			ProviderAccountIdentity: "person@example.invalid");
 		TaskCompletionSource<bool> refreshStarted = new(
 			TaskCreationOptions.RunContinuationsAsynchronously);
 		TaskCompletionSource<UsageSnapshot> refreshResult = new(
@@ -14421,6 +14425,12 @@ public sealed class DashboardViewModelTests
 			new FakeAccountProfileStore(account),
 			refreshCoordinator);
 		await viewModel.InitializeAsync();
+		if (initialStatus.HasValue)
+		{
+			viewModel.Accounts.Single().ApplySnapshot(
+				CreateReadySnapshot(account) with { Status = initialStatus.Value });
+			Assert.True(viewModel.Accounts.Single().HasUsageMetrics);
+		}
 
 		Task firstRefresh = viewModel.RefreshAccountUsageAsync(account.Id);
 		await refreshStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -14429,18 +14439,143 @@ public sealed class DashboardViewModelTests
 			account.Id,
 			coalescedProgress.Add);
 
-		Assert.False(secondRefresh.IsCompleted);
-		Assert.Equal(
-			[AccountRefreshProgress.Started],
-			coalescedProgress);
-		Assert.Single(refreshCoordinator.RefreshRequests);
-		Assert.Equal(account.Id, Assert.Single(
-			refreshCoordinator.InvalidatedAccountIds));
-		refreshResult.SetResult(CreateReadySnapshot(account));
+		try
+		{
+			Assert.False(secondRefresh.IsCompleted);
+			Assert.Equal(
+				[AccountRefreshProgress.Started],
+				coalescedProgress);
+			Assert.Single(refreshCoordinator.RefreshRequests);
+			Assert.Equal(account.Id, Assert.Single(
+				refreshCoordinator.InvalidatedAccountIds));
+		}
+		finally
+		{
+			refreshResult.TrySetResult(CreateReadySnapshot(account));
+			await Task.WhenAll(firstRefresh, secondRefresh);
+		}
 
-		await Task.WhenAll(firstRefresh, secondRefresh);
-
 		Assert.Single(refreshCoordinator.RefreshRequests);
+		Assert.Single(refreshCoordinator.InvalidatedAccountIds);
+	}
+
+	[Theory]
+	[InlineData(true, false)]
+	[InlineData(false, false)]
+	[InlineData(true, true)]
+	public async Task RefreshAccountUsageAsync_WhenSameTargetIsQueued_ReportsActualStageAfterStarting(
+		bool firstCallerReportsProgress,
+		bool cancelFirstCaller)
+	{
+		AccountProfile account = new(
+			Guid.NewGuid(),
+			ProviderKind.Codex,
+			"Codex",
+			ProviderAccountIdentity: "person@example.invalid");
+		TaskCompletionSource<bool> fullRefreshStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> allowFullRefreshToFinish = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> targetRefreshStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> allowTargetRefreshToFinish = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<bool> queuedCallerReceivedStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		using CancellationTokenSource firstCallerCancellation = new();
+		int requestCount = 0;
+		FakeUsageRefreshCoordinator refreshCoordinator = new()
+		{
+			RefreshHandler = async requestedAccount =>
+			{
+				if (Interlocked.Increment(ref requestCount) == 1)
+				{
+					fullRefreshStarted.TrySetResult(true);
+					await allowFullRefreshToFinish.Task;
+				}
+				else
+				{
+					targetRefreshStarted.TrySetResult(true);
+					await allowTargetRefreshToFinish.Task;
+				}
+
+				return CreateReadySnapshot(requestedAccount);
+			}
+		};
+		DashboardViewModel viewModel = new(
+			new FakeAccountProfileStore(account),
+			refreshCoordinator);
+		await viewModel.InitializeAsync();
+		viewModel.Accounts.Single().ApplySnapshot(CreateReadySnapshot(account));
+		Task fullRefresh = viewModel.RefreshUsageAsync();
+		Task targetRefresh = Task.CompletedTask;
+		Task duplicateQueuedRefresh = Task.CompletedTask;
+		Task duplicateStartedRefresh = Task.CompletedTask;
+
+		try
+		{
+			await fullRefreshStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			List<AccountRefreshProgress> targetProgress = new();
+			targetRefresh = viewModel.RefreshAccountUsageAsync(
+				account.Id,
+				firstCallerReportsProgress ? targetProgress.Add : null,
+				firstCallerCancellation.Token);
+			List<AccountRefreshProgress> queuedProgress = new();
+			duplicateQueuedRefresh = viewModel.RefreshAccountUsageAsync(
+				account.Id,
+				progress =>
+				{
+					queuedProgress.Add(progress);
+					if (progress == AccountRefreshProgress.Started)
+					{
+						queuedCallerReceivedStarted.TrySetResult(true);
+					}
+				});
+			Assert.Equal([AccountRefreshProgress.Queued], queuedProgress);
+			Assert.Single(refreshCoordinator.RefreshRequests);
+			if (cancelFirstCaller)
+			{
+				firstCallerCancellation.Cancel();
+				await Assert.ThrowsAnyAsync<OperationCanceledException>(() => targetRefresh);
+				targetRefresh = Task.CompletedTask;
+			}
+
+			allowFullRefreshToFinish.TrySetResult(true);
+			await targetRefreshStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			await queuedCallerReceivedStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			List<AccountRefreshProgress> startedProgress = new();
+			duplicateStartedRefresh = viewModel.RefreshAccountUsageAsync(
+				account.Id,
+				startedProgress.Add);
+			Assert.Equal([AccountRefreshProgress.Started], startedProgress);
+			Assert.Equal(
+				[AccountRefreshProgress.Queued, AccountRefreshProgress.Started],
+				queuedProgress);
+			if (firstCallerReportsProgress)
+			{
+				Assert.Equal(
+					cancelFirstCaller
+						? [AccountRefreshProgress.Queued]
+						: [AccountRefreshProgress.Queued, AccountRefreshProgress.Started],
+					targetProgress);
+			}
+			else
+			{
+				Assert.Empty(targetProgress);
+			}
+		}
+		finally
+		{
+			allowFullRefreshToFinish.TrySetResult(true);
+			allowTargetRefreshToFinish.TrySetResult(true);
+			await Task.WhenAll(
+				fullRefresh,
+				targetRefresh,
+				duplicateQueuedRefresh,
+				duplicateStartedRefresh);
+		}
+
+		Assert.Equal(2, refreshCoordinator.RefreshRequests.Count);
 		Assert.Single(refreshCoordinator.InvalidatedAccountIds);
 	}
 

@@ -1317,6 +1317,144 @@ public sealed class AccountUsageViewModelStatusTests
 		Assert.Equal(string.Empty, viewModel.RecoveryActionDescription);
 	}
 
+	[Theory]
+	[InlineData(SnapshotStatus.Ready)]
+	[InlineData(SnapshotStatus.Stale)]
+	public void StatusToolTip_WithDisplayedUsage_UsesObservationTimeWithoutErrorNotice(
+		SnapshotStatus status)
+	{
+		AccountProfile profile = CreateProfile(
+			ProviderKind.Copilot,
+			providerAccountIdentity: "github:copilot:github.com/octocat");
+		AccountUsageViewModel viewModel = new(profile, canManage: true);
+		DateTimeOffset observedAt = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
+		viewModel.ApplySnapshot(new UsageSnapshot(
+			profile,
+			new[] { new UsageMetric("quota", "用量", 25, "已使用 25%") },
+			SourceTrust.OfficialExperimental,
+			status,
+			observedAt.AddMinutes(15),
+			ObservedAt: observedAt,
+			ProviderAccountIdentity: profile.ProviderAccountIdentity));
+
+		Assert.True(viewModel.HasUsageMetrics);
+		Assert.False(viewModel.HasNotice);
+		Assert.False(viewModel.HasRecoveryAction);
+		Assert.Equal(
+			$"資料時間 {observedAt.ToLocalTime():yyyy/MM/dd HH:mm:ss}",
+			viewModel.StatusToolTip);
+	}
+
+	[Theory]
+	[InlineData(SnapshotStatus.Ready, true)]
+	[InlineData(SnapshotStatus.Stale, true)]
+	[InlineData(SnapshotStatus.Stale, false)]
+	public void StatusToolTip_WithoutObservationTime_SeparatesReadTimeFromUnknownDataTime(
+		SnapshotStatus status,
+		bool hasReadTime)
+	{
+		AccountProfile profile = CreateProfile(
+			ProviderKind.Copilot,
+			providerAccountIdentity: "github:copilot:github.com/octocat");
+		AccountUsageViewModel viewModel = new(profile, canManage: true);
+		DateTimeOffset fetchedAt = hasReadTime
+			? new DateTimeOffset(2026, 9, 28, 12, 15, 0, TimeSpan.Zero)
+			: default;
+		viewModel.ApplySnapshot(new UsageSnapshot(
+			profile,
+			new[] { new UsageMetric("quota", "用量", 25, "已使用 25%") },
+			SourceTrust.OfficialExperimental,
+			status,
+			fetchedAt,
+			ProviderAccountIdentity: profile.ProviderAccountIdentity));
+
+		Assert.Equal(
+			hasReadTime
+				? $"資料時間不明；讀取時間 {fetchedAt.ToLocalTime():yyyy/MM/dd HH:mm:ss}"
+				: "資料時間不明",
+			viewModel.StatusToolTip);
+	}
+
+	[Theory]
+	[InlineData(SnapshotStatus.Ready, false)]
+	[InlineData(SnapshotStatus.Stale, false)]
+	[InlineData(SnapshotStatus.Refreshing, true)]
+	[InlineData(SnapshotStatus.Error, true)]
+	[InlineData(SnapshotStatus.NotConfigured, true)]
+	[InlineData(SnapshotStatus.Unsupported, true)]
+	public void StatusToolTip_WithoutCompletedUsableUsage_DoesNotShowDataTime(
+		SnapshotStatus status,
+		bool hasMetrics)
+	{
+		AccountProfile profile = CreateProfile(
+			ProviderKind.Copilot,
+			providerAccountIdentity: "github:copilot:github.com/octocat");
+		AccountUsageViewModel viewModel = new(profile, canManage: true);
+		DateTimeOffset fetchedAt = new(2026, 9, 28, 12, 15, 0, TimeSpan.Zero);
+		viewModel.ApplySnapshot(new UsageSnapshot(
+			profile,
+			hasMetrics
+				? new[] { new UsageMetric("quota", "用量", 25, "已使用 25%") }
+				: Array.Empty<UsageMetric>(),
+			SourceTrust.OfficialExperimental,
+			status,
+			fetchedAt,
+			ObservedAt: fetchedAt,
+			ProviderAccountIdentity: profile.ProviderAccountIdentity));
+
+		Assert.Null(viewModel.StatusToolTip);
+	}
+
+	[Fact]
+	public void StatusToolTip_WhenObservationChangesOrAccountStops_NotifiesUpdatedBinding()
+	{
+		AccountProfile profile = CreateProfile(
+			ProviderKind.Copilot,
+			providerAccountIdentity: "github:copilot:github.com/octocat");
+		AccountUsageViewModel viewModel = new(profile, canManage: true);
+		DateTimeOffset observedAt = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
+		UsageSnapshot snapshot = new(
+			profile,
+			new[] { new UsageMetric("quota", "用量", 25, "已使用 25%") },
+			SourceTrust.OfficialExperimental,
+			SnapshotStatus.Ready,
+			observedAt,
+			ObservedAt: observedAt,
+			ProviderAccountIdentity: profile.ProviderAccountIdentity);
+		List<string?> toolTipUpdates = new();
+		viewModel.PropertyChanged += (_, eventArgs) =>
+		{
+			if (eventArgs.PropertyName == nameof(AccountUsageViewModel.StatusToolTip))
+			{
+				toolTipUpdates.Add(viewModel.StatusToolTip);
+			}
+		};
+
+		Assert.Null(viewModel.StatusToolTip);
+		viewModel.ApplySnapshot(snapshot);
+		Assert.Contains(viewModel.StatusToolTip, toolTipUpdates);
+		toolTipUpdates.Clear();
+
+		DateTimeOffset nextObservedAt = observedAt.AddMinutes(15);
+		viewModel.ApplySnapshot(snapshot with
+		{
+			FetchedAt = nextObservedAt,
+			ObservedAt = nextObservedAt
+		});
+		string expectedToolTip =
+			$"資料時間 {nextObservedAt.ToLocalTime():yyyy/MM/dd HH:mm:ss}";
+		Assert.Equal(expectedToolTip, viewModel.StatusToolTip);
+		Assert.Contains(expectedToolTip, toolTipUpdates);
+		toolTipUpdates.Clear();
+
+		viewModel.ApplyProfile(profile with { IsEnabled = false }, canManage: true);
+
+		Assert.Null(viewModel.CurrentSnapshot);
+		Assert.Empty(viewModel.UsageMetrics);
+		Assert.Null(viewModel.StatusToolTip);
+		Assert.Contains(null, toolTipUpdates);
+	}
+
 	[Fact]
 	public void ApplySnapshot_WithInformationalStaleNotice_UsesUsageStatusTitle()
 	{
@@ -2148,6 +2286,7 @@ public sealed class AccountUsageViewModelStatusTests
 		Assert.True(viewModel.HasConfirmedProviderAccountBinding);
 		Assert.Equal(AccountStatusKind.Refreshing, viewModel.StatusKind);
 		Assert.Empty(viewModel.UsageMetrics);
+		Assert.Null(viewModel.StatusToolTip);
 		viewModel.SetUsageDisplayMode(UsageDisplayMode.Remaining);
 		Assert.Empty(viewModel.UsageMetrics);
 
@@ -2156,6 +2295,7 @@ public sealed class AccountUsageViewModelStatusTests
 		Assert.Equal(AccountStatusKind.Ready, viewModel.StatusKind);
 		UsageMetricViewModel metric = Assert.Single(viewModel.UsageMetrics);
 		Assert.Equal("剩餘 75%", metric.DisplayValue);
+		Assert.NotNull(viewModel.StatusToolTip);
 	}
 
 	[Fact]
@@ -2776,7 +2916,7 @@ public sealed class AccountUsageViewModelStatusTests
 		"5 / 50 已使用，額外用量已開啟")]
 	[InlineData(
 		"5 / 50 已使用，額度用完後仍可使用")]
-	public void ApplySnapshot_WithCopilotUsageStatus_HidesProviderStatus(
+	public void ApplySnapshot_WithCopilotUsageStatus_KeepsStatusInToolTipAcrossDisplayModes(
 		string displayValue)
 	{
 		DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -2805,7 +2945,13 @@ public sealed class AccountUsageViewModelStatusTests
 
 		UsageMetricViewModel metric = Assert.Single(viewModel.UsageMetrics);
 		Assert.Equal("已使用 10%", metric.DisplayValue);
-		Assert.Equal("5 / 50 已使用", metric.ToolTipValue);
+		Assert.Equal(displayValue, metric.ToolTipValue);
+
+		viewModel.SetUsageDisplayMode(UsageDisplayMode.Remaining);
+
+		UsageMetricViewModel remainingMetric = Assert.Single(viewModel.UsageMetrics);
+		Assert.Equal("剩餘 90%", remainingMetric.DisplayValue);
+		Assert.Equal(displayValue, remainingMetric.ToolTipValue);
 	}
 
 	[Theory]

@@ -324,7 +324,17 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 	public UsageSnapshot? CurrentSnapshot
 	{
 		get => _currentSnapshot;
-		private set => SetField(ref _currentSnapshot, value);
+		private set
+		{
+			if (Equals(_currentSnapshot, value))
+			{
+				return;
+			}
+
+			_currentSnapshot = value;
+			OnPropertyChanged();
+			OnPropertyChanged(nameof(StatusToolTip));
+		}
 	}
 
 	public bool CanManage
@@ -721,6 +731,22 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		_ => "未知狀態"
 	};
 
+	public string? StatusToolTip
+	{
+		get
+		{
+			if (_hasPendingConnectionRefresh ||
+				!HasUsageMetrics ||
+				(CurrentSnapshot is not UsageSnapshot snapshot) ||
+				!HasUsableUsage(snapshot))
+			{
+				return null;
+			}
+
+			return CreateObservationText(snapshot);
+		}
+	}
+
 	public IReadOnlyList<UsageMetricViewModel> UsageMetrics
 	{
 		get => _usageMetrics;
@@ -730,6 +756,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			OnPropertyChanged();
 			OnPropertyChanged(nameof(HasUsageMetrics));
 			OnPropertyChanged(nameof(HasNoUsageMetrics));
+			OnPropertyChanged(nameof(StatusToolTip));
 		}
 	}
 
@@ -2311,8 +2338,15 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 
 	private static string CreateObservationText(UsageSnapshot snapshot)
 	{
-		DateTimeOffset observedAt = snapshot.ObservedAt ?? snapshot.FetchedAt;
-		return $"資料時間 {observedAt.ToLocalTime():MM/dd HH:mm:ss}";
+		if ((snapshot.ObservedAt is DateTimeOffset observedAt) &&
+			(observedAt != default))
+		{
+			return $"資料時間 {observedAt.ToLocalTime():yyyy/MM/dd HH:mm:ss}";
+		}
+
+		return snapshot.FetchedAt == default
+			? "資料時間不明"
+			: $"資料時間不明；讀取時間 {snapshot.FetchedAt.ToLocalTime():yyyy/MM/dd HH:mm:ss}";
 	}
 
 	private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
