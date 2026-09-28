@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.15-0078D4" alt="目前正式版本 1.0.15"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.16-0078D4" alt="目前正式版本 1.0.16"></a>
 </p>
 
 <p align="center">
@@ -33,9 +33,9 @@
 
 ## 目前版本
 
-目前正式版本為 **`1.0.15`**。[下載最新版](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.15) · [版本說明](docs/releases/1.0.15.md)
+目前正式版本為 **`1.0.16`**。[下載最新版](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.16) · [版本說明](docs/releases/1.0.16.md)
 
-本版改善浮窗展開與卡片檢查回饋，並讓帳號連接、設定匯入與用量提示更清楚。
+本版新增 English／繁體中文介面，預設使用 English；從浮窗 **⋯ → Language** 或系統匣的同名子選單可立即切換語系。語系包含在設定匯出、匯入及還原匯入前設定中。
 
 標準安裝版可從系統匣選擇 **檢查更新** 升級；第一次使用請見[安裝與第一次使用](#安裝與第一次使用)。相容性與注意事項見[使用限制](#使用限制)。
 
@@ -80,7 +80,7 @@
 | **一般安裝：Updater** | `AiUsageDashboard-Updater-<version>-win-x64.exe` | Updater 也能首次安裝。以一般使用者權限執行，安裝後從開始選單搜尋 **AI Usage**；保留 Updater 供日後更新。 |
 | **免安裝：完整 ZIP** | `AiUsageDashboard-<version>-win-x64.zip` | 完整解壓到新資料夾後，執行其中的 App；不要下載 GitHub 自動產生的 Source code ZIP。 |
 
-`1.0.15` 沿用的 Updater 檔名是 `AiUsageDashboard-Updater-1.0.12-win-x64.exe`；請依 Release 上的實際檔名下載。
+`1.0.16` 的 Updater 檔名是 `AiUsageDashboard-Updater-1.0.16-win-x64.exe`；請依 Release 上的實際檔名下載。
 
 依[安裝與第一次啟動](使用說明.md#安裝與第一次啟動)操作、閱讀並接受適用條款，再新增帳號，透過服務的官方登入流程完成連接。
 

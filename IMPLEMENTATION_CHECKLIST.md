@@ -8,11 +8,11 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.15 / sequence 1029`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.16 / sequence 1030`。
 
 ### 英文與繁體中文語系
 
-本輪預定發布 `1.0.16 / sequence 1030`，App 與 Updater 均重新建置；目前公開版仍為 `1.0.15`。正式 source／CI／凍結與匿名下載結果完成後回填 [1.0.16 版本說明](docs/releases/1.0.16.md)。
+`1.0.16 / sequence 1030` 已正式公開，App 與 Updater 均由同一完整 source SHA 重新建置；正式 source、CI、凍結成品與匿名下載結果見 [1.0.16 版本說明](docs/releases/1.0.16.md)。
 
 - [x] Repository 預設 README 使用英文；繁中內容保留於 `README.zh-TW.md`，兩份正文可互相切換，`README.en.md` 保留舊英文入口。
 - [x] 2026-09-29 README 入口調整：Release 建置 0 warnings／errors，相關既有測試 44／44 通過，0 failed／skipped。三份 README 的 62 筆本機連結、13 份文件的 20 筆既有章節引用，以及 UTF-8、正文保留與 diff 檢查通過；GitHub 線上呈現尚未驗證。
@@ -30,7 +30,7 @@
 
 首輪完整測試為 4,442 passed／19 failed；其中 17 項為原繁中文案、選單數量或布局測試缺少新文字資源的預期，已修正並通過定向回歸。另外兩項 native 子程序測試曾在清理 fixture 或 parent exit code 檢查失敗；獨立重跑結果不一致，修正前最後一次完整含 coverage 重跑均通過，原失敗仍保留，根因尚未定位。
 
-本輪未執行真實 CLI 登入／用量、安裝升級、真人多螢幕或螢幕閱讀器驗收。語系功能尚未正式發布，正式下載版狀態仍見下方紀錄。
+本輪未執行真實 CLI 登入／用量、安裝升級、真人多螢幕或螢幕閱讀器驗收。語系功能已隨 `1.0.16` 正式發布；成品與待驗證範圍見下方紀錄及 [版本說明](docs/releases/1.0.16.md)。
 
 ### 使用者體驗一致性與操作回饋
 
@@ -129,7 +129,23 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 目前正式版本
 
-`1.0.15 / sequence 1029` 已沿用同一組凍結候選正式公開（[source `605e765d16e75bb37afd15843ea8349cc1187fb0`](https://github.com/Sokaka/ai-usage-dashboard/commit/605e765d16e75bb37afd15843ea8349cc1187fb0)）。[v1.0.15 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.15) 現為 stable／latest；Release ID `398185364`，六件成品資料見 [1.0.15 版本說明](docs/releases/1.0.15.md)。本版沿用 `v1.0.14` 正式版中的 `1.0.12` Updater 原始 bytes，source [`1f7dfa10c606e500096f7af3472ee3277a94615a`](https://github.com/Sokaka/ai-usage-dashboard/commit/1f7dfa10c606e500096f7af3472ee3277a94615a)。
+`1.0.16 / sequence 1030` 已沿用同一組凍結候選正式公開（[source `ec810d852b5ff93adfd2cc039008e0d1ba3c4771`](https://github.com/Sokaka/ai-usage-dashboard/commit/ec810d852b5ff93adfd2cc039008e0d1ba3c4771)）。[v1.0.16 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.16) 現為 stable／latest；Release ID `398675153`，六件成品資料見 [1.0.16 版本說明](docs/releases/1.0.16.md)。App 與新版 Updater 均來自同一 source；本版提供 English／繁體中文介面與語系設定匯入匯出。
+
+- [x] [同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36491036747/attempts/1)：Release 建置（0 warnings／0 errors）與完整測試（4,507 passed／0 failed／0 skipped）通過，production line coverage 74.94%（49,778／66,425，門檻 70%）。
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36491733896/attempts/1) attempt 1：Release 建置（0 warnings／0 errors）與完整測試（4,507 passed／0 failed／0 skipped）通過，production line coverage 74.93%（49,771／66,425，門檻 70%），同一 attempt 建置、簽署、驗簽及凍結六件成品。
+- [x] 已核對 freeze receipt、Release ID `398675153`、source、sequence `1030`、六件 asset ID／size／SHA256 與三份 sidecar；production public trust `aud-prod-20260907-a` 的 feed 驗簽通過。
+- [x] 正式公開後已匿名下載六件原凍結成品，核對 Release／latest／tag target、資產身分與 bytes；latest stable feed 與凍結 feed 相同，六件合計 `106955747` bytes。
+- [x] 已從本次 App ZIP 讀回預設 English、English／繁體中文各 1,849 筆資源；全部值與 source 相符（XML 換行正規化後），process `CurrentCulture` 不變。
+- [x] 開發階段以合成資料完成 7 項舊版 preferences／portable settings reader／writer probe及 1 項新版寫入 round-trip（共 8 項）：舊版讀取 fallback、5 個舊版寫入入口阻擋新版格式，以及舊版匯入拒絕。舊 reader／writer source 已與 `c990862cd10fbb929201f4780ee0482131fa4884` 核對；這是資料讀寫驗證，不是安裝或更新驗收。
+- [ ] 乾淨 Windows 初裝與條款接受／拒絕、`1.0.15` → `1.0.16` App 一鍵更新及新版 Updater 交接。
+- [ ] 五平台真人登入、手動／背景用量、基準與最新正式 CLI、帳號隔離、取消與失敗處理；見 [1.0.16 CLI 表](docs/CLI_COMPATIBILITY.md#1016)。
+- [ ] 完整 UI／無障礙驗收。
+
+匿名下載與驗簽、合成 reader／writer probe 不代替安裝或 App 更新按鈕驗收；歷史版本與其他 source 的實機結果不改列為本版通過。
+
+### 1.0.15 歷史正式版
+
+`1.0.15 / sequence 1029` 已沿用同一組凍結候選正式公開（[source `605e765d16e75bb37afd15843ea8349cc1187fb0`](https://github.com/Sokaka/ai-usage-dashboard/commit/605e765d16e75bb37afd15843ea8349cc1187fb0)）。[v1.0.15 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.15) 公開時為 stable／latest；Release ID `398185364`，六件成品資料見 [1.0.15 版本說明](docs/releases/1.0.15.md)。本版沿用 `v1.0.14` 正式版中的 `1.0.12` Updater 原始 bytes，source [`1f7dfa10c606e500096f7af3472ee3277a94615a`](https://github.com/Sokaka/ai-usage-dashboard/commit/1f7dfa10c606e500096f7af3472ee3277a94615a)。
 
 - [x] 本版減少展開浮窗的重複排版，交付上述九項使用者體驗與操作回饋修正；沿用 `1.0.14` 的背景週期與服務排隊。
 - [x] [同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36414232487)：Release 建置與完整測試（4,393 passed／0 failed／0 skipped）通過，production line coverage 74.36%（48,895／65,755，門檻 70%）。
