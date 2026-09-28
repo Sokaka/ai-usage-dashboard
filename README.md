@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#requirements"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="Project code licensed under MIT"></a>
-  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.15-0078D4" alt="Current stable version 1.0.15"></a>
+  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.16-0078D4" alt="Current stable version 1.0.16"></a>
 </p>
 
 <p align="center">
@@ -31,19 +31,18 @@
 
 </details>
 
-The stable v1.0.15 download uses a Traditional Chinese interface. The current source adds
-English (default) and Traditional Chinese, switchable from **⋯ → Language** or the tray menu;
-the language setting is included in settings exports. Detailed guides and release notes remain
-in Traditional Chinese. The instructions below include Chinese menu labels for the stable download.
+English is the default interface. Switch between **English** and **繁體中文** from the
+**⋯ → Language** submenu or the tray menu. Your language choice is included in settings
+exports and imports. Detailed guides and release notes are in Traditional Chinese.
 
 <a name="目前版本"></a>
 
 ## Current release
 
-The current stable version is **`1.0.15`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.15) · [Release notes](docs/releases/1.0.15.md)
+The current stable version is **`1.0.16`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.16) · [Release notes](docs/releases/1.0.16.md)
 
-This release improves widget expansion and feedback when checking an account's usage,
-with clearer account connection, settings import, and usage messages.
+This release adds English and Traditional Chinese interfaces, immediate switching from the
+Language submenu, and language settings in exports, imports, and restore.
 
 For a standard installation, choose **Check for updates** (`檢查更新`) from the system tray menu,
 then follow the update prompt. New users can start with [Installation and first use](#installation-and-first-use).
@@ -106,7 +105,7 @@ Choose a download from the current version's GitHub Release:
    `app\AiUsageDashboard.App.exe`.
    Do not download GitHub's automatically generated **Source code** ZIP.
 
-For App `1.0.15`, the Updater file is `AiUsageDashboard-Updater-1.0.12-win-x64.exe`.
+For App `1.0.16`, the Updater file is `AiUsageDashboard-Updater-1.0.16-win-x64.exe`.
 Use the actual filename listed on the Release page; the Updater version can differ from the app version.
 
 Follow [Installation and first launch](使用說明.md#安裝與第一次啟動), read and accept the applicable terms,
