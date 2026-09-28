@@ -1,8 +1,8 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.14` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.14` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.15` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.15` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
-`1.0.15` 正在準備候選，尚未正式公開；逐平台狀態見 [1.0.15](#1015)，本版內容與待驗界線見 [1.0.15 候選版本說明](releases/1.0.15.md)。目前正式版本仍為 `1.0.14`，其背景用量更新與服務排隊的實測狀態見 [1.0.14](#1014)，正式版本與下載資訊見 [README](../README.md#目前版本)。
+本版改善展開浮窗的排版與操作回饋；逐平台狀態見 [1.0.15](#1015)，正式版本與下載資訊見 [README](../README.md#目前版本)。
 
 ## 版本要求
 
@@ -27,7 +27,7 @@
 
 ### 1.0.15
 
-`1.0.15` 尚在候選準備階段，未正式公開。發布序號、完整 source SHA、同 source Windows CI、候選 workflow 的 run／attempt、Updater 來源與六件成品身分，待本次盤點、建置及凍結後記錄。CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
+本表只對應 `1.0.15 / sequence 1029`（[source `605e765d16e75bb37afd15843ea8349cc1187fb0`](https://github.com/Sokaka/ai-usage-dashboard/commit/605e765d16e75bb37afd15843ea8349cc1187fb0)）的同一組正式公開凍結成品。原始建置為 [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36415082312/attempts/1) attempt 1；Release ID `398185364`。本版沿用 `v1.0.14` 正式版中的 `1.0.12` Updater 原始 bytes，source [`1f7dfa10c606e500096f7af3472ee3277a94615a`](https://github.com/Sokaka/ai-usage-dashboard/commit/1f7dfa10c606e500096f7af3472ee3277a94615a)。CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
 
 | 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
 | --- | --- | --- | --- |
@@ -37,9 +37,13 @@
 | Grok | 未以本版實測 | 未驗證 | 未驗證 |
 | Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
 
-本版改善展開浮窗的排版與操作回饋；`1.0.14` 已發布的每卡背景週期、已綁定卡片提早顯示，以及服務內排隊仍沿用。五個平台的真人登入、用量查詢、背景更新、取消與失敗處理，以及基準與最新正式 CLI 的逐版實測，均尚未以本版完成。
+本版改善展開浮窗的排版與操作回饋；`1.0.14` 已發布的每卡背景週期、已綁定卡片提早顯示與服務內排隊仍沿用。五個平台的真人登入、用量查詢、背景更新、取消與失敗處理，以及基準與最新正式 CLI 的逐版實測，均尚未以本版完成。
 
-同 source CI、合成回歸、WPF 布局、匿名下載及驗簽的結果須依本版實際紀錄填入；這些檢查與歷史真人結果不代替本表的真人登入、用量、乾淨 Windows 安裝、App 一鍵線上更新或完整 UI／無障礙驗收。候選狀態與待驗範圍見 [1.0.15 候選版本說明](releases/1.0.15.md)。
+[同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36414232487)：Release 建置與完整測試（4,393 passed／0 failed／0 skipped）通過，production line coverage 74.36%（48,895／65,755，門檻 70%）。[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36415082312/attempts/1) attempt 1：Release 建置與完整測試（4,393 passed／0 failed／0 skipped）通過，production line coverage 74.36%（48,895／65,755，門檻 70%），並在同一 attempt 簽署及凍結六件成品。
+
+正式公開後已匿名下載六件原凍結成品，前後核對同一 Release／latest／tag target、asset ID／名稱／大小／SHA256、三份 sidecar 與 latest stable feed `1963` bytes／SHA256 `ef339f3e8a9a6dc9412e84366cc89b23b1c226e16989228b16a387f4458ba09b`；production public trust 對 RSA-PSS-SHA256 驗簽通過，六件合計 `106808780` bytes。
+
+一般 CI、合成回歸、WPF 布局、匿名下載與驗簽，以及歷史真人結果，不代替本表的真人登入、用量、乾淨 Windows 安裝、App 一鍵線上更新或完整 UI／無障礙驗收。功能與驗證範圍見 [1.0.15 版本說明](releases/1.0.15.md)。
 
 ### 1.0.14
 
