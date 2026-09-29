@@ -8,7 +8,7 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.16 / sequence 1030`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.17 / sequence 1031`。
 
 ### 英文與繁體中文語系
 
@@ -32,15 +32,16 @@
 
 本輪未執行真實 CLI 登入／用量、安裝升級、真人多螢幕或螢幕閱讀器驗收。語系功能已隨 `1.0.16` 正式發布；成品與待驗證範圍見下方紀錄及 [版本說明](docs/releases/1.0.16.md)。
 
-### 卡片警示翻譯修正（尚未發布）
+### 卡片警示翻譯修正（1.0.17 已發布）
 
 - [x] 舊用量的自動重試警示先翻譯完整原因，再移除重複提示，修正 Claude、Codex、Grok、Antigravity 的原因混語。
 - [x] CLI 診斷可翻譯已組合的已知原因；CLI 名稱、版號與相容性基準保留原值。部分翻譯不會隱藏原因或後續診斷，未知原文內的英文重試字句與 CRLF 保持原樣。
 - [x] 新增 31 個合成資料回歸案例，涵蓋整張卡片的警示、英／繁中切換、snapshot 與原始用量保留，以及 CLI 診斷的已知／未知版本。2026-09-29 Release 建置 0 warnings／errors；定向測試 210／210、完整測試 4,538／4,538 通過，0 failed／skipped，完整測試執行 245.44 秒。Production line coverage 74.84%（49,734／66,458，門檻 70%）。
 - [x] 53 個合成警示原因的雙語 helper 檢查共 106 次呼叫，全部通過；兩種語系各 1,851 筆 compiled 資源與 source 一致。此檢查未執行 provider 或真人 UI。
-- [ ] 下一版封裝、安裝後的卡片警示驗收。
+- [x] `1.0.17` 正式候選封裝、同包資源與合成警示檢查通過。
+- [ ] 安裝後的卡片警示驗收。
 
-本輪預定發布 `1.0.17 / sequence 1031`，沿用 `v1.0.16` 已簽署的 Updater；目前正式版本仍為 `1.0.16`。完整 main SHA 的 CI、候選封裝與公開下載結果完成後回填 [1.0.17 版本說明](docs/releases/1.0.17.md)。本次未執行真實 CLI 登入／用量或安裝升級。
+`1.0.17 / sequence 1031` 已沿用同一組凍結候選正式公開。[v1.0.17 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.17) 現為 stable／latest；六件成品資料見 [1.0.17 版本說明](docs/releases/1.0.17.md)。本次未執行真實 CLI 登入／用量或安裝升級。
 
 ### 使用者體驗一致性與操作回饋
 
@@ -139,7 +140,20 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 目前正式版本
 
-`1.0.16 / sequence 1030` 已沿用同一組凍結候選正式公開（[source `ec810d852b5ff93adfd2cc039008e0d1ba3c4771`](https://github.com/Sokaka/ai-usage-dashboard/commit/ec810d852b5ff93adfd2cc039008e0d1ba3c4771)）。[v1.0.16 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.16) 現為 stable／latest；Release ID `398675153`，六件成品資料見 [1.0.16 版本說明](docs/releases/1.0.16.md)。App 與新版 Updater 均來自同一 source；本版提供 English／繁體中文介面與語系設定匯入匯出。
+`1.0.17 / sequence 1031` 已沿用同一組凍結候選正式公開。[v1.0.17 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.17) 現為 stable／latest；六件成品資料見 [1.0.17 版本說明](docs/releases/1.0.17.md)。
+
+[source `8b45ee81b16bea6e387489e576323cfeb8bd32e6`](https://github.com/Sokaka/ai-usage-dashboard/commit/8b45ee81b16bea6e387489e576323cfeb8bd32e6)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36508603265/attempts/1) run `36508603265` attempt `1`，Release ID `398757069`。App 來自本次 source，Updater 沿用 `v1.0.16` 已簽署的 `1.0.16` 原始 bytes，source [`ec810d852b5ff93adfd2cc039008e0d1ba3c4771`](https://github.com/Sokaka/ai-usage-dashboard/commit/ec810d852b5ff93adfd2cc039008e0d1ba3c4771)。
+
+- [x] [同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36508046906/attempts/1)：Release 建置 0 warnings／errors，完整測試 4,538 passed／0 failed／0 skipped；production line coverage 74.96%（49,814／66,458，門檻 70%）。
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36508603265/attempts/1) attempt `1`：Release 建置 0 warnings／errors，完整測試 4,538 passed／0 failed／0 skipped；production line coverage 74.96%（49,814／66,458，門檻 70%）；同一 attempt 完成建置、簽署、驗簽與六件成品凍結。
+- [x] 已核對六件 asset ID／size／SHA256、三份 sidecar、production public trust feed 簽章及 draft 匿名存取拒絕。正式公開後匿名下載六件原凍結成品，latest feed 與凍結 feed 相同；六件合計 `106956341` bytes。
+- [x] 正式 App ZIP 預設 English；English／繁體中文各 1,851 筆資源與 source 相符，process `CurrentCulture` 不變。直接載入同包 App／Core 的 53 組 helper 檢查共 159 次呼叫、8 組卡片共 24 次語系呈現檢查通過，驗證已知原因翻譯、未知診斷及 CLI 資訊保留、語系切換；此檢查沒有執行真人 UI 或 provider。
+- [ ] 乾淨 Windows 初裝、`1.0.16` → `1.0.17` App 一鍵更新、安裝後卡片警示與完整 UI／無障礙驗收。
+- [ ] 五平台真人登入、手動／背景用量及失敗處理；見 [1.0.17 CLI 表](docs/CLI_COMPATIBILITY.md#1017)。
+
+### 1.0.16 歷史正式版
+
+`1.0.16 / sequence 1030` 已沿用同一組凍結候選正式公開（[source `ec810d852b5ff93adfd2cc039008e0d1ba3c4771`](https://github.com/Sokaka/ai-usage-dashboard/commit/ec810d852b5ff93adfd2cc039008e0d1ba3c4771)）。[v1.0.16 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.16) 公開時為 stable／latest；Release ID `398675153`，六件成品資料見 [1.0.16 版本說明](docs/releases/1.0.16.md)。App 與新版 Updater 均來自同一 source；本版提供 English／繁體中文介面與語系設定匯入匯出。
 
 - [x] [同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36491036747/attempts/1)：Release 建置（0 warnings／0 errors）與完整測試（4,507 passed／0 failed／0 skipped）通過，production line coverage 74.94%（49,778／66,425，門檻 70%）。
 - [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36491733896/attempts/1) attempt 1：Release 建置（0 warnings／0 errors）與完整測試（4,507 passed／0 failed／0 skipped）通過，production line coverage 74.93%（49,771／66,425，門檻 70%），同一 attempt 建置、簽署、驗簽及凍結六件成品。

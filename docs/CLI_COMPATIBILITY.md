@@ -1,8 +1,8 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.16` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.16` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.17` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.17` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
-本版提供 English／繁體中文介面與語系設定匯入匯出；逐平台狀態見 [1.0.16](#1016)，正式版本與下載資訊見 [README](../README.md#目前版本)。
+本版修正卡片警示翻譯，保留 English／繁體中文介面與語系設定匯入匯出；逐平台狀態見 [1.0.17](#1017)，正式版本與下載資訊見 [README](../README.md#目前版本)。
 
 ## 版本要求
 
@@ -27,7 +27,7 @@
 
 ### 1.0.17
 
-本表對應預定發布的 `1.0.17 / sequence 1031`；正式候選尚待以整合後完整 main SHA 建置。App 使用本次 source，Updater 預計沿用 `v1.0.16` 已簽署的 `1.0.16` 原始 bytes；CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
+本表對應已公開的 `1.0.17 / sequence 1031`；[source `8b45ee81b16bea6e387489e576323cfeb8bd32e6`](https://github.com/Sokaka/ai-usage-dashboard/commit/8b45ee81b16bea6e387489e576323cfeb8bd32e6)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36508603265/attempts/1) run `36508603265` attempt `1`，Release ID `398757069`。App 來自本次 source，Updater 沿用 `v1.0.16` 已簽署的 `1.0.16` 原始 bytes，source [`ec810d852b5ff93adfd2cc039008e0d1ba3c4771`](https://github.com/Sokaka/ai-usage-dashboard/commit/ec810d852b5ff93adfd2cc039008e0d1ba3c4771)。CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
 
 | 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
 | --- | --- | --- | --- |
@@ -37,7 +37,7 @@
 | Grok | 未以本版實測 | 未驗證 | 未驗證 |
 | Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
 
-本版修正卡片警示的英文翻譯及重複自動重試提示，保留未知診斷與 CLI 版本資訊。完整 SHA 的 CI、正式候選、公開下載與安裝結果尚待回填；一般合成回歸不代替真人登入、用量、背景更新、App 線上更新或完整 UI／無障礙驗收。內容見 [1.0.17 版本說明](releases/1.0.17.md)。
+本版修正卡片警示的英文翻譯及重複自動重試提示，保留未知診斷與 CLI 版本資訊。完整 SHA 的 CI、正式候選、公開下載及同包合成警示檢查已完成，安裝與真人實測仍待驗；一般合成回歸不代替真人登入、用量、背景更新、App 線上更新或完整 UI／無障礙驗收。內容見 [1.0.17 版本說明](releases/1.0.17.md)。
 
 ### 1.0.16
 
