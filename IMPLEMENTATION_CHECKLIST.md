@@ -8,7 +8,7 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.17 / sequence 1031`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.18 / sequence 1032`。
 
 ### 英文與繁體中文語系
 
@@ -41,14 +41,14 @@
 - [x] `1.0.17` 正式候選封裝、同包資源與合成警示檢查通過。
 - [ ] 安裝後的卡片警示驗收。
 
-`1.0.17 / sequence 1031` 已沿用同一組凍結候選正式公開。[v1.0.17 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.17) 現為 stable／latest；六件成品資料見 [1.0.17 版本說明](docs/releases/1.0.17.md)。本次未執行真實 CLI 登入／用量或安裝升級。
+`1.0.17 / sequence 1031` 已沿用同一組凍結候選正式公開。[v1.0.17 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.17) 公開時為 stable／latest；六件成品資料見 [1.0.17 版本說明](docs/releases/1.0.17.md)。本次未執行真實 CLI 登入／用量或安裝升級。
 
-### Updater 語系提示修正（1.0.18 待發布）
+### Updater 語系提示修正（1.0.18 已發布）
 
 - [x] 更新程式的完成、重新啟動、已是最新版及已知附加警告提供 English／繁體中文。
 - [x] App 傳遞目前語系；獨立 Updater 只讀既有語系設定，缺少設定時使用英文，不變更 process `CurrentCulture` 或設定格式。
 - [x] 雙語文案、語系優先順序、損壞設定保留與隔離程序交接回歸。
-- [ ] `1.0.18` 同 source 的 CI、App／新版 Updater 封裝、正式成品語系檢查與公開下載。
+- [x] `1.0.18` 同 source 的 CI、App／新版 Updater 封裝、正式成品語系檢查與公開下載通過；見下方目前正式版本。
 - [ ] 官方舊 Updater → 本版 App 按鈕更新、維護副本提升及安裝後提示驗收。
 
 2026-09-29 修正後 Release 建置 0 warnings／errors；定向測試 111／111、完整測試 4,593／4,593 通過，0 failed／skipped，TRX 執行時間 251.29 秒。Production line coverage 74.91%（49,902／66,620，門檻 70%）。
@@ -154,7 +154,23 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 目前正式版本
 
-`1.0.17 / sequence 1031` 已沿用同一組凍結候選正式公開。[v1.0.17 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.17) 現為 stable／latest；六件成品資料見 [1.0.17 版本說明](docs/releases/1.0.17.md)。
+
+`1.0.18 / sequence 1032` 已沿用同一組凍結候選正式公開。[v1.0.18 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.18) 現為 stable／latest；六件成品資料見 [1.0.18 版本說明](docs/releases/1.0.18.md)。
+
+[source `137f8718e9efdfaa46b3d20b53984fc1a8c667ff`](https://github.com/Sokaka/ai-usage-dashboard/commit/137f8718e9efdfaa46b3d20b53984fc1a8c667ff)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36516000991/attempts/1) run `36516000991` attempt `1`，Release ID `398796172`。App 與新版 Updater 均為 `1.0.18`，由同一 source 建置；沒有沿用舊 Updater。
+
+- [x] [同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36515493836/attempts/1)：Release 建置 0 warnings／errors，完整測試 4,593 passed／0 failed／0 skipped；production line coverage 75.03%（49,982／66,620，門檻 70%）。
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36516000991/attempts/1)：Release 建置 0 warnings／errors，完整測試 4,593 passed／0 failed／0 skipped；production line coverage 75.02%（49,975／66,620，門檻 70%）；同一 attempt 建置、簽署、驗簽與凍結。
+- [x] 六件 Release／asset ID、大小、SHA256、三份 canonical sidecar、production public trust `aud-prod-20260907-a` 的 feed 簽章與 draft 匿名拒絕均通過。正式公開後以無 token／cookie 的 client 匿名下載六件原凍結成品，latest／tag source 與 signed latest feed 相符；前後 bytes 不變，六件合計 `106959938` bytes。
+- [x] 正式 App ZIP 預設 English，English 1,851 筆／繁體中文 1,851 筆資源均與本次 source 相符，process `CurrentCulture` 不變。直接讀取正式 Updater single-file 內的 main／Core assemblies，423 項雙語文案、合成 preferences／舊參數 fallback 與明確語系優先檢查通過；embedded stable feed／channel／production trust bytes 及 EXE 版本、source、大小與 SHA256 均相符。這是正式成品的合成檢查，未執行安裝、真人 UI 或 provider。
+- [ ] 乾淨 Windows 安裝、官方舊 Updater → `1.0.18` App 按鈕更新、維護副本與 Windows 登錄交接、安裝後 UI／無障礙。
+- [ ] 五平台真人登入、手動／背景用量及失敗處理；見 [1.0.18 CLI 表](docs/CLI_COMPATIBILITY.md#1018)。
+
+首次透過舊 `1.0.16` Updater 升級時，舊 parent 完成尾訊仍可能是中文；新 `1.0.18` 維護 Updater 接手後跟隨所選語系。正式成品的合成檢查不代替上述實機驗收。
+
+### 1.0.17 歷史正式版
+
+`1.0.17 / sequence 1031` 已沿用同一組凍結候選正式公開。[v1.0.17 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.17) 公開時為 stable／latest；六件成品資料見 [1.0.17 版本說明](docs/releases/1.0.17.md)。
 
 [source `8b45ee81b16bea6e387489e576323cfeb8bd32e6`](https://github.com/Sokaka/ai-usage-dashboard/commit/8b45ee81b16bea6e387489e576323cfeb8bd32e6)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36508603265/attempts/1) run `36508603265` attempt `1`，Release ID `398757069`。App 來自本次 source，Updater 沿用 `v1.0.16` 已簽署的 `1.0.16` 原始 bytes，source [`ec810d852b5ff93adfd2cc039008e0d1ba3c4771`](https://github.com/Sokaka/ai-usage-dashboard/commit/ec810d852b5ff93adfd2cc039008e0d1ba3c4771)。
 

@@ -1,8 +1,8 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.17` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.17` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.18` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.18` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
-本版修正卡片警示翻譯，保留 English／繁體中文介面與語系設定匯入匯出；逐平台狀態見 [1.0.17](#1017)，正式版本與下載資訊見 [README](../README.md#目前版本)。
+本版修正 Updater 語系提示，保留 English／繁體中文介面與語系設定匯入匯出；逐平台狀態見 [1.0.18](#1018)，正式版本與下載資訊見 [README](../README.md#目前版本)。
 
 ## 版本要求
 
@@ -27,7 +27,7 @@
 
 ### 1.0.18
 
-本表對應 `1.0.18 / sequence 1032` 的待建立候選，尚未正式公開。App 與新版 `1.0.18` Updater 將由同一完整 source SHA 建置；source、CI、run／attempt 與六件成品 identity 待實際建立後回填。CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
+本表對應已公開的 `1.0.18 / sequence 1032`；[source `137f8718e9efdfaa46b3d20b53984fc1a8c667ff`](https://github.com/Sokaka/ai-usage-dashboard/commit/137f8718e9efdfaa46b3d20b53984fc1a8c667ff)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36516000991/attempts/1) run `36516000991` attempt `1`，Release ID `398796172`。App 與新版 Updater 均為 `1.0.18`，由同一 source 建置；沒有沿用舊 Updater。 CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
 
 | 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
 | --- | --- | --- | --- |
@@ -36,6 +36,8 @@
 | GitHub Copilot | 未以本版實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
 | Grok | 未以本版實測 | 未驗證 | 未驗證 |
 | Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
+
+本版的同 source Windows CI、正式候選、六件公開下載、App 資源與正式 Updater 合成語系檢查已完成。乾淨安裝、App 按鈕更新、維護 Updater／Windows 登錄交接、安裝後 UI 及五平台真人 CLI 仍待驗；隔離程序 fixture 不代替官方舊 Updater 的線上更新 E2E。
 
 本版修正 Updater 的語系提示，保留既有 provider 協定與 CLI 要求。舊 Updater 首次交接的中文完成提示限制及本版驗證範圍見 [1.0.18 版本說明](releases/1.0.18.md)。
 
