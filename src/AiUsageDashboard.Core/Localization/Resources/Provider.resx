@@ -930,6 +930,12 @@
 	<data name="Message309" xml:space="preserve">
 		<value>{0} / {1} used</value>
 	</data>
+	<data name="CliDiagnosticDetected" xml:space="preserve">
+		<value>{0} CLI version diagnostic: Detected {1} {2}; this version's compatibility baseline is {3}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
+	<data name="CliDiagnosticUnknown" xml:space="preserve">
+		<value>{0} CLI version diagnostic: The {1} version could not be recognized; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
+	</data>
 	<data name="Message310" xml:space="preserve">
 		<value>{0} CLI version diagnostic: {1}; this version's compatibility baseline is {2}. This version has not been verified, which does not mean it is unsupported. The version difference may be one possible cause.</value>
 	</data>
