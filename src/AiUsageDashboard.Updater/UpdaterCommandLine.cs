@@ -24,6 +24,9 @@ internal sealed record UpdaterCommandLineOptions(
 	bool IsUninstallConfirmed,
 	bool ShouldNotifyUser)
 {
+	internal UpdaterDisplayLanguage DisplayLanguage { get; init; } =
+		UpdaterDisplayLanguage.English;
+
 	internal bool ShouldPromptForLicenses { get; init; }
 }
 

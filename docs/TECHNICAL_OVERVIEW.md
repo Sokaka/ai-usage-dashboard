@@ -44,6 +44,10 @@
 
 執行中的固定 maintenance Updater 若因 Windows image lock 無法被 delegated 新版覆寫，新版會先留在 maintenance root 的 content-addressed generation。delegated 新版只有在自身 version／size／SHA-256 符合 signed feed、執行路徑是該 artifact 的固定 cache path，且由 Windows 取得的 direct parent exact PID／UTC start time／image path 確認為固定 maintenance Updater 時，才以當下 canonical hash 作 compare-and-swap 條件，原子保存 promotion receipt 並啟動該 generation 的 internal promoter。promoter 會持續等待 exact parent 自然離開，再取得 canonical install root 的 `UpdateInstallLock`；只有 receipt 仍精確指向自己的工作可重新驗證 generation／固定入口 hashes，並從同目錄 temporary file 原子提升。這個 ownership 由新版 child 負責，因此已發布、尚不具 promotion 邏輯的舊 Updater 也能進入更新鏈。被較新 generation 取代或 receipt 已清除的 promoter 會安全結束；pending retry 只有在 install lock 內確認完整 receipt snapshot 未被取代時才能重新綁定，避免舊 retry 蓋回新版 handoff。成功會清除相符 receipt；失敗會保存有界錯誤。固定入口已具 retry 能力時，下次 online 啟動會在讀取 feed 前重試；若初次 bootstrap 後固定入口仍是尚無此能力的舊版，則需由相容 transition feed 再次成功 delegation。Windows uninstall registration 會先修正到目前可執行的 Updater，之後才清理不再被引用的舊 generation；硬中止遺留的嚴格命名 promotion temporary file則由解除安裝的 maintenance ownership cleanup 清除，近似名稱、directory 與 reparse point 仍 fail closed 保留。
 
+App 以無參數啟動維護 Updater，使用該 child 的 `AI_USAGE_DASHBOARD_UI_LANGUAGE` 傳遞目前語系，不改變 App 的 process environment。新版 Updater 優先使用有效的傳入語系；獨立啟動時只讀既有 `preferences.json` 的 `language`，缺少設定時使用 English。語系只用於顯示，不變更 `CurrentCulture`、設定 schema 或 feed／安裝安全判斷。文案放在獨立 Updater 中，維持 single-file 分發及對 App assemblies 的隔離。
+
+舊 Updater 不認識新增 CLI 參數，因此語系不經 argv 傳遞；其 delegated child 可繼承 environment。舊 `1.0.16` parent 在首次交接後仍顯示自己的固定中文完成提示，直到新版維護入口接手；隔離程序回歸不能代替這條正式 App 更新路徑的實測。
+
 `AppInstallationContextDetector` 依目前 executable 與相鄰 `update-manifest.json` fail closed 分類：
 
 - `CanonicalManaged`：exact `%LOCALAPPDATA%\Programs\AiUsageDashboard\current\app\AiUsageDashboard.App.exe`、有效 manifest 與相同 payload identity。只有這一類、固定 maintenance Updater 存在，且 `UpdateShutdownChannel.StartAsync` 已確認 pipe listener ready 時，才顯示 **更新並重新啟動**。

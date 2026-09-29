@@ -4,6 +4,7 @@ using System.IO;
 using System.Security;
 
 using AiUsageDashboard.App.Persistence;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Updater.Core;
 
 namespace AiUsageDashboard.App.Updates;
@@ -94,7 +95,8 @@ internal sealed class MaintenanceUpdaterLauncher
 
 	internal async Task<MaintenanceUpdaterLaunchResult> LaunchAsync(
 		AppInstallationContext installationContext,
-		bool isShutdownChannelReady)
+		bool isShutdownChannelReady,
+		AppLanguage language = AppLanguage.English)
 	{
 		ArgumentNullException.ThrowIfNull(installationContext);
 
@@ -129,7 +131,7 @@ internal sealed class MaintenanceUpdaterLauncher
 					MaintenanceUpdaterLaunchFailure.ExecutableUnavailable);
 			}
 
-			ProcessStartInfo startInfo = CreateStartInfo(executablePath);
+			ProcessStartInfo startInfo = CreateStartInfo(executablePath, language);
 			int exitCode = await _runProcessAsync(startInfo).ConfigureAwait(false);
 			return new MaintenanceUpdaterLaunchResult(
 				WasStarted: true,
@@ -152,7 +154,9 @@ internal sealed class MaintenanceUpdaterLauncher
 		}
 	}
 
-	internal static ProcessStartInfo CreateStartInfo(string executablePath)
+	internal static ProcessStartInfo CreateStartInfo(
+		string executablePath,
+		AppLanguage language = AppLanguage.English)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
 		string fullPath = Path.GetFullPath(executablePath);
@@ -165,13 +169,25 @@ internal sealed class MaintenanceUpdaterLauncher
 				nameof(executablePath));
 		}
 
-		return new ProcessStartInfo(fullPath)
+		string updaterLanguage = language switch
+		{
+			AppLanguage.English => nameof(UpdaterDisplayLanguage.English),
+			AppLanguage.TraditionalChinese =>
+				nameof(UpdaterDisplayLanguage.TraditionalChinese),
+			_ => throw new ArgumentOutOfRangeException(
+				nameof(language), language, "The updater display language is unsupported.")
+		};
+		ProcessStartInfo startInfo = new(fullPath)
 		{
 			CreateNoWindow = false,
-			UseShellExecute = true,
+			UseShellExecute = false,
 			WindowStyle = ProcessWindowStyle.Normal,
 			WorkingDirectory = workingDirectory
 		};
+		startInfo.Environment[
+			UpdaterDisplayLanguageContract.LanguageEnvironmentVariableName] =
+			updaterLanguage;
+		return startInfo;
 	}
 
 	private static async Task<int> RunProcessAsync(ProcessStartInfo startInfo)

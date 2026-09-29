@@ -43,6 +43,20 @@
 
 `1.0.17 / sequence 1031` 已沿用同一組凍結候選正式公開。[v1.0.17 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.17) 現為 stable／latest；六件成品資料見 [1.0.17 版本說明](docs/releases/1.0.17.md)。本次未執行真實 CLI 登入／用量或安裝升級。
 
+### Updater 語系提示修正（1.0.18 待發布）
+
+- [x] 更新程式的完成、重新啟動、已是最新版及已知附加警告提供 English／繁體中文。
+- [x] App 傳遞目前語系；獨立 Updater 只讀既有語系設定，缺少設定時使用英文，不變更 process `CurrentCulture` 或設定格式。
+- [x] 雙語文案、語系優先順序、損壞設定保留與隔離程序交接回歸。
+- [ ] `1.0.18` 同 source 的 CI、App／新版 Updater 封裝、正式成品語系檢查與公開下載。
+- [ ] 官方舊 Updater → 本版 App 按鈕更新、維護副本提升及安裝後提示驗收。
+
+2026-09-29 修正後 Release 建置 0 warnings／errors；定向測試 111／111、完整測試 4,593／4,593 通過，0 failed／skipped，TRX 執行時間 251.29 秒。Production line coverage 74.91%（49,902／66,620，門檻 70%）。
+
+首次建置發現新增測試的三處 `UpdaterCommandLine.Parse` 參數順序錯誤，已修正。首輪完整測試為 4,592 passed／1 failed／0 skipped：使用說明新增的相對版本說明連結無法在隨包 README 使用，已改成完整 GitHub URL，該項重測 1／1 通過；上述完整結果來自修正後重跑，原失敗紀錄保留。
+
+舊 `1.0.16` Updater 第一次交接新版後仍由舊 parent 顯示中文尾訊；新版無法改動已在執行的舊程式。這項限制與驗證範圍見 [1.0.18 版本說明](docs/releases/1.0.18.md)。
+
 ### 使用者體驗一致性與操作回饋
 
 - [x] Claude 帳號編輯畫面明確說明「儲存並連接」即接受用量風險，「儲存」可留待稍後決定。
