@@ -2222,7 +2222,8 @@ public partial class App : System.Windows.Application
 		Task<MaintenanceUpdaterLaunchResult> launchTask =
 			_maintenanceUpdaterLauncher.LaunchAsync(
 				_appInstallationContext,
-				_isUpdateShutdownChannelReady);
+				_isUpdateShutdownChannelReady,
+				_selectedLanguage);
 		RefreshUpdatePresentation();
 		MaintenanceUpdaterLaunchResult result = await launchTask;
 		if (!CanShowInteractiveUpdateResult(IsQuitting))

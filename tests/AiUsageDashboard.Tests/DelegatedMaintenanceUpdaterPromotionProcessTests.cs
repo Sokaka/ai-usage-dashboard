@@ -19,9 +19,13 @@ public sealed class DelegatedMaintenanceUpdaterPromotionProcessTests
 	private const string ParentCommand = "fixture-parent";
 	private static readonly TimeSpan ProcessTimeout = TimeSpan.FromSeconds(30);
 
-	[Fact]
+	// 合成 parent 模擬舊版交接形狀，未使用官方舊版 Updater。
+	[Theory]
+	[InlineData(nameof(UpdaterDisplayLanguage.English))]
+	[InlineData(nameof(UpdaterDisplayLanguage.TraditionalChinese))]
 	[Trait("Category", "WindowsIntegration")]
-	public async Task LegacyCanonicalParent_DelegatedTarget_PromotesAfterExactParentExits()
+	public async Task LegacyCanonicalParent_DelegatedTarget_PromotesAfterExactParentExits(
+		string language)
 	{
 		using UpdaterProcessTestDirectory temporaryDirectory = new();
 		string localApplicationDataDirectory = temporaryDirectory.Path;
@@ -121,6 +125,8 @@ public sealed class DelegatedMaintenanceUpdaterPromotionProcessTests
 		parentStartInfo.ArgumentList.Add(ParentCommand);
 		parentStartInfo.Environment[FixtureConfigurationEnvironmentVariable] =
 			configurationPath;
+		parentStartInfo.Environment[
+			UpdaterDisplayLanguageContract.LanguageEnvironmentVariableName] = language;
 		WindowsJobContainedProcess? containedParent = null;
 		Process? parent = null;
 		Process? promoter = null;
@@ -154,6 +160,7 @@ public sealed class DelegatedMaintenanceUpdaterPromotionProcessTests
 				await ReadObservationAsync<DelegatedChildObservation>(Path.Combine(
 					observationDirectory,
 					"delegated-child.json"));
+			Assert.Equal(language, childObservation.DisplayLanguage);
 			parent = Process.GetProcessById(childObservation.ParentProcessId);
 			_ = parent.SafeHandle;
 			long parentStartTimeUtcTicks =
@@ -493,7 +500,8 @@ public sealed class DelegatedMaintenanceUpdaterPromotionProcessTests
 		int PromotionParentProcessId,
 		long PromotionParentProcessStartTimeUtcTicks,
 		string ExpectedCanonicalSha256,
-		string SourceSha256);
+		string SourceSha256,
+		string? DisplayLanguage);
 
 	private sealed record PromoterObservation(
 		int ProcessId,

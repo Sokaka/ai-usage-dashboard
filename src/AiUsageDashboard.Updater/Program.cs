@@ -19,6 +19,10 @@ internal static class Program
 	public static async Task<int> Main(string[] arguments)
 	{
 		bool shouldNotifyUser = arguments.Length == 0;
+		string? environmentLanguage = Environment.GetEnvironmentVariable(
+			UpdaterDisplayLanguageContract.LanguageEnvironmentVariableName);
+		UpdaterDisplayLanguageContract.TryParse(environmentLanguage, out UpdaterDisplayLanguage displayLanguage);
+		UpdaterText text = UpdaterText.ForLanguage(displayLanguage);
 
 		try
 		{
@@ -45,6 +49,14 @@ internal static class Program
 			}
 
 			UpdaterCommandLineOptions options = UpdaterCommandLine.Parse(arguments);
+			options = options with
+			{
+				DisplayLanguage = UpdaterDisplayLanguageResolver.Resolve(
+					options.UserDataRoot,
+					environmentLanguage,
+					Console.Error)
+			};
+			text = UpdaterText.ForLanguage(options.DisplayLanguage);
 			shouldNotifyUser = options.ShouldNotifyUser;
 			RecoverInterruptedInstallation(options.InstallRoot);
 			if (options.Command == UpdaterCommand.UpdateOnline)
@@ -68,11 +80,11 @@ internal static class Program
 			{
 				if (result.ExitCode == SuccessExitCode)
 				{
-					UpdaterUserNotifier.ShowSuccess(result.UserMessage);
+					UpdaterUserNotifier.ShowSuccess(result.UserMessage, text);
 				}
 				else
 				{
-					UpdaterUserNotifier.ShowError(result.UserMessage);
+					UpdaterUserNotifier.ShowError(result.UserMessage, text);
 				}
 			}
 
@@ -82,21 +94,21 @@ internal static class Program
 		{
 			Console.Error.WriteLine(exception.Message);
 			Console.Error.WriteLine(UpdaterCommandLine.Usage);
-			NotifyFailureIfRequested(shouldNotifyUser, exception.Message);
+			NotifyFailureIfRequested(shouldNotifyUser, text.UpdateCouldNotStart(exception.Message), text);
 			return CommandLineFailureExitCode;
 		}
 		catch (OperationCanceledException)
 		{
-			const string message = "The update was cancelled.";
+			string message = text.UpdateCancelled;
 			Console.Error.WriteLine(message);
-			NotifyFailureIfRequested(shouldNotifyUser, message);
+			NotifyFailureIfRequested(shouldNotifyUser, message, text);
 			return GeneralFailureExitCode;
 		}
 		catch (Exception exception)
 		{
-			string message = $"Update failed: {exception.Message}";
+			string message = text.UpdateFailed(exception.Message);
 			Console.Error.WriteLine(message);
-			NotifyFailureIfRequested(shouldNotifyUser, message);
+			NotifyFailureIfRequested(shouldNotifyUser, message, text);
 			return GeneralFailureExitCode;
 		}
 	}
@@ -148,6 +160,7 @@ internal static class Program
 		UpdaterCommandLineOptions options,
 		CancellationToken cancellationToken)
 	{
+		UpdaterText text = UpdaterText.ForLanguage(options.DisplayLanguage);
 		if (options.FeedUri is null)
 		{
 			throw new InvalidOperationException(
@@ -180,9 +193,7 @@ internal static class Program
 				InvalidOperationException or ArgumentException or
 				Win32Exception)
 		{
-			delegatedPromotionWarning =
-				"無法確認 delegated maintenance updater 的 parent 身分：" +
-				exception.Message;
+			delegatedPromotionWarning = text.ParentIdentityUnavailable(exception.Message);
 			Console.Error.WriteLine($"Warning: {delegatedPromotionWarning}");
 		}
 
@@ -232,8 +243,8 @@ internal static class Program
 					delegatedUpdater.ExecutablePath,
 					options);
 				string delegatedMessage = delegatedExitCode == SuccessExitCode
-					? "最新版檢查與更新已完成。"
-					: "新版 updater 未能完成更新，請查看錯誤訊息。";
+					? text.DelegatedUpdateCompleted
+					: text.DelegatedUpdateFailed;
 				UpdaterExecutionResult delegatedResult = new(
 					delegatedExitCode,
 					delegatedMessage);
@@ -339,6 +350,7 @@ internal static class Program
 		ArgumentException.ThrowIfNullOrWhiteSpace(packagePath);
 		ArgumentNullException.ThrowIfNull(manifest);
 		ArgumentNullException.ThrowIfNull(options);
+		UpdaterText text = UpdaterText.ForLanguage(options.DisplayLanguage);
 		manifest.Validate();
 		using UpdateInstallLock updateLock = UpdateInstallLock.Acquire(
 			options.InstallRoot);
@@ -410,7 +422,7 @@ internal static class Program
 			return new UpdaterExecutionResult(
 				SuccessExitCode,
 				AppendWarning(
-					$"AI Usage {manifest.Version} 已更新完成。",
+					text.UpdateCompleted(manifest.Version),
 					registrationWarning));
 		}
 
@@ -420,15 +432,13 @@ internal static class Program
 			return new UpdaterExecutionResult(
 				SuccessExitCode,
 				AppendWarning(
-					$"AI Usage {manifest.Version} 已更新並重新啟動。",
+					text.UpdateCompletedAndRestarted(manifest.Version),
 					registrationWarning));
 		}
 		catch (Exception exception) when (
 			exception is Win32Exception or InvalidOperationException)
 		{
-			string message =
-				"The update was applied, but AI Usage could not be restarted: " +
-				exception.Message;
+			string message = text.RestartFailed(exception.Message);
 			Console.Error.WriteLine(message);
 			return new UpdaterExecutionResult(RestartFailureExitCode, message);
 		}
@@ -554,6 +564,20 @@ internal static class Program
 		string executablePath,
 		UpdaterCommandLineOptions options)
 	{
+		ProcessStartInfo startInfo = CreateDelegatedUpdaterStartInfo(executablePath, options);
+		using Process process = Process.Start(startInfo) ??
+			throw new InvalidOperationException(
+				"Windows did not start the downloaded updater.");
+		await process.WaitForExitAsync();
+		return process.ExitCode;
+	}
+
+	internal static ProcessStartInfo CreateDelegatedUpdaterStartInfo(
+		string executablePath,
+		UpdaterCommandLineOptions options)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
+		ArgumentNullException.ThrowIfNull(options);
 		ProcessStartInfo startInfo = new()
 		{
 			FileName = executablePath,
@@ -580,11 +604,14 @@ internal static class Program
 			startInfo.ArgumentList.Add("--no-restart");
 		}
 
-		using Process process = Process.Start(startInfo) ??
-			throw new InvalidOperationException(
-				"Windows did not start the downloaded updater.");
-		await process.WaitForExitAsync();
-		return process.ExitCode;
+		startInfo.Environment[UpdaterDisplayLanguageContract.LanguageEnvironmentVariableName] =
+			options.DisplayLanguage switch
+			{
+				UpdaterDisplayLanguage.English => nameof(UpdaterDisplayLanguage.English),
+				UpdaterDisplayLanguage.TraditionalChinese => nameof(UpdaterDisplayLanguage.TraditionalChinese),
+				_ => throw new ArgumentOutOfRangeException(nameof(options), "Unsupported updater display language.")
+			};
+		return startInfo;
 	}
 
 	private static async Task<UpdaterExecutionResult>
@@ -604,6 +631,7 @@ internal static class Program
 		ArgumentNullException.ThrowIfNull(currentUpdater);
 		ArgumentNullException.ThrowIfNull(availableUpdater);
 		ArgumentNullException.ThrowIfNull(options);
+		UpdaterText text = UpdaterText.ForLanguage(options.DisplayLanguage);
 		string? warning = pendingPromotionWarning;
 
 		if (result.ExitCode is not SuccessExitCode and not RestartFailureExitCode)
@@ -629,8 +657,7 @@ internal static class Program
 					preparationWarning = isCanonicalCurrent
 						? null
 						: preparationWarning ??
-							"App 已更新，但 canonical maintenance updater 仍不是 " +
-							"signed feed 指定版本。";
+							text.CanonicalUpdaterNotCurrent;
 				}
 				catch (Exception exception) when (
 					exception is IOException or UnauthorizedAccessException or
@@ -640,8 +667,7 @@ internal static class Program
 				{
 					preparationWarning = CombineWarnings(
 						preparationWarning,
-						"App 已更新，但無法驗證 canonical maintenance updater：" +
-							exception.Message);
+						text.CanonicalUpdaterVerificationFailed(exception.Message));
 				}
 			}
 
@@ -689,8 +715,7 @@ internal static class Program
 		{
 			warning = CombineWarnings(
 				warning,
-				"App 已更新，但無法安排 delegated maintenance updater 提升：" +
-					exception.Message);
+				text.PromotionSchedulingFailed(exception.Message));
 			Console.Error.WriteLine(
 				$"Warning: {warning ?? "Maintenance updater promotion failed."}");
 		}
@@ -704,6 +729,7 @@ internal static class Program
 		UpdaterCommandLineOptions options,
 		CancellationToken cancellationToken)
 	{
+		UpdaterText text = UpdaterText.ForLanguage(options.DisplayLanguage);
 		if (!options.ShouldRegisterInstalledApp)
 		{
 			return null;
@@ -774,7 +800,7 @@ internal static class Program
 					recordedOptions,
 					changedCanonicalException,
 					CancellationToken.None);
-				string warning = changedCanonicalException.Message;
+				string warning = text.PendingPromotionRetryFailed(changedCanonicalException.Message);
 				Console.Error.WriteLine($"Warning: {warning}");
 				return warning;
 			}
@@ -800,9 +826,7 @@ internal static class Program
 				InvalidOperationException or ArgumentException or
 				Win32Exception)
 		{
-			string warning =
-				"Pending maintenance updater promotion could not be " +
-				$"retried: {exception.Message}";
+			string warning = text.PendingPromotionRetryFailed(exception.Message);
 			Console.Error.WriteLine($"Warning: {warning}");
 			return warning;
 		}
@@ -814,6 +838,7 @@ internal static class Program
 			UpdateManifest installedManifest,
 			CancellationToken cancellationToken)
 	{
+		UpdaterText text = UpdaterText.ForLanguage(options.DisplayLanguage);
 		string? registrationWarning = await TryRegisterInstalledAppAsync(
 			options,
 			installedManifest,
@@ -824,7 +849,7 @@ internal static class Program
 			return new UpdaterExecutionResult(
 				SuccessExitCode,
 				AppendWarning(
-					"AI Usage 已是最新版。",
+					text.AlreadyCurrent,
 					registrationWarning));
 		}
 
@@ -834,15 +859,13 @@ internal static class Program
 			return new UpdaterExecutionResult(
 				SuccessExitCode,
 				AppendWarning(
-					"AI Usage 已是最新版，並已啟動。",
+					text.AlreadyCurrentAndStarted,
 					registrationWarning));
 		}
 		catch (Exception exception) when (
 			exception is Win32Exception or InvalidOperationException)
 		{
-			string message =
-				"AI Usage is current, but it could not be started: " +
-				exception.Message;
+			string message = text.CurrentAppStartFailed(exception.Message);
 			Console.Error.WriteLine(message);
 			return new UpdaterExecutionResult(RestartFailureExitCode, message);
 		}
@@ -899,6 +922,7 @@ internal static class Program
 		UpdateManifest installedManifest,
 		CancellationToken cancellationToken)
 	{
+		UpdaterText text = UpdaterText.ForLanguage(options.DisplayLanguage);
 		if (!options.ShouldRegisterInstalledApp)
 		{
 			return null;
@@ -911,7 +935,7 @@ internal static class Program
 					"The running updater executable path is unavailable.");
 			ManagedInstallationRegistrar registrar = new(
 				new CurrentUserUninstallRegistryStore(),
-				new ManagedStartMenuShortcut());
+				new ManagedStartMenuShortcut(displayLanguage: options.DisplayLanguage));
 			string? shortcutWarning = await registrar.EnsureRegisteredAsync(
 				runningUpdaterPath,
 				options.InstallRoot,
@@ -932,9 +956,7 @@ internal static class Program
 				SecurityException or InvalidDataException or
 				InvalidOperationException or ArgumentException)
 		{
-			string warning =
-				"App 已更新，但無法登錄 Windows 已安裝的應用程式：" +
-				exception.Message;
+			string warning = text.RegistrationFailed(exception.Message);
 			Console.Error.WriteLine($"Warning: {warning}");
 			return warning;
 		}
@@ -996,11 +1018,12 @@ internal static class Program
 
 	private static void NotifyFailureIfRequested(
 		bool shouldNotifyUser,
-		string message)
+		string message,
+		UpdaterText text)
 	{
 		if (shouldNotifyUser)
 		{
-			UpdaterUserNotifier.ShowError(message);
+			UpdaterUserNotifier.ShowError(message, text);
 		}
 	}
 

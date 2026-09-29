@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 
 using AiUsageDashboard.App.Updates;
+using AiUsageDashboard.Core.Localization;
 using AiUsageDashboard.Updater.Core;
 
 namespace AiUsageDashboard.Tests;
@@ -25,9 +26,83 @@ public sealed class MaintenanceUpdaterLauncherTests
 			startInfo.WorkingDirectory);
 		Assert.Empty(startInfo.ArgumentList);
 		Assert.Empty(startInfo.Arguments);
-		Assert.True(startInfo.UseShellExecute);
+		Assert.False(startInfo.UseShellExecute);
 		Assert.False(startInfo.CreateNoWindow);
 		Assert.Equal(ProcessWindowStyle.Normal, startInfo.WindowStyle);
+		Assert.Equal(
+			nameof(UpdaterDisplayLanguage.English),
+			startInfo.Environment[
+				UpdaterDisplayLanguageContract.LanguageEnvironmentVariableName]);
+	}
+
+	[Theory]
+	[InlineData(AppLanguage.English, nameof(UpdaterDisplayLanguage.English))]
+	[InlineData(AppLanguage.TraditionalChinese,
+		nameof(UpdaterDisplayLanguage.TraditionalChinese))]
+	public void CreateStartInfo_PassesSelectedLanguageWithoutChangingParentEnvironment(
+		AppLanguage language,
+		string expectedLanguage)
+	{
+		string? originalLanguage = Environment.GetEnvironmentVariable(
+			UpdaterDisplayLanguageContract.LanguageEnvironmentVariableName);
+		ProcessStartInfo startInfo = MaintenanceUpdaterLauncher.CreateStartInfo(
+			Path.Combine(Path.GetTempPath(), "updater.exe"),
+			language);
+
+		Assert.Equal(expectedLanguage, startInfo.Environment[
+			UpdaterDisplayLanguageContract.LanguageEnvironmentVariableName]);
+		Assert.Equal(originalLanguage, Environment.GetEnvironmentVariable(
+			UpdaterDisplayLanguageContract.LanguageEnvironmentVariableName));
+		Assert.Empty(startInfo.ArgumentList);
+	}
+
+	[Fact]
+	public void CreateStartInfo_RejectsUnsupportedLanguage()
+	{
+		Assert.Throws<ArgumentOutOfRangeException>(() =>
+			MaintenanceUpdaterLauncher.CreateStartInfo(
+				Path.Combine(Path.GetTempPath(), "updater.exe"),
+				(AppLanguage)int.MaxValue));
+	}
+
+	[Theory]
+	[InlineData(AppLanguage.English, nameof(UpdaterDisplayLanguage.English))]
+	[InlineData(AppLanguage.TraditionalChinese,
+		nameof(UpdaterDisplayLanguage.TraditionalChinese))]
+	public async Task LaunchAsync_PassesCurrentLanguageToUpdater(
+		AppLanguage language,
+		string expectedLanguage)
+	{
+		string testDirectory = CreateTestDirectory();
+		string executablePath = Path.Combine(testDirectory, "updater.exe");
+		await File.WriteAllBytesAsync(executablePath, [0]);
+		ProcessStartInfo? launchedStartInfo = null;
+		MaintenanceUpdaterLauncher launcher = new(
+			() => executablePath,
+			startInfo =>
+			{
+				launchedStartInfo = startInfo;
+				return Task.FromResult(0);
+			});
+
+		try
+		{
+			MaintenanceUpdaterLaunchResult result = await launcher.LaunchAsync(
+				CreateContext(AppInstallationKind.CanonicalManaged),
+				isShutdownChannelReady: true,
+				language);
+
+			Assert.True(result.WasStarted);
+			Assert.NotNull(launchedStartInfo);
+			Assert.Equal(expectedLanguage, launchedStartInfo.Environment[
+				UpdaterDisplayLanguageContract.LanguageEnvironmentVariableName]);
+			Assert.Empty(launchedStartInfo.ArgumentList);
+			Assert.False(launchedStartInfo.UseShellExecute);
+		}
+		finally
+		{
+			Directory.Delete(testDirectory, recursive: true);
+		}
 	}
 
 	[Fact]

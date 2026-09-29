@@ -22,7 +22,8 @@ internal sealed record DelegatedChildObservation(
 	int PromotionParentProcessId,
 	long PromotionParentProcessStartTimeUtcTicks,
 	string ExpectedCanonicalSha256,
-	string SourceSha256);
+	string SourceSha256,
+	string? DisplayLanguage);
 
 internal sealed record PromoterObservation(
 	int ProcessId,

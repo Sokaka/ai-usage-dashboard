@@ -9,14 +9,19 @@ internal sealed class ManagedStartMenuShortcut : IManagedStartMenuShortcut
 	internal const string ShortcutFileName = "AI Usage.lnk";
 	internal const string ShortcutDescription = "AI Usage Dashboard managed installation";
 	private readonly Func<string> _getProgramsRoot;
+	private readonly UpdaterDisplayLanguage _displayLanguage;
 
 	internal ManagedStartMenuShortcut(string programsRoot)
 		: this(() => programsRoot)
 	{
 	}
 
-	internal ManagedStartMenuShortcut(Func<string>? getProgramsRoot = null)
+	internal ManagedStartMenuShortcut(
+		Func<string>? getProgramsRoot = null,
+		UpdaterDisplayLanguage displayLanguage = UpdaterDisplayLanguage.TraditionalChinese)
 	{
+		_ = UpdaterText.ForLanguage(displayLanguage);
+		_displayLanguage = displayLanguage;
 		_getProgramsRoot = getProgramsRoot ?? (() => Environment.GetFolderPath(
 			Environment.SpecialFolder.Programs,
 			Environment.SpecialFolderOption.DoNotVerify));
@@ -40,7 +45,7 @@ internal sealed class ManagedStartMenuShortcut : IManagedStartMenuShortcut
 
 			if (File.Exists(shortcutPath))
 			{
-				return GetConflictWarning(shortcutPath, expected);
+				return GetConflictWarning(shortcutPath, expected, _displayLanguage);
 			}
 
 			string temporaryPath = Path.Combine(
@@ -64,13 +69,15 @@ internal sealed class ManagedStartMenuShortcut : IManagedStartMenuShortcut
 				}
 			}
 
-			return GetConflictWarning(shortcutPath, expected);
+			return GetConflictWarning(shortcutPath, expected, _displayLanguage);
 		}
 		catch (Exception exception) when (
 			exception is IOException or UnauthorizedAccessException or
 				SecurityException or InvalidDataException or ArgumentException)
 		{
-			return $"無法建立開始選單捷徑「{shortcutPath ?? ShortcutFileName}」；請檢查該路徑與權限，再重新執行更新程式。{exception.Message}";
+			return UpdaterText.ForLanguage(_displayLanguage).ShortcutCreationFailed(
+				shortcutPath ?? ShortcutFileName,
+				exception.Message);
 		}
 	}
 
@@ -126,7 +133,8 @@ internal sealed class ManagedStartMenuShortcut : IManagedStartMenuShortcut
 
 	private static string? GetConflictWarning(
 		string shortcutPath,
-		ShellShortcutDefinition expected)
+		ShellShortcutDefinition expected,
+		UpdaterDisplayLanguage displayLanguage = UpdaterDisplayLanguage.TraditionalChinese)
 	{
 		ShellShortcutDefinition actual = WindowsShellShortcut.Read(shortcutPath);
 		bool matches = (string.Equals(actual.TargetPath, expected.TargetPath, StringComparison.OrdinalIgnoreCase)) &&
@@ -139,7 +147,7 @@ internal sealed class ManagedStartMenuShortcut : IManagedStartMenuShortcut
 			(actual.Hotkey == expected.Hotkey);
 		return matches
 			? null
-			: $"開始選單捷徑「{shortcutPath}」的內容與此安裝不符，已保留；請檢查該捷徑，移開同名衝突後再重新執行更新程式。";
+			: UpdaterText.ForLanguage(displayLanguage).ShortcutConflict(shortcutPath);
 	}
 
 	private static void EnsureSafeShortcutPath(string programsRoot, string shortcutPath)

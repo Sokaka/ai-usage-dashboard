@@ -167,7 +167,9 @@ internal static class Program
 			context.ParentIdentity.ProcessId,
 			context.ParentIdentity.ProcessStartTimeUtcTicks,
 			context.ExpectedCanonicalSha256,
-			currentUpdater.Sha256);
+			currentUpdater.Sha256,
+			Environment.GetEnvironmentVariable(
+				UpdaterDisplayLanguageContract.LanguageEnvironmentVariableName));
 		await WriteObservationAsync(
 			Path.Combine(
 				configuration.ObservationDirectory,

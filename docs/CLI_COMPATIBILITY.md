@@ -25,6 +25,20 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同版成品官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
+### 1.0.18
+
+本表對應 `1.0.18 / sequence 1032` 的待建立候選，尚未正式公開。App 與新版 `1.0.18` Updater 將由同一完整 source SHA 建置；source、CI、run／attempt 與六件成品 identity 待實際建立後回填。CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本版實測 | 未驗證 | 未驗證 |
+| Codex | 未以本版實測 | 未驗證 | 未驗證 |
+| GitHub Copilot | 未以本版實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
+| Grok | 未以本版實測 | 未驗證 | 未驗證 |
+| Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
+
+本版修正 Updater 的語系提示，保留既有 provider 協定與 CLI 要求。舊 Updater 首次交接的中文完成提示限制及本版驗證範圍見 [1.0.18 版本說明](releases/1.0.18.md)。
+
 ### 1.0.17
 
 本表對應已公開的 `1.0.17 / sequence 1031`；[source `8b45ee81b16bea6e387489e576323cfeb8bd32e6`](https://github.com/Sokaka/ai-usage-dashboard/commit/8b45ee81b16bea6e387489e576323cfeb8bd32e6)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36508603265/attempts/1) run `36508603265` attempt `1`，Release ID `398757069`。App 來自本次 source，Updater 沿用 `v1.0.16` 已簽署的 `1.0.16` 原始 bytes，source [`ec810d852b5ff93adfd2cc039008e0d1ba3c4771`](https://github.com/Sokaka/ai-usage-dashboard/commit/ec810d852b5ff93adfd2cc039008e0d1ba3c4771)。CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。

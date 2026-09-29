@@ -7,25 +7,25 @@ internal static class UpdaterUserNotifier
 	private const uint ErrorIcon = 0x00000010;
 	private const uint InformationIcon = 0x00000040;
 	private const uint OkButton = 0x00000000;
-	private const string Title = "AI Usage Updater";
-
-	internal static void ShowError(string message)
+	internal static void ShowError(string message, UpdaterText text)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(message);
+		ArgumentNullException.ThrowIfNull(text);
 		_ = MessageBox(
 			IntPtr.Zero,
 			message,
-			Title,
+			text.DialogTitle,
 			OkButton | ErrorIcon);
 	}
 
-	internal static void ShowSuccess(string message)
+	internal static void ShowSuccess(string message, UpdaterText text)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(message);
+		ArgumentNullException.ThrowIfNull(text);
 		_ = MessageBox(
 			IntPtr.Zero,
 			message,
-			Title,
+			text.DialogTitle,
 			OkButton | InformationIcon);
 	}
 
