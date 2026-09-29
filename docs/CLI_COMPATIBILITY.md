@@ -25,6 +25,20 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同版成品官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
+### 1.0.19
+
+本表對應 `1.0.19` 的待建立候選，尚未正式公開；發布序號、完整 source SHA、同 source CI 與候選成品須待實際驗證後回填。Claude 最低版本仍為 `2.1.169`，其餘 CLI 版本要求沿用上表。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本版成品實測；候選前觀察 `2.1.285` | 未以本版成品驗證 | 未以本版成品驗證 |
+| Codex | 未以本版實測 | 未驗證 | 未驗證 |
+| GitHub Copilot | 未以本版實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
+| Grok | 未以本版實測 | 未驗證 | 未驗證 |
+| Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
+
+2026-09-30 曾以已登入且通過簽章檢查的 Claude Code `2.1.285`，依 App 參數受控執行一次 `/usage`。回應宣告 model turn、token 與 cost 均為零，`usage.fallback_credit` 為 `null`；可見文字只有訂閱提示，沒有額度數字。這是候選成品之前的回應格式觀察，不是本版 App 的登入、額度顯示或背景更新驗收。合成回歸已加入 `2.1.285` 新欄位與 `2.1.185`、`2.1.169` 舊格式；不表示這些 CLI 版本都已完成真人實測。內容與待驗範圍見 [1.0.19 版本說明](releases/1.0.19.md)。
+
 ### 1.0.18
 
 本表對應已公開的 `1.0.18 / sequence 1032`；[source `137f8718e9efdfaa46b3d20b53984fc1a8c667ff`](https://github.com/Sokaka/ai-usage-dashboard/commit/137f8718e9efdfaa46b3d20b53984fc1a8c667ff)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36516000991/attempts/1) run `36516000991` attempt `1`，Release ID `398796172`。App 與新版 Updater 均為 `1.0.18`，由同一 source 建置；沒有沿用舊 Updater。 CLI 版本要求沿用上表，App 固定 Copilot SDK `1.0.11`。
