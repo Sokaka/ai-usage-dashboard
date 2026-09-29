@@ -15,8 +15,8 @@
 </p>
 
 <p align="center">
-  <a href="docs/images/dashboard-compact.png">
-    <img src="docs/images/dashboard-compact.png" alt="AI Usage in Classic Blue, showing example accounts and usage cards for five services" width="410">
+  <a href="docs/images/dashboard-compact-en.png">
+    <img src="docs/images/dashboard-compact-en.png" alt="AI Usage in Classic Blue, showing example accounts and usage cards for five services" width="410">
   </a>
 </p>
 
@@ -24,8 +24,8 @@
 <summary>Preview all four themes</summary>
 
 <p align="center">
-  <a href="docs/images/dashboard-preview.png">
-    <img src="docs/images/dashboard-preview.png" alt="AI Usage in four color themes, each showing example accounts and usage cards for five services" width="820">
+  <a href="docs/images/dashboard-preview-en.png">
+    <img src="docs/images/dashboard-preview-en.png" alt="AI Usage in four color themes, each showing example accounts and usage cards for five services" width="820">
   </a>
 </p>
 
