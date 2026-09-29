@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#requirements"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="Project code licensed under MIT"></a>
-  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.18-0078D4" alt="Current stable version 1.0.18"></a>
+  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.19-0078D4" alt="Current stable version 1.0.19"></a>
 </p>
 
 <p align="center">
@@ -39,10 +39,11 @@ exports and imports. Detailed guides and release notes are in Traditional Chines
 
 ## Current release
 
-The current stable version is **`1.0.18`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.18) · [Release notes](docs/releases/1.0.18.md)
+The current stable version is **`1.0.19`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.19) · [Release notes](docs/releases/1.0.19.md)
 
-This release makes Updater completion and restart messages follow the App language. It keeps the
-card-warning fixes, English and Traditional Chinese interfaces, settings backups, and earlier performance improvements.
+This release accepts Claude Code `2.1.285` `/usage` responses containing `fallback_credit: null`.
+Responses without quota numbers still show a temporary unavailable status; they are not treated as quota readings.
+The minimum supported Claude Code version remains `2.1.169`. Earlier interface, backup, and Updater improvements remain available.
 
 On the first upgrade through the old Updater `1.0.16`, its completion message may still be in Chinese.
 The new Updater uses your selected language; see the [upgrade notes](docs/releases/1.0.18.md#升級).
@@ -108,8 +109,9 @@ Choose a download from the current version's GitHub Release:
    `app\AiUsageDashboard.App.exe`.
    Do not download GitHub's automatically generated **Source code** ZIP.
 
-For App `1.0.18`, the Updater file is `AiUsageDashboard-Updater-1.0.18-win-x64.exe`.
-Use the actual filename listed on the Release page; the Updater version can differ from the app version.
+For App `1.0.19`, the portable ZIP is `AiUsageDashboard-1.0.19-win-x64.zip`.
+The standard Updater is `AiUsageDashboard-Updater-1.0.18-win-x64.exe`, reused unchanged from the previous release.
+Use the actual filenames listed on the Release page; the Updater version can differ from the app version.
 
 Follow [Installation and first launch](使用說明.md#安裝與第一次啟動), read and accept the applicable terms,
 then choose **Add account** (`新增帳號`) and connect through the service's official sign-in flow.
