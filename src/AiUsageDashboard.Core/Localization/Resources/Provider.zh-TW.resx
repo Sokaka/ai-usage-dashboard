@@ -930,6 +930,12 @@
 	<data name="Message309" xml:space="preserve">
 		<value>{0} / {1} 已使用</value>
 	</data>
+	<data name="CliDiagnosticDetected" xml:space="preserve">
+		<value>{0} CLI 版本診斷：偵測到 {1} {2}；本版相容性基準為 {3}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
+	<data name="CliDiagnosticUnknown" xml:space="preserve">
+		<value>{0} CLI 版本診斷：無法辨識 {1} 版號；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
+	</data>
 	<data name="Message310" xml:space="preserve">
 		<value>{0} CLI 版本診斷：{1}；本版相容性基準為 {2}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。</value>
 	</data>

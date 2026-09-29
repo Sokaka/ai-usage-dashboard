@@ -215,6 +215,199 @@ public sealed class LocalizationPresentationTests
 		Assert.Equal("Used 80%", Assert.Single(account.UsageMetrics).DisplayValue);
 	}
 
+	[Theory]
+	[InlineData(ProviderKind.Claude,
+		"Claude 暫時未回傳用量額度；AI Usage 稍後會自動再試，不需要操作。",
+		"Claude has not returned a usage quota")]
+	[InlineData(ProviderKind.Codex,
+		"暫時無法讀取 Codex 用量，稍後會自動再試。",
+		"Codex usage")]
+	[InlineData(ProviderKind.Grok,
+		"暫時無法讀取 Grok 用量，稍後會自動再試。",
+		"Grok usage")]
+	[InlineData(ProviderKind.Antigravity,
+		"暫時無法讀取 Antigravity 用量，稍後會自動再試。",
+		"Antigravity usage")]
+	[InlineData(ProviderKind.Antigravity,
+		"Antigravity 用量檢查未完成，稍後會自動再試。",
+		"Antigravity usage check")]
+	[InlineData(ProviderKind.Antigravity,
+		"Antigravity 用量檢查尚未完成。AI Usage 稍後會自動再試，並保留現有帳號與用量資料。",
+		"Antigravity usage check")]
+	[InlineData(ProviderKind.Antigravity,
+		"AI Usage 無法確認這次 Antigravity 用量讀取是否仍符合安全條件，稍後會自動重新檢查；既有登入不受影響。",
+		"your existing sign-in is unaffected")]
+	[InlineData(ProviderKind.Claude,
+		"Claude Code 已登入有效訂閱，但暫時無法確認目前登入的帳號。AI Usage 稍後會自動再試。",
+		"signed-in account")]
+	[InlineData(ProviderKind.Claude,
+		"Claude Code 已登入有效訂閱，但暫時無法確認目前的組織。AI Usage 稍後會自動再試。",
+		"organization")]
+	[InlineData(ProviderKind.Claude,
+		"Claude `auth status` 暫時缺少可驗證的訂閱資訊。AI Usage 稍後會自動再試。",
+		"subscription information")]
+	[InlineData(ProviderKind.Claude,
+		"暫時無法讀取 Claude 用量，稍後會自動再試。",
+		"Claude usage")]
+	[InlineData(ProviderKind.Claude,
+		"Claude Code 已登入有效訂閱，但暫時無法確認目前的訂閱範圍。AI Usage 稍後會自動再試。",
+		"subscription scope")]
+	[InlineData(ProviderKind.Codex,
+		"暫時無法確認 Codex 帳號與 workspace，稍後會自動再試。",
+		"Codex account and workspace")]
+	[InlineData(ProviderKind.Codex,
+		"暫時無法確認 Codex CLI 版本，稍後會自動再試。",
+		"Codex CLI version")]
+	[InlineData(ProviderKind.Codex,
+		"Codex 回傳無法辨識的錯誤；AI Usage 稍後會自動再試，不需要操作。",
+		"Codex returned an unrecognized error")]
+	[InlineData(ProviderKind.Grok,
+		"暫時無法取得用量，AI Usage 稍後會自動再試。",
+		"Usage is temporarily unavailable")]
+	[InlineData(ProviderKind.Grok,
+		"用量已重置，AI Usage 稍後會自動再試。",
+		"Usage has reset")]
+	[InlineData(ProviderKind.Claude,
+		"Claude Code `/usage` 尚未確認是否產生用量就中斷。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。",
+		"before it could be determined whether it consumed usage")]
+	[InlineData(ProviderKind.Claude,
+		"Claude Code 2.1.3 的 `/usage` 回報錯誤，但用量結果顯示成功，暫時無法確認這次結果。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。",
+		"Claude Code 2.1.3 `/usage` reported an error")]
+	[InlineData(ProviderKind.Codex,
+		"暫時無法讀取 Codex 用量，稍後會自動再試。 CLI 版本診斷：偵測到 Codex CLI 0.145.0；本版相容性基準為 0.144.1。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。",
+		"Detected Codex CLI 0.145.0; this version's compatibility baseline is 0.144.1")]
+	[InlineData(ProviderKind.Codex,
+		"Codex app-server 回應逾時。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：偵測到 Codex CLI 0.145.0；本版相容性基準為 0.144.1。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。",
+		"Detected Codex CLI 0.145.0; this version's compatibility baseline is 0.144.1")]
+	[InlineData(ProviderKind.Grok,
+		"暫時無法讀取 Grok 用量，稍後會自動再試。 CLI 版本診斷：無法辨識 Grok CLI 版號；本版相容性基準為 1.0.3。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。",
+		"Grok CLI version could not be recognized; this version's compatibility baseline is 1.0.3")]
+	public void AccountWarning_StaleRetryLocalizesTheReasonAfterRemovingDuplicateGuidance(
+		ProviderKind provider,
+		string error,
+		string expectedReason)
+	{
+		using IDisposable language = UiText.UseLanguage(AppLanguage.English);
+		AccountProfile profile = new(
+			Guid.Parse("c90a8f4d-1e52-4cb4-9571-201d3077ac68"),
+			provider,
+			"Synthetic account",
+			HasAcceptedClaudeQuotaRisk: true,
+			ProviderAccountIdentity: "synthetic-account");
+		DateTimeOffset observedAt = new(2026, 9, 29, 0, 0, 0, TimeSpan.Zero);
+		UsageSnapshot snapshot = new(
+			profile,
+			[new("synthetic.primary", "5 小時用量", 10, "已使用 10%")],
+			SourceTrust.OfficialExperimental,
+			SnapshotStatus.Stale,
+			observedAt.AddMinutes(1),
+			ObservedAt: observedAt,
+			Error: error,
+			ProviderAccountIdentity: profile.ProviderAccountIdentity,
+			RecoveryAction: UsageRecoveryAction.Retry);
+		AccountUsageViewModel account = new(profile, canManage: true);
+		account.ApplySnapshot(snapshot);
+		UsageSnapshot appliedSnapshot = Assert.IsType<UsageSnapshot>(account.CurrentSnapshot);
+
+		string englishDescription = account.RecoveryActionDescription;
+		Assert.DoesNotMatch(@"[\p{IsCJKUnifiedIdeographs}]", englishDescription);
+		Assert.DoesNotContain('。', englishDescription);
+		Assert.DoesNotContain("..", englishDescription);
+		Assert.Contains(expectedReason, englishDescription, StringComparison.OrdinalIgnoreCase);
+		Assert.Contains("no action is needed", englishDescription, StringComparison.OrdinalIgnoreCase);
+		Assert.Single(System.Text.RegularExpressions.Regex.Matches(englishDescription, "retry automatically"));
+		Assert.DoesNotContain("check again automatically", englishDescription, StringComparison.OrdinalIgnoreCase);
+		using (UiText.UseLanguage(AppLanguage.TraditionalChinese))
+		{
+			account.RefreshLocalizedPresentation();
+			Assert.Contains("目前顯示", account.RecoveryActionDescription);
+			Assert.Contains("AI Usage 稍後會自動再試，不需要手動操作。", account.RecoveryActionDescription);
+			Assert.Same(appliedSnapshot, account.CurrentSnapshot);
+		}
+		account.RefreshLocalizedPresentation();
+		Assert.Equal(englishDescription, account.RecoveryActionDescription);
+		Assert.Same(appliedSnapshot, account.CurrentSnapshot);
+		Assert.Equal(error, appliedSnapshot.Error);
+		Assert.Equal(snapshot.ObservedAt, appliedSnapshot.ObservedAt);
+		Assert.Equal(snapshot.Metrics, appliedSnapshot.Metrics);
+	}
+
+	[Theory]
+	[InlineData("Opaque provider text: It will retry automatically later. [raw_271]")]
+	[InlineData("Unknown provider diagnostic: 生資料 [opaque_271]\r\nOpaque note: AI Usage will retry automatically. No action is needed.")]
+	[InlineData("Opaque provider text: It will retry automatically later. [raw_271] CLI 版本診斷：偵測到 Grok CLI 1.0.4；本版相容性基準為 1.0.3。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。")]
+	public void AccountWarning_StaleRetryPreservesUnknownDiagnosticsThatMentionRetry(string diagnostic)
+	{
+		using IDisposable language = UiText.UseLanguage(AppLanguage.English);
+		AccountProfile profile = new(
+			Guid.Parse("6baabf08-33f4-46c1-8669-126b197ef96c"),
+			ProviderKind.Grok,
+			"Synthetic account",
+			ProviderAccountIdentity: "synthetic-account");
+		DateTimeOffset observedAt = new(2026, 9, 29, 0, 0, 0, TimeSpan.Zero);
+		UsageSnapshot snapshot = new(
+			profile,
+			[new("grok.weekly", "週用量", 10, "已使用 10%")],
+			SourceTrust.Official,
+			SnapshotStatus.Stale,
+			observedAt.AddMinutes(1),
+			ObservedAt: observedAt,
+			Error: diagnostic,
+			ProviderAccountIdentity: profile.ProviderAccountIdentity,
+			RecoveryAction: UsageRecoveryAction.Retry);
+		AccountUsageViewModel account = new(profile, canManage: true);
+		account.ApplySnapshot(snapshot);
+		UsageSnapshot appliedSnapshot = Assert.IsType<UsageSnapshot>(account.CurrentSnapshot);
+		string englishDescription = account.RecoveryActionDescription;
+		string rawReason = diagnostic.Split(" CLI 版本診斷：", StringSplitOptions.None)[0];
+		Assert.Contains(rawReason, englishDescription);
+		using (UiText.UseLanguage(AppLanguage.TraditionalChinese))
+		{
+			account.RefreshLocalizedPresentation();
+			Assert.Contains(rawReason, account.RecoveryActionDescription);
+			Assert.Same(appliedSnapshot, account.CurrentSnapshot);
+		}
+		account.RefreshLocalizedPresentation();
+		Assert.Equal(englishDescription, account.RecoveryActionDescription);
+		Assert.Equal(diagnostic, appliedSnapshot.Error);
+		Assert.Same(appliedSnapshot, account.CurrentSnapshot);
+	}
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public void AccountWarning_StaleRetryPreservesReasonWhenOnlyCliDiagnosticCanBeTranslated(bool hasObservedAt)
+	{
+		using IDisposable language = UiText.UseLanguage(AppLanguage.English);
+		const string reason = "Unknown provider diagnostic: 生資料 [opaque_271]\r\nOpaque note: It will retry automatically later.";
+		string error = $"{reason}。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。 CLI 版本診斷：偵測到 Grok CLI 1.0.4；本版相容性基準為 1.0.3。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。";
+		AccountProfile profile = new(
+			Guid.Parse("56895652-e8fb-47e7-b699-dc3f8fb29a58"),
+			ProviderKind.Grok,
+			"Synthetic account",
+			ProviderAccountIdentity: "synthetic-account");
+		DateTimeOffset fetchedAt = new(2026, 9, 29, 0, 1, 0, TimeSpan.Zero);
+		UsageSnapshot snapshot = new(
+			profile,
+			[new("grok.weekly", "週用量", 10, "已使用 10%")],
+			SourceTrust.Official,
+			SnapshotStatus.Stale,
+			fetchedAt,
+			ObservedAt: hasObservedAt ? fetchedAt.AddMinutes(-1) : null,
+			Error: error,
+			ProviderAccountIdentity: profile.ProviderAccountIdentity,
+			RecoveryAction: UsageRecoveryAction.Retry);
+		AccountUsageViewModel account = new(profile, canManage: true);
+		account.ApplySnapshot(snapshot);
+		Assert.Contains(reason, account.RecoveryActionDescription);
+		Assert.Contains("Detected Grok CLI 1.0.4", account.RecoveryActionDescription);
+		Assert.Contains("compatibility baseline is 1.0.3", account.RecoveryActionDescription);
+		Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(account.RecoveryActionDescription, "retry automatically").Count);
+		Assert.Contains("AI Usage will retry automatically; no action is needed.", account.RecoveryActionDescription);
+		Assert.DoesNotContain("AI Usage 稍後會自動再試", account.RecoveryActionDescription);
+		Assert.Equal(error, account.CurrentSnapshot?.Error);
+	}
+
 	[Fact]
 	public void ClaudeAllModelsLabel_LocalizesKnownQualifierAndKeepsSource()
 	{

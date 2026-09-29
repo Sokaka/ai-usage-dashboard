@@ -13,7 +13,7 @@ public static partial class UiText
 		int[] ArgumentIndexes,
 		string Prefix,
 		string RequiredLiteral,
-		bool HasPresentationArguments,
+		int[] PresentationArgumentIndexes,
 		int LiteralLength);
 
 	private sealed record LegacyCatalog(
@@ -92,8 +92,9 @@ public static partial class UiText
 			object?[] arguments = new object?[template.ArgumentIndexes.Max() + 1];
 			for (int index = 0; index < template.ArgumentIndexes.Length; index++)
 			{
+				int argumentIndex = template.ArgumentIndexes[index];
 				string argument = match.Groups[$"a{index}"].Value;
-				arguments[template.ArgumentIndexes[index]] = template.HasPresentationArguments
+				arguments[argumentIndex] = template.PresentationArgumentIndexes.Contains(argumentIndex)
 					? Translate(argument)
 					: argument;
 			}
@@ -152,8 +153,9 @@ public static partial class UiText
 				object?[] arguments = new object?[matchedTemplate.ArgumentIndexes.Max() + 1];
 				for (int index = 0; index < matchedTemplate.ArgumentIndexes.Length; index++)
 				{
+					int argumentIndex = matchedTemplate.ArgumentIndexes[index];
 					string argument = matchedFragment.Groups[$"a{index}"].Value;
-					arguments[matchedTemplate.ArgumentIndexes[index]] = matchedTemplate.HasPresentationArguments
+					arguments[argumentIndex] = matchedTemplate.PresentationArgumentIndexes.Contains(argumentIndex)
 						? Translate(argument)
 						: argument;
 				}
@@ -296,7 +298,12 @@ public static partial class UiText
 					argumentIndexes.ToArray(),
 					source[..placeholders[0].Index],
 					requiredLiteral,
-					key is "AIUsageScheduledAnAutomaticRetryIn" or "UpdatesAreTooFrequentTryAgainIn",
+					key switch
+					{
+						"AIUsageScheduledAnAutomaticRetryIn" or "UpdatesAreTooFrequentTryAgainIn" => argumentIndexes.ToArray(),
+						"CliDiagnosticDetected" or "CliDiagnosticUnknown" => [0],
+						_ => []
+					},
 					literalLength));
 			}
 		}

@@ -49,6 +49,25 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		"稍後自動再試。",
 		"稍後會自動重新檢查；"
 	];
+	private static readonly string[] RemovableEnglishAutomaticRetryGuidance =
+	[
+		"AI Usage will retry automatically later and keep your existing account and usage data.",
+		"AI Usage will retry automatically and keep the last successfully read data.",
+		"AI Usage will retry automatically and keep the existing account and usage data.",
+		"AI Usage will retry automatically later; no action is needed.",
+		"AI Usage will retry automatically. No action is needed.",
+		"AI Usage will retry automatically; no action is needed.",
+		"Will retry automatically; no action is needed.",
+		"AI Usage will retry automatically later.",
+		"AI Usage will retry automatically.",
+		"It will retry automatically later.",
+		"Will retry automatically.",
+		"will retry automatically.",
+		"It will check again automatically later;",
+		"Will check again automatically; ",
+		"another check will run automatically later.",
+		"temporary failures will be retried automatically."
+	];
 	private static readonly UsageMetric[] AntigravityFiveHourRevalidationPlaceholders =
 	{
 		new(
@@ -2028,10 +2047,6 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			? UiText.Translate("目前顯示上次成功讀取的資料")
 			: UiText.Translate($"目前顯示 {snapshot.ObservedAt.Value.ToLocalTime().ToString("yyyy/MM/dd HH:mm", UiText.Culture)} 成功讀取的資料");
 		string? retryReason = GetAutomaticRetryReasonDetail(snapshot.Error);
-		if (retryReason is not null)
-		{
-			retryReason = UiText.Translate(retryReason);
-		}
 
 		if (retryReason is not null)
 		{
@@ -2048,9 +2063,17 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			return null;
 		}
 
-		string reason = error.Trim();
+		// 先翻譯完整句型；英文去重只適用於已翻譯的提示，避免刪除來源診斷。
+		string source = error.Trim();
+		string reason = UiText.Translate(source);
+		IEnumerable<string> removableGuidance = ((UiText.CurrentLanguage == AppLanguage.English) &&
+			ContainsAutomaticRetryGuidance(source) &&
+			!ContainsAutomaticRetryGuidance(reason) &&
+			!string.Equals(reason, source, StringComparison.Ordinal))
+			? RemovableEnglishAutomaticRetryGuidance.Concat(RemovableAutomaticRetryGuidance)
+			: RemovableAutomaticRetryGuidance;
 
-		foreach (string guidance in RemovableAutomaticRetryGuidance)
+		foreach (string guidance in removableGuidance)
 		{
 			int guidanceIndex = reason.IndexOf(
 				guidance,
@@ -2077,7 +2100,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 	{
 		string prefix = reason[..guidanceIndex]
 			.TrimEnd()
-			.TrimEnd('；', '，', '。');
+			.TrimEnd('；', '，', '。', ';', ',', '.');
 		string suffix = reason[(guidanceIndex + guidanceLength)..]
 			.TrimStart();
 
@@ -2086,9 +2109,10 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			return string.IsNullOrWhiteSpace(suffix) ? null : suffix;
 		}
 
+		string sentenceEnd = UiText.Get("Status.SentenceSeparator").TrimEnd();
 		return string.IsNullOrWhiteSpace(suffix)
-			? $"{prefix}。"
-			: $"{prefix}。 {suffix}";
+			? $"{prefix}{sentenceEnd}"
+			: $"{prefix}{sentenceEnd} {suffix}";
 	}
 
 	private static bool ContainsAutomaticRetryGuidance(string? error)

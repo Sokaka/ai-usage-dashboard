@@ -152,6 +152,53 @@ public sealed class ProviderLocalizationTests
 		});
 	}
 
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public void CliVersionDiagnostic_TranslatesComposedReasonsAndKeepsCliArgumentsOpaque(bool hasDetectedVersion)
+	{
+		const string cliName = "可用";
+		const string detectedVersion = "週用量";
+		const string referenceVersion = "剩餘";
+		string reason = "Codex app-server 回應逾時。AI Usage 稍後會自動再試，並保留上次成功讀取的資料。";
+		string versionDetail = hasDetectedVersion ? $"偵測到 {cliName} {detectedVersion}" : $"無法辨識 {cliName} 版號";
+		string chinese = $"{reason} CLI 版本診斷：{versionDetail}；本版相容性基準為 {referenceVersion}。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。";
+		using (UiText.UseLanguage(AppLanguage.English))
+		{
+			string translated = UiText.Translate(chinese);
+			Assert.Contains("Codex app-server response timed out", translated);
+			Assert.Contains("AI Usage will retry automatically and keep the last successfully read data.", translated);
+			Assert.Contains(hasDetectedVersion
+				? $"Detected {cliName} {detectedVersion}; this version's compatibility baseline is {referenceVersion}."
+				: $"The {cliName} version could not be recognized; this version's compatibility baseline is {referenceVersion}.", translated);
+		}
+	}
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public void CliVersionDiagnostic_PreservesUnknownReasonAcrossLanguageSwitch(bool hasDetectedVersion)
+	{
+		const string reason = "Unknown provider diagnostic: 生資料 [opaque_271]\r\nOpaque note: It will retry automatically later.";
+		string versionDetail = hasDetectedVersion ? "偵測到 Grok CLI 1.0.4" : "無法辨識 Grok CLI 版號";
+		string chinese = $"{reason} CLI 版本診斷：{versionDetail}；本版相容性基準為 1.0.3。這個版本尚未驗證，但不代表不支援；版本差異可能是原因之一。";
+		string english;
+		using (UiText.UseLanguage(AppLanguage.English))
+		{
+			english = UiText.Translate(chinese);
+			Assert.Contains(reason, english);
+			Assert.Contains("CLI version diagnostic:", english);
+			Assert.Contains("Grok CLI", english);
+			Assert.Contains("1.0.3", english);
+			Assert.DoesNotContain("偵測到", english);
+			Assert.DoesNotContain("無法辨識", english);
+		}
+		using (UiText.UseLanguage(AppLanguage.TraditionalChinese))
+		{
+			Assert.Equal(chinese, UiText.Translate(english));
+		}
+	}
+
 	[Fact]
 	public void OpaqueProviderArgumentsAndUnknownRawDiagnostics_AreKeptInBothLanguages()
 	{
