@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.18-0078D4" alt="目前正式版本 1.0.18"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.19-0078D4" alt="目前正式版本 1.0.19"></a>
 </p>
 
 <p align="center">
@@ -33,9 +33,10 @@
 
 ## 目前版本
 
-目前正式版本為 **`1.0.18`**。[下載最新版](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.18) · [版本說明](docs/releases/1.0.18.md)
+目前正式版本為 **`1.0.19`**。[下載最新版](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.19) · [版本說明](docs/releases/1.0.19.md)
 
-本版讓更新完成與重新啟動提示跟隨 App 語系，保留卡片警示修正、English／繁體中文切換、設定備份與先前效能調整。
+本版可辨識 Claude Code `2.1.285` 的 `/usage` 回應中 `fallback_credit: null`。
+若回應沒有額度數字，卡片仍會顯示暫時無法取得額度，不會把它當成有效額度。Claude Code 最低支援版本維持 `2.1.169`；先前的介面、備份與 Updater 改善仍保留。
 
 第一次透過舊 `1.0.16` Updater 升級時，完成提示仍可能是中文；新版接手後使用所選語系，見[升級說明](docs/releases/1.0.18.md#升級)。
 
@@ -82,7 +83,7 @@
 | **一般安裝：Updater** | `AiUsageDashboard-Updater-<version>-win-x64.exe` | Updater 也能首次安裝。以一般使用者權限執行，安裝後從開始選單搜尋 **AI Usage**；保留 Updater 供日後更新。 |
 | **免安裝：完整 ZIP** | `AiUsageDashboard-<version>-win-x64.zip` | 完整解壓到新資料夾後，執行其中的 App；不要下載 GitHub 自動產生的 Source code ZIP。 |
 
-`1.0.18` 的 Updater 檔名是 `AiUsageDashboard-Updater-1.0.18-win-x64.exe`；請依 Release 上的實際檔名下載。
+App `1.0.19` 的免安裝檔為 `AiUsageDashboard-1.0.19-win-x64.zip`；一般安裝使用沿用前版、位元組未變的 `AiUsageDashboard-Updater-1.0.18-win-x64.exe`。請依 Release 上的實際檔名下載。
 
 依[安裝與第一次啟動](使用說明.md#安裝與第一次啟動)操作、閱讀並接受適用條款，再新增帳號，透過服務的官方登入流程完成連接。
 

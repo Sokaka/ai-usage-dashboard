@@ -8,17 +8,19 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.18 / sequence 1032`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.19 / sequence 1033`。
 
-### Claude Code `/usage` 相容性修正（1.0.19 候選）
+### Claude Code `/usage` 相容性修正（1.0.19 已發布）
 
 - [x] 候選前依 App 參數受控查詢已登入的 Claude Code `2.1.285` 一次。回應的 `usage.fallback_credit` 為 `null`，宣告 model turn、token、cost 均為零；可見文字只有訂閱提示，沒有額度數字。這次查詢不算本版成品驗收。
 - [x] 解析器只新增接受 `fallback_credit: null`；其他值與未知欄位仍拒絕，零 turn／token／cost 及來源安全檢查維持。CLI 最低版本仍為 `2.1.169`。
 - [x] 已加入 `2.1.285` 新欄位、`2.1.185`／`2.1.169` 舊格式、非 `null` 值與缺少額度數字的合成回歸案例。
-- [ ] 同 source Windows CI、完整測試、production line coverage、候選封裝與六件成品凍結。
+- [x] 同 source Windows CI 與候選 workflow 均通過完整測試 4,604／4,604、Release 建置 0 warnings／errors；production line coverage 分別為 75.01%（49,975／66,621）與 75.02%（49,976／66,621），高於 70% 門檻。候選封裝、簽署、驗簽及六件成品凍結已完成。
+- [x] 本機先前的完整測試為 4,602 passed／2 failed；兩案在清理 Updater fixture EXE 時遭 WithSecure 防毒暫時鎖檔，不能記為本機全套通過。相同測試在上述乾淨 Windows CI 與候選 runner 均全數通過，未關閉防護或調降門檻。
+- [x] 正式公開後匿名下載六件原凍結成品，asset ID、大小、SHA256、三份 sidecar、latest feed 與簽章核對通過；六件合計 `106959894` bytes。
 - [ ] 本版成品的真人登入、額度顯示、背景更新、舊 CLI 查詢及既有安裝升級驗收；逐平台狀態見 [1.0.19 CLI 實測表](docs/CLI_COMPATIBILITY.md#1019)。
 
-候選功能、升級範圍與尚未執行的驗證見 [1.0.19 版本說明](docs/releases/1.0.19.md)。
+本版功能、升級範圍、成品資料與尚未執行的驗證見 [1.0.19 版本說明](docs/releases/1.0.19.md)。
 
 ### 英文與繁體中文語系
 
@@ -58,7 +60,7 @@
 - [x] 更新程式的完成、重新啟動、已是最新版及已知附加警告提供 English／繁體中文。
 - [x] App 傳遞目前語系；獨立 Updater 只讀既有語系設定，缺少設定時使用英文，不變更 process `CurrentCulture` 或設定格式。
 - [x] 雙語文案、語系優先順序、損壞設定保留與隔離程序交接回歸。
-- [x] `1.0.18` 同 source 的 CI、App／新版 Updater 封裝、正式成品語系檢查與公開下載通過；見下方目前正式版本。
+- [x] `1.0.18` 同 source 的 CI、App／新版 Updater 封裝、正式成品語系檢查與公開下載通過；見下方 1.0.18 歷史正式版。
 - [ ] 官方舊 Updater → 本版 App 按鈕更新、維護副本提升及安裝後提示驗收。
 
 2026-09-29 修正後 Release 建置 0 warnings／errors；定向測試 111／111、完整測試 4,593／4,593 通過，0 failed／skipped，TRX 執行時間 251.29 秒。Production line coverage 74.91%（49,902／66,620，門檻 70%）。
@@ -164,8 +166,21 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 目前正式版本
 
+`1.0.19 / sequence 1033` 已沿用同一組凍結候選正式公開。[v1.0.19 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.19) 現為 stable／latest；六件成品資料見 [1.0.19 版本說明](docs/releases/1.0.19.md)。
 
-`1.0.18 / sequence 1032` 已沿用同一組凍結候選正式公開。[v1.0.18 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.18) 現為 stable／latest；六件成品資料見 [1.0.18 版本說明](docs/releases/1.0.18.md)。
+[source `c562db0db0965a1e040eb8f0d82610e5f7e9b43e`](https://github.com/Sokaka/ai-usage-dashboard/commit/c562db0db0965a1e040eb8f0d82610e5f7e9b43e)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36639029950/attempts/1) run `36639029950` attempt `1`，Release ID `399573497`。App 為 `1.0.19`，Updater 沿用 `v1.0.18` 已簽署的原始 bytes，來源 [source `137f8718e9efdfaa46b3d20b53984fc1a8c667ff`](https://github.com/Sokaka/ai-usage-dashboard/commit/137f8718e9efdfaa46b3d20b53984fc1a8c667ff)。
+
+- [x] [同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36638254002)：Release 建置 0 warnings／errors，完整測試 4,604 passed／0 failed／0 skipped；production line coverage 75.01%（49,975／66,621，門檻 70%）。
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36639029950/attempts/1)：Release 建置 0 warnings／errors，完整測試 4,604 passed／0 failed／0 skipped；production line coverage 75.02%（49,976／66,621，門檻 70%）；同一 attempt 完成建置、簽署、驗簽與六件成品凍結。
+- [x] 六件 Release asset ID、大小、SHA256、三份 canonical sidecar、stable feed 簽章及 draft 匿名存取拒絕已核對。正式公開後，以無 token／cookie 的 client 匿名下載六件原凍結成品，latest feed 的 source、version、sequence 與簽章相符；六件合計 `106959894` bytes。
+- [ ] 乾淨 Windows 安裝、既有標準安裝的一鍵線上更新、安裝後 UI／無障礙。
+- [ ] 本版成品的 Claude Code `2.1.285` 真人登入、額度顯示、背景更新及舊版 CLI 真人查詢；其他四個 provider 的真人登入／用量亦待驗，見 [1.0.19 CLI 表](docs/CLI_COMPATIBILITY.md#1019)。
+
+候選前的一次受控 Claude 查詢只證實 `fallback_credit: null` 的回應格式，沒有額度數字；不能代替正式成品的真人額度顯示驗收。
+
+### 1.0.18 歷史正式版
+
+`1.0.18 / sequence 1032` 已沿用同一組凍結候選正式公開。[v1.0.18 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.18) 公開時為 stable／latest；六件成品資料見 [1.0.18 版本說明](docs/releases/1.0.18.md)。
 
 [source `137f8718e9efdfaa46b3d20b53984fc1a8c667ff`](https://github.com/Sokaka/ai-usage-dashboard/commit/137f8718e9efdfaa46b3d20b53984fc1a8c667ff)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36516000991/attempts/1) run `36516000991` attempt `1`，Release ID `398796172`。App 與新版 Updater 均為 `1.0.18`，由同一 source 建置；沒有沿用舊 Updater。
 
