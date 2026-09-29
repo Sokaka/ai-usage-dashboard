@@ -104,6 +104,68 @@ public sealed class ClaudeCliUsageCompatibilityTests
 		Assert.Equal(ObservedAt, result.ObservedAt);
 	}
 
+	[Fact]
+	public void ParseSafeResult_WithNullFallbackCredit_ReturnsUsage()
+	{
+		JsonObject root = CreateResult();
+		GetUsage(root)["fallback_credit"] = null;
+
+		ClaudeUsagePollResult result = ClaudeCliUsagePoller.ParseSafeResult(
+			root.ToJsonString(),
+			ObservedAt);
+
+		Assert.Equal(UsageText, result.Output);
+		Assert.Equal(ObservedAt, result.ObservedAt);
+	}
+
+	[Fact]
+	public void ParseSafeResult_WithNullFallbackCreditAndNoQuotas_ReportsQuotaUnavailable()
+	{
+		JsonObject root = CreateResult();
+		GetUsage(root)["fallback_credit"] = null;
+		root["result"] =
+			"You are currently using your subscription to power your Claude Code usage";
+
+		ClaudeUsagePollResult result = ClaudeCliUsagePoller.ParseSafeResult(
+			root.ToJsonString(),
+			ObservedAt);
+
+		Assert.Throws<ClaudeUsageQuotaUnavailableException>(() =>
+			ClaudeUsageTextParser.Parse(result.Output, result.ObservedAt));
+	}
+
+	[Theory]
+	[InlineData("0")]
+	[InlineData("0.0")]
+	[InlineData("\"0\"")]
+	[InlineData("false")]
+	[InlineData("{}")]
+	[InlineData("[]")]
+	public void ParseSafeResult_WithNonNullFallbackCredit_RejectsResult(
+		string fallbackCreditJson)
+	{
+		JsonObject root = CreateResult();
+		GetUsage(root)["fallback_credit"] = JsonNode.Parse(fallbackCreditJson);
+
+		InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+			ClaudeCliUsagePoller.ParseSafeResult(root.ToJsonString(), ObservedAt));
+
+		Assert.Contains("token usage 不是嚴格的零用量結果", exception.Message);
+	}
+
+	[Fact]
+	public void ParseSafeResult_WithNonZeroFallbackCredit_ReportsExplicitUsageActivity()
+	{
+		JsonObject root = CreateResult();
+		GetUsage(root)["fallback_credit"] = 1;
+
+		InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+			ClaudeCliUsagePoller.ParseSafeResult(root.ToJsonString(), ObservedAt));
+
+		Assert.Equal("Claude `/usage` 回報了非零 token usage。", exception.Message);
+		Assert.True(exception.Data["AiUsageDashboard.Claude.ExplicitUsageActivity"] is true);
+	}
+
 	[Theory]
 	[InlineData("local_command")]
 	[InlineData("result_index")]
@@ -193,12 +255,15 @@ public sealed class ClaudeCliUsageCompatibilityTests
 	}
 
 	[Theory]
-	[InlineData("2.1.268", true)]
-	[InlineData("2.1.267", false)]
-	[InlineData("2.1.169", false)]
+	[InlineData("2.1.285", true, true)]
+	[InlineData("2.1.268", true, false)]
+	[InlineData("2.1.267", false, false)]
+	[InlineData("2.1.185", false, false)]
+	[InlineData("2.1.169", false, false)]
 	public async Task PollAsync_WithNewOrLegacyEnvelope_ReturnsUsage(
 		string version,
-		bool includesCommandMetadata)
+		bool includesCommandMetadata,
+		bool includesNullFallbackCredit)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = Path.Combine(temporaryDirectory.Path, "claude.exe");
@@ -206,6 +271,10 @@ public sealed class ClaudeCliUsageCompatibilityTests
 		await File.WriteAllTextAsync(executablePath, string.Empty);
 		Directory.CreateDirectory(configDirectory);
 		JsonObject root = CreateResult();
+		if (includesNullFallbackCredit)
+		{
+			GetUsage(root)["fallback_credit"] = null;
+		}
 
 		if (!includesCommandMetadata)
 		{
@@ -260,5 +329,12 @@ public sealed class ClaudeCliUsageCompatibilityTests
 		return JsonNode.Parse(Claude21268ResultJson)?.AsObject() ??
 			throw new InvalidOperationException(
 				"Claude 2.1.268 compatibility fixture must be a JSON object.");
+	}
+
+	private static JsonObject GetUsage(JsonObject result)
+	{
+		return result["usage"]?.AsObject() ??
+			throw new InvalidOperationException(
+				"Claude 2.1.268 compatibility fixture must contain usage.");
 	}
 }

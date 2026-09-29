@@ -342,7 +342,7 @@ Claude CLI 暫時不存在時，帳號專用設定與憑證不會被刪除；安
 - input、output 與 cache token 全部精確為 0。
 - 費用（cost）為 0。
 - 沒有權限遭拒（permission denial）。
-- `usage` 欄位符合已驗證的資料格式（schema）；出現未知欄位或型別變更時會停止採用結果。
+- `usage` 欄位符合已驗證的資料格式（schema）；`fallback_credit` 只接受實測的 `null`，其他值、未知欄位或型別變更時會停止採用結果。
 - 結果可省略 `local_command` 與 `result_index`；若有提供，必須分別為 `usage` 與數值 0。其他 turn／token／cost 檢查仍須全部通過。
 - `fast_mode_*` 只當作有長度上限的狀態附加資料；新增狀態值不影響零 turn／token／cost 判定，也不會單獨觸發安全停止標記。
 

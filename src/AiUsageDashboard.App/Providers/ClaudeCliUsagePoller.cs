@@ -1959,6 +1959,7 @@ internal sealed class ClaudeCliUsagePoller :
 				"service_tier" or
 				"inference_geo" or
 				"speed" => property.Value.ValueKind == JsonValueKind.String,
+				"fallback_credit" => property.Value.ValueKind == JsonValueKind.Null,
 				"iterations" =>
 					(property.Value.ValueKind == JsonValueKind.Array) &&
 					(property.Value.GetArrayLength() == 0),
