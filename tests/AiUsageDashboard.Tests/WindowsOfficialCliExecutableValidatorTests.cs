@@ -400,15 +400,15 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 	}
 
 	[Fact]
-	public void ClaudeResolver_WithUntrustedThenTrustedCandidate_UsesTrustedCandidate()
+	public void ClaudeResolver_WithRejectedThenAcceptedPublisher_UsesAcceptedCandidate()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
-		string untrustedPath = CreateExecutable(
+		string rejectedPublisherPath = CreateExecutable(
 			temporaryDirectory,
-			"untrusted-claude.exe");
-		string trustedPath = CreateExecutable(
+			"rejected-publisher-claude.exe");
+		string acceptedPublisherPath = CreateExecutable(
 			temporaryDirectory,
-			"trusted-claude.exe");
+			"accepted-publisher-claude.exe");
 		WindowsOfficialCliExecutableValidator validator = new(
 			"Anthropic, PBC",
 			_ => true,
@@ -416,7 +416,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 				0,
 				string.Equals(
 					path,
-					trustedPath,
+					acceptedPublisherPath,
 					StringComparison.OrdinalIgnoreCase)
 					? AnthropicSignerSubject
 					: "CN=Unexpected Publisher"),
@@ -425,10 +425,10 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 			_ => true);
 
 		string? result = ClaudeCliUsagePoller.ResolveExecutablePath(
-			[untrustedPath, trustedPath],
+			[rejectedPublisherPath, acceptedPublisherPath],
 			validator);
 
-		Assert.Equal(Path.GetFullPath(trustedPath), result);
+		Assert.Equal(Path.GetFullPath(acceptedPublisherPath), result);
 	}
 
 	[Fact]
