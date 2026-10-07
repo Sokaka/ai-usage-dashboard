@@ -104,7 +104,7 @@ internal sealed class GrokCliExecutableValidator : IGrokCliExecutableValidator
 			ReadEmbeddedVersion,
 			versionProbe,
 			IsFixedDrivePath,
-			GrokCliExecutableStager.IsDefaultStagedPathAclSafe,
+			IsPathAclSafe,
 			GrokCliExecutableStager.Shared,
 			containmentState)
 	{
@@ -288,7 +288,7 @@ internal sealed class GrokCliExecutableValidator : IGrokCliExecutableValidator
 			if (skipSignatureInspection && !executableLease.IsProtected)
 			{
 				throw new GrokCliUntrustedException(
-					"Grok Build CLI staging validation requires a protected executable lease.");
+					"Grok Build CLI validation requires a protected source lease.");
 			}
 
 			if (!skipSignatureInspection)

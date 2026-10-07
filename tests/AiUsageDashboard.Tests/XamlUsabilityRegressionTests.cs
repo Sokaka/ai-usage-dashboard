@@ -817,6 +817,24 @@ public sealed class XamlUsabilityRegressionTests
 
 	[Theory]
 	[InlineData("FloatingWidgetWindow.xaml")]
+	public void CollapsedButton_UsesSingleTwoPixelOuterBorder(string fileName)
+	{
+		XDocument window = LoadAppXaml(fileName);
+		XElement collapsedButton = GetNamedElement(
+			window,
+			"Button",
+			"CollapsedButton");
+		XElement logo = Assert.Single(
+			collapsedButton.Descendants(Presentation + "ContentControl"));
+
+		Assert.Equal("2", (string?)collapsedButton.Attribute("BorderThickness"));
+		Assert.Equal(
+			"{DynamicResource TransparentBrush}",
+			(string?)logo.Attribute("BorderBrush"));
+	}
+
+	[Theory]
+	[InlineData("FloatingWidgetWindow.xaml")]
 	public void AccountRemovalMenu_DescribesAccountRemoval(string fileName)
 	{
 		string xaml = LoadAppSource(fileName);

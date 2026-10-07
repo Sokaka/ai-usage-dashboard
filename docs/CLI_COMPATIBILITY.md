@@ -25,6 +25,22 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同版成品官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
+### 1.0.20
+
+本表對應準備發布的 `1.0.20 / sequence 1034` source；正式候選尚未建立。Claude Code 最低版本維持 `2.1.169`，其他 CLI 要求沿用上表；Copilot 保留本機官方 CLI 與 SDK `1.0.11`。預定沿用前版已簽署的 `1.0.18` Updater，須由候選封裝重新核對。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | source probe 使用 `2.1.292`；尚未以正式成品實測 | 未重新驗證 | source probe 讀取三個額度項目；正式成品待驗 |
+| Codex | 未以本版實測 | 未驗證 | 未驗證 |
+| GitHub Copilot | 未以本版實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
+| Grok | 未以本版實測 | 未驗證 | 未驗證 |
+| Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
+
+2026-10-07 候選前依 App 參數受控執行 Claude Code `2.1.292` `/usage`；修正後讀取三個額度項目，回應宣告 turn／token／cost 均為零、`safety_stops` 為零、`usage.fallback_credit` 為 `null`。這是 source probe，未使用本版正式成品，也未重驗登入、背景更新或舊版 CLI 的真人查詢。合成回歸保留 `2.1.285`、`2.1.185`、`2.1.169` 舊格式，並涵蓋新欄位缺省、精確零值與不安全值拒絕；不表示這些版本均完成真人驗收。
+
+Claude／Codex／Grok 來源改為鎖定官方原始 EXE；Claude 來源 ACL 不符時保留受保護副本，Copilot 保留既有 copy 路徑。帳號、偏好與用量檔案格式未變，安全來源、簽章、程序與帳號隔離要求仍維持。真人安裝、CLI 與一鍵更新驗收繼續列為待驗。
+
 ### 1.0.19
 
 本表對應已公開的 `1.0.19 / sequence 1033`；[source `c562db0db0965a1e040eb8f0d82610e5f7e9b43e`](https://github.com/Sokaka/ai-usage-dashboard/commit/c562db0db0965a1e040eb8f0d82610e5f7e9b43e)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/36639029950/attempts/1) run `36639029950` attempt `1`，Release ID `399573497`。同 source Windows CI、候選完整測試及凍結成品均已驗證；Claude 最低版本仍為 `2.1.169`，其餘 CLI 版本要求沿用上表。Updater 沿用已簽署的 `v1.0.18` 原始 bytes。

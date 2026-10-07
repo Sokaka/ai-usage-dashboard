@@ -10,13 +10,13 @@ public sealed class GrokCliExecutableValidatorTests
 {
 	private sealed class FakeExecutableStager : IGrokCliExecutableStager
 	{
-		private readonly string _stagedPath;
+		private readonly string _protectedPath;
 
 		internal string? ObservedSourcePath { get; private set; }
 
-		internal FakeExecutableStager(string stagedPath)
+		internal FakeExecutableStager(string protectedPath)
 		{
-			_stagedPath = stagedPath;
+			_protectedPath = protectedPath;
 		}
 
 		public WindowsOfficialCliExecutableLease Stage(
@@ -26,12 +26,12 @@ public sealed class GrokCliExecutableValidatorTests
 			cancellationToken.ThrowIfCancellationRequested();
 			ObservedSourcePath = sourceExecutablePath;
 			FileStream stream = new(
-				_stagedPath,
+				_protectedPath,
 				FileMode.Open,
 				FileAccess.Read,
 				FileShare.Read);
 			return WindowsOfficialCliExecutableLease.CreateProtected(
-				_stagedPath,
+				_protectedPath,
 				stream);
 		}
 	}
@@ -92,18 +92,14 @@ public sealed class GrokCliExecutableValidatorTests
 	}
 
 	[Fact]
-	public async Task Resolve_WithStager_UsesProtectedLeaseAndValidatesStagedPath()
+	public async Task Resolve_WithStager_UsesProtectedSourceLease()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = Path.Combine(
 			temporaryDirectory.Path,
 			"official-source.exe");
-		string stagedPath = Path.Combine(
-			temporaryDirectory.Path,
-			"protected-copy.exe");
 		File.WriteAllBytes(sourcePath, [0x4D, 0x5A, 0x01]);
-		File.WriteAllBytes(stagedPath, [0x4D, 0x5A, 0x02]);
-		FakeExecutableStager stager = new(stagedPath);
+		FakeExecutableStager stager = new(sourcePath);
 		string? inspectedPath = null;
 		string? versionPath = null;
 		GrokCliExecutableValidator validator = new(
@@ -125,7 +121,7 @@ public sealed class GrokCliExecutableValidatorTests
 			_ => true,
 			path => string.Equals(
 				path,
-				stagedPath,
+				sourcePath,
 				StringComparison.OrdinalIgnoreCase),
 			stager);
 
@@ -134,8 +130,8 @@ public sealed class GrokCliExecutableValidatorTests
 
 		Assert.Equal(sourcePath, stager.ObservedSourcePath);
 		Assert.Null(inspectedPath);
-		Assert.Equal(Path.GetFullPath(stagedPath), versionPath);
-		Assert.Equal(Path.GetFullPath(stagedPath), result.ExecutablePath);
+		Assert.Equal(Path.GetFullPath(sourcePath), versionPath);
+		Assert.Equal(Path.GetFullPath(sourcePath), result.ExecutablePath);
 		Assert.True(result.ExecutableLease?.IsProtected);
 	}
 

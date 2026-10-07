@@ -1367,12 +1367,12 @@ public sealed class ClaudeCliUsagePollerTests
 			TimeSpan.FromSeconds(5),
 			store,
 			containedUsageProcessRunner:
-				async (startInfo, jobName, beforeResumeAsync, token) =>
+				async (startInfo, jobName, beforeStartAsync, token) =>
 				{
 					Assert.Equal("-p", startInfo.ArgumentList[0]);
 					observedJobName = jobName;
 					preparedState = await store.LoadAsync(accountId, token);
-					await beforeResumeAsync(token);
+					await beforeStartAsync(token);
 					startedState = await store.LoadAsync(accountId, token);
 					return new ClaudeCliUsagePoller.ProcessResult(
 						0,
@@ -1449,9 +1449,9 @@ public sealed class ClaudeCliUsagePollerTests
 			TimeSpan.FromSeconds(5),
 			store,
 			containedUsageProcessRunner:
-				async (_, _, beforeResumeAsync, token) =>
+				async (_, _, beforeStartAsync, token) =>
 				{
-					await beforeResumeAsync(token);
+					await beforeStartAsync(token);
 					throw new ClaudeCliUsagePoller
 						.ContainedUsageCleanupUnconfirmedException(
 							new TimeoutException("cleanup timed out"));
@@ -1541,9 +1541,9 @@ public sealed class ClaudeCliUsagePollerTests
 				TimeSpan.FromSeconds(5),
 				store,
 				containedUsageProcessRunner:
-					async (_, _, beforeResumeAsync, token) =>
+					async (_, _, beforeStartAsync, token) =>
 					{
-						await beforeResumeAsync(token);
+						await beforeStartAsync(token);
 						throw new ClaudeCliUsagePoller
 							.ContainedUsageCleanupUnconfirmedException(
 								new TimeoutException("cleanup timed out"));

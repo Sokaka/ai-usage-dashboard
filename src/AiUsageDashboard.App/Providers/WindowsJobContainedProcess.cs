@@ -328,13 +328,6 @@ internal sealed class WindowsJobContainedProcess : IDisposable
 
 		[DllImport(
 			"kernel32.dll",
-			EntryPoint = "ResumeThread",
-			ExactSpelling = true,
-			SetLastError = true)]
-		internal static extern uint ResumeThread(SafeKernelHandle thread);
-
-		[DllImport(
-			"kernel32.dll",
 			EntryPoint = "TerminateProcess",
 			ExactSpelling = true,
 			SetLastError = true)]
@@ -372,11 +365,9 @@ internal sealed class WindowsJobContainedProcess : IDisposable
 	private const int MaximumEnvironmentBlockCharacters = 32767;
 	private const uint CreateNewConsole = 0x00000010;
 	private const uint CreateNoWindow = 0x08000000;
-	private const uint CreateSuspended = 0x00000004;
 	private const uint CreateUnicodeEnvironment = 0x00000400;
 	private const uint ExtendedStartupInfoPresent = 0x00080000;
 	private const uint ForcedExitCode = 0xC0DE0004;
-	private const uint ResumeThreadFailed = 0xFFFFFFFF;
 	private const uint StartfUseStdHandles = 0x00000100;
 	private const uint WaitFailed = 0xFFFFFFFF;
 	private const uint WaitObject0 = 0x00000000;
@@ -492,10 +483,7 @@ internal sealed class WindowsJobContainedProcess : IDisposable
 				IntPtr.Zero,
 				IntPtr.Zero,
 				inheritHandles: true,
-				CreateNoWindow |
-					CreateSuspended |
-					CreateUnicodeEnvironment |
-					ExtendedStartupInfoPresent,
+				BuildCreationFlags(createNewConsole: false),
 				environment,
 				startInfo.WorkingDirectory,
 				ref startupInfo,
@@ -503,7 +491,7 @@ internal sealed class WindowsJobContainedProcess : IDisposable
 			{
 				throw new Win32Exception(
 					Marshal.GetLastWin32Error(),
-					"Unable to create the suspended contained process.");
+					"Unable to create the contained process.");
 			}
 
 			GC.KeepAlive(inputReadHandle);
@@ -535,22 +523,6 @@ internal sealed class WindowsJobContainedProcess : IDisposable
 				bufferSize: 4096,
 				isAsync: true);
 			errorReadHandle = null;
-			InvokeLaunchGuard(throwIfLaunchBlocked, ref isLaunchBlocked);
-			uint previousSuspendCount = NativeMethods.ResumeThread(threadHandle);
-
-			if (previousSuspendCount == ResumeThreadFailed)
-			{
-				throw new Win32Exception(
-					Marshal.GetLastWin32Error(),
-					"Unable to resume the contained process.");
-			}
-
-			if (previousSuspendCount != 1)
-			{
-				throw new InvalidOperationException(
-					$"The contained process had an unexpected suspend count of {previousSuspendCount}.");
-			}
-
 			WindowsJobContainedProcess result = new(
 				job,
 				processHandle,
@@ -669,10 +641,7 @@ internal sealed class WindowsJobContainedProcess : IDisposable
 				IntPtr.Zero,
 				IntPtr.Zero,
 				inheritHandles: false,
-				CreateNewConsole |
-					CreateSuspended |
-					CreateUnicodeEnvironment |
-					ExtendedStartupInfoPresent,
+				BuildCreationFlags(createNewConsole: true),
 				environment,
 				startInfo.WorkingDirectory,
 				ref startupInfo,
@@ -680,7 +649,7 @@ internal sealed class WindowsJobContainedProcess : IDisposable
 			{
 				throw new Win32Exception(
 					Marshal.GetLastWin32Error(),
-					"Unable to create the suspended interactive process.");
+					"Unable to create the contained interactive process.");
 			}
 
 			GC.KeepAlive(job);
@@ -688,22 +657,6 @@ internal sealed class WindowsJobContainedProcess : IDisposable
 			threadHandle = new SafeKernelHandle(processInformation.Thread);
 			job.VerifyMembership(processHandle);
 			isJobMembershipVerified = true;
-			InvokeLaunchGuard(throwIfLaunchBlocked, ref isLaunchBlocked);
-			uint previousSuspendCount = NativeMethods.ResumeThread(threadHandle);
-
-			if (previousSuspendCount == ResumeThreadFailed)
-			{
-				throw new Win32Exception(
-					Marshal.GetLastWin32Error(),
-					"Unable to resume the contained interactive process.");
-			}
-
-			if (previousSuspendCount != 1)
-			{
-				throw new InvalidOperationException(
-					$"The contained interactive process had an unexpected suspend count of {previousSuspendCount}.");
-			}
-
 			WindowsJobContainedProcess result = new(job, processHandle);
 			job = null;
 			processHandle = null;
@@ -751,6 +704,17 @@ internal sealed class WindowsJobContainedProcess : IDisposable
 				job?.Dispose();
 			}
 		}
+	}
+
+	internal static uint BuildCreationFlags(bool createNewConsole)
+	{
+		uint windowMode = createNewConsole
+			? CreateNewConsole
+			: CreateNoWindow;
+
+		return windowMode |
+			CreateUnicodeEnvironment |
+			ExtendedStartupInfoPresent;
 	}
 
 	internal async Task<int> WaitForExitAsync(

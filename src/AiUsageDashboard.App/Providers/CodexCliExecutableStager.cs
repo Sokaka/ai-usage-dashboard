@@ -19,8 +19,6 @@ internal sealed class CodexCliExecutableStager :
 	internal const long MaximumExecutableSizeBytes =
 		WindowsOfficialCliExecutableStager.MaximumExecutableSizeBytes;
 	private const string ExpectedSignerName = "OpenAI OpCo, LLC";
-	private const string StagedFilePrefix = "codex-";
-	private const string TemporaryFilePrefix = ".codex-stage-";
 	private readonly WindowsOfficialCliExecutableStager _stager;
 
 	internal static ICodexCliExecutableStager Shared { get; } =
@@ -28,40 +26,26 @@ internal sealed class CodexCliExecutableStager :
 
 	internal CodexCliExecutableStager()
 		: this(
-			ResolveDefaultTrustedRoot,
 			path => new WindowsAuthenticodeInspector().Inspect(path),
 			WindowsExecutablePathSecurity.IsCanonicalNonReparseFile,
 			WindowsExecutablePathSecurity.IsFixedDrivePath,
-			WindowsExecutablePathSecurity.IsPathAclSafeWithinTrustedRoot,
-			WindowsExecutablePathSecurity
-				.IsDirectoryPathAclSafeWithinTrustedRoot,
-			TryPrepareTrustedRoot,
-			AntigravityPrivateKeyAcl.TryProtectNewFile)
+			CodexOfficialExecutablePathResolver
+				.IsResolvedExecutablePathAclSafe)
 	{
 	}
 
 	internal CodexCliExecutableStager(
-		Func<string> trustedRootResolver,
 		Func<string, WindowsAuthenticodeInspection> inspectSignature,
 		Func<string, bool> isCanonicalNonReparseFile,
 		Func<string, bool> isFixedDrivePath,
-		Func<string, string, bool> isPathAclSafe,
-		Func<string, string, bool> isRootAclSafe,
-		Func<string, bool> tryPrepareTrustedRoot,
-		Func<string, bool> tryProtectFile)
+		Func<string, bool> isPathAclSafe)
 	{
 		_stager = new WindowsOfficialCliExecutableStager(
 			ExpectedSignerName,
-			StagedFilePrefix,
-			TemporaryFilePrefix,
-			trustedRootResolver,
 			inspectSignature,
 			isCanonicalNonReparseFile,
 			isFixedDrivePath,
-			isPathAclSafe,
-			isRootAclSafe,
-			tryPrepareTrustedRoot,
-			tryProtectFile);
+			isPathAclSafe);
 	}
 
 	public WindowsOfficialCliExecutableLease Stage(
@@ -75,7 +59,7 @@ internal sealed class CodexCliExecutableStager :
 		catch (WindowsOfficialCliExecutableStagingException exception)
 		{
 			throw new CodexCliUntrustedException(
-				"無法建立或驗證 Codex CLI 的受保護執行副本。",
+				"無法鎖定或驗證 Codex CLI 的官方原始執行檔。",
 				exception);
 		}
 	}
@@ -83,13 +67,6 @@ internal sealed class CodexCliExecutableStager :
 	public void Dispose()
 	{
 		_stager.Dispose();
-	}
-
-	internal static string ResolveDefaultTrustedRoot()
-	{
-		return Path.Combine(
-			ResolveDefaultProviderRoot(),
-			"executables-v1");
 	}
 
 	internal static string ResolveDefaultProviderRoot()
@@ -111,18 +88,4 @@ internal sealed class CodexCliExecutableStager :
 			$"AiUsageDashboard.CodexCli.{currentUserSid}");
 	}
 
-	internal static bool IsDefaultStagedPathAclSafe(string absolutePath)
-	{
-		return WindowsExecutablePathSecurity.IsPathAclSafeWithinTrustedRoot(
-			absolutePath,
-			ResolveDefaultTrustedRoot());
-	}
-
-	private static bool TryPrepareTrustedRoot(string trustedRoot)
-	{
-		return AntigravityPrivateKeyAcl.TryPreparePrivateStorageDirectory(
-			trustedRoot,
-			out _,
-			out _);
-	}
 }

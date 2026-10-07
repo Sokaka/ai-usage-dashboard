@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 
 using AiUsageDashboard.App.Providers;
@@ -6,31 +7,6 @@ namespace AiUsageDashboard.Tests;
 
 public sealed class GrokCliVersionProbeTests
 {
-	private sealed class ControlledDeadlineTimeProvider : TimeProvider
-	{
-		private ITimer? _timer;
-
-		public override ITimer CreateTimer(
-			TimerCallback callback,
-			object? state,
-			TimeSpan dueTime,
-			TimeSpan period)
-		{
-			Assert.Null(_timer);
-			Assert.Equal(TimeSpan.FromMilliseconds(100), dueTime);
-			Assert.Equal(Timeout.InfiniteTimeSpan, period);
-			_timer = TimeProvider.System.CreateTimer(
-				callback, state, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-			return _timer;
-		}
-
-		internal void ExpireDeadline()
-		{
-			Assert.NotNull(_timer);
-			Assert.True(_timer.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan));
-		}
-	}
-
 	private sealed class FakeProcess : IGrokAcpProcess
 	{
 		private readonly TaskCompletionSource _disposeCompletion = new(
@@ -254,16 +230,16 @@ public sealed class GrokCliVersionProbeTests
 	[Fact]
 	public async Task ReadVersionAsync_WhenProcessStartBlocks_TimesOutWithoutHoldingCallerAndDefersScratchCleanup()
 	{
-		TimeSpan testTimeout = TimeSpan.FromSeconds(5);
 		using TemporaryDirectory temporaryDirectory = new();
 		FakeProcess process = new(
 			Encoding.UTF8.GetBytes("grok 1.0.4 (d846eb93d9)\r\n"));
 		using ManualResetEventSlim releaseStart = new(initialState: false);
 		BlockingProcessFactory processFactory = new(process, releaseStart);
+		TimeSpan probeTimeout = TimeSpan.FromMilliseconds(100);
+		ManualDeadlineTimeProvider timeProvider = new(probeTimeout);
 		TaskCompletionSource scratchCleanupCompletion = new(
 			TaskCreationOptions.RunContinuationsAsynchronously);
 		int disposeCountAtScratchCleanup = -1;
-		ControlledDeadlineTimeProvider timeProvider = new();
 		GrokCliVersionProbe probe = CreateProbe(
 			processFactory,
 			Path.Combine(temporaryDirectory.Path, "version-probe"),
@@ -272,41 +248,46 @@ public sealed class GrokCliVersionProbeTests
 				disposeCountAtScratchCleanup = process.DisposeCallCount;
 				scratchCleanupCompletion.TrySetResult();
 			},
-			probeTimeout: TimeSpan.FromMilliseconds(100),
+			probeTimeout: probeTimeout,
 			timeProvider: timeProvider);
-		Task<Task<GrokExecutableVersion?>> invocation = Task.Factory.StartNew(
-			() => probe.ReadVersionAsync(
-				Path.Combine(temporaryDirectory.Path, "grok.exe")),
-			CancellationToken.None,
-			TaskCreationOptions.LongRunning,
-			TaskScheduler.Default);
+		using CancellationTokenSource fallbackRelease = new(TimeSpan.FromSeconds(10));
+		using CancellationTokenRegistration fallbackRegistration =
+			fallbackRelease.Token.Register(releaseStart.Set);
+		Stopwatch invocationStopwatch = Stopwatch.StartNew();
+
+		Task<GrokExecutableVersion?> versionTask = probe.ReadVersionAsync(
+			Path.Combine(temporaryDirectory.Path, "grok.exe"));
 
 		try
 		{
-			Task<GrokExecutableVersion?> versionTask = await invocation.WaitAsync(testTimeout);
-			await processFactory.StartEntered.Task.WaitAsync(testTimeout);
+			invocationStopwatch.Stop();
+			Assert.True(
+				invocationStopwatch.Elapsed < TimeSpan.FromMilliseconds(500),
+				$"ReadVersionAsync synchronously held its caller for {invocationStopwatch.Elapsed}.");
+			await processFactory.StartEntered.Task.WaitAsync(TimeSpan.FromSeconds(10));
 			Assert.False(versionTask.IsCompleted);
-			// 先確認 StartAsync 已阻塞，再觸發 deadline，避免排程延遲先取消尚未啟動的工作。
-			timeProvider.ExpireDeadline();
+			timeProvider.Expire();
 			GrokCliVersionProbeException exception =
 				await Assert.ThrowsAsync<GrokCliVersionProbeException>(() => versionTask)
-					.WaitAsync(testTimeout);
+					.WaitAsync(TimeSpan.FromSeconds(10));
 			Assert.Contains("deadline", exception.Message, StringComparison.Ordinal);
 			Assert.False(scratchCleanupCompletion.Task.IsCompleted);
+
+			releaseStart.Set();
+			await process.DisposeCompletion.WaitAsync(TimeSpan.FromSeconds(10));
+			await scratchCleanupCompletion.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+			Assert.Equal(1, process.TerminateCallCount);
+			Assert.Equal(1, process.DisposeCallCount);
+			Assert.Equal(1, disposeCountAtScratchCleanup);
 		}
 		finally
 		{
 			releaseStart.Set();
-			Task<GrokExecutableVersion?> versionTask = await invocation.WaitAsync(testTimeout);
-			// 保留原斷言失敗，同時觀察釋放後的工作，避免它離開測試範圍。
-			await Record.ExceptionAsync(() => versionTask);
-			await process.DisposeCompletion.WaitAsync(testTimeout);
-			await scratchCleanupCompletion.Task.WaitAsync(testTimeout);
+			ProviderProcessExecution.ObserveFault(versionTask);
+			await process.DisposeCompletion.WaitAsync(TimeSpan.FromSeconds(10));
+			await scratchCleanupCompletion.Task.WaitAsync(TimeSpan.FromSeconds(10));
 		}
-
-		Assert.Equal(1, process.TerminateCallCount);
-		Assert.Equal(1, process.DisposeCallCount);
-		Assert.Equal(1, disposeCountAtScratchCleanup);
 	}
 
 	[Theory]

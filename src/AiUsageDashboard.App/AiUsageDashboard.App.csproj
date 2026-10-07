@@ -10,6 +10,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Assets\AiUsageDashboard.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyTitle>AI Usage</AssemblyTitle>
+    <Product>AI Usage</Product>
+    <Description>本機 AI 用量儀表板</Description>
     <!-- This is a WPF app; process DPI awareness must be set before its first HWND exists. -->
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
     <CopilotSkipCliDownload>true</CopilotSkipCliDownload>

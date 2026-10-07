@@ -104,6 +104,155 @@ public sealed class ClaudeCliUsageCompatibilityTests
 		Assert.Equal(ObservedAt, result.ObservedAt);
 	}
 
+	[Theory]
+	[InlineData("safety_stops")]
+	[InlineData("fallback_credit")]
+	public void ParseSafeResult_WithOneSafetyMetadataFieldAbsent_ReturnsUsage(string absentProperty)
+	{
+		JsonObject root = CreateClaude21292Result();
+		JsonObject parent = absentProperty == "fallback_credit"
+			? root["usage"]?.AsObject() ??
+				throw new InvalidOperationException("Claude compatibility fixture must contain usage.")
+			: root;
+		Assert.True(parent.Remove(absentProperty));
+
+		ClaudeUsagePollResult result = ClaudeCliUsagePoller.ParseSafeResult(root.ToJsonString(), ObservedAt);
+
+		Assert.Equal(UsageText, result.Output);
+	}
+
+	[Fact]
+	public void ParseSafeResult_WithClaude21292Envelope_ReturnsUsage()
+	{
+		ClaudeUsagePollResult result = ClaudeCliUsagePoller.ParseSafeResult(
+			CreateClaude21292Result().ToJsonString(),
+			ObservedAt);
+
+		Assert.Equal(UsageText, result.Output);
+		Assert.Equal(ObservedAt, result.ObservedAt);
+	}
+
+	[Theory]
+	[InlineData("1")]
+	[InlineData("-1")]
+	[InlineData("0.5")]
+	[InlineData("1e-400")]
+	[InlineData("\"0\"")]
+	[InlineData("null")]
+	[InlineData("false")]
+	[InlineData("{}")]
+	[InlineData("[]")]
+	public void ParseSafeResult_WithInvalidSafetyStops_RejectsResult(string invalidValueJson)
+	{
+		JsonObject root = CreateClaude21292Result();
+		root["safety_stops"] = JsonNode.Parse(invalidValueJson);
+
+		Assert.Throws<InvalidDataException>(() =>
+			ClaudeCliUsagePoller.ParseSafeResult(root.ToJsonString(), ObservedAt));
+	}
+
+	[Theory]
+	[InlineData("\"safety_stops\":0,\"safety_stops\":1,")]
+	[InlineData("\"safety_stops\":1,\"safety_stops\":0,")]
+	[InlineData("\"safety_stops\":0,\"safety_stops\":0,")]
+	public void ParseSafeResult_WithDuplicateSafetyStops_RejectsResult(string duplicateProperties)
+	{
+		string json = CreateClaude21292Result().ToJsonString();
+		json = json.Insert(1, duplicateProperties);
+
+		Assert.Throws<InvalidDataException>(() =>
+			ClaudeCliUsagePoller.ParseSafeResult(json, ObservedAt));
+	}
+
+	[Theory]
+	[InlineData("num_turns", "1")]
+	[InlineData("total_cost_usd", "0.01")]
+	[InlineData("queued_turn_count", "1")]
+	[InlineData("modelUsage", "{\"model\":{\"inputTokens\":1}}")]
+	[InlineData("subagent_stats", "{\"spawned\":1}")]
+	[InlineData("permission_denials", "[{}]")]
+	[InlineData("unknown_activity", "0")]
+	public void ParseSafeResult_WithNewEnvelopeAndUnsafeMetadata_RejectsResult(
+		string propertyName,
+		string invalidValueJson)
+	{
+		JsonObject root = CreateClaude21292Result();
+		root[propertyName] = JsonNode.Parse(invalidValueJson);
+
+		Assert.Throws<InvalidDataException>(() =>
+			ClaudeCliUsagePoller.ParseSafeResult(root.ToJsonString(), ObservedAt));
+	}
+
+	[Theory]
+	[InlineData("input_tokens", "1")]
+	[InlineData("output_tokens", "1")]
+	[InlineData("cache_creation_input_tokens", "1")]
+	[InlineData("cache_read_input_tokens", "1")]
+	[InlineData("unknown_activity", "0")]
+	public void ParseSafeResult_WithNewEnvelopeAndUnsafeTokenMetadata_RejectsResult(
+		string propertyName,
+		string invalidValueJson)
+	{
+		JsonObject root = CreateClaude21292Result();
+		GetUsage(root)[propertyName] = JsonNode.Parse(invalidValueJson);
+
+		Assert.Throws<InvalidDataException>(() =>
+			ClaudeCliUsagePoller.ParseSafeResult(root.ToJsonString(), ObservedAt));
+	}
+
+	[Theory]
+	[InlineData("1", 0)]
+	[InlineData("-1", 0)]
+	[InlineData("0.5", 0)]
+	[InlineData("1e-400", 0)]
+	[InlineData("1", 1)]
+	public async Task PollAsync_WithNonZeroSafetyStops_RequiresManualRevalidation(
+		string safetyStopsJson,
+		int usageExitCode)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = Path.Combine(temporaryDirectory.Path, "claude.exe");
+		string configDirectory = Path.Combine(temporaryDirectory.Path, "config");
+		await File.WriteAllTextAsync(executablePath, string.Empty);
+		Directory.CreateDirectory(configDirectory);
+		JsonObject root = CreateClaude21292Result();
+		root["safety_stops"] = JsonNode.Parse(safetyStopsJson);
+		int usageRunCount = 0;
+		ClaudeCliUsagePoller poller = new(
+			_ => configDirectory,
+			() => executablePath,
+			(startInfo, _) =>
+			{
+				bool isUsage = startInfo.ArgumentList[0] == "-p";
+				if (isUsage)
+				{
+					usageRunCount++;
+				}
+
+				string standardOutput = startInfo.ArgumentList[0] switch
+				{
+					"--version" => "2.1.292 (Claude Code)",
+					"auth" => AuthStatusJson,
+					"-p" => root.ToJsonString(),
+					_ => throw new InvalidOperationException(
+						$"Unexpected Claude compatibility probe: {startInfo.ArgumentList[0]}.")
+				};
+				return Task.FromResult(new ClaudeCliUsagePoller.ProcessResult(
+					isUsage ? usageExitCode : 0, standardOutput, string.Empty));
+			},
+			new FixedTimeProvider());
+		Guid accountId = Guid.NewGuid();
+
+		ClaudeUsageSafetyException failure =
+			await Assert.ThrowsAsync<ClaudeUsageSafetyException>(() => poller.PollAsync(accountId));
+		ClaudeUsageSafetyException blocked =
+			await Assert.ThrowsAsync<ClaudeUsageSafetyException>(() => poller.PollAsync(accountId));
+
+		Assert.False(failure.CanRetryAutomatically);
+		Assert.False(blocked.CanRetryAutomatically);
+		Assert.Equal(1, usageRunCount);
+	}
+
 	[Fact]
 	public void ParseSafeResult_WithNullFallbackCredit_ReturnsUsage()
 	{
@@ -255,15 +404,17 @@ public sealed class ClaudeCliUsageCompatibilityTests
 	}
 
 	[Theory]
-	[InlineData("2.1.285", true, true)]
-	[InlineData("2.1.268", true, false)]
-	[InlineData("2.1.267", false, false)]
-	[InlineData("2.1.185", false, false)]
-	[InlineData("2.1.169", false, false)]
+	[InlineData("2.1.292", true, true, true)]
+	[InlineData("2.1.285", true, true, false)]
+	[InlineData("2.1.268", true, false, false)]
+	[InlineData("2.1.267", false, false, false)]
+	[InlineData("2.1.185", false, false, false)]
+	[InlineData("2.1.169", false, false, false)]
 	public async Task PollAsync_WithNewOrLegacyEnvelope_ReturnsUsage(
 		string version,
 		bool includesCommandMetadata,
-		bool includesNullFallbackCredit)
+		bool includesNullFallbackCredit,
+		bool includesSafetyStops)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = Path.Combine(temporaryDirectory.Path, "claude.exe");
@@ -274,6 +425,10 @@ public sealed class ClaudeCliUsageCompatibilityTests
 		if (includesNullFallbackCredit)
 		{
 			GetUsage(root)["fallback_credit"] = null;
+		}
+		if (includesSafetyStops)
+		{
+			root["safety_stops"] = 0;
 		}
 
 		if (!includesCommandMetadata)
@@ -322,6 +477,15 @@ public sealed class ClaudeCliUsageCompatibilityTests
 			new[] { "auth", "status", "--json" },
 			capturedStartInfos[1].ArgumentList);
 		Assert.Equal("/usage", capturedStartInfos[2].ArgumentList[1]);
+	}
+
+	private static JsonObject CreateClaude21292Result()
+	{
+		// Claude Code 2.1.292 的 /usage 實測包含這兩個欄位，其餘結構與 2.1.268 相同。
+		JsonObject root = CreateResult();
+		root["safety_stops"] = 0;
+		GetUsage(root)["fallback_credit"] = null;
+		return root;
 	}
 
 	private static JsonObject CreateResult()

@@ -157,7 +157,7 @@ internal sealed class GrokAcpUsageClient : IGrokAcpUsageClient
 		ValidateLaunchOptions(options);
 		cancellationToken.ThrowIfCancellationRequested();
 
-		using CancellationTokenSource timeoutSource = new(_operationTimeout);
+		using CancellationTokenSource timeoutSource = new(_operationTimeout, _timeProvider);
 		using CancellationTokenSource linkedSource =
 			CancellationTokenSource.CreateLinkedTokenSource(
 				cancellationToken,
