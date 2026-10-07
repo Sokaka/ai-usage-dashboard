@@ -1,8 +1,8 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.19` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.19` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.20` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.20` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
-本版修正 Claude Code `2.1.285` 的 `/usage` 回應相容性，保留 `2.1.169` 起的既有格式及其他 provider 要求；逐平台狀態見 [1.0.19](#1019)，正式版本與下載資訊見 [README](../README.md#current-release)。
+本版修正 Claude Code `2.1.292` 的 `/usage` 回應相容性，保留 `2.1.169` 起的既有格式及其他 provider 要求；逐平台狀態見 [1.0.20](#1020)，正式版本與下載資訊見 [README](../README.md#current-release)。
 
 ## 版本要求
 
@@ -27,19 +27,21 @@
 
 ### 1.0.20
 
-本表對應準備發布的 `1.0.20 / sequence 1034` source；正式候選尚未建立。Claude Code 最低版本維持 `2.1.169`，其他 CLI 要求沿用上表；Copilot 保留本機官方 CLI 與 SDK `1.0.11`。預定沿用前版已簽署的 `1.0.18` Updater，須由候選封裝重新核對。
+本表對應已公開的 `1.0.20 / sequence 1034`；[source `d618a2680a6d0be6afcc7b25b231bcd768c0b030`](https://github.com/Sokaka/ai-usage-dashboard/commit/d618a2680a6d0be6afcc7b25b231bcd768c0b030)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/37557317791/attempts/1) run `37557317791` attempt `1`，Release ID `405283920`。 同 source Windows CI、候選完整測試與凍結成品均已驗證；Claude 最低版本仍為 `2.1.169`，其他 CLI 要求沿用上表。Updater 沿用 `v1.0.19` 交付的 `1.0.18` 原始 bytes。
 
 | 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
 | --- | --- | --- | --- |
-| Claude | source probe 使用 `2.1.292`；尚未以正式成品實測 | 未重新驗證 | source probe 讀取三個額度項目；正式成品待驗 |
+| Claude | source probe 使用 `2.1.292`；尚未以正式成品實測 | 未以本版成品驗證 | source probe 讀取三個額度項目；正式成品待驗 |
 | Codex | 未以本版實測 | 未驗證 | 未驗證 |
 | GitHub Copilot | 未以本版實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
 | Grok | 未以本版實測 | 未驗證 | 未驗證 |
 | Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
 
-2026-10-07 候選前依 App 參數受控執行 Claude Code `2.1.292` `/usage`；修正後讀取三個額度項目，回應宣告 turn／token／cost 均為零、`safety_stops` 為零、`usage.fallback_credit` 為 `null`。這是 source probe，未使用本版正式成品，也未重驗登入、背景更新或舊版 CLI 的真人查詢。合成回歸保留 `2.1.285`、`2.1.185`、`2.1.169` 舊格式，並涵蓋新欄位缺省、精確零值與不安全值拒絕；不表示這些版本均完成真人驗收。
+2026-10-07 候選前依 App 參數受控執行 Claude Code `2.1.292` `/usage`；修正後讀取三個額度項目，回應宣告 model turn、input／output token 與 cost 均為零，root `safety_stops` 為零、`usage.fallback_credit` 為 `null`。這是 source probe，未使用本版正式成品，也未重驗登入、背景更新或舊版 CLI 的真人查詢。
 
-Claude／Codex／Grok 來源改為鎖定官方原始 EXE；Claude 來源 ACL 不符時保留受保護副本，Copilot 保留既有 copy 路徑。帳號、偏好與用量檔案格式未變，安全來源、簽章、程序與帳號隔離要求仍維持。真人安裝、CLI 與一鍵更新驗收繼續列為待驗。
+合成回歸保留 `2.1.285`、`2.1.185`、`2.1.169` 的舊格式，並涵蓋 root `safety_stops` 缺省、精確零值與不安全值拒絕；不表示這些 CLI 版本均完成真人驗收。
+
+本版成品的 Claude Code `2.1.292` 真人登入、額度顯示、背景更新及舊版 CLI 的真人查詢仍待驗。乾淨 Windows 安裝、既有標準安裝的一鍵線上更新、安裝後 UI／無障礙，以及其他四個 provider 的真人登入／用量亦未以本版成品完成。匿名下載、簽章與合成回歸不代替這些實機驗收。 內容與六件正式成品資料見 [1.0.20 版本說明](releases/1.0.20.md)。
 
 ### 1.0.19
 
