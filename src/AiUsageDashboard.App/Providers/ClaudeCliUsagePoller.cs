@@ -129,6 +129,7 @@ internal sealed class ClaudeCliUsagePoller :
 			"is_error",
 			"num_turns",
 			"queued_turn_count",
+			"safety_stops",
 			"total_cost_usd",
 			"duration_ms",
 			"duration_api_ms",
@@ -354,12 +355,12 @@ internal sealed class ClaudeCliUsagePoller :
 				_commandTimeout,
 				ProcessCleanupTimeout);
 			_containedUsageProcessRunner =
-				(startInfo, jobName, beforeResumeAsync, token) =>
+				(startInfo, jobName, beforeStartAsync, token) =>
 					RunCrashContainedUsageProcessAsync(
 						windowsProcessRunner,
 						startInfo,
 						jobName,
-						beforeResumeAsync,
+						beforeStartAsync,
 						token);
 		}
 
@@ -1417,6 +1418,8 @@ internal sealed class ClaudeCliUsagePoller :
 				"queued_turn_count",
 				out JsonElement queuedTurnCountElement) &&
 				!IsExactJsonZero(queuedTurnCountElement)) ||
+			(root.TryGetProperty("safety_stops", out JsonElement safetyStopsElement) &&
+				!IsExactJsonZero(safetyStopsElement)) ||
 			!root.TryGetProperty("total_cost_usd", out JsonElement costElement) ||
 			!IsExactJsonZero(costElement) ||
 			!HasOptionalNonNegativeInt64Property(root, "duration_ms") ||
@@ -1585,7 +1588,7 @@ internal sealed class ClaudeCliUsagePoller :
 
 				try
 				{
-					_ = validator.ValidateStaged(executableLease);
+					_ = validator.ValidateProtected(executableLease);
 					return executableLease;
 				}
 				catch
@@ -2172,7 +2175,7 @@ internal sealed class ClaudeCliUsagePoller :
 			WindowsAntigravityOfficialPrintProcessRunner processRunner,
 			ProcessStartInfo startInfo,
 			string jobName,
-			Func<CancellationToken, Task> beforeResumeAsync,
+			Func<CancellationToken, Task> beforeStartAsync,
 			CancellationToken cancellationToken)
 	{
 		try
@@ -2181,7 +2184,7 @@ internal sealed class ClaudeCliUsagePoller :
 				await processRunner.RunAsync(
 					startInfo,
 					jobName,
-					beforeResumeAsync,
+					beforeStartAsync,
 					cancellationToken);
 
 			if (result.StdoutLimitExceeded || result.StderrLimitExceeded)
@@ -2256,6 +2259,14 @@ internal sealed class ClaudeCliUsagePoller :
 		{
 			throw CreateExplicitUsageActivityException(
 				"Claude `/usage` 回報了非零 queued turn。");
+		}
+
+		if (root.TryGetProperty("safety_stops", out JsonElement safetyStops) &&
+			(safetyStops.ValueKind == JsonValueKind.Number) &&
+			!IsExactJsonZero(safetyStops))
+		{
+			throw CreateExplicitUsageActivityException(
+				"Claude `/usage` 回報了非零 safety stop。");
 		}
 
 		if (root.TryGetProperty("total_cost_usd", out JsonElement cost) &&

@@ -120,7 +120,7 @@ internal sealed class WindowsOfficialCliExecutableValidator
 		return Validate(executablePath, inspectSignature: true);
 	}
 
-	internal string ValidateStaged(WindowsOfficialCliExecutableLease executableLease)
+	internal string ValidateProtected(WindowsOfficialCliExecutableLease executableLease)
 	{
 		ArgumentNullException.ThrowIfNull(executableLease);
 		using WindowsOfficialCliExecutableLease validationLease =
@@ -130,7 +130,7 @@ internal sealed class WindowsOfficialCliExecutableValidator
 		{
 			throw new OfficialCliExecutableValidationException(
 				OfficialCliExecutableValidationFailureReason.UnsafePath,
-				"Official CLI executable validation requires a protected staging lease.");
+				"Official CLI executable validation requires a protected source lease.");
 		}
 
 		using IDisposable? executableLeaseRetention =

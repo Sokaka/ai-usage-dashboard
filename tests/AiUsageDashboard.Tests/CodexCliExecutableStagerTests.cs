@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Security.Principal;
 
 using AiUsageDashboard.AntigravitySpike;
@@ -26,11 +25,11 @@ public sealed class CodexCliExecutableStagerTests
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 			ObservedSourcePaths.Add(sourceExecutablePath);
-			string stagedPath = _stage(sourceExecutablePath);
+			string protectedPath = _stage(sourceExecutablePath);
 			return WindowsOfficialCliExecutableLease.CreateProtected(
-				stagedPath,
+				protectedPath,
 				new FileStream(
-					stagedPath,
+					protectedPath,
 					FileMode.Open,
 					FileAccess.Read,
 					FileShare.Read));
@@ -41,85 +40,59 @@ public sealed class CodexCliExecutableStagerTests
 		"CN=\"OpenAI OpCo, LLC\", O=\"OpenAI OpCo, LLC\", L=San Francisco, S=California, C=US";
 
 	[Fact]
-	public void Stage_WithOpenAiSignedSource_CreatesContentAddressedCopy()
+	public void Stage_WithOpenAiSignedSource_ProtectsOriginalPath()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(temporaryDirectory, "codex.exe");
-		string trustedRoot = Path.Combine(temporaryDirectory.Path, "trusted");
 		List<string> aclCheckedPaths = new();
-		using CodexCliExecutableStager stager = CreateStager(
-			trustedRoot,
+		using CodexCliExecutableStager stager = new(
 			_ => CreateSignature(ExactSignerSubject),
-			(path, root) =>
+			_ => true,
+			_ => true,
+			path =>
 			{
 				aclCheckedPaths.Add(path);
-				return IsWithinRoot(path, root);
+				return true;
 			});
 
 		using WindowsOfficialCliExecutableLease lease = stager.Stage(sourcePath);
-		string stagedPath = lease.ExecutablePath;
-		Assert.True(lease.IsProtected);
 
-		string expectedHash = Convert.ToHexString(
-			SHA256.HashData(File.ReadAllBytes(sourcePath))).ToLowerInvariant();
-		Assert.Equal(
-			Path.Combine(trustedRoot, $"codex-{expectedHash}.exe"),
-			stagedPath,
-			ignoreCase: true);
-		Assert.Equal(File.ReadAllBytes(sourcePath), File.ReadAllBytes(stagedPath));
-		Assert.DoesNotContain(
-			aclCheckedPaths,
-			path => string.Equals(
-				path,
-				sourcePath,
-				StringComparison.OrdinalIgnoreCase));
+		Assert.True(lease.IsProtected);
+		Assert.Equal(Path.GetFullPath(sourcePath), lease.ExecutablePath);
+		Assert.NotEmpty(aclCheckedPaths);
 		Assert.All(
 			aclCheckedPaths,
-			path => Assert.True(IsWithinRoot(path, trustedRoot)));
+			path => Assert.Equal(Path.GetFullPath(sourcePath), path));
+		Assert.Equal([Path.GetFullPath(sourcePath)], Directory.EnumerateFiles(
+			temporaryDirectory.Path));
 	}
 
 	[Fact]
-	public void Stage_WithNonOpenAiSigner_FailsClosed()
+	public void Stage_WithUnsafePhysicalSourceAcl_FailsClosed()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(temporaryDirectory, "codex.exe");
-		string trustedRoot = Path.Combine(temporaryDirectory.Path, "trusted");
-		using CodexCliExecutableStager stager = CreateStager(
-			trustedRoot,
-			_ => CreateSignature("CN=Unexpected Publisher"));
+		int signatureInspectionCount = 0;
+		using CodexCliExecutableStager stager = new(
+			_ =>
+			{
+				signatureInspectionCount++;
+				return CreateSignature(ExactSignerSubject);
+			},
+			_ => true,
+			_ => true,
+			_ => false);
 
 		Assert.Throws<CodexCliUntrustedException>(() =>
 		{
 			using WindowsOfficialCliExecutableLease lease =
 				stager.Stage(sourcePath);
 		});
-		Assert.Empty(Directory.EnumerateFiles(trustedRoot));
+		Assert.Equal(0, signatureInspectionCount);
 	}
 
 	[Fact]
-	public void Stage_WhenFinalProtectedCopyAclIsUnsafe_FailsClosed()
-	{
-		using TemporaryDirectory temporaryDirectory = new();
-		string sourcePath = CreateSource(temporaryDirectory, "codex.exe");
-		string trustedRoot = Path.Combine(temporaryDirectory.Path, "trusted");
-		using CodexCliExecutableStager stager = CreateStager(
-			trustedRoot,
-			_ => CreateSignature(ExactSignerSubject),
-			(path, root) =>
-				IsWithinRoot(path, root) &&
-				!Path.GetFileName(path).StartsWith(
-					"codex-",
-					StringComparison.Ordinal));
-
-		Assert.Throws<CodexCliUntrustedException>(() =>
-		{
-			using WindowsOfficialCliExecutableLease lease =
-				stager.Stage(sourcePath);
-		});
-	}
-
-	[Fact]
-	public void ResolveExecutablePath_WhenFirstStageFails_FallsBackToSecondCandidate()
+	public void ResolveExecutablePath_WhenFirstProtectionFails_FallsBackToSecondCandidate()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string firstSourcePath = CreateSource(
@@ -128,9 +101,6 @@ public sealed class CodexCliExecutableStagerTests
 		string secondSourcePath = CreateSource(
 			temporaryDirectory,
 			"second-codex.exe");
-		string stagedPath = CreateSource(
-			temporaryDirectory,
-			"protected-codex.exe");
 		FakeCodexCliExecutableStager stager = new(sourcePath =>
 		{
 			if (string.Equals(
@@ -141,9 +111,9 @@ public sealed class CodexCliExecutableStagerTests
 				throw new CodexCliUntrustedException("Rejected test candidate.");
 			}
 
-			return stagedPath;
+			return sourcePath;
 		});
-		List<string> inspectedPaths = new();
+		List<string> signaturePaths = new();
 		List<string> versionPaths = new();
 		WindowsOfficialCliExecutableValidator validator = new(
 			"OpenAI OpCo, LLC",
@@ -154,7 +124,7 @@ public sealed class CodexCliExecutableStagerTests
 			},
 			path =>
 			{
-				inspectedPaths.Add(path);
+				signaturePaths.Add(path);
 				return CreateSignature(ExactSignerSubject);
 			},
 			_ => true,
@@ -166,18 +136,18 @@ public sealed class CodexCliExecutableStagerTests
 			validator,
 			stager);
 
-		Assert.Equal(Path.GetFullPath(stagedPath), result);
+		Assert.Equal(Path.GetFullPath(secondSourcePath), result);
 		Assert.Equal(
 			[firstSourcePath, secondSourcePath],
 			stager.ObservedSourcePaths);
-		Assert.Empty(inspectedPaths);
-		Assert.Equal([Path.GetFullPath(stagedPath)], versionPaths);
+		Assert.Empty(signaturePaths);
+		Assert.Equal([Path.GetFullPath(secondSourcePath)], versionPaths);
 	}
 
 	[Fact]
-	public void ResolveDefaultTrustedRoot_IsFixedDriveAndCurrentUserScoped()
+	public void ResolveDefaultProviderRoot_IsFixedDriveAndCurrentUserScoped()
 	{
-		string trustedRoot = CodexCliExecutableStager.ResolveDefaultTrustedRoot();
+		string providerRoot = CodexCliExecutableStager.ResolveDefaultProviderRoot();
 		string fixedDriveRoot = Path.GetPathRoot(Environment.SystemDirectory) ??
 			throw new InvalidOperationException(
 				"The Windows system drive is unavailable.");
@@ -189,31 +159,10 @@ public sealed class CodexCliExecutableStagerTests
 		Assert.Equal(
 			Path.Combine(
 				fixedDriveRoot,
-				$"AiUsageDashboard.CodexCli.{currentUserSid}",
-				"executables-v1"),
-			trustedRoot,
+				$"AiUsageDashboard.CodexCli.{currentUserSid}"),
+			providerRoot,
 			ignoreCase: true);
-		Assert.True(WindowsExecutablePathSecurity.IsFixedDrivePath(trustedRoot));
-	}
-
-	private static CodexCliExecutableStager CreateStager(
-		string trustedRoot,
-		Func<string, WindowsAuthenticodeInspection> inspectSignature,
-		Func<string, string, bool>? isPathAclSafe = null)
-	{
-		return new CodexCliExecutableStager(
-			() => trustedRoot,
-			inspectSignature,
-			File.Exists,
-			_ => true,
-			isPathAclSafe ?? ((_, _) => true),
-			(_, _) => true,
-			path =>
-			{
-				Directory.CreateDirectory(path);
-				return true;
-			},
-			File.Exists);
+		Assert.True(WindowsExecutablePathSecurity.IsFixedDrivePath(providerRoot));
 	}
 
 	private static string CreateSource(
@@ -234,15 +183,5 @@ public sealed class CodexCliExecutableStagerTests
 			WinVerifyTrustStatus: 0,
 			SignerSubject: signerSubject,
 			SignerThumbprint: new string('A', 40));
-	}
-
-	private static bool IsWithinRoot(string path, string root)
-	{
-		string normalizedRoot = Path.TrimEndingDirectorySeparator(
-			Path.GetFullPath(root));
-		string fullPath = Path.GetFullPath(path);
-		return fullPath.StartsWith(
-			$"{normalizedRoot}{Path.DirectorySeparatorChar}",
-			StringComparison.OrdinalIgnoreCase);
 	}
 }

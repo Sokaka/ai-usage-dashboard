@@ -138,37 +138,24 @@ Copilot 只在使用者明確連接時，透過受控的官方 CLI 網頁登入�
 
 ### 執行官方 CLI 前的檔案保護
 
-Windows 上的 Claude、Codex、Copilot 與 Grok 不直接執行原始安裝檔。程式會先鎖住安裝檔、驗證來源，再複製到受保護的資料夾：
+Windows 上的 Codex 與 Grok 直接執行官方安裝的原始 EXE。Claude 先嘗試相同路徑；來源 ACL 安全時也直接執行原檔。直接執行前會完成下列檢查：
 
 - 用不允許其他程序寫入或刪除的檔案控制代碼（handle）鎖住原始檔。
-- 確認檔案位於固定磁碟（fixed drive）、完整路徑沒有重新導向點（reparse point）、檔案不超過 512 MiB，並通過 WinVerifyTrust 與各服務要求的簽署者（signer）檢查。
-- 從同一個檔案控制代碼複製檔案並計算 SHA-256。
-- 暫存檔與完成提交（commit）後的副本，都會重新驗證上層資料夾 ACL、SHA-256 與簽章。完成驗證後，同一個已驗證副本控制代碼（staged file handle）會持續保持唯讀鎖。
+- 確認檔案位於固定磁碟（fixed drive）、完整路徑沒有重新導向點（reparse point）、ACL 符合各服務的官方安裝來源規則，而且檔案大小介於 1 byte 與 512 MiB 之間。
+- 在鎖內記錄 volume serial number、file ID、長度與建立／寫入／變更時間，然後執行 WinVerifyTrust，且簽署者（signer）的 common name 必須精確符合服務要求。
+- 簽章驗證後，再從既有 handle 與同一路徑重新開啟的 handle 核對完整檔案身分與變更標記，並重查固定磁碟、reparse point 與 ACL；任一項不同就停止。
 
-每個服務會在下列資料夾中，依檔案內容的 SHA-256 分開保存副本：
+通過後回傳的 protected source lease 仍指向同一個官方原始 EXE。若 Claude 只有來源 ACL 不符合直接執行規則，則改走受保護副本：仍須確認原檔位於固定磁碟、沒有 reparse point、大小合格且 `Anthropic, PBC` 簽章有效；以 `FileShare.Read` 鎖住原檔，核對 trust stamp，將相同內容複製到 `%USERPROFILE%\AiUsageDashboard.ClaudeCli\executables-v1`，再核對 SHA-256、副本 ACL 與簽章。來源或副本驗證失敗即停止。正常情況保留目前副本與按寫入時間選出的前一個副本，並清理過期暫存檔；刪除失敗時會保留並記錄警告。舊版 `%SystemDrive%\AiUsageDashboard.*\executables-v1` 目錄不會自動刪除。
 
-```text
-%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1
-%SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\executables-v1
-%SystemDrive%\AiUsageDashboard.CopilotCli.<current-user-SID>\executables-v1
-%SystemDrive%\AiUsageDashboard.GrokCli.<current-user-SID>\executables-v1
-```
+Copilot 使用本機官方 CLI，仍在驗證來源後複製至 `%SystemDrive%\AiUsageDashboard.CopilotCli.<current-user-SID>\executables-v1`。副本目錄只開放目前使用者、Local System 與 Builtin Administrators；每次執行重新驗證 ACL、檔案身分與 SHA-256，程序期間持有副本 lease，正常保留目前與前一份有效副本。未確認程序樹已結束時，仍保留鎖並阻止下一次操作。
 
-受保護目錄建立時就套用 DACL，只讓目前使用者的 SID、Local System 與 Builtin Administrators 擁有 Full Control。其他一般使用者沒有存取權。
-
-每次版本檢查、登入與背景查詢都會取得獨立的唯讀鎖，直到最後一個程序或傳輸確認結束。讀到快取時仍會檢查路徑、ACL、檔案身分與變更標記；標記改變時會重新建立受保護副本。
-
-每個服務正常保留目前來源對應的副本與前一個有效副本。程式會盡力清理更舊副本；若檔案仍被使用，或路徑、ACL、重新導向點與刪除檢查失敗，則保留檔案並在之後重試，所以短期內可能超過兩份。
-
-暫存檔不列入有效副本。當次失敗會嘗試立即清除；當機遺留的固定名稱暫存檔，只有在受保護目錄、路徑與 ACL 都再次通過檢查，且至少一小時未更新時才會刪除。
-
-執行檔鎖只有在確認沒有程序再使用該副本後才會釋放，不能只看前景等待逾時或方法已返回。
+每次版本檢查、登入與背景查詢都會取得實際執行檔的 lease。Claude 直接執行時鎖住原檔，fallback 時在複製期間鎖住原檔、程序期間鎖住受保護副本；lease 複本會複製同一個 OS handle。只有確認沒有程序再使用該執行檔後才釋放程序 lease，不能只看前景等待逾時或方法已返回。
 
 - Claude 與 Codex 的終止、等待和輸出讀取若逾時，會交由背景清理工作接手，完成後才釋放鎖。
 - 若 `wait` 與 `HasExited` 都無法確認程序已離開，執行檔鎖與帳號操作鎖會保留到本次 App 結束；背景仍會在固定上限內重試終止。
 - `Kill(entireProcessTree: true)` 部分或全部失敗時，也不會把根程序已結束當成整棵程序樹已清空。
 - Claude 尚未確認程序樹已清空時，鎖會和這次執行的識別碼（attempt ID）一起保留。
-- Grok 無法確認程序樹已清空時，會停止新的 Grok 程序，並保留所有使用中副本的鎖到 App 結束。
+- Grok 無法確認程序樹已清空時，會停止新的 Grok 程序，並保留所有使用中的 protected source lease 到 App 結束。
 
 ### 查詢失敗後如何重試
 
@@ -263,7 +250,7 @@ Claude 採使用者明確啟用、優先在背景執行 `/usage` 查詢的本機
 %LOCALAPPDATA%\AiUsageDashboard\claude\<account-id>\config
 ```
 
-候選 Claude Code 原始執行檔必須通過前述共用檔案保護流程的來源檢查，且簽署者（signer）為 `Anthropic, PBC`。版本檢查、登入與 `/usage` 都只執行 `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1\claude-<sha256>.exe` 下重新驗證過的受保護副本。
+候選 Claude Code 原始執行檔的簽署者（signer）必須為 `Anthropic, PBC`。來源 ACL 安全時，版本檢查、登入與 `/usage` 直接執行同一個已驗證並鎖住的官方原始 EXE；來源 ACL 不符時，先按前述流程驗證原檔與受保護副本，再在副本的 lease 全程保持有效時執行。兩種路徑都使用相同的版本與功能下限。
 
 每張卡片的安全狀態、自動重試階段與期限另存於
 `%LOCALAPPDATA%\AiUsageDashboard\claude\<account-id>\usage-safety-v1.json`。
@@ -279,7 +266,7 @@ Claude 採使用者明確啟用、優先在背景執行 `/usage` 查詢的本機
 結束碼衝突標記才會改成自動重試。若舊版的中斷、取消或零用量無法驗證標記
 沒有「程序已全部結束」的證據，程式會等待人工確認，不靠推測自動重跑。
 
-每次真正執行 `/usage` 前，App 會先保存具有唯一 attempt ID 的 `Prepared` 狀態。程序會先以暫停狀態建立，並在建立時加入這次執行專用的具名 Windows Job Object；確認加入成功且 `StartedContained` 已寫入磁碟後，程序才會開始執行。
+每次真正執行 `/usage` 前，App 會先保存具有唯一 attempt ID 的 `Prepared` 狀態，再在 `CreateProcessW` 前保存 `StartedContained`。程序透過 `PROC_THREAD_ATTRIBUTE_JOB_LIST` 在建立時直接加入這次執行專用的具名 Windows Job Object；不建立 suspended process，也不呼叫 `ResumeThread`。
 
 App 或主機意外中止時，Job 的「關閉時終止程序」功能（kill-on-close）會終止整棵程序樹。下次啟動會重新開啟同一個 Job，必要時終止殘留程序；確認程序樹已清空後，才改成自動重試。
 
@@ -344,6 +331,7 @@ Claude CLI 暫時不存在時，帳號專用設定與憑證不會被刪除；安
 - 沒有權限遭拒（permission denial）。
 - `usage` 欄位符合已驗證的資料格式（schema）；`fallback_credit` 只接受實測的 `null`，其他值、未知欄位或型別變更時會停止採用結果。
 - 結果可省略 `local_command` 與 `result_index`；若有提供，必須分別為 `usage` 與數值 0。其他 turn／token／cost 檢查仍須全部通過。
+- 結果可省略 `safety_stops`；若有提供，必須是數值 0。非零 `safety_stops` 會停止自動查詢，要求人工重新驗證；舊版未提供此欄位時仍可讀取。
 - `fast_mode_*` 只當作有長度上限的狀態附加資料；新增狀態值不影響零 turn／token／cost 判定，也不會單獨觸發安全停止標記。
 
 暫時性安全驗證失敗不會要求使用者處理。處理方式如下：
@@ -375,7 +363,7 @@ Anthropic 的身分驗證政策不允許第三方開發者代表使用者提供 
 
 現行政策同時說明，若產品遵守 `Commercial Terms`、執行 Anthropic 發布且未修改的 Claude Code 執行檔、不移除內建身分驗證方式，並由每位終端使用者以自己的憑證驗證及直接付費，終端使用者仍可在該產品中登入 Claude Code。
 
-AI Usage 不收集 Claude 憑證，登入交由 Anthropic 官方流程。執行檔會先複製成位元完全相同、依內容雜湊保存的副本，再從副本執行；但文件核對不能代替合約或法律判定。
+AI Usage 不收集 Claude 憑證，登入交由 Anthropic 官方流程。直接鎖定未修改的官方原始 EXE；來源 ACL 不符時才建立位元完全相同、已驗證的受保護副本；但文件核對不能代替合約或法律判定。
 
 Claude 的產品整合條款適用與 child-process 隔離是否構成限制內建 auth 仍有不確定性，保留至發布者最後決策；不因個人作品或風險同意而視為已獲許可。保留官方 binary、`--claudeai`、`CLAUDE_CONFIG_DIR`、官方登入及使用者自己的直接計費。各使用者仍須另外接受查詢可能產生用量與費用的風險；詳見 [發布流程](../RELEASING.md)。
 
@@ -401,15 +389,11 @@ Codex 透過官方 `codex app-server` 的標準輸入輸出（stdio）交換 JSO
 %LOCALAPPDATA%\AiUsageDashboard\codex\<account-id>\home
 ```
 
-Codex 執行檔解析器（resolver）會先從官方安裝目錄找到實際的 `codex.exe`。來源必須通過共用的受保護副本檢查，且簽署者必須是 `OpenAI OpCo, LLC`。版本檢查、登入與 app-server 背景查詢都只執行下列重新驗證過的副本：
-
-```text
-%SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\executables-v1\codex-<sha256>.exe
-```
+Codex 執行檔解析器（resolver）會先從官方安裝目錄找到實際的 `codex.exe`。來源須符合官方 installer layout 的 ACL 與共用檔案保護檢查，且簽署者為 `OpenAI OpCo, LLC`。版本檢查、登入與 app-server 背景查詢直接執行同一個已驗證且鎖定的官方原始 EXE，不建立可執行副本。
 
 版本檢查使用同一服務目錄下的 `validation-v1\probe-<guid>` 隔離設定目錄。建立後會重新檢查所在位置是固定磁碟、父路徑沒有重新導向點（reparse point），而且 ACL 只允許指定帳號存取；結束時也會再次確認父目錄、GUID 名稱、ACL 與路徑，才遞迴刪除這次建立的目錄。
 
-若無法確認版本檢查的程序已完全受控，相關執行檔鎖會保留到 App 結束。程式也會關閉整個程序的 Codex 啟動入口；後續解析、建立副本、登入與背景查詢都直接拒絕，不再建立另一個隔離鎖。
+若無法確認版本檢查的程序已完全受控，相關執行檔鎖會保留到 App 結束。程式也會關閉整個程序的 Codex 啟動入口；後續來源解析、登入與背景查詢都直接拒絕，不再建立另一個隔離鎖。
 
 只有使用者選擇 **儲存並連接**、**連接 Codex 帳號** 或 **切換 Codex 帳號** 時，程式才會建立帳號專用目錄並呼叫 `account/login/start`。背景更新不會自行開啟登入。
 
@@ -437,7 +421,7 @@ Codex 卡片的 **查看重置券** 視窗只讀取該卡片目前的用量快�
 
 從程序建立開始，app-server 的通訊管道就由同一個背景清理工作追蹤：
 
-- 即使關閉 stdin pipe、終止程序樹或建立通訊管道中途失敗，或終止後第二次等待仍逾時，程序、剩餘輸出讀取與受保護執行檔副本的鎖仍交由背景工作清理。
+- 即使關閉 stdin pipe、終止程序樹或建立通訊管道中途失敗，或終止後第二次等待仍逾時，程序、剩餘輸出讀取與 protected source lease 仍交由背景工作清理。
 - 只有確認程序已結束，而且通訊管道已完成釋放（disposal）後，才會釋放執行檔鎖。前景查詢或登入先返回，不會提前解鎖執行檔。
 - 若 `wait` 與 `HasExited` 都無法確認程序已結束，清理工作會把本次作業的鎖保留到 App 重新啟動，並繼續等待，讓有時間上限的清理流程執行逾時／終止路徑。
 
@@ -457,9 +441,7 @@ Grok 每張帳號卡片都有獨立的 `GROK_HOME`、空白工作目錄、OAuth 
 %LOCALAPPDATA%\AiUsageDashboard\grok\<account-id>\home
 ```
 
-AI Usage 不從 `PATH` 接受任意 `grok.exe`，只解析目前 Windows 使用者預設安裝位置 `%USERPROFILE%\.grok\bin\grok.exe`。來源必須通過共用的受保護副本檢查，且簽章者為 `X.AI LLC`。
-
-登入與背景查詢只執行 `%SystemDrive%\AiUsageDashboard.GrokCli.<current-user-SID>\executables-v1\grok-<sha256>.exe` 下重新驗證過的副本。
+AI Usage 不從 `PATH` 接受任意 `grok.exe`，只解析目前 Windows 使用者預設安裝位置 `%USERPROFILE%\.grok\bin\grok.exe`。來源必須通過固定磁碟、無 reparse point、安全 ACL、大小與簽章檢查，且簽章者為 `X.AI LLC`。登入與背景查詢直接執行同一個已驗證且鎖定的官方原始 EXE，不建立可執行副本。
 
 `1.0.3` 是相容性基準，不是最低允許版本。版本探查接受單行的 `grok x.y.z (commit)`，也接受同格式加上精確的 ` [stable]` 尾綴；其他尾綴不推測版號。可信任執行檔的版號不同或無法解析時，仍會啟動 ACP，再以實際的初始交握、方法與資料格式判斷是否相容。任一來源檢查失敗時都會停止，並引導安裝或更新官方 CLI。
 
@@ -489,7 +471,7 @@ JSONL 每行大小、總輸出量、回應數量（response count）、標準錯
 
 CLI 登入成功且 `LoginCompleted` 寫入磁碟後，即使 App 中止，下次啟動也能重新驗證帳號並完成綁定。若在此之前中止，或無法證明是同一次安全連接，使用者必須重新連接。
 
-若無法確認 Grok 程序樹已清空，程式會停止建立新的 Grok 副本、驗證、登入與背景查詢，並把使用中副本的鎖保留到 App 結束。使用者必須重新啟動 App 才能恢復。
+若無法確認 Grok 程序樹已清空，程式會停止新的 Grok 來源驗證、登入與背景查詢，並把使用中的 protected source lease 保留到 App 結束。使用者必須重新啟動 App 才能恢復。
 
 Grok 最短每 15 分鐘更新一次，快取在 30 分鐘後標成舊資料。ACP 暫時失敗、本機 I/O 失敗、逾時、回傳內容（payload）或資料格式（schema）損壞，以及資料不完整時，程式會拒絕採用這次資料、保留上次成功的資料，並由共用背景查詢流程逐步延長等待時間後重試。
 
@@ -507,7 +489,7 @@ Grok 最短每 15 分鐘更新一次，快取在 30 分鐘後標成舊資料。A
 
 Copilot CLI 由使用者依[官方安裝文件](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli)安裝，建議使用 WinGet 標準安裝。解析器接受目前 Windows 使用者的 WinGet 標準 package、標準 npm 安裝的 native `copilot.exe`，或 `PATH` 內的真正官方 EXE／npm prefix 下的 native 位置；不執行 `.cmd`／`.ps1` wrapper，也不從舊 App bundle 取得備援執行檔。
 
-來源須通過 `GitHub, Inc.` Authenticode、ProductName 與共用檔案保護檢查，再由共用 stager 複製到 `%SystemDrive%\AiUsageDashboard.CopilotCli.<current-user-SID>\executables-v1`。只在 Copilot 操作時取得執行檔，不因啟動 App 或使用其他 provider 就要求安裝 Copilot。
+來源須通過 `GitHub, Inc.` Authenticode、ProductName 與共用檔案保護檢查，再由 copy stager 複製到 `%SystemDrive%\AiUsageDashboard.CopilotCli.<current-user-SID>\executables-v1`。只在 Copilot 操作時取得執行檔，不因啟動 App 或使用其他 provider 就要求安裝 Copilot。
 
 連接與用量查詢都在背景執行 CLI 搜尋、驗簽與副本準備，避免這些同步檔案作業佔用 UI 執行緒。取消時會先結束呼叫端的等待；若背景準備稍後才取得執行檔鎖，會由清理工作釋放，不啟動登入或 SDK。
 
@@ -529,7 +511,7 @@ copilot.exe --no-auto-update login --web-flow
 
 官方網頁登入流程（web flow）會使用官方 CLI 在作業系統中的共用登入清單。這只是連接時使用的共用環境，不代表各卡片平時共用登入資料。
 
-互動 CLI 與讀取登入結果的背景程序，都會先以暫停狀態建立，確認放入 `KILL_ON_JOB_CLOSE` Job Object 後才開始執行。背景程序只使用 `127.0.0.1` 的 TCP 端點與獨立的 `COPILOT_CONNECTION_TOKEN`；AI Usage 只接受官方 CLI 的固定連接埠公告格式。
+互動 CLI 與讀取登入結果的背景程序，都會透過 `PROC_THREAD_ATTRIBUTE_JOB_LIST` 在 `CreateProcessW` 建立時直接加入 `KILL_ON_JOB_CLOSE` Job Object，不使用 suspended process 或 `ResumeThread`。啟動阻擋檢查會在 `CreateProcessW` 前完成。背景程序只使用 `127.0.0.1` 的 TCP 端點與獨立的 `COPILOT_CONNECTION_TOKEN`；AI Usage 只接受官方 CLI 的固定連接埠公告格式。
 
 若啟動失敗、取消或清理延遲，程式必須先確認整棵程序樹已結束，才會解除相關鎖。無法確認時不會開始下一次登入；跨程序重試也會先清除可辨識、但已失去所屬程序的登入暫存目錄。
 

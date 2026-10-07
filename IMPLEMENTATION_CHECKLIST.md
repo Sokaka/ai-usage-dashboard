@@ -1,6 +1,6 @@
 # 實作與驗證清單
 
-更新日期：2026-09-30
+更新日期：2026-10-07
 
 讀者：負責 AI Usage Dashboard 開發、測試與交付的人員。本文只列現況、驗證界線與尚待工作。
 
@@ -9,6 +9,14 @@
 ## 目前 source
 
 標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.19 / sequence 1033`。
+
+### 官方 EXE 保護與 Claude Code 2.1.292 相容性（待發布）
+
+- [x] Claude、Codex、Grok 使用已驗證且鎖定的官方原始 EXE；Claude 來源 ACL 不符時才使用已核對 SHA-256、ACL 與簽章的受保護副本。Copilot 保留既有副本路徑；程序結束確認、quarantine 與帳號隔離要求維持。
+- [x] Claude `/usage` 接受缺省或精確為零的 `safety_stops`，保留 `fallback_credit: null` 與舊回應格式。非零 safety stop 仍停止自動查詢，其他未知安全欄位仍拒絕採用。
+- [x] 候選前以 Claude Code `2.1.292` 依 App 參數受控查詢；修正後讀取三個額度項目，turn／token／cost 均為零。這次是 source probe，未使用本版正式成品，也未重驗登入流程。
+- [x] 整合版本機 Release 建置 0 warnings／0 errors；完整測試 4,631 passed／0 failed／0 skipped，production line coverage 74.84%（50,144／67,002，門檻 70%）。本機驗證包通過成品 EXE allowlist、dependency/license profiles 與離線 license exports；這是 source／封裝驗證，不是正式候選或真人安裝驗收。
+- [ ] 同 SHA Windows CI、正式候選與匿名下載驗簽尚待完成；真人登入、舊 CLI 實機查詢與標準安裝一鍵更新另列待驗。
 
 ### Claude Code `/usage` 相容性修正（1.0.19 已發布）
 

@@ -926,7 +926,7 @@ internal sealed class CodexAppServerUsagePoller : ICodexUsagePoller
 				versionEvidenceExecutablePath = executablePath;
 				return true;
 			},
-			CodexCliExecutableStager.IsDefaultStagedPathAclSafe,
+			CodexOfficialExecutablePathResolver.IsResolvedExecutablePathAclSafe,
 			CodexVersionProbeContainmentState.Shared.RetainExecutableLease);
 		WindowsOfficialCliExecutableLease? executableLease = ResolveExecutable(
 			GetExecutableCandidates(),
@@ -1039,13 +1039,13 @@ internal sealed class CodexAppServerUsagePoller : ICodexUsagePoller
 				{
 					ThrowIfCodexContainmentCompromised(containmentState);
 					string sourcePath = CodexOfficialExecutablePathResolver
-						.ResolveStagingSource(fullPath);
+						.ResolveProtectedSource(fullPath);
 					ThrowIfCodexContainmentCompromised(containmentState);
 					executableLease = stager.Stage(sourcePath);
 
 					try
 					{
-						_ = validator.ValidateStaged(executableLease);
+						_ = validator.ValidateProtected(executableLease);
 					}
 					catch
 					{

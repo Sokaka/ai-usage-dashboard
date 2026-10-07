@@ -838,13 +838,6 @@ internal sealed class WindowsGrokAcpProcessFactory : IGrokAcpProcessFactory
 
 		[DllImport(
 			"kernel32.dll",
-			EntryPoint = "ResumeThread",
-			ExactSpelling = true,
-			SetLastError = true)]
-		internal static extern uint ResumeThread(SafeKernelHandle thread);
-
-		[DllImport(
-			"kernel32.dll",
 			EntryPoint = "LocalFree",
 			ExactSpelling = true)]
 		internal static extern IntPtr LocalFree(IntPtr memory);
@@ -897,7 +890,6 @@ internal sealed class WindowsGrokAcpProcessFactory : IGrokAcpProcessFactory
 
 	private const int MaximumEnvironmentBlockCharacters = 32767;
 	private const uint CreateNoWindow = 0x08000000;
-	private const uint CreateSuspended = 0x00000004;
 	private const uint CreateUnicodeEnvironment = 0x00000400;
 	private const int ErrorInsufficientBuffer = 122;
 	private const int ErrorPipeConnected = 535;
@@ -913,7 +905,6 @@ internal sealed class WindowsGrokAcpProcessFactory : IGrokAcpProcessFactory
 	private const uint PipeAccessOutbound = 0x00000002;
 	private const uint PipeRejectRemoteClients = 0x00000008;
 	private const uint RedirectedPipeBufferSize = 8192;
-	private const uint ResumeThreadFailed = 0xFFFFFFFF;
 	private const uint SecurityDescriptorRevision = 1;
 	private const uint StartfUseStdHandles = 0x00000100;
 	private const uint WaitFailed = 0xFFFFFFFF;
@@ -1012,19 +1003,18 @@ internal sealed class WindowsGrokAcpProcessFactory : IGrokAcpProcessFactory
 				validated.ExecutablePath,
 				validated.Command);
 			ProcessInformation processInformation;
+			cancellationToken.ThrowIfCancellationRequested();
 			using (IDisposable transition =
 				_containmentState.EnterLaunchTransition())
 			{
+				cancellationToken.ThrowIfCancellationRequested();
 				if (!NativeMethods.CreateProcess(
 					validated.ExecutablePath,
 					commandLine,
 					IntPtr.Zero,
 					IntPtr.Zero,
 					inheritHandles: true,
-					CreateNoWindow |
-						CreateSuspended |
-						CreateUnicodeEnvironment |
-						ExtendedStartupInfoPresent,
+					BuildCreationFlags(),
 					environment,
 					validated.WorkingDirectory,
 					ref startupInfo,
@@ -1032,7 +1022,7 @@ internal sealed class WindowsGrokAcpProcessFactory : IGrokAcpProcessFactory
 				{
 					throw new Win32Exception(
 						Marshal.GetLastWin32Error(),
-						"Unable to create the suspended Grok ACP process.");
+						"Unable to create the Grok ACP process.");
 				}
 			}
 
@@ -1069,33 +1059,6 @@ internal sealed class WindowsGrokAcpProcessFactory : IGrokAcpProcessFactory
 				bufferSize: 8192,
 				isAsync: true);
 			errorReadHandle = null;
-
-			cancellationToken.ThrowIfCancellationRequested();
-			int resumeError = 0;
-			uint previousSuspendCount;
-			using (IDisposable transition =
-				_containmentState.EnterLaunchTransition())
-			{
-				previousSuspendCount = NativeMethods.ResumeThread(threadHandle);
-
-				if (previousSuspendCount == ResumeThreadFailed)
-				{
-					resumeError = Marshal.GetLastWin32Error();
-				}
-			}
-
-			if (previousSuspendCount == ResumeThreadFailed)
-			{
-				throw new Win32Exception(
-					resumeError,
-					"Unable to resume the contained Grok ACP process.");
-			}
-
-			if (previousSuspendCount != 1)
-			{
-				throw new InvalidOperationException(
-					$"The Grok ACP process had an unexpected suspend count of {previousSuspendCount}.");
-			}
 
 			WindowsGrokAcpProcess result = new(
 				_containmentState,
@@ -1418,6 +1381,13 @@ internal sealed class WindowsGrokAcpProcessFactory : IGrokAcpProcessFactory
 		}
 
 		return commandLine;
+	}
+
+	internal static uint BuildCreationFlags()
+	{
+		return CreateNoWindow |
+			CreateUnicodeEnvironment |
+			ExtendedStartupInfoPresent;
 	}
 
 	private static void AppendCommandLineArgument(

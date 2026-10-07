@@ -209,7 +209,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 	}
 
 	[Fact]
-	public void ValidateStaged_WithUnprotectedLease_RejectsBeforeValidation()
+	public void ValidateProtected_WithUnprotectedLease_RejectsBeforeValidation()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = CreateExecutable(
@@ -223,7 +223,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 
 		OfficialCliExecutableValidationException exception = Assert.Throws<
 			OfficialCliExecutableValidationException>(
-				() => validator.ValidateStaged(executableLease));
+				() => validator.ValidateProtected(executableLease));
 
 		Assert.Equal(
 			OfficialCliExecutableValidationFailureReason.UnsafePath,
@@ -231,7 +231,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 	}
 
 	[Fact]
-	public void ValidateStaged_WithProtectedLease_SkipsRedundantSignatureInspection()
+	public void ValidateProtected_WithProtectedLease_SkipsRedundantSignatureInspection()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = CreateExecutable(
@@ -259,7 +259,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 				executablePath,
 				stream);
 
-		string result = validator.ValidateStaged(executableLease);
+		string result = validator.ValidateProtected(executableLease);
 
 		Assert.Equal(Path.GetFullPath(executablePath), result);
 		Assert.Equal(0, Volatile.Read(ref signatureInspectionCount));
@@ -602,10 +602,10 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 		try
 		{
 			string result = ResolveOfficialLayout(layout);
-			string stagingSource = ResolveOfficialStagingSourceLayout(layout);
+			string protectedSource = ResolveOfficialProtectedSourceLayout(layout);
 
 			Assert.Equal(layout.PhysicalExecutablePath, result);
-			Assert.Equal(layout.PhysicalExecutablePath, stagingSource);
+			Assert.Equal(layout.PhysicalExecutablePath, protectedSource);
 		}
 		finally
 		{
@@ -615,7 +615,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 	}
 
 	[Fact]
-	public async Task CodexOfficialStagingSource_WithUnsafeSourceAcl_ReturnsPhysicalExecutable()
+	public async Task CodexOfficialProtectedSource_WithUnsafeSourceAcl_ReturnsPhysicalExecutable()
 	{
 		using PrivateFixedDriveTemporaryDirectory temporaryDirectory = new();
 		string unsafeParentPath = Path.Combine(
@@ -639,9 +639,9 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 			Assert.False(WindowsExecutablePathSecurity.IsPathAclSafe(
 				layout.PhysicalExecutablePath));
 
-			string stagingSource = ResolveOfficialStagingSourceLayout(layout);
+			string protectedSource = ResolveOfficialProtectedSourceLayout(layout);
 
-			Assert.Equal(layout.PhysicalExecutablePath, stagingSource);
+			Assert.Equal(layout.PhysicalExecutablePath, protectedSource);
 		}
 		finally
 		{
@@ -799,12 +799,12 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 			Assert.Equal(
 				OfficialCliExecutableValidationFailureReason.UnsafePath,
 				exception.FailureReason);
-			OfficialCliExecutableValidationException stagingException = Assert.Throws<
+			OfficialCliExecutableValidationException protectionException = Assert.Throws<
 				OfficialCliExecutableValidationException>(
-					() => ResolveOfficialStagingSourceLayout(layout));
+					() => ResolveOfficialProtectedSourceLayout(layout));
 			Assert.Equal(
 				OfficialCliExecutableValidationFailureReason.UnsafePath,
-				stagingException.FailureReason);
+				protectionException.FailureReason);
 		}
 		finally
 		{
@@ -841,12 +841,12 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 			Assert.Equal(
 				OfficialCliExecutableValidationFailureReason.UnsafePath,
 				exception.FailureReason);
-			OfficialCliExecutableValidationException stagingException = Assert.Throws<
+			OfficialCliExecutableValidationException protectionException = Assert.Throws<
 				OfficialCliExecutableValidationException>(
-					() => ResolveOfficialStagingSourceLayout(layout));
+					() => ResolveOfficialProtectedSourceLayout(layout));
 			Assert.Equal(
 				OfficialCliExecutableValidationFailureReason.UnsafePath,
-				stagingException.FailureReason);
+				protectionException.FailureReason);
 		}
 		finally
 		{
@@ -1102,7 +1102,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 	}
 
 	[Fact]
-	public void ContainedProcess_WhenLaunchIsBlockedBeforeResume_ConfirmsRootExit()
+	public void ContainedProcess_WhenLaunchGuardFails_DoesNotCreateProcess()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string fixtureDirectory = Path.Combine(
@@ -1124,15 +1124,12 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 					startInfo,
 					() =>
 					{
-						if (Interlocked.Increment(
-							ref boundaryCheckCount) == 2)
-						{
-							throw new CodexCliVersionProbeContainmentException(
-								"Containment was compromised before resume.");
-						}
-					}));
+					Interlocked.Increment(ref boundaryCheckCount);
+					throw new CodexCliVersionProbeContainmentException(
+						"Containment was compromised before process creation.");
+				}));
 
-		Assert.Equal(2, boundaryCheckCount);
+		Assert.Equal(1, boundaryCheckCount);
 		Assert.True(exception.IsLaunchBlocked);
 		Assert.True(exception.IsTreeEmptyConfirmed);
 		Assert.IsType<CodexCliVersionProbeContainmentException>(
@@ -1148,6 +1145,23 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 			classifiedFailure);
 		Assert.Same(exception, classifiedFailure.InnerException);
 		Assert.True(containmentState.IsCompromised);
+	}
+
+	[Fact]
+	public void ContainedProcessCreationFlags_UseCreationTimeJobWithoutSuspension()
+	{
+		const uint createSuspended = 0x00000004;
+		const uint redirectedExpected = 0x08080400;
+		const uint interactiveExpected = 0x00080410;
+		uint redirectedFlags = WindowsJobContainedProcess.BuildCreationFlags(
+			createNewConsole: false);
+		uint interactiveFlags = WindowsJobContainedProcess.BuildCreationFlags(
+			createNewConsole: true);
+
+		Assert.Equal(redirectedExpected, redirectedFlags);
+		Assert.Equal(interactiveExpected, interactiveFlags);
+		Assert.Equal(0u, redirectedFlags & createSuspended);
+		Assert.Equal(0u, interactiveFlags & createSuspended);
 	}
 
 	[Fact]
@@ -1238,7 +1252,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 	}
 
 	[Fact]
-	public void ValidateStaged_WhenCodexProbeContainmentFails_QuarantinesProtectedLease()
+	public void ValidateProtected_WhenCodexProbeContainmentFails_QuarantinesProtectedLease()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = CreateExecutable(
@@ -1276,7 +1290,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 		{
 			OfficialCliExecutableValidationException exception = Assert.Throws<
 				OfficialCliExecutableValidationException>(
-					() => validator.ValidateStaged(executableLease));
+					() => validator.ValidateProtected(executableLease));
 			executableLease.Dispose();
 
 			Assert.Equal(
@@ -1302,7 +1316,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 	}
 
 	[Fact]
-	public void ValidateStaged_AfterCodexProbeCompromise_DoesNotQuarantineAnotherLease()
+	public void ValidateProtected_AfterCodexProbeCompromise_DoesNotQuarantineAnotherLease()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = CreateExecutable(
@@ -1334,7 +1348,7 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 
 		OfficialCliExecutableValidationException exception = Assert.Throws<
 			OfficialCliExecutableValidationException>(
-				() => validator.ValidateStaged(executableLease));
+				() => validator.ValidateProtected(executableLease));
 
 		Assert.Equal(
 			OfficialCliExecutableValidationFailureReason
@@ -1687,10 +1701,10 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 			_ => true);
 	}
 
-	private static string ResolveOfficialStagingSourceLayout(
+	private static string ResolveOfficialProtectedSourceLayout(
 		OfficialJunctionLayout layout)
 	{
-		return CodexOfficialExecutablePathResolver.ResolveStagingSource(
+		return CodexOfficialExecutablePathResolver.ResolveProtectedSource(
 			layout.VisibleExecutablePath,
 			layout.StandaloneRoot,
 			"x86_64-pc-windows-msvc",

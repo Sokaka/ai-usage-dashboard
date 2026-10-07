@@ -66,7 +66,7 @@ internal static class CodexOfficialExecutablePathResolver
 		}
 	}
 
-	internal static string ResolveStagingSource(string executablePath)
+	internal static string ResolveProtectedSource(string executablePath)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
 
@@ -111,7 +111,7 @@ internal static class CodexOfficialExecutablePathResolver
 			string visibleBinDirectory = Path.GetDirectoryName(fullPath) ??
 				throw CreateUnsafePathException();
 
-			return ResolveStagingSource(
+			return ResolveProtectedSource(
 				fullPath,
 				visibleBinDirectory,
 				codexHome,
@@ -186,7 +186,7 @@ internal static class CodexOfficialExecutablePathResolver
 		}
 	}
 
-	internal static string ResolveStagingSource(
+	internal static string ResolveProtectedSource(
 		string executablePath,
 		string visibleBinDirectory,
 		string codexHome,
@@ -220,7 +220,7 @@ internal static class CodexOfficialExecutablePathResolver
 				"packages",
 				"standalone");
 
-			return ResolveStagingSource(
+			return ResolveProtectedSource(
 				fullPath,
 				standaloneRoot,
 				expectedWindowsTarget,
@@ -494,7 +494,7 @@ internal static class CodexOfficialExecutablePathResolver
 		}
 	}
 
-	internal static string ResolveStagingSource(
+	internal static string ResolveProtectedSource(
 		string executablePath,
 		string standaloneRoot,
 		string expectedWindowsTarget,

@@ -11,9 +11,9 @@
 | 元件 | 內部版本政策與支援範圍 |
 | --- | --- |
 | AI Usage | 有版本編號、自帶執行環境的 Windows x64 套件；目前使用 .NET 8.0.31，僅支援至 2026-11-10 |
-| Claude | 相容性基準 `2.1.169`；官方 Claude Code `>=2.1.169` 才有需要的 `--safe-mode`；執行 `Anthropic, PBC` 簽署、目前 Windows 使用者專用的受保護副本；Claude.ai Pro／Max／Team；Enterprise 可辨識，但目前不提供 `/usage`；實驗性輪詢 |
-| Codex | 相容性基準 `0.144.1`；可確認為官方 `codex-cli x.y.z` 的三段式正式版本都會先實測；執行 `OpenAI OpCo, LLC` 簽署、目前 Windows 使用者專用的受保護副本；實驗性 `app-server` 串接 |
-| Grok | 相容性基準 `1.0.3`；可信任的官方版本即使版號不同或無法解析，仍先測試 ACP 通訊；只接受預設安裝位置、`X.AI LLC` 簽章與目前 Windows 使用者專用的受保護副本；實驗性多帳號串接 |
+| Claude | 相容性基準 `2.1.169`；官方 Claude Code `>=2.1.169` 才有需要的 `--safe-mode`；來源 ACL 安全時直接執行官方原始 EXE，否則執行經驗證的受保護副本；簽署者須為 `Anthropic, PBC`；Claude.ai Pro／Max／Team；Enterprise 可辨識，但目前不提供 `/usage`；實驗性輪詢 |
+| Codex | 相容性基準 `0.144.1`；可確認為官方 `codex-cli x.y.z` 的三段式正式版本都會先實測；direct-source lease 只接受 `OpenAI OpCo, LLC` 簽署且通過官方 installer layout ACL 的實體 EXE；實驗性 `app-server` 串接 |
+| Grok | 相容性基準 `1.0.3`；可信任的官方版本即使版號不同或無法解析，仍先測試 ACP 通訊；只接受預設安裝位置、`X.AI LLC` 簽章並直接鎖定官方原始 EXE；實驗性多帳號串接 |
 | GitHub Copilot | 使用本機官方 CLI 三段式正式版 `>=1.0.79` 且 `<2.0.0`；基準 `1.0.79`，App 固定 `GitHub.Copilot.SDK` `1.0.11`；核對 `GitHub, Inc.` 簽章與 ProductName，執行目前使用者的受保護副本；只支援不同的 `github.com` 帳號，每張卡片分開保存登入資料 |
 | AGY | 相容性基準 `1.1.11`；Windows 10 1809 以上；production 只執行官方用量輸出功能（official print），限 `1.1.11 <= version < 2.0.0` 的正式版本，並核對 Google 簽章 |
 
@@ -23,17 +23,17 @@
 
 ### 執行檔安全要求
 
-Claude、Codex 與 Grok 只會執行 AI Usage 建立的受保護副本。程式會鎖住來源檔，確認檔案位於本機固定磁碟、路徑沒有重新解析點（reparse point）、大小不超過 512 MiB、Windows 簽章與發行者正確，再依 SHA-256 建立副本。受保護目錄只開放目前使用者、Local System 與 Builtin Administrators 完整存取：
+Codex 與 Grok 直接執行官方安裝的原始 EXE。Claude 也先嘗試此路徑：以 `FileShare.Read` 鎖住來源，確認固定磁碟、無重新解析點（reparse point）、安全 ACL、1 byte 至 512 MiB 的大小、Windows 簽章與發行者，並在簽章驗證前後核對 volume／file ID 與 trust stamp。
 
-- `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1`
-- `%SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\executables-v1`
-- `%SystemDrive%\AiUsageDashboard.GrokCli.<current-user-SID>\executables-v1`
+若 Claude 官方來源只有 ACL 不符合直接執行規則，程式仍須確認它位於固定磁碟、沒有重新解析點、大小合格，且 `Anthropic, PBC` 簽章有效。來源在複製期間保持鎖定；副本置於目前使用者專用的 `%USERPROFILE%\AiUsageDashboard.ClaudeCli\executables-v1`，內容以 SHA-256 核對，再驗證副本的 ACL 與簽章。來源或副本驗證失敗即停止，不會放寬檢查或執行任意替代檔案。
 
-正常情況下，每個服務只保留目前與前一個有效副本。若檔案仍在使用、安全檢查失敗或刪除失敗，必須先保留，待下次再清理。不得強制刪除、放寬權限或手動替換副本。
+版本檢查、登入與背景查詢會持有實際執行檔的 lease；Claude 直接執行時鎖住原檔，fallback 時鎖住受保護副本。lease 複本會複製同一個 OS handle。若無法確認整個子程序樹都已結束，相關 lease 會 quarantine 到 AI Usage 結束，且相關操作必須停止到重新啟動。
 
-程序結束前，副本必須保持鎖定。若程式無法確認整個子程序樹都已結束，Claude、Codex 或 Grok 的相關操作必須停止到 AI Usage 重新啟動，不得在狀態不明時繼續啟動新的程序。
+Claude 會嘗試清理自己建立的過期暫存副本，正常情況保留目前副本與按寫入時間選出的前一個副本；刪除失敗的檔案會保留並記錄警告。程式不會自動刪除舊版 `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1`。Codex 與 Grok 不建立可執行副本，也不自動清理各自的舊版副本目錄。
 
-Grok 只接受 `%USERPROFILE%\.grok\bin\grok.exe`，發行者必須為 `X.AI LLC`。AGY 每次執行前都要重新確認已核准的官方路徑、版本、Google 簽章與檔案狀態；驗證失敗時停止，不得改走其他執行方式。不要從其他電腦複製服務執行檔、帳號目錄、受保護副本或登入資料，也不要用 `PATH` 或替代檔案繞過檢查。
+Copilot 仍執行目前使用者的受保護副本；來源、版本與帳號隔離規則見[技術總覽](docs/TECHNICAL_OVERVIEW.md#本機-cli-來源與版本)。
+
+Grok 只接受 `%USERPROFILE%\.grok\bin\grok.exe`，發行者必須為 `X.AI LLC`。AGY 每次執行前都要重新確認官方路徑、版本、Google 簽章與檔案狀態；官方來源驗證失敗時不得改走舊版相容流程。不要從其他電腦複製服務執行檔、帳號目錄或登入資料，也不要用 `PATH` 或替代檔案繞過檢查。
 
 執行環境期限依照官方 [.NET 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy)。請在期限前完成移轉，並確認新的 .NET 執行環境仍在支援期。套件自帶的執行環境一旦超出支援期限，就不會繼續取得修正。
 
@@ -133,7 +133,7 @@ Claude 背景查詢只有在 model turns、tokens 與 cost 全部恰好為零時
 
 未新增 Grok 的使用者不會建立 Grok 專用登入目錄，也不會執行 OAuth 或 ACP 用量查詢。需要 Grok 的使用者請依序操作：
 
-1. 從 xAI 官方來源安裝 Grok Build CLI，確認它位於 `%USERPROFILE%\.grok\bin\grok.exe`，並記錄實際版本。AI Usage 會自動建立或更新目前 Windows 使用者專用的受保護副本。本版相容性基準為 `1.0.3`，其他可信任官方版本仍先實測。
+1. 從 xAI 官方來源安裝 Grok Build CLI，確認它位於 `%USERPROFILE%\.grok\bin\grok.exe`，並記錄實際版本。AI Usage 會在每次執行前重新鎖定並驗證同一個官方原始 EXE。本版相容性基準為 `1.0.3`，其他可信任官方版本仍先實測。
 2. 在浮窗選擇 **新增帳號**，選取 Grok，再選擇 **儲存並連接**。
 3. AI Usage 會開啟與目前終端共用輸入輸出的登入視窗及瀏覽器；若網頁顯示存取權杖（token）、授權碼或回傳網址（callback URL），請貼回該終端並按 Enter，不要貼到 AI Usage 浮窗。
 4. 終端成功結束後，AI Usage 會從同一張卡片的專用目錄讀取每週用量與實際帳號。連接完成後會顯示 **可用**。官方資料沒有 `email` 時不算失敗；請使用本機暱稱區分多張卡片。
@@ -307,7 +307,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 
 待刪除目錄不得含 reparse point。未知的頂層項目會保留，根目錄只有在空白時才移除；中途失敗時會保留可供下次接續的紀錄。最後執行中的維護 EXE 只會交由目前使用者的隱藏程序刪除該精確檔案，不會使用萬用字元或遞迴刪除。
 
-若使用離線 ZIP，請先結束 AI Usage，再刪除自行解壓的版本目錄。兩種方式都會保留使用者資料、Copilot 的 Windows Credential Manager 登入資料，以及 Claude、Codex、Copilot、Grok 的受保護執行副本，供日後重新安裝使用。
+若使用離線 ZIP，請先結束 AI Usage，再刪除自行解壓的版本目錄。兩種方式都會保留使用者資料、Copilot 的 Windows Credential Manager 登入資料、Claude／Codex／Grok 的官方安裝檔，以及 Claude／Copilot 與舊版可能留下的受保護副本，供日後重新安裝或另行安全清理。
 
 永久刪除本機資料是另一項不可復原的操作。執行前，資料擁有者必須確認會失去 AI Usage 設定、快取、診斷資料、各服務的本機登入、受保護執行副本及 AGY 核准來源。
 
@@ -343,15 +343,16 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - `%LOCALAPPDATA%\AiUsageDashboard\<provider>\<account-id>\usage-snapshot-v1.json`：各帳號分開保存的上次用量。
 - `%LOCALAPPDATA%\AiUsageDashboard\diagnostics.log`：有容量上限的診斷紀錄。
 - `%LOCALAPPDATA%\AiUsageDashboard\claude\<account-id>`：帳號專屬的 Claude CLI 設定與登入資料。
+- `%USERPROFILE%\AiUsageDashboard.ClaudeCli\executables-v1`：Claude 來源 ACL 不符合直接執行規則時建立的受保護副本；正常保留目前與前一份有效副本，安全清理失敗時先保留並記錄警告。
 - `%LOCALAPPDATA%\AiUsageDashboard\codex\<account-id>`：帳號專屬的 Codex CLI 設定與登入資料。
 - `%LOCALAPPDATA%\AiUsageDashboard\copilot\<account-id>`：Copilot 卡片的隔離執行目錄；登入 token 不在這裡。
 - `%LOCALAPPDATA%\AiUsageDashboard\grok\<account-id>`：帳號專屬的 Grok 主目錄、空白工作目錄、私密連接資料、快取與本機登入；移除該卡時會整體清理。
 - Windows Credential Manager 的 `AiUsageDashboard/Copilot/<account-id>` 與 `AiUsageDashboard/Copilot/Pending/<account-id>`：Copilot 卡片目前使用與暫存中的登入資料。實際帳號 ID 使用 32 位十六進位格式，不含連字號。
-- `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1`：目前 Windows 使用者共用、依檔案內容雜湊分類的 Claude 受保護執行檔版本；正常保留目前與前一個有效版本，安全清理失敗時可暫時超過兩份，移除單張卡片時不清理。
-- `%SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\executables-v1`：目前 Windows 使用者共用、依檔案內容雜湊分類的 Codex 受保護執行檔版本；正常保留目前與前一個有效版本，安全清理失敗時可暫時超過兩份，移除單張卡片時不清理。
+- `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1`：舊版可能留下的受保護執行檔副本；新版不自動刪除此目錄，移除卡片也不清理。
+- `%SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\executables-v1`：舊版可能留下的受保護執行檔副本；新版不自動刪除此目錄，移除卡片也不清理。
 - `%SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\validation-v1`：Codex 版本檢查使用的私密根目錄；每次正常檢查會刪除自己的 `probe-<guid>` 目錄，移除單張卡片時不清理根目錄。
 - `%SystemDrive%\AiUsageDashboard.CopilotCli.<current-user-SID>\executables-v1`：目前 Windows 使用者共用的 Copilot 受保護執行檔副本；只有 Copilot 操作時才取得，移除卡片不清理此目錄。
-- `%SystemDrive%\AiUsageDashboard.GrokCli.<current-user-SID>\executables-v1`：目前 Windows 使用者共用、依檔案內容雜湊分類的 Grok 受保護執行檔版本；正常保留目前與前一個有效版本，安全清理失敗時可暫時超過兩份，移除單張卡片時不清理。
+- `%SystemDrive%\AiUsageDashboard.GrokCli.<current-user-SID>\executables-v1`：舊版可能留下的受保護執行檔副本；新版不自動刪除此目錄，移除卡片也不清理。
 - `%LOCALAPPDATA%\AiUsageDashboard\grok-connection-pending-v1.json`：不含 token／原始帳號的 Grok 連接續做狀態。
 - `%LOCALAPPDATA%\AiUsageDashboard\account-cleanup-pending-v1.json`：帳號清理失敗後供背景重試的狀態。
 - `%LOCALAPPDATA%\AiUsageDashboard\portable-settings-import-transaction-v1`：設定匯入中斷後的復原紀錄，以及匯入前檔案狀態與備份。
@@ -386,13 +387,13 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 
 ### 服務與更新行為
 
-- [ ] Claude：確認程式只執行通過路徑、大小、`Anthropic, PBC` 簽章、SHA-256 與權限檢查的受保護副本。操作結束前不得覆寫或刪除副本；無法確認子程序已結束時，後續操作須停止到 App 重新啟動。
+- [ ] Claude：確認程式只執行通過路徑、大小、`Anthropic, PBC` 簽章與權限檢查的官方原始 EXE；fallback 副本另核對 SHA-256。操作結束前不得解除實際執行檔的鎖；無法確認子程序已結束時，後續操作須停止到 App 重新啟動。
 - [ ] Claude：拒絕風險提示時，不得開始登入或呼叫 `/usage`。接受後完成登入並進入 **可用**，記錄 `turns`、`tokens` 與 `cost` 都是零。
-- [ ] Codex：確認程式只執行通過路徑、大小、`OpenAI OpCo, LLC` 簽章、SHA-256 與權限檢查的受保護副本。完成官方登入後，確認帳號、方案與所有預期的用量週期，且不建立 turn。
-- [ ] Codex：登入或查詢結束前不得解除副本鎖定。模擬無法確認子程序已結束後，所有 Codex 啟動都須停止到 App 重新啟動；正常的 `validation-v1\probe-<guid>` 測試目錄則應自動清理。
-- [ ] Grok：確認只接受 `%USERPROFILE%\.grok\bin\grok.exe`，並通過路徑、大小、`X.AI LLC` 簽章、SHA-256 與權限檢查。版本不同於 `1.0.3` 時仍要先實測，不得只因版號不同而拒絕。
-- [ ] Grok：完成登入並確認每週用量與重置時間。更新官方 CLI、從系統匣結束再重開後，應建立新的受保護副本，且不再次開啟登入。無法確認子程序已結束時，後續操作須停止到 App 重新啟動。
-- [ ] 受保護副本清理：分別更新 Claude、Codex 與 Grok，確認正常只保留目前與前一個有效副本。使用中、來源可疑或刪除失敗的檔案不得強制刪除；問題排除後才於下次更新清理。三個目錄不得開放給其他一般使用者。
+- [ ] Codex：確認程式只執行通過路徑、大小、`OpenAI OpCo, LLC` 簽章與官方 installer layout ACL 檢查的已鎖定原始 EXE。完成官方登入後，確認帳號、方案與所有預期的用量週期，且不建立 turn。
+- [ ] Codex：登入或查詢結束前不得解除原始 EXE 的鎖。模擬無法確認子程序已結束後，所有 Codex 啟動都須停止到 App 重新啟動；正常的 `validation-v1\probe-<guid>` 測試目錄則應自動清理。
+- [ ] Grok：確認只接受 `%USERPROFILE%\.grok\bin\grok.exe`，並通過路徑、大小、`X.AI LLC` 簽章與權限檢查。版本不同於 `1.0.3` 時仍要先實測，不得只因版號不同而拒絕。
+- [ ] Grok：完成登入並確認每週用量與重置時間。更新官方 CLI、從系統匣結束再重開後，應重新驗證並鎖定更新後的官方原始 EXE，且不再次開啟登入。無法確認子程序已結束時，後續操作須停止到 App 重新啟動。
+- [ ] 受保護副本清理：更新 Claude fallback 來源與 Copilot，確認正常只保留目前與前一個有效副本。使用中、來源可疑或刪除失敗的檔案不得強制刪除；問題排除後才於下次更新清理。副本目錄不得開放給其他一般使用者；舊版 Claude／Codex／Grok 隔離目錄保持原狀。
 - [ ] Grok 多帳號：用已綁定的同一帳號連接第二張卡片時，必須拒絕且不改變第一張卡。改用另一個帳號後，兩張卡的登入、連接狀態、快取、重新啟動及手動更新都應彼此隔離。移除其中一張後，其本機目錄應消失，另一張仍可更新。
 - [ ] Grok 中斷復原：分別在登入完成狀態寫入前後中止程式。寫入後重開應重新驗證帳號並接續；寫入前重開則應要求重新連接，不得誤綁或洩漏帳號原始資料。
 - [ ] GitHub Copilot：使用兩個不同的 `github.com` 帳號連接兩張卡片，確認重新啟動及逐卡更新後仍各自顯示正確帳號和用量。再用第一個帳號連接第三張卡片，確認重複綁定被拒絕且既有兩張卡不變。
@@ -430,10 +431,10 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 
 ## 支援與復原
 
-- Claude／Codex CLI 遺失或不相容：先記錄偵測版本與完整原始錯誤。版本差異只是可能原因；若官方來源、簽章與必要功能都合格，先重新啟動 AI Usage，讓程式自行建立或更新受保護副本，再對照候選版試用紀錄。不得手動複製受保護執行檔或放寬目錄權限；既有帳號識別會保留。
+- Claude／Codex CLI 遺失或不相容：先記錄偵測版本與完整原始錯誤。版本差異只是可能原因；若官方來源、簽章與必要功能都合格，先重新啟動 AI Usage，讓程式重新驗證並鎖定官方原始 EXE；Claude 來源 ACL 不符時才準備受保護 fallback 副本。再對照候選版試用紀錄，不得手動複製受保護執行檔或放寬目錄權限；既有帳號識別會保留。
 - GitHub Copilot CLI 缺少或不符：依[官方文件](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli)安裝或更新，建議 WinGet 標準安裝；來源也可為標準 npm 安裝或 `PATH` 可解析的真正官方 `copilot.exe`。AI Usage 不執行 `.cmd`／`.ps1` wrapper、不退回舊 App bundle；卡片及 token 保留，修正 CLI 後重試，不先重新登入。精確來源與版本規則見[技術總覽](docs/TECHNICAL_OVERVIEW.md#本機-cli-來源與版本)。
 - GitHub Copilot 要求重新連接：只重新連接受影響的卡片。若移除卡片後仍顯示清理警告，保持 AI Usage 開啟以完成背景重試；不要手動批次刪除 Windows Credential Manager 項目。
-- Grok CLI 遺失或來源不受信任：只能從 xAI 官方來源安裝到 `%USERPROFILE%\.grok\bin\grok.exe`。重新啟動 AI Usage，讓程式自行更新受保護副本，並確認 `X.AI LLC` 簽章與路徑檢查通過。`1.0.3` 是相容性基準；不得只因版本不同而要求降版，也不得用 `PATH`、手動複製或替代執行檔繞過檢查。
+- Grok CLI 遺失或來源不受信任：只能從 xAI 官方來源安裝到 `%USERPROFILE%\.grok\bin\grok.exe`。重新啟動 AI Usage，讓程式重新鎖定並驗證官方原始 EXE，並確認 `X.AI LLC` 簽章與路徑檢查通過。`1.0.3` 是相容性基準；不得只因版本不同而要求降版，也不得用 `PATH`、手動複製或替代執行檔繞過檢查。
 - 服務暫時失敗：稍後重試；畫面會保留上次正常的用量資料。
 - 明確的登入驗證失敗：只重新連接受影響的帳號。
 - Grok 連接中斷：先重新啟動 AI Usage。若待處理紀錄已保存 `LoginCompleted`，程式會用新取得的帳號資料驗證後接續；否則卡片會要求重新連接。不要手動複製、編輯或刪除連接／待處理檔案。

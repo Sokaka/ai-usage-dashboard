@@ -303,15 +303,18 @@ public sealed class GrokAcpUsageClientTests
 		FakeProcess process = new(CreateSuccessfulOutput(now, creditUsagePercent: 27.5));
 		using ManualResetEventSlim releaseStart = new(initialState: false);
 		BlockingProcessFactory factory = new(process, releaseStart);
+		TimeSpan operationTimeout = TimeSpan.FromMilliseconds(100);
+		ManualDeadlineTimeProvider timeProvider = new(operationTimeout);
 		ProviderProcessOperationTracker operationTracker = new();
 		FakeLease rawOperationLease = new();
 		IDisposable operationLease =
 			operationTracker.HoldLease(rawOperationLease);
 		GrokAcpUsageClient client = new(
 			factory,
-			operationTimeout: TimeSpan.FromMilliseconds(100),
+			timeProvider,
+			operationTimeout: operationTimeout,
 			cleanupTimeout: TimeSpan.FromSeconds(1));
-		using CancellationTokenSource fallbackRelease = new(TimeSpan.FromSeconds(2));
+		using CancellationTokenSource fallbackRelease = new(TimeSpan.FromSeconds(10));
 		using CancellationTokenRegistration fallbackRegistration =
 			fallbackRelease.Token.Register(releaseStart.Set);
 		Stopwatch invocationStopwatch = Stopwatch.StartNew();
@@ -321,26 +324,39 @@ public sealed class GrokAcpUsageClientTests
 			CancellationToken.None,
 			operationTracker);
 
-		invocationStopwatch.Stop();
-		Assert.True(
-			invocationStopwatch.Elapsed < TimeSpan.FromMilliseconds(500),
-			$"QueryAsync synchronously held its caller for {invocationStopwatch.Elapsed}.");
-		await factory.StartEntered.Task.WaitAsync(TimeSpan.FromSeconds(1));
-		GrokAcpFailureException exception =
-			await Assert.ThrowsAsync<GrokAcpFailureException>(() => queryTask)
-				.WaitAsync(TimeSpan.FromSeconds(1));
-		Assert.IsType<TimeoutException>(exception.InnerException);
-		operationLease.Dispose();
-		Assert.Equal(0, process.DisposeCallCount);
-		Assert.False(rawOperationLease.DisposeCompletion.Task.IsCompleted);
+		try
+		{
+			invocationStopwatch.Stop();
+			Assert.True(
+				invocationStopwatch.Elapsed < TimeSpan.FromMilliseconds(500),
+				$"QueryAsync synchronously held its caller for {invocationStopwatch.Elapsed}.");
+			await factory.StartEntered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+			Assert.False(queryTask.IsCompleted);
+			timeProvider.Expire();
+			GrokAcpFailureException exception =
+				await Assert.ThrowsAsync<GrokAcpFailureException>(() => queryTask)
+					.WaitAsync(TimeSpan.FromSeconds(10));
+			Assert.IsType<TimeoutException>(exception.InnerException);
+			operationLease.Dispose();
+			Assert.Equal(0, process.DisposeCallCount);
+			Assert.False(rawOperationLease.DisposeCompletion.Task.IsCompleted);
 
-		releaseStart.Set();
-		await process.DisposeCompletion.WaitAsync(TimeSpan.FromSeconds(1));
-		await rawOperationLease.DisposeCompletion.Task.WaitAsync(
-			TimeSpan.FromSeconds(1));
+			releaseStart.Set();
+			await process.DisposeCompletion.WaitAsync(TimeSpan.FromSeconds(10));
+			await rawOperationLease.DisposeCompletion.Task.WaitAsync(
+				TimeSpan.FromSeconds(10));
 
-		Assert.Equal(1, process.TerminateCallCount);
-		Assert.Equal(1, process.DisposeCallCount);
+			Assert.Equal(1, process.TerminateCallCount);
+			Assert.Equal(1, process.DisposeCallCount);
+		}
+		finally
+		{
+			releaseStart.Set();
+			operationLease.Dispose();
+			ProviderProcessExecution.ObserveFault(queryTask);
+			await process.DisposeCompletion.WaitAsync(TimeSpan.FromSeconds(10));
+			await rawOperationLease.DisposeCompletion.Task.WaitAsync(TimeSpan.FromSeconds(10));
+		}
 	}
 
 	[Fact]

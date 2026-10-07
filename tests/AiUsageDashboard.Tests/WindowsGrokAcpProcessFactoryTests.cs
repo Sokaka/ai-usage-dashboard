@@ -9,6 +9,49 @@ namespace AiUsageDashboard.Tests;
 public sealed class WindowsGrokAcpProcessFactoryTests
 {
 	[Fact]
+	public void ProcessCreationFlags_UseCreationTimeJobWithoutSuspension()
+	{
+		const uint createSuspended = 0x00000004;
+		const uint expected = 0x08080400;
+		uint creationFlags = WindowsGrokAcpProcessFactory.BuildCreationFlags();
+
+		Assert.Equal(expected, creationFlags);
+		Assert.Equal(0u, creationFlags & createSuspended);
+	}
+
+	[Fact]
+	public void ProductionProcessLaunchers_ContainNoSuspendResumeProtocol()
+	{
+		string repositoryRoot = RepositoryTestPaths.Root;
+
+		foreach (string relativePath in new[]
+		{
+			Path.Combine(
+				"src",
+				"AiUsageDashboard.App",
+				"Providers",
+				"WindowsJobContainedProcess.cs"),
+			Path.Combine(
+				"src",
+				"AiUsageDashboard.App",
+				"Providers",
+				"WindowsGrokAcpProcessFactory.cs")
+		})
+		{
+			string source = File.ReadAllText(Path.Combine(
+				repositoryRoot,
+				relativePath));
+			Assert.DoesNotContain("CreateSuspended", source, StringComparison.Ordinal);
+			Assert.DoesNotContain("CREATE_SUSPENDED", source, StringComparison.Ordinal);
+			Assert.DoesNotContain("ResumeThread", source, StringComparison.Ordinal);
+			Assert.Contains(
+				"ProcThreadAttributeJobList",
+				source,
+				StringComparison.Ordinal);
+		}
+	}
+
+	[Fact]
 	public void RetainExecutableLease_WhenContainmentRemainsHealthy_ReleasesLease()
 	{
 		GrokProcessContainmentState containmentState = new();
@@ -249,4 +292,5 @@ public sealed class WindowsGrokAcpProcessFactoryTests
 			return true;
 		}
 	}
+
 }

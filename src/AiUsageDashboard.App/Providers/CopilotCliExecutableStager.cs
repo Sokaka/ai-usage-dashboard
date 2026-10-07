@@ -7,7 +7,7 @@ namespace AiUsageDashboard.App.Providers;
 
 internal sealed class CopilotCliExecutableStager : IDisposable
 {
-	private readonly WindowsOfficialCliExecutableStager _stager;
+	private readonly WindowsOfficialCliExecutableCopyStager _stager;
 
 	internal static CopilotCliExecutableStager Shared { get; } = new();
 
@@ -34,7 +34,7 @@ internal sealed class CopilotCliExecutableStager : IDisposable
 		Func<string, bool> tryPrepareTrustedRoot,
 		Func<string, bool> tryProtectFile)
 	{
-		_stager = new WindowsOfficialCliExecutableStager(
+		_stager = new WindowsOfficialCliExecutableCopyStager(
 			"GitHub, Inc.",
 			"copilot-",
 			".copilot-stage-",
