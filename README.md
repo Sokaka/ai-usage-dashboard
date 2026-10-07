@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#requirements"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="Project code licensed under MIT"></a>
-  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.19-0078D4" alt="Current stable version 1.0.19"></a>
+  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.20-0078D4" alt="Current stable version 1.0.20"></a>
 </p>
 
 <p align="center">
@@ -39,11 +39,11 @@ exports and imports. Detailed guides and release notes are in Traditional Chines
 
 ## Current release
 
-The current stable version is **`1.0.19`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.19) · [Release notes](docs/releases/1.0.19.md)
+The current stable version is **`1.0.20`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.20) · [Release notes](docs/releases/1.0.20.md)
 
-This release accepts Claude Code `2.1.285` `/usage` responses containing `fallback_credit: null`.
-Responses without quota numbers still show a temporary unavailable status; they are not treated as quota readings.
-The minimum supported Claude Code version remains `2.1.169`. Earlier interface, backup, and Updater improvements remain available.
+This release reads Claude Code `2.1.292` `/usage` responses when `safety_stops` is absent or exactly zero.
+Earlier response formats, including `fallback_credit: null`, remain supported; the minimum version remains `2.1.169`.
+Responses without quota numbers still show a temporary unavailable status. Official executable protection and account isolation remain in place.
 
 On the first upgrade through the old Updater `1.0.16`, its completion message may still be in Chinese.
 The new Updater uses your selected language; see the [upgrade notes](docs/releases/1.0.18.md#升級).
@@ -109,7 +109,7 @@ Choose a download from the current version's GitHub Release:
    `app\AiUsageDashboard.App.exe`.
    Do not download GitHub's automatically generated **Source code** ZIP.
 
-For App `1.0.19`, the portable ZIP is `AiUsageDashboard-1.0.19-win-x64.zip`.
+For App `1.0.20`, the portable ZIP is `AiUsageDashboard-1.0.20-win-x64.zip`.
 The standard Updater is `AiUsageDashboard-Updater-1.0.18-win-x64.exe`, reused unchanged from the previous release.
 Use the actual filenames listed on the Release page; the Updater version can differ from the app version.
 
