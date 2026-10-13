@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.AccessControl;
+using System.Security.Cryptography;
 using System.Security.Principal;
 
 using AiUsageDashboard.AntigravitySpike;
@@ -455,6 +456,116 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 		Assert.False(WindowsExecutablePathSecurity.IsPathAclSafe(
 			executablePath));
 		Assert.Equal(Path.GetFullPath(executablePath), result);
+	}
+
+	[Fact]
+	public void ClaudeResolver_WithWritableSourceAndLegacyCopyParent_UsesIndependentProtectedCopy()
+	{
+		using PrivateFixedDriveTemporaryDirectory temporaryDirectory = new();
+		string profileRoot = Path.Combine(temporaryDirectory.Path, "profile");
+		Directory.CreateDirectory(profileRoot);
+		string localRoot = Path.Combine(profileRoot, ".local");
+		string legacyParent = Path.Combine(profileRoot, "AiUsageDashboard.ClaudeCli");
+		CreateWritableFixtureDirectory(localRoot);
+		CreateWritableFixtureDirectory(legacyParent);
+		string sourceDirectory = Path.Combine(localRoot, "bin");
+		Directory.CreateDirectory(sourceDirectory);
+		string sourcePath = Path.Combine(sourceDirectory, "claude.exe");
+		byte[] sourceContent = [0x4D, 0x5A, 0x01, 0x02];
+		File.WriteAllBytes(sourcePath, sourceContent);
+		string sourceHash = Convert.ToHexString(SHA256.HashData(sourceContent))
+			.ToLowerInvariant();
+		string stagedFileName = $"claude-{sourceHash}.exe";
+		string legacyRoot = Path.Combine(legacyParent, "executables-v1");
+		Assert.True(PrivateFixedDriveTemporaryDirectory
+			.TryCreatePrivateDirectory(legacyRoot));
+		string legacyCopyPath = Path.Combine(legacyRoot, stagedFileName);
+		File.WriteAllBytes(legacyCopyPath, sourceContent);
+		Assert.True(AntigravityPrivateKeyAcl.TryProtectNewFile(legacyCopyPath));
+
+		Assert.False(WindowsExecutablePathSecurity.IsPathAclSafeWithinTrustedRoot(
+			sourcePath, profileRoot));
+		Assert.True(AntigravityPrivateKeyAcl.IsPrivateDirectory(legacyRoot));
+		Assert.True(AntigravityPrivateKeyAcl.IsPrivateFile(legacyCopyPath));
+		Assert.False(WindowsExecutablePathSecurity
+			.IsDirectoryPathAclSafeWithinTrustedRoot(legacyRoot, legacyRoot));
+		string[] preservedPaths =
+		[
+			sourcePath, sourceDirectory, localRoot,
+			legacyParent, legacyRoot, legacyCopyPath
+		];
+		Dictionary<string, string> originalAclDescriptors = preservedPaths
+			.ToDictionary(path => path, ReadFixtureAclDescriptor);
+		string trustedRoot = Path.Combine(
+			temporaryDirectory.Path, "protected-claude", "executables-v1");
+		int signatureInspections = 0;
+		using ClaudeCliExecutableStager stager = new(
+			_ =>
+			{
+				signatureInspections++;
+				return CreateSignature(0, AnthropicSignerSubject);
+			},
+			WindowsExecutablePathSecurity.IsCanonicalNonReparseFile,
+			WindowsExecutablePathSecurity.IsFixedDrivePath,
+			WindowsExecutablePathSecurity.IsPathAclSafe,
+			() => trustedRoot);
+		WindowsOfficialCliExecutableValidator validator =
+			ClaudeCliUsagePoller.CreateOfficialExecutableValidator(
+				_ => true,
+				_ => CreateSignature(0, AnthropicSignerSubject));
+
+		string stagedPath = Assert.IsType<string>(
+			ClaudeCliUsagePoller.ResolveExecutablePath(
+				[sourcePath], validator, stager));
+
+		Assert.Equal(Path.Combine(trustedRoot, stagedFileName), stagedPath,
+			ignoreCase: true);
+		Assert.Equal(stagedPath, ClaudeCliUsagePoller.ResolveExecutablePath(
+			[sourcePath], validator, stager));
+		Assert.Equal(2, signatureInspections);
+		Assert.True(AntigravityPrivateKeyAcl.IsPrivateFile(stagedPath));
+		Assert.Equal(sourceContent, File.ReadAllBytes(stagedPath));
+		Assert.Equal(sourceContent, File.ReadAllBytes(sourcePath));
+		Assert.Equal(sourceContent, File.ReadAllBytes(legacyCopyPath));
+		foreach (KeyValuePair<string, string> originalAcl in originalAclDescriptors)
+		{
+			Assert.Equal(originalAcl.Value, ReadFixtureAclDescriptor(originalAcl.Key));
+		}
+	}
+
+	[Fact]
+	public void ClaudeStager_WithWritableProtectedRootAncestor_RejectsPrivateLeaf()
+	{
+		using PrivateFixedDriveTemporaryDirectory temporaryDirectory = new();
+		string sourcePath = Path.Combine(temporaryDirectory.Path, "claude.exe");
+		byte[] sourceContent = [0x4D, 0x5A, 0x01, 0x02];
+		File.WriteAllBytes(sourcePath, sourceContent);
+		string unsafeParent = Path.Combine(temporaryDirectory.Path, "protected-claude");
+		CreateWritableFixtureDirectory(unsafeParent);
+		string trustedRoot = Path.Combine(unsafeParent, "executables-v1");
+		Assert.True(PrivateFixedDriveTemporaryDirectory
+			.TryCreatePrivateDirectory(trustedRoot));
+		Assert.True(AntigravityPrivateKeyAcl.IsPrivateDirectory(trustedRoot));
+		string originalParentAcl = ReadFixtureAclDescriptor(unsafeParent);
+		using ClaudeCliExecutableStager stager = new(
+			_ => CreateSignature(0, AnthropicSignerSubject),
+			WindowsExecutablePathSecurity.IsCanonicalNonReparseFile,
+			WindowsExecutablePathSecurity.IsFixedDrivePath,
+			WindowsExecutablePathSecurity.IsPathAclSafe,
+			() => trustedRoot);
+
+		ClaudeCliUntrustedException exception = Assert.Throws<ClaudeCliUntrustedException>(() =>
+		{
+			using WindowsOfficialCliExecutableLease lease = stager.Stage(sourcePath);
+		});
+
+		WindowsOfficialCliExecutableStagingException failure =
+			Assert.IsType<WindowsOfficialCliExecutableStagingException>(exception.InnerException);
+		Assert.Equal(WindowsOfficialCliExecutableStagingFailureReason.ProtectionFailed,
+			failure.FailureReason);
+		Assert.Empty(Directory.EnumerateFileSystemEntries(trustedRoot));
+		Assert.Equal(sourceContent, File.ReadAllBytes(sourcePath));
+		Assert.Equal(originalParentAcl, ReadFixtureAclDescriptor(unsafeParent));
 	}
 
 	[Fact]
@@ -1647,6 +1758,40 @@ public sealed class WindowsOfficialCliExecutableValidatorTests
 		{
 			// A missing process is the normal confirmed-quiescence result.
 		}
+	}
+
+	private static void CreateWritableFixtureDirectory(string directoryPath)
+	{
+		Assert.True(PrivateFixedDriveTemporaryDirectory
+			.TryCreatePrivateDirectory(directoryPath));
+		DirectoryInfo directory = new(directoryPath);
+		DirectorySecurity security = directory.GetAccessControl();
+		foreach (WellKnownSidType identityType in new[]
+		{
+			WellKnownSidType.BuiltinUsersSid,
+			WellKnownSidType.AuthenticatedUserSid
+		})
+		{
+			security.AddAccessRule(new FileSystemAccessRule(
+				new SecurityIdentifier(identityType, null),
+				FileSystemRights.Modify | FileSystemRights.Synchronize,
+				InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+				PropagationFlags.None,
+				AccessControlType.Allow));
+		}
+		directory.SetAccessControl(security);
+		Assert.False(WindowsExecutablePathSecurity.IsAccessControlSafe(
+			directory.GetAccessControl()));
+	}
+
+	private static string ReadFixtureAclDescriptor(string path)
+	{
+		const AccessControlSections sections =
+			AccessControlSections.Access | AccessControlSections.Owner;
+		FileSystemSecurity security = Directory.Exists(path)
+			? new DirectoryInfo(path).GetAccessControl(sections)
+			: new FileInfo(path).GetAccessControl(sections);
+		return security.GetSecurityDescriptorSddlForm(sections);
 	}
 
 	private static string CreateExecutable(

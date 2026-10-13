@@ -25,11 +25,11 @@
 
 Codex 與 Grok 直接執行官方安裝的原始 EXE。Claude 也先嘗試此路徑：以 `FileShare.Read` 鎖住來源，確認固定磁碟、無重新解析點（reparse point）、安全 ACL、1 byte 至 512 MiB 的大小、Windows 簽章與發行者，並在簽章驗證前後核對 volume／file ID 與 trust stamp。
 
-若 Claude 官方來源只有 ACL 不符合直接執行規則，程式仍須確認它位於固定磁碟、沒有重新解析點、大小合格，且 `Anthropic, PBC` 簽章有效。來源在複製期間保持鎖定；副本置於目前使用者專用的 `%USERPROFILE%\AiUsageDashboard.ClaudeCli\executables-v1`，內容以 SHA-256 核對，再驗證副本的 ACL 與簽章。來源或副本驗證失敗即停止，不會放寬檢查或執行任意替代檔案。
+若 Claude 官方來源只有 ACL 不符合直接執行規則，程式仍須確認它位於固定磁碟、沒有重新解析點、大小合格，且 `Anthropic, PBC` 簽章有效。來源在複製期間保持鎖定；副本置於目前使用者專用的 `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1`，內容以 SHA-256 核對，再驗證副本的 ACL 與簽章。此位置由 Windows 的 system-volume root 與目前使用者 SID 決定；副本根目錄及其上層須通過固定磁碟、無重新解析點與各層 ACL 檢查，私人目錄只允許目前使用者、Local System 與 Builtin Administrators 存取。來源或副本驗證失敗即停止，不會放寬檢查或執行任意替代檔案，也不修改原始 CLI 或原目錄 ACL。
 
 版本檢查、登入與背景查詢會持有實際執行檔的 lease；Claude 直接執行時鎖住原檔，fallback 時鎖住受保護副本。lease 複本會複製同一個 OS handle。若無法確認整個子程序樹都已結束，相關 lease 會 quarantine 到 AI Usage 結束，且相關操作必須停止到重新啟動。
 
-Claude 會嘗試清理自己建立的過期暫存副本，正常情況保留目前副本與按寫入時間選出的前一個副本；刪除失敗的檔案會保留並記錄警告。程式不會自動刪除舊版 `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1`。Codex 與 Grok 不建立可執行副本，也不自動清理各自的舊版副本目錄。
+Claude 會嘗試清理自己建立的過期暫存副本，正常情況保留目前副本與按寫入時間選出的前一個副本；刪除失敗的檔案會保留並記錄警告。程式不會自動刪除舊版 `%USERPROFILE%\AiUsageDashboard.ClaudeCli\executables-v1`，也不會修改該目錄或其上層的 ACL。Codex 與 Grok 不建立可執行副本，也不自動清理各自的舊版副本目錄。
 
 Copilot 仍執行目前使用者的受保護副本；來源、版本與帳號隔離規則見[技術總覽](docs/TECHNICAL_OVERVIEW.md#本機-cli-來源與版本)。
 
@@ -343,12 +343,12 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - `%LOCALAPPDATA%\AiUsageDashboard\<provider>\<account-id>\usage-snapshot-v1.json`：各帳號分開保存的上次用量。
 - `%LOCALAPPDATA%\AiUsageDashboard\diagnostics.log`：有容量上限的診斷紀錄。
 - `%LOCALAPPDATA%\AiUsageDashboard\claude\<account-id>`：帳號專屬的 Claude CLI 設定與登入資料。
-- `%USERPROFILE%\AiUsageDashboard.ClaudeCli\executables-v1`：Claude 來源 ACL 不符合直接執行規則時建立的受保護副本；正常保留目前與前一份有效副本，安全清理失敗時先保留並記錄警告。
+- `%USERPROFILE%\AiUsageDashboard.ClaudeCli\executables-v1`：舊版可能留下的 Claude 受保護副本；目前不再作為預設副本位置，也不自動刪除或修改其 ACL。
 - `%LOCALAPPDATA%\AiUsageDashboard\codex\<account-id>`：帳號專屬的 Codex CLI 設定與登入資料。
 - `%LOCALAPPDATA%\AiUsageDashboard\copilot\<account-id>`：Copilot 卡片的隔離執行目錄；登入 token 不在這裡。
 - `%LOCALAPPDATA%\AiUsageDashboard\grok\<account-id>`：帳號專屬的 Grok 主目錄、空白工作目錄、私密連接資料、快取與本機登入；移除該卡時會整體清理。
 - Windows Credential Manager 的 `AiUsageDashboard/Copilot/<account-id>` 與 `AiUsageDashboard/Copilot/Pending/<account-id>`：Copilot 卡片目前使用與暫存中的登入資料。實際帳號 ID 使用 32 位十六進位格式，不含連字號。
-- `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1`：舊版可能留下的受保護執行檔副本；新版不自動刪除此目錄，移除卡片也不清理。
+- `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1`：Claude 來源 ACL 不符合直接執行規則時建立的受保護副本；正常保留目前與前一份有效副本，安全清理失敗時先保留並記錄警告；移除卡片不清理此目錄。
 - `%SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\executables-v1`：舊版可能留下的受保護執行檔副本；新版不自動刪除此目錄，移除卡片也不清理。
 - `%SystemDrive%\AiUsageDashboard.CodexCli.<current-user-SID>\validation-v1`：Codex 版本檢查使用的私密根目錄；每次正常檢查會刪除自己的 `probe-<guid>` 目錄，移除單張卡片時不清理根目錄。
 - `%SystemDrive%\AiUsageDashboard.CopilotCli.<current-user-SID>\executables-v1`：目前 Windows 使用者共用的 Copilot 受保護執行檔副本；只有 Copilot 操作時才取得，移除卡片不清理此目錄。
