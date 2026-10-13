@@ -1,10 +1,8 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.20` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.20` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.21` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.21` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
-本版修正 Claude Code `2.1.292` 的 `/usage` 回應相容性，保留 `2.1.169` 起的既有格式及其他 provider 要求；逐平台狀態見 [1.0.20](#1020)，正式版本與下載資訊見 [README](../README.md#current-release)。
-
-`1.0.21` 候選修正 Claude 受保護副本的目錄選擇，CLI 版本要求維持不變；候選驗證狀態見 [1.0.21](#1021)，不沿用前版的實測結果。
+本版修正 Claude 受保護副本的目錄選擇，CLI 版本要求維持不變；逐平台狀態見 [1.0.21](#1021)，正式版本與下載資訊見 [README](../README.md#current-release)。不沿用前版的實測結果。
 
 ## 版本要求
 
@@ -29,7 +27,7 @@
 
 ### 1.0.21
 
-本表對應 `1.0.21 / sequence 1035` 候選。source SHA、同 source Windows CI、候選 workflow 與六件凍結成品紀錄待本次驗證完成後填入；目前未宣稱正式公開或完整驗收。Updater 預計沿用前一正式版 `v1.0.20` 交付的 `1.0.18` 原始 bytes，須通過候選沿用檢查。
+本表對應已公開的 `1.0.21 / sequence 1035`；[source `959b12a3513296ba6e6817e09303ad80cf829622`](https://github.com/Sokaka/ai-usage-dashboard/commit/959b12a3513296ba6e6817e09303ad80cf829622)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/38373002648/attempts/1) run `38373002648` attempt `1`，Release ID `411485065`。Updater 沿用前一正式版 `v1.0.20` 交付的 `1.0.18` 原始 bytes，CLI 版本要求維持不變。
 
 | 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
 | --- | --- | --- | --- |
@@ -39,7 +37,9 @@
 | Grok | 未以本版實測 | 未驗證 | 未驗證 |
 | Antigravity | 未以本版實測 | 未驗證 | 未驗證 |
 
-本次修正保留來源 ACL 安全時直接執行原始 Claude EXE；只有來源 ACL 不符合規則時，才改用 system-volume root 下目前使用者專用的受保護副本。合成 ACL 回歸範圍包含來源與舊 profile 副本上層有額外修改權限的情況，以及新副本根目錄與祖先的拒絕條件；執行結果待本次測試回填，不代表官方 CLI 登入或用量查詢通過。
+本次修正保留來源 ACL 安全時直接執行原始 Claude EXE；只有來源 ACL 不符合規則時，才改用 system-volume root 下目前使用者專用的受保護副本。合成 ACL 回歸涵蓋來源與舊 profile 副本上層有額外修改權限、新位置的副本及 cache 重用、原檔內容與 ACL 保留，以及新副本上層不安全時拒絕。
+
+[同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/38372264365/attempts/1) 與[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/38373002648/attempts/1)各自通過 Release 建置，均為 0 warnings／errors、完整測試 4,634 passed／0 failed／0 skipped，production line coverage 74.93%（50,216／67,015，門檻 70%）。六件凍結成品的公開匿名下載、sidecar、stable feed 簽章與 latest feed bytes 核對通過。這些結果不代表官方 CLI 登入或用量查詢通過。
 
 回報問題的成員電腦、Claude Code `2.1.296` 的真人登入／用量／背景更新，以及其他四個 provider 的真人登入／用量，都尚未以本版成品驗證。乾淨 Windows 安裝、既有標準安裝的一鍵線上更新與安裝後 UI／無障礙亦待驗。內容及發布狀態見 [1.0.21 版本說明](releases/1.0.21.md)。
 
