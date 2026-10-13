@@ -145,7 +145,9 @@ Windows 上的 Codex 與 Grok 直接執行官方安裝的原始 EXE。Claude 先
 - 在鎖內記錄 volume serial number、file ID、長度與建立／寫入／變更時間，然後執行 WinVerifyTrust，且簽署者（signer）的 common name 必須精確符合服務要求。
 - 簽章驗證後，再從既有 handle 與同一路徑重新開啟的 handle 核對完整檔案身分與變更標記，並重查固定磁碟、reparse point 與 ACL；任一項不同就停止。
 
-通過後回傳的 protected source lease 仍指向同一個官方原始 EXE。若 Claude 只有來源 ACL 不符合直接執行規則，則改走受保護副本：仍須確認原檔位於固定磁碟、沒有 reparse point、大小合格且 `Anthropic, PBC` 簽章有效；以 `FileShare.Read` 鎖住原檔，核對 trust stamp，將相同內容複製到 `%USERPROFILE%\AiUsageDashboard.ClaudeCli\executables-v1`，再核對 SHA-256、副本 ACL 與簽章。來源或副本驗證失敗即停止。正常情況保留目前副本與按寫入時間選出的前一個副本，並清理過期暫存檔；刪除失敗時會保留並記錄警告。舊版 `%SystemDrive%\AiUsageDashboard.*\executables-v1` 目錄不會自動刪除。
+通過後回傳的 protected source lease 仍指向同一個官方原始 EXE。若 Claude 只有來源 ACL 不符合直接執行規則，則改走受保護副本：仍須確認原檔位於固定磁碟、沒有 reparse point、大小合格且 `Anthropic, PBC` 簽章有效；以 `FileShare.Read` 鎖住原檔，核對 trust stamp，將相同內容複製到 `%SystemDrive%\AiUsageDashboard.ClaudeCli.<current-user-SID>\executables-v1`，再核對 SHA-256、副本 ACL 與簽章。
+
+Claude 副本目錄由 Windows 的 system-volume root 與目前使用者 SID 決定，不受來源目錄或使用者 profile 的額外寫入權限影響。副本根目錄與其上層仍須通過固定磁碟、無 reparse point 與各層 ACL 檢查；私人目錄只允許目前使用者、Local System 與 Builtin Administrators 存取。來源或副本驗證失敗即停止，不修改官方安裝或原目錄 ACL。正常情況保留目前副本與按寫入時間選出的前一個副本，並清理過期暫存檔；刪除失敗時會保留並記錄警告。舊版 `%USERPROFILE%\AiUsageDashboard.ClaudeCli\executables-v1` 副本與 Codex／Grok 的舊副本目錄不會自動刪除。
 
 Copilot 使用本機官方 CLI，仍在驗證來源後複製至 `%SystemDrive%\AiUsageDashboard.CopilotCli.<current-user-SID>\executables-v1`。副本目錄只開放目前使用者、Local System 與 Builtin Administrators；每次執行重新驗證 ACL、檔案身分與 SHA-256，程序期間持有副本 lease，正常保留目前與前一份有效副本。未確認程序樹已結束時，仍保留鎖並阻止下一次操作。
 

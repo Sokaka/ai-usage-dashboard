@@ -252,6 +252,23 @@ public sealed class ClaudeCliExecutableStagerTests
 		Assert.Equal([Path.GetFullPath(secondSourcePath)], versionPaths);
 	}
 
+	[Fact]
+	public void ResolveDefaultProtectedRoot_IsFixedDriveAndCurrentUserScoped()
+	{
+		string protectedRoot = ClaudeCliExecutableStager.ResolveDefaultProtectedRoot();
+		string fixedDriveRoot = Path.GetPathRoot(Environment.SystemDirectory) ??
+			throw new InvalidOperationException("The Windows system drive is unavailable.");
+		using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+		string currentUserSid = identity.User?.Value ??
+			throw new InvalidOperationException("The current Windows identity has no user SID.");
+
+		Assert.Equal(
+			Path.Combine(fixedDriveRoot, $"AiUsageDashboard.ClaudeCli.{currentUserSid}",
+				"executables-v1"),
+			protectedRoot,
+			ignoreCase: true);
+	}
+
 	private static string CreateSource(
 		TemporaryDirectory temporaryDirectory,
 		string fileName)

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
+using System.Security.Principal;
 
 using AiUsageDashboard.AntigravitySpike;
 
@@ -70,7 +71,7 @@ internal sealed class ClaudeCliExecutableStager :
 			_inspectSignature,
 			_isCanonicalNonReparseFile,
 			_isFixedDrivePath,
-			_isPathAclSafe);
+			IsSourceOrProtectedPathAclSafe);
 	}
 
 	public WindowsOfficialCliExecutableLease Stage(
@@ -333,7 +334,7 @@ internal sealed class ClaudeCliExecutableStager :
 				StringComparison.OrdinalIgnoreCase) ||
 			(_cachedSourceStamp != sourceStamp) ||
 			!_isCanonicalNonReparseFile(cachedLease.ExecutablePath) ||
-			!_isPathAclSafe(cachedLease.ExecutablePath))
+			!IsSourceOrProtectedPathAclSafe(cachedLease.ExecutablePath))
 		{
 			return null;
 		}
@@ -361,7 +362,8 @@ internal sealed class ClaudeCliExecutableStager :
 				out _) ||
 			!WindowsExecutablePathSecurity.IsCanonicalNonReparseDirectory(
 				protectedRoot) ||
-			!WindowsExecutablePathSecurity.IsDirectoryPathAclSafe(
+			!WindowsExecutablePathSecurity.IsDirectoryPathAclSafeWithinTrustedRoot(
+				protectedRoot,
 				protectedRoot))
 		{
 			throw new WindowsOfficialCliExecutableStagingException(
@@ -410,7 +412,7 @@ internal sealed class ClaudeCliExecutableStager :
 
 			if (!AntigravityPrivateKeyAcl.TryProtectNewFile(temporaryPath) ||
 				!_isCanonicalNonReparseFile(temporaryPath) ||
-				!_isPathAclSafe(temporaryPath))
+				!IsSourceOrProtectedPathAclSafe(temporaryPath))
 			{
 				throw new WindowsOfficialCliExecutableStagingException(
 					WindowsOfficialCliExecutableStagingFailureReason.ProtectionFailed,
@@ -499,7 +501,7 @@ internal sealed class ClaudeCliExecutableStager :
 			{
 				if (IsOwnedTemporaryPath(path, protectedRoot) &&
 					_isCanonicalNonReparseFile(path) &&
-					_isPathAclSafe(path) &&
+					IsSourceOrProtectedPathAclSafe(path) &&
 					(File.GetLastWriteTimeUtc(path) <= staleBeforeUtc))
 				{
 					TryDeleteOldCopy(path);
@@ -524,7 +526,7 @@ internal sealed class ClaudeCliExecutableStager :
 					string.Equals(path, currentPath, StringComparison.OrdinalIgnoreCase) ||
 					string.Equals(path, previousPath, StringComparison.OrdinalIgnoreCase) ||
 					!_isCanonicalNonReparseFile(path) ||
-					!_isPathAclSafe(path))
+					!IsSourceOrProtectedPathAclSafe(path))
 				{
 					continue;
 				}
@@ -597,13 +599,32 @@ internal sealed class ClaudeCliExecutableStager :
 				Uri.IsHexDigit);
 	}
 
-	private static string ResolveDefaultProtectedRoot()
+	internal static string ResolveDefaultProtectedRoot()
 	{
-		string userProfile = Environment.GetFolderPath(
-			Environment.SpecialFolder.UserProfile);
+		string? fixedDriveRoot = Path.GetPathRoot(Environment.SystemDirectory);
+		using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+		string? currentUserSid = identity.User?.Value;
+
+		if (string.IsNullOrWhiteSpace(fixedDriveRoot) ||
+			!Path.IsPathFullyQualified(fixedDriveRoot) ||
+			string.IsNullOrWhiteSpace(currentUserSid))
+		{
+			throw new WindowsOfficialCliExecutableStagingException(
+				WindowsOfficialCliExecutableStagingFailureReason.ProtectionFailed,
+				"The protected Claude CLI executable directory could not be resolved.");
+		}
+
 		return Path.Combine(
-			userProfile,
-			"AiUsageDashboard.ClaudeCli",
+			fixedDriveRoot,
+			$"AiUsageDashboard.ClaudeCli.{currentUserSid}",
 			"executables-v1");
+	}
+
+	private bool IsSourceOrProtectedPathAclSafe(string executablePath)
+	{
+		return _isPathAclSafe(executablePath) ||
+			WindowsExecutablePathSecurity.IsPathAclSafeWithinTrustedRoot(
+				executablePath,
+				_protectedRootResolver());
 	}
 }
