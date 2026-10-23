@@ -8,21 +8,22 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.21 / sequence 1035`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.22 / sequence 1036`。
 
-### AGY Argon 群組相容性（1.0.22 候選）
+### AGY Argon 群組相容性（1.0.22 已發布）
 
 - [x] 原有兩組、四個額度區間繼續支援；另接受可選的 `gemini-argon-wtu-weekly` 群組，完整驗證所有區間並比較兩份 command，卡片維持四個原有用量項目。
 - [x] 新增 43 個合成回歸案例，涵蓋新舊格式、非法欄位與分組、回應一致性、安全計數，以及升級後自動清除既有格式錯誤標記。
 - [x] 候選前的修正版 production DLL 在 AGY CLI `1.4.5` 完成一次受控用量查詢，回傳四個原有用量項目且 conversation／turn／所有 token 零值檢查通過；未保存原始用量輸出。此 source probe 不代替本候選成品驗收。
-- [ ] 最新 main 上的同 source Windows CI、候選封裝／簽署／凍結及正式匿名下載驗證待完成。其他 provider 真人登入／用量、乾淨 Windows 初裝、既有安裝一鍵更新及 UI／無障礙，均未以本版成品驗證。
+- [x] 同 source Windows CI、候選封裝／簽署／凍結及正式匿名下載驗證完成，見[目前正式版本](#目前正式版本)。
+- [ ] self-contained App 的一般啟動與使用流程、AGY 真人登入與背景刷新、UI／無障礙、乾淨 Windows 初裝及既有標準安裝的一鍵線上更新仍待驗。其他四個 provider 的正式成品真人登入／用量與背景刷新亦待驗。DLL＋CLI smoke、合成回歸、建置與下載驗證不代替 App 端到端及實機安裝驗收。
 
 ### Claude 受保護副本目錄權限修正（1.0.21 已發布）
 
 - [x] 保留來源 ACL 安全時直接執行官方原始 EXE；只有來源 ACL 不符合直接執行規則時，才使用 Windows system-volume root 下目前使用者 SID 專用的副本目錄。新位置與全部上層的 ACL、固定磁碟、無 reparse point、檔案鎖定、SHA-256、官方簽章及帳號隔離要求維持。
 - [x] 合成 ACL 回歸涵蓋來源與舊 profile 副本上層同時有額外修改權限、新位置的副本及 cache 重用、原檔內容與 ACL 保留，以及新副本上層不安全時拒絕。舊 profile 副本不自動刪除或修改權限。
 - [x] 本機完整測試 4,634 passed／0 failed／0 skipped，production line coverage 74.82%（50,140／67,015，門檻 70%）。本機結果與下方同 source Windows CI、候選成品結果分開記錄。
-- [x] 同 source Windows CI、候選封裝／簽署／凍結及公開後匿名下載驗簽完成，見[目前正式版本](#目前正式版本)。
+- [x] 同 source Windows CI、候選封裝／簽署／凍結及公開後匿名下載驗簽完成，見[1.0.21 歷史正式版](#1021-歷史正式版)。
 - [ ] 回報問題的成員電腦、真人 CLI 登入／用量／背景更新、乾淨 Windows 安裝、既有標準安裝一鍵更新及安裝後 UI／無障礙，均尚未以本版成品驗證。
 
 ### 官方 EXE 保護與 Claude Code 2.1.292 相容性（1.0.20 已發布）
@@ -189,7 +190,22 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 目前正式版本
 
-`1.0.21 / sequence 1035` 已沿用同一組凍結候選正式公開。[v1.0.21 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.21) 現為 stable／latest；六件成品資料見 [1.0.21 版本說明](docs/releases/1.0.21.md)。
+`1.0.22 / sequence 1036` 已沿用同一組凍結候選正式公開。[v1.0.22 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.22) 現為 stable／latest；六件成品資料見 [1.0.22 版本說明](docs/releases/1.0.22.md)。
+
+[source `5d2051a52c84eefe631ad025fb4bc0028e02cb30`](https://github.com/Sokaka/ai-usage-dashboard/commit/5d2051a52c84eefe631ad025fb4bc0028e02cb30)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/39900394124/attempts/1) run `39900394124` attempt `1`，Release ID `421452495`。App 與 Updater 均為 `1.0.22`，由同一 source 重新建置；SDK `8.0.426`、內附 runtime `8.0.32`，沒有沿用舊 Updater。
+
+- [x] [同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/39899773462/attempts/1)：Release 建置 0 warnings／errors，完整測試 4,677 passed／0 failed／0 skipped；production line coverage 74.94%（50,234／67,030，門檻 70%）。
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/39900394124/attempts/1)：Release 建置 0 warnings／errors，完整測試 4,677 passed／0 failed／0 skipped；production line coverage 74.94%（50,234／67,030，門檻 70%）；同一 run／attempt 完成建置、簽署、驗簽與六件成品凍結。
+- [x] 六件原凍結成品已透過無 token／cookie 的 client 匿名下載；Release／latest／tag source、asset ID／名稱／大小／SHA256、三份 canonical sidecar、production public trust feed 簽章及 latest feed bytes 均核對通過。六件合計 `107015000` bytes；沒有重建、重簽或替換資產。
+- [x] 凍結 production DLL 搭配真實 AGY CLI `1.4.6` 的單次受控用量查詢通過；版本探查與用量查詢各一次，取得原有四個用量項目，程序正常結束、stderr 為空，conversation／turn／所有 token 零值檢查通過。凍結 DLL SHA256 為 `49b99d605d4cf597b5bb6d2043aad48a6f734f8fb2f80f0e668be7660322182c`。此用量驗證未啟動 App executable，未重驗登入；此 DLL＋CLI smoke 不代表 App 端到端驗收。
+- [x] 凍結 App、ClaudeCapture 與 Updater 的實際 `--export-licenses` 分別通過 14、7、14 份文件核對；元件版本、原文 SHA256、manifest 與 acceptance digest 格式均相符。App runtime configuration 直接讀回的 .NETCore 與 WindowsDesktop 均為 `8.0.32`。此離線匯出不包含條款接受／拒絕及安裝驗收。
+- [ ] self-contained App 的一般啟動與使用流程、AGY 真人登入與背景刷新、UI／無障礙、乾淨 Windows 初裝及既有標準安裝的一鍵線上更新仍待驗。其他四個 provider 的正式成品真人登入／用量與背景刷新亦待驗。DLL＋CLI smoke、合成回歸、建置與下載驗證不代替 App 端到端及實機安裝驗收。
+
+逐平台狀態見 [1.0.22 CLI 表](docs/CLI_COMPATIBILITY.md#1022)。
+
+### 1.0.21 歷史正式版
+
+`1.0.21 / sequence 1035` 已沿用同一組凍結候選正式公開。[v1.0.21 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.21) 公開時為 stable／latest；六件成品資料見 [1.0.21 版本說明](docs/releases/1.0.21.md)。
 
 [source `959b12a3513296ba6e6817e09303ad80cf829622`](https://github.com/Sokaka/ai-usage-dashboard/commit/959b12a3513296ba6e6817e09303ad80cf829622)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/38373002648/attempts/1) run `38373002648` attempt `1`，Release ID `411485065`。App 為 `1.0.21`，Updater 沿用 [v1.0.20](docs/releases/1.0.20.md) 交付的已簽署 `1.0.18` 原始 bytes，來源 [source `137f8718e9efdfaa46b3d20b53984fc1a8c667ff`](https://github.com/Sokaka/ai-usage-dashboard/commit/137f8718e9efdfaa46b3d20b53984fc1a8c667ff)。
 
