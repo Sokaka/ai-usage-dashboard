@@ -16,7 +16,7 @@
 
 每次發布須依[升級與相容性原則](docs/COMPATIBILITY_POLICY.md)確認舊資料、既有安裝與 CLI 的受影響範圍及驗證結果。必要的不相容變更須在 Release 說明原因、受影響版本、使用者步驟與復原限制；不以要求刪除設定、全部重新登入或強制換 CLI 取代相容性處理。
 
-.NET 8.0.31 是目前固定的 runtime；依 [Microsoft 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)，.NET 8 於 2026-11-10 結束支援。每次候選重新核對 patch 與 advisory；逾期或出現未處理風險時先修正，再建候選。
+.NET 8.0.32 是目前固定的 runtime；依 [Microsoft 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)，.NET 8 於 2026-11-10 結束支援。每次候選重新核對 patch 與 advisory；逾期或出現未處理風險時先修正，再建候選。
 
 `Microsoft.Extensions.AI.Abstractions` 固定為 10.10.0，適用另行更新的 [Platform Extensions 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy/extensions)。App、Setup 與 ClaudeCapture 共用的 `System.Text.Json` 固定為 10.0.12；各自的 dependency manifest 必須涵蓋相同版本及其依賴，並通過合併成品的實際離線授權匯出。
 

@@ -665,7 +665,9 @@ agy -p /usage --output-format stream-json
 
 AI Usage 仍會在回傳後硬性驗證程序成功、沒有標準錯誤輸出（stderr）或截斷、result 為 success、conversation／turn 未建立，而且 input、output、thinking、cache-read 與 total token 全部為零；任何不符都會停止後續擷取。
 
-解析器只接受 typed `usage` command data，內容必須正好有兩個已知群組（group），每組正好有兩個已知額度區間（bucket），總計四個額度週期（quota window）。
+解析器只接受 typed `usage` command data，必須包含原有兩個已知群組（group），每組各有週用量與 5 小時用量兩個額度區間（bucket）。另接受可選的 Gemini 4 Argon 群組，且該群組只能包含 `gemini-argon-wtu-weekly`，週期為 `weekly`。舊版兩組格式仍可讀取。
+
+Argon 區間同樣必須通過欄位、數值、重置時間與兩份 command 的一致性檢查；卡片目前仍只顯示原有四個額度週期（quota window），不顯示 Argon 額度。
 
 出現未知 event、欄位、group、bucket、重複值、超出範圍的 fraction、無效 reset time，或 command／result 不一致時，都會停止採用結果。
 

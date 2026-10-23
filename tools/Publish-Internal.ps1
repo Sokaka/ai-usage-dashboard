@@ -23,8 +23,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$requiredSdkVersion = '8.0.425'
-$selfContainedRuntimeVersion = '8.0.31'
+$requiredSdkVersion = '8.0.426'
+$selfContainedRuntimeVersion = '8.0.32'
 $runtimeIdentifier = 'win-x64'
 $repositoryRoot = [System.IO.Path]::GetFullPath(
 	(Join-Path $PSScriptRoot '..'))

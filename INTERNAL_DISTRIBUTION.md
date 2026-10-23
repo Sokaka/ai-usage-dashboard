@@ -10,7 +10,7 @@
 
 | 元件 | 內部版本政策與支援範圍 |
 | --- | --- |
-| AI Usage | 有版本編號、自帶執行環境的 Windows x64 套件；目前使用 .NET 8.0.31，僅支援至 2026-11-10 |
+| AI Usage | 有版本編號、自帶執行環境的 Windows x64 套件；目前使用 .NET 8.0.32，僅支援至 2026-11-10 |
 | Claude | 相容性基準 `2.1.169`；官方 Claude Code `>=2.1.169` 才有需要的 `--safe-mode`；來源 ACL 安全時直接執行官方原始 EXE，否則執行經驗證的受保護副本；簽署者須為 `Anthropic, PBC`；Claude.ai Pro／Max／Team；Enterprise 可辨識，但目前不提供 `/usage`；實驗性輪詢 |
 | Codex | 相容性基準 `0.144.1`；可確認為官方 `codex-cli x.y.z` 的三段式正式版本都會先實測；direct-source lease 只接受 `OpenAI OpCo, LLC` 簽署且通過官方 installer layout ACL 的實體 EXE；實驗性 `app-server` 串接 |
 | Grok | 相容性基準 `1.0.3`；可信任的官方版本即使版號不同或無法解析，仍先測試 ACP 通訊；只接受預設安裝位置、`X.AI LLC` 簽章並直接鎖定官方原始 EXE；實驗性多帳號串接 |
@@ -181,7 +181,7 @@ AI Usage 不會安裝或讀取 status line，不會附帶 AGY capture EXE，也�
 
 版本探查與 `/usage` 都必須放入 kill-on-close Windows Job Object，active-process limit 固定為 `1`。官方程序嘗試建立 child process、輸出超過固定上限、stderr 非空、逾時、清理不明，或解析器看到非預期資料時，都必須拒絕結果。
 
-解析器只接受 `usage` 指令的兩組資料、每組兩個週期，並要求成功、conversation／turn 為零、所有 token 精確為零。原始 JSON 只在記憶體中使用，用完即清除，不得寫入診斷、快取或套件。
+解析器必須完整驗證 `usage` 指令原有兩組資料、每組兩個週期；另接受只包含 `gemini-argon-wtu-weekly`、週期為 `weekly` 的可選 Argon 群組。Argon 區間雖不顯示，仍須通過相同的欄位、數值、重置時間與兩份 command 一致性檢查。程序仍須成功、conversation／turn 為零、所有 token 精確為零。原始 JSON 只在記憶體中使用，用完即清除，不得寫入診斷、快取或套件。
 
 ### 已退役的 AGY 研究路徑
 
