@@ -25,6 +25,20 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同版成品官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
+### 1.0.22
+
+本表對應準備中的 `1.0.22 / sequence 1036` 候選，尚未公開。App 與 Updater 均重新建置為 `1.0.22`，SDK 為 `8.0.426`，內附 runtime 為 `8.0.32`；CLI 版本要求維持不變。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本版成品實測 | 未驗證 | 未驗證 |
+| Codex | 未以本版成品實測 | 未驗證 | 未驗證 |
+| GitHub Copilot | 未以本版成品實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
+| Grok | 未以本版成品實測 | 未驗證 | 未驗證 |
+| Antigravity | 候選前 source probe 使用 `1.4.5`；本版成品待驗 | 未重驗登入 | 本版成品待驗 |
+
+本版明確支援可選的 `gemini-argon-wtu-weekly` 群組，保留原有兩組格式、四個顯示項目與全部安全檢查。候選前的修正版 DLL 已完成一次 `1.4.5` 查詢與零活動驗證；不將這項 source probe 沿用為本版成品結果。完整真人登入、背景刷新、乾淨 Windows 初裝、既有安裝一鍵更新與 UI／無障礙仍待驗，見 [1.0.22 版本說明](releases/1.0.22.md)。
+
 ### 1.0.21
 
 本表對應已公開的 `1.0.21 / sequence 1035`；[source `959b12a3513296ba6e6817e09303ad80cf829622`](https://github.com/Sokaka/ai-usage-dashboard/commit/959b12a3513296ba6e6817e09303ad80cf829622)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/38373002648/attempts/1) run `38373002648` attempt `1`，Release ID `411485065`。Updater 沿用前一正式版 `v1.0.20` 交付的 `1.0.18` 原始 bytes，CLI 版本要求維持不變。

@@ -63,6 +63,320 @@ public sealed class AntigravityOfficialPrintEnvelopeParserTests
 		Assert.False(parsed.RequiresSafetyLatch);
 	}
 
+	[Theory]
+	[InlineData(false, false)]
+	[InlineData(true, false)]
+	[InlineData(false, true)]
+	[InlineData(true, true)]
+	public void Parse_WithArgonGroupAndReorderedCopies_ReturnsOriginalFourWindows(
+		bool reverseGroups,
+		bool reverseBuckets)
+	{
+		JsonObject commandRoot = CreateArgonCommandRoot();
+		JsonObject resultRoot = CreateMatchingResultRoot(commandRoot);
+		JsonObject resultData = resultRoot["result"]!["command"]!["data"]!.AsObject();
+		JsonArray groups = resultData["groups"]!.AsArray();
+
+		if (reverseBuckets)
+		{
+			foreach (JsonNode? group in groups)
+			{
+				group!["buckets"] = new JsonArray(group["buckets"]!.AsArray()
+					.Reverse().Select(bucket => bucket!.DeepClone()).ToArray());
+			}
+		}
+
+		if (reverseGroups)
+		{
+			resultData["groups"] = new JsonArray(groups.Reverse()
+				.Select(group => group!.DeepClone()).ToArray());
+		}
+
+		AntigravityOfficialPrintParseResult parsed = Parse(CreateOutput(
+			commandRoot,
+			resultRoot));
+
+		Assert.True(parsed.Result.IsSuccessful);
+		Assert.False(parsed.RequiresSafetyLatch);
+		Assert.Equal(
+			new[]
+			{
+				"agy.gemini.weekly",
+				"agy.gemini.rolling-5h",
+				"agy.claude.weekly",
+				"agy.claude.rolling-5h"
+			},
+			parsed.Result.Windows.Select(window => window.StableWindowId));
+		Assert.Equal(
+			new[] { 80m, 60m, 40m, 20m },
+			parsed.Result.Windows.Select(window => window.RemainingPercent));
+		Assert.All(parsed.Result.Windows, window =>
+		{
+			Assert.False(window.IsAvailable);
+			Assert.Equal(TimeSpan.FromDays(1), window.ResetsIn);
+		});
+	}
+
+	[Theory]
+	[InlineData("presentation-and-window")]
+	[InlineData("zero-quota")]
+	[InlineData("full-quota-without-reset")]
+	public void Parse_WithArgonOptionalFieldsOmitted_Succeeds(string mutation)
+	{
+		JsonObject commandRoot = CreateArgonCommandRoot();
+		JsonObject group = commandRoot["command"]!["data"]!["groups"]![2]!.AsObject();
+		JsonObject bucket = group["buckets"]![0]!.AsObject();
+
+		switch (mutation)
+		{
+			case "presentation-and-window":
+				group.Remove("description");
+				bucket.Remove("description");
+				bucket.Remove("window");
+				bucket.Remove("disabled");
+				bucket.Remove("remaining_amount");
+				break;
+			case "zero-quota":
+				bucket.Remove("remaining_fraction");
+				bucket.Remove("remaining_amount");
+				break;
+			case "full-quota-without-reset":
+				bucket["remaining_fraction"] = 1m;
+				bucket.Remove("reset_time");
+				break;
+			default:
+				throw new ArgumentOutOfRangeException(nameof(mutation));
+		}
+
+		AntigravityOfficialPrintParseResult parsed = Parse(CreateOutput(
+			commandRoot,
+			CreateMatchingResultRoot(commandRoot)));
+
+		Assert.True(parsed.Result.IsSuccessful);
+		Assert.False(parsed.RequiresSafetyLatch);
+		Assert.Equal(4, parsed.Result.Windows.Count);
+	}
+
+	[Fact]
+	public void Parse_WithArgonOmittedAndExplicitZeroQuotaFields_CopiesMatch()
+	{
+		JsonObject commandRoot = CreateArgonCommandRoot();
+		JsonObject commandBucket = commandRoot["command"]!["data"]!["groups"]![2]![
+			"buckets"]![0]!.AsObject();
+		commandBucket.Remove("remaining_fraction");
+		commandBucket.Remove("remaining_amount");
+		JsonObject resultRoot = CreateMatchingResultRoot(commandRoot);
+		JsonObject resultBucket = resultRoot["result"]!["command"]!["data"]![
+			"groups"]![2]!["buckets"]![0]!.AsObject();
+		resultBucket["remaining_fraction"] = 0m;
+		resultBucket["remaining_amount"] = 0L;
+
+		AntigravityOfficialPrintParseResult parsed = Parse(CreateOutput(
+			commandRoot,
+			resultRoot));
+
+		Assert.True(parsed.Result.IsSuccessful);
+		Assert.False(parsed.RequiresSafetyLatch);
+	}
+
+	[Theory]
+	[InlineData("unknown-bucket")]
+	[InlineData("duplicate-bucket")]
+	[InlineData("duplicate-group")]
+	[InlineData("extra-group")]
+	[InlineData("argon-in-gemini-group")]
+	[InlineData("mixed-groups")]
+	[InlineData("missing-gemini-group")]
+	[InlineData("missing-third-party-group")]
+	[InlineData("missing-required-bucket")]
+	[InlineData("empty-argon-group")]
+	public void Parse_WithInvalidArgonGroupMembership_Latches(string mutation)
+	{
+		JsonObject commandRoot = CreateArgonCommandRoot();
+		JsonArray groups = commandRoot["command"]!["data"]!["groups"]!.AsArray();
+		JsonArray geminiBuckets = groups[0]!["buckets"]!.AsArray();
+		JsonArray argonBuckets = groups[2]!["buckets"]!.AsArray();
+
+		switch (mutation)
+		{
+			case "unknown-bucket":
+				argonBuckets[0]!["id"] = "gemini-future-weekly";
+				break;
+			case "duplicate-bucket":
+				argonBuckets.Add(argonBuckets[0]!.DeepClone());
+				break;
+			case "duplicate-group":
+				groups.Add(groups[2]!.DeepClone());
+				break;
+			case "extra-group":
+				groups.Add(CreateGroup(
+					"Unknown group",
+					("unknown-weekly", "Weekly", "weekly", 0.5)));
+				break;
+			case "argon-in-gemini-group":
+				geminiBuckets.Add(argonBuckets[0]!.DeepClone());
+				groups.RemoveAt(2);
+				break;
+			case "mixed-groups":
+				JsonNode geminiBucket = geminiBuckets[0]!.DeepClone();
+				geminiBuckets[0] = argonBuckets[0]!.DeepClone();
+				argonBuckets[0] = geminiBucket;
+				break;
+			case "missing-gemini-group":
+				groups.RemoveAt(0);
+				break;
+			case "missing-third-party-group":
+				groups.RemoveAt(1);
+				break;
+			case "missing-required-bucket":
+				geminiBuckets.RemoveAt(0);
+				break;
+			case "empty-argon-group":
+				argonBuckets.Clear();
+				break;
+			default:
+				throw new ArgumentOutOfRangeException(nameof(mutation));
+		}
+
+		AssertUnverifiableResponseLatched(
+			Parse(CreateOutput(commandRoot, CreateMatchingResultRoot(commandRoot))),
+			AntigravityUsageSafetyFailureReason.OutputCommandEnvelopeInvalid);
+	}
+
+	[Theory]
+	[InlineData("group", "description", "1")]
+	[InlineData("bucket", "description", "false")]
+	[InlineData("bucket", "disabled", "\"false\"")]
+	[InlineData("bucket", "disabled", "true")]
+	[InlineData("bucket", "window", "\"5h\"")]
+	[InlineData("bucket", "remaining_fraction", "-0.01")]
+	[InlineData("bucket", "remaining_fraction", "1.01")]
+	[InlineData("bucket", "remaining_fraction", "\"0.9\"")]
+	[InlineData("bucket", "remaining_amount", "-1")]
+	[InlineData("bucket", "remaining_amount", "1.5")]
+	[InlineData("bucket", "remaining_amount", "\"123\"")]
+	[InlineData("bucket", "reset_time", "\"not-an-rfc3339-time\"")]
+	[InlineData("bucket", "reset_time", "null")]
+	[InlineData("bucket", "reset_time", null)]
+	[InlineData("bucket", "unknown", "true")]
+	[InlineData("group", "unknown", "true")]
+	public void Parse_WithInvalidArgonField_Latches(
+		string location,
+		string propertyName,
+		string? jsonValue)
+	{
+		JsonObject commandRoot = CreateArgonCommandRoot();
+		JsonObject group = commandRoot["command"]!["data"]!["groups"]![2]!.AsObject();
+		JsonObject target = location switch
+		{
+			"group" => group,
+			"bucket" => group["buckets"]![0]!.AsObject(),
+			_ => throw new ArgumentOutOfRangeException(nameof(location))
+		};
+
+		if (jsonValue is null)
+		{
+			target.Remove(propertyName);
+		}
+		else
+		{
+			target[propertyName] = JsonNode.Parse(jsonValue);
+		}
+
+		AssertUnverifiableResponseLatched(
+			Parse(CreateOutput(commandRoot, CreateMatchingResultRoot(commandRoot))),
+			AntigravityUsageSafetyFailureReason.OutputCommandEnvelopeInvalid);
+	}
+
+	[Fact]
+	public void Parse_WithArgonDuplicateJsonProperty_LatchesAsUnverifiable()
+	{
+		JsonObject commandRoot = CreateArgonCommandRoot();
+		string output = CreateOutput(commandRoot, CreateMatchingResultRoot(commandRoot));
+		string duplicate = output.Replace(
+			"\"id\":\"gemini-argon-wtu-weekly\"",
+			"\"id\":\"gemini-argon-wtu-weekly\",\"id\":\"gemini-argon-wtu-weekly\"",
+			StringComparison.Ordinal);
+
+		Assert.NotEqual(output, duplicate);
+		AssertUnverifiableResponseLatched(
+			Parse(duplicate),
+			AntigravityUsageSafetyFailureReason.OutputHasDuplicateProperties);
+	}
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public void Parse_WithArgonInOnlyOneCopy_LatchesAsCopiesDiffer(
+		bool argonInFirstCommand)
+	{
+		JsonObject commandRoot = argonInFirstCommand
+			? CreateArgonCommandRoot()
+			: CreateCommandRoot();
+		JsonObject resultCommandRoot = argonInFirstCommand
+			? CreateCommandRoot()
+			: CreateArgonCommandRoot();
+
+		AssertUnverifiableResponseLatched(
+			Parse(CreateOutput(commandRoot, CreateMatchingResultRoot(resultCommandRoot))),
+			AntigravityUsageSafetyFailureReason.OutputCommandCopiesDiffer);
+	}
+
+	[Theory]
+	[InlineData("remaining_fraction", "0.75")]
+	[InlineData("remaining_amount", "124")]
+	[InlineData("reset_time", "\"2026-08-14T00:00:00Z\"")]
+	public void Parse_WithArgonCopiesDifferent_LatchesAsCopiesDiffer(
+		string propertyName,
+		string jsonValue)
+	{
+		JsonObject commandRoot = CreateArgonCommandRoot();
+		JsonObject resultRoot = CreateMatchingResultRoot(commandRoot);
+		JsonObject bucket = resultRoot["result"]!["command"]!["data"]![
+			"groups"]![2]!["buckets"]![0]!.AsObject();
+		bucket[propertyName] = JsonNode.Parse(jsonValue);
+
+		AssertUnverifiableResponseLatched(
+			Parse(CreateOutput(commandRoot, resultRoot)),
+			AntigravityUsageSafetyFailureReason.OutputCommandCopiesDiffer);
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public void Parse_WithArgonAndNonZeroToken_LatchesBeforeShapeCheck(
+		bool tokenInsideArgon)
+	{
+		JsonObject commandRoot = CreateArgonCommandRoot();
+		JsonObject resultRoot = CreateMatchingResultRoot(commandRoot);
+		JsonObject resultBucket = resultRoot["result"]!["command"]!["data"]![
+			"groups"]![2]!["buckets"]![0]!.AsObject();
+		resultBucket["disabled"] = true;
+
+		if (tokenInsideArgon)
+		{
+			resultBucket["model_tokens"] = 1;
+		}
+		else
+		{
+			resultRoot["result"]!["usage"]!["total_tokens"] = 1;
+		}
+
+		AntigravityOfficialPrintParseResult parsed = Parse(CreateOutput(
+			commandRoot,
+			resultRoot));
+
+		Assert.True(parsed.RequiresSafetyLatch);
+		Assert.False(parsed.Result.IsSuccessful);
+		Assert.Equal(
+			AntigravityProductionUsageFailureKind.SafetyLatched,
+			parsed.Result.FailureKind);
+		Assert.Equal(
+			AntigravityUsageSafetyFailureReason.UsageActivityDetected,
+			parsed.SafetyFailureReason);
+		Assert.Equal(parsed.SafetyFailureReason, parsed.Result.SafetyFailureReason);
+	}
+
 	[Fact]
 	public void Parse_WithKnown112OptionalQuotaFields_Succeeds()
 	{
@@ -685,6 +999,27 @@ public sealed class AntigravityOfficialPrintEnvelopeParserTests
 			["event"] = "command_result",
 			["command"] = CreateCommand()
 		};
+	}
+
+	private static JsonObject CreateArgonCommandRoot()
+	{
+		JsonObject commandRoot = CreateCommandRoot();
+		JsonObject argonGroup = CreateGroup(
+			"Gemini Argon",
+			("gemini-argon-wtu-weekly", "Weekly Limit Remaining", "weekly", 0.9));
+		JsonObject bucket = argonGroup["buckets"]![0]!.AsObject();
+		bucket["description"] = "Argon quota";
+		bucket["disabled"] = false;
+		bucket["remaining_amount"] = 123L;
+		commandRoot["command"]!["data"]!["groups"]!.AsArray().Add(argonGroup);
+		return commandRoot;
+	}
+
+	private static JsonObject CreateMatchingResultRoot(JsonObject commandRoot)
+	{
+		JsonObject resultRoot = CreateResultRoot();
+		resultRoot["result"]!["command"] = commandRoot["command"]!.DeepClone();
+		return resultRoot;
 	}
 
 	private static JsonObject CreateResultRoot()

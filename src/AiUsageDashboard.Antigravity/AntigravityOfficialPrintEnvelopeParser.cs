@@ -23,6 +23,8 @@ internal static class AntigravityOfficialPrintEnvelopeParser
 		DateTimeOffset? ResetAt);
 
 	private const string CommandName = "usage";
+	private const string ArgonWeeklyBucketId = "gemini-argon-wtu-weekly";
+	private const string ArgonWeeklyWindow = "weekly";
 	private static readonly string[] RequiredUsageCounters =
 	{
 		"input_tokens",
@@ -93,6 +95,8 @@ internal static class AntigravityOfficialPrintEnvelopeParser
 			new[] { "3p-weekly", "3p-5h" },
 			StringComparer.Ordinal)
 	};
+	private static readonly IReadOnlySet<string> ArgonWeeklyBucketGroup =
+		new HashSet<string>(new[] { ArgonWeeklyBucketId }, StringComparer.Ordinal);
 
 	internal static AntigravityOfficialPrintParseResult Parse(
 		ReadOnlyMemory<byte> stdoutUtf8,
@@ -321,68 +325,89 @@ internal static class AntigravityOfficialPrintEnvelopeParser
 			!HasAbsentOrStringValue(data, "description") ||
 			!data.TryGetProperty("groups", out JsonElement groups) ||
 			(groups.ValueKind != JsonValueKind.Array) ||
-			(groups.GetArrayLength() != 2))
+			(groups.GetArrayLength() < ExpectedBucketGroups.Length) ||
+			(groups.GetArrayLength() > ExpectedBucketGroups.Length + 1))
 		{
 			return false;
 		}
 
 		Dictionary<string, ParsedBucket> byId =
 			new(StringComparer.Ordinal);
-		List<IReadOnlySet<string>> observedBucketGroups = new(2);
+		List<IReadOnlySet<string>> observedBucketGroups =
+			new(groups.GetArrayLength());
 
 		foreach (JsonElement group in groups.EnumerateArray())
 		{
-			if ((group.ValueKind != JsonValueKind.Object) ||
-				!HasExactProperties(
-					group,
-					GroupProperties,
-					"description") ||
-				!TryGetRequiredString(group, "name", out _) ||
-				!HasAbsentOrStringValue(group, "description") ||
-				!group.TryGetProperty("buckets", out JsonElement buckets) ||
-				(buckets.ValueKind != JsonValueKind.Array) ||
-				(buckets.GetArrayLength() != 2))
+			if (!TryParseBucketGroup(group, out IReadOnlyList<ParsedBucket>? buckets) ||
+				(buckets is null))
 			{
 				return false;
 			}
 
-			HashSet<string> bucketIds = new(StringComparer.Ordinal);
-
-			foreach (JsonElement bucket in buckets.EnumerateArray())
+			foreach (ParsedBucket bucket in buckets)
 			{
-				if (!TryParseBucket(
-					bucket,
-					out ParsedBucket? parsed) ||
-					(parsed is null) ||
-					!bucketIds.Add(parsed.BucketId) ||
-					!byId.TryAdd(parsed.BucketId, parsed))
+				if (!byId.TryAdd(bucket.BucketId, bucket))
 				{
 					return false;
 				}
 			}
 
-			if (!ExpectedBucketGroups.Any(expected =>
-				expected.SetEquals(bucketIds)))
-			{
-				return false;
-			}
-
-			observedBucketGroups.Add(bucketIds);
+			observedBucketGroups.Add(buckets.Select(bucket => bucket.BucketId)
+				.ToHashSet(StringComparer.Ordinal));
 		}
 
-		if ((byId.Count != ExpectedBuckets.Length) ||
-			(observedBucketGroups.Count != ExpectedBucketGroups.Length) ||
-			ExpectedBucketGroups.Any(expected =>
+		if (ExpectedBucketGroups.Any(expected =>
 				observedBucketGroups.Count(observed =>
-					expected.SetEquals(observed)) != 1) ||
-			!byId.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(
-				ExpectedBuckets.Select(expected => expected.BucketId)))
+					expected.SetEquals(observed)) != 1))
 		{
 			return false;
 		}
 
+		// 未顯示的 Argon 區間也必須參與兩份 command 的一致性比對。
 		parsedBuckets = Array.AsReadOnly(
-			ExpectedBuckets.Select(expected => byId[expected.BucketId]).ToArray());
+			byId.Values.OrderBy(bucket => bucket.BucketId, StringComparer.Ordinal)
+				.ToArray());
+		return true;
+	}
+
+	private static bool TryParseBucketGroup(
+		JsonElement group,
+		out IReadOnlyList<ParsedBucket>? parsedBuckets)
+	{
+		parsedBuckets = null;
+
+		if ((group.ValueKind != JsonValueKind.Object) ||
+			!HasExactProperties(group, GroupProperties, "description") ||
+			!TryGetRequiredString(group, "name", out _) ||
+			!HasAbsentOrStringValue(group, "description") ||
+			!group.TryGetProperty("buckets", out JsonElement buckets) ||
+			(buckets.ValueKind != JsonValueKind.Array))
+		{
+			return false;
+		}
+
+		List<ParsedBucket> parsed = new();
+		HashSet<string> bucketIds = new(StringComparer.Ordinal);
+
+		foreach (JsonElement bucket in buckets.EnumerateArray())
+		{
+			if (!TryParseBucket(bucket, out ParsedBucket? parsedBucket) ||
+				(parsedBucket is null) ||
+				!bucketIds.Add(parsedBucket.BucketId))
+			{
+				return false;
+			}
+
+			parsed.Add(parsedBucket);
+		}
+
+		if (!ExpectedBucketGroups.Any(expected => expected.SetEquals(bucketIds)) &&
+			!ArgonWeeklyBucketGroup.SetEquals(bucketIds))
+		{
+			return false;
+		}
+
+		parsedBuckets = parsed.AsReadOnly();
 		return true;
 	}
 
@@ -429,11 +454,18 @@ internal static class AntigravityOfficialPrintEnvelopeParser
 				id,
 				StringComparison.Ordinal));
 
-		if ((expected is null) ||
+		string? expectedWindow = string.Equals(
+			id,
+			ArgonWeeklyBucketId,
+			StringComparison.Ordinal)
+				? ArgonWeeklyWindow
+				: expected?.Window;
+
+		if ((expectedWindow is null) ||
 			!HasAbsentOrExactStringValue(
 				bucket,
 				"window",
-				expected.Window))
+				expectedWindow))
 		{
 			return false;
 		}

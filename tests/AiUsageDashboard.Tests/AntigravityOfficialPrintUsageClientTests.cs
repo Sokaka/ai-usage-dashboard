@@ -2775,6 +2775,45 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 	}
 
 	[Fact]
+	public async Task CaptureAsync_AfterUpgradeWithArgonGroup_ClearsPersistedFormatFailure()
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CreateExecutable(temporaryDirectory);
+		string stateFilePath = Path.Combine(temporaryDirectory.Path, "safety.json");
+		JsonAntigravityOfficialPrintSafetyStateStore previousStore = new(stateFilePath);
+		await previousStore.SaveAsync(
+			new AntigravityOfficialPrintSafetyState(
+				AntigravityUsageSafetyFailureReason.OutputCommandEnvelopeInvalid,
+				ObservedAt - TimeSpan.FromMinutes(2),
+				AutomaticRevalidationAllowed: true,
+				AttemptId: "d15500424ca84361a082ef8b4ecfdb35",
+				DetectedCliVersion: "1.4.5"),
+			CancellationToken.None);
+		JsonObject command = CreateCommand();
+		command["data"]!["groups"]!.AsArray().Add(CreateGroup(
+			"Gemini 4 Argon",
+			("gemini-argon-wtu-weekly", "Weekly Limit Remaining", "weekly", 0.5)));
+		FakeCapabilityValidator validator = new(isSupported: true, cliVersion: "1.4.5");
+		FakeProcessRunner runner = CreateOutputRunner(() => CreateOutput(command));
+		AntigravityOfficialPrintUsageClient client = CreateClient(
+			validator,
+			runner,
+			new JsonAntigravityOfficialPrintSafetyStateStore(stateFilePath));
+
+		AntigravityProductionUsageResult result = await client.CaptureAsync(
+			executablePath,
+			CancellationToken.None);
+
+		Assert.True(result.IsSuccessful);
+		Assert.Equal(4, result.Windows.Count);
+		Assert.Equal(AntigravityOfficialPrintUsageClient.LocalSessionIdentity, result.AccountIdentity);
+		Assert.Null(await new JsonAntigravityOfficialPrintSafetyStateStore(stateFilePath)
+			.LoadAsync(CancellationToken.None));
+		Assert.Equal(1, validator.CallCount);
+		Assert.Equal(1, runner.CallCount);
+	}
+
+	[Fact]
 	public async Task CaptureAsync_WhenNonZeroExitRetryIsCanceledBeforeStart_PreservesRecoveryEpisode()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
@@ -4694,7 +4733,11 @@ public sealed class AntigravityOfficialPrintUsageClientTests
 
 	private static string CreateOutput(long totalTokens = 0)
 	{
-		JsonObject command = CreateCommand();
+		return CreateOutput(CreateCommand(), totalTokens);
+	}
+
+	private static string CreateOutput(JsonObject command, long totalTokens = 0)
+	{
 		JsonObject commandEvent = new()
 		{
 			["event"] = "command_result",
