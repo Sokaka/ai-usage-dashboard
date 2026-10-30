@@ -1881,7 +1881,10 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 
 	private void ApplyMetrics(UsageSnapshot snapshot)
 	{
-		UsageMetric? primaryMetric = snapshot.Metrics.FirstOrDefault();
+		UsageMetric[] metrics = UsageMetricPresentation.GetVisibleMetrics(
+			Provider,
+			snapshot.Metrics).ToArray();
+		UsageMetric? primaryMetric = metrics.FirstOrDefault();
 
 		if (primaryMetric is null)
 		{
@@ -1902,7 +1905,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			details.Add($"重置 {primaryMetric.ResetsAt.Value.ToLocalTime():MM/dd HH:mm}");
 		}
 
-		UsageMetric? secondaryMetric = snapshot.Metrics.Skip(1).FirstOrDefault();
+		UsageMetric? secondaryMetric = metrics.Skip(1).FirstOrDefault();
 
 		if (secondaryMetric is not null)
 		{
@@ -1915,7 +1918,9 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 
 	private void ProjectUsageMetrics(UsageSnapshot snapshot)
 	{
-		IEnumerable<UsageMetric> metrics = snapshot.Metrics;
+		IEnumerable<UsageMetric> metrics = UsageMetricPresentation.GetVisibleMetrics(
+			Provider,
+			snapshot.Metrics);
 
 		if (IsAntigravity &&
 			(snapshot.RecoveryAction == UsageRecoveryAction.RevalidateUsage))

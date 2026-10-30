@@ -345,6 +345,8 @@ Claude CLI 暫時不存在時，帳號專用設定與憑證不會被刪除；安
 
 這項執行後檢查只能偵測異常的模型呼叫（invocation），無法撤銷第一次異常呼叫可能已產生的額度（quota）或費用。`/usage` 回傳的是人類可讀文字，不是具版本的機器可讀額度格式（machine-readable quota schema），因此此功能維持實驗標示；CLI 文案或最外層結果格式（result envelope）改變時，解析器會停止採用結果。
 
+Claude 卡片在 5 小時用量為 0%、`ResetsAt` 為空且沒有 `ResetDisplayValue` 時，隱藏該列；週額度、非零用量與已有重置資訊的項目仍顯示。卡片摘要與用量列採相同規則，原始 snapshot、快取與排序資料維持原樣；舊快取與 status line 備用來源也適用。這是顯示規則，不以缺少時間判定方案或保證沒有 5 小時限制；來源提供但無法解析的時間也可能呈現為空值。
+
 新版不再提供狀態列設定（status line setup）或手動 CLI 入口。既有擷取輔助程式與備用讀取方式只為相容舊設定。擷取資料只保存允許清單內的格式版本、Claude Code 版本、模型識別、擷取時間、`HasCurrentUsage` 狀態與兩個額度週期；不保存工作目錄、逐字稿路徑、session ID、費用、原始 context token 或完整 JSON input。
 
 ### 分發與驗證條件

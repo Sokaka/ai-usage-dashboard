@@ -116,6 +116,19 @@ internal static class UsageMetricPresentation
 			(remaining <= threshold);
 	}
 
+	internal static IEnumerable<UsageMetric> GetVisibleMetrics(
+		ProviderKind provider,
+		IEnumerable<UsageMetric> metrics)
+	{
+		ArgumentNullException.ThrowIfNull(metrics);
+		return provider == ProviderKind.Claude
+			? metrics.Where(metric => !IsFiveHour(metric) ||
+				(metric.UsedPercent != 0) ||
+				(metric.ResetsAt is not null) ||
+				!string.IsNullOrWhiteSpace(metric.ResetDisplayValue))
+			: metrics;
+	}
+
 	internal static IOrderedEnumerable<UsageMetric> OrderMetrics(
 		IEnumerable<UsageMetric> metrics,
 		DateTimeOffset? now = null)

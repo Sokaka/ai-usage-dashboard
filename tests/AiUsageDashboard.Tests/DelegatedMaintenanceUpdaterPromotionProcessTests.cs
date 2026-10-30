@@ -285,10 +285,16 @@ public sealed class DelegatedMaintenanceUpdaterPromotionProcessTests
 			int parentExitCode = await containedParent.WaitForExitAsync()
 				.WaitAsync(ProcessTimeout);
 			await promoter.WaitForExitAsync().WaitAsync(ProcessTimeout);
-			Assert.Equal(0, parentExitCode);
-			Assert.Equal(0, promoter.ExitCode);
-			Assert.Equal(string.Empty, await standardOutput);
-			Assert.Equal(string.Empty, await standardError);
+			string standardOutputText = await standardOutput.WaitAsync(ProcessTimeout);
+			string standardErrorText = await standardError.WaitAsync(ProcessTimeout);
+			Assert.True(parentExitCode == 0,
+				$"Parent updater fixture exited with code {parentExitCode}. " +
+				$"Standard error: {standardErrorText}");
+			Assert.True(promoter.ExitCode == 0,
+				$"Promoter fixture exited with code {promoter.ExitCode}. " +
+				$"Standard error: {standardErrorText}");
+			Assert.Equal(string.Empty, standardOutputText);
+			Assert.Equal(string.Empty, standardErrorText);
 
 			Assert.Equal(
 				targetIdentity.Sha256,
@@ -513,17 +519,8 @@ public sealed class DelegatedMaintenanceUpdaterPromotionProcessTests
 
 		internal UpdaterProcessTestDirectory()
 		{
-			string localApplicationData = Environment.GetFolderPath(
-				Environment.SpecialFolder.LocalApplicationData);
-
-			if (string.IsNullOrWhiteSpace(localApplicationData))
-			{
-				throw new InvalidOperationException(
-					"The local application data directory is unavailable.");
-			}
-
 			_testRoot = System.IO.Path.Combine(
-				System.IO.Path.GetFullPath(localApplicationData),
+				System.IO.Path.GetFullPath(System.IO.Path.GetTempPath()),
 				"_audpt");
 			Path = System.IO.Path.Combine(
 				_testRoot,
