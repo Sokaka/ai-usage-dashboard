@@ -21,8 +21,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$requiredSdkVersion = '8.0.426'
-$selfContainedRuntimeVersion = '8.0.32'
+$requiredSdkVersion = '8.0.427'
+$selfContainedRuntimeVersion = '8.0.33'
 $runtimeIdentifier = 'win-x64'
 $parsedFeedUri = $null
 

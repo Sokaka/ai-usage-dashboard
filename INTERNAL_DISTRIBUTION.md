@@ -10,7 +10,7 @@
 
 | 元件 | 內部版本政策與支援範圍 |
 | --- | --- |
-| AI Usage | 有版本編號、自帶執行環境的 Windows x64 套件；目前使用 .NET 8.0.32，僅支援至 2026-11-10 |
+| AI Usage | 有版本編號、自帶執行環境的 Windows x64 套件；目前使用 .NET 8.0.33，僅支援至 2026-11-10 |
 | Claude | 相容性基準 `2.1.169`；官方 Claude Code `>=2.1.169` 才有需要的 `--safe-mode`；來源 ACL 安全時直接執行官方原始 EXE，否則執行經驗證的受保護副本；簽署者須為 `Anthropic, PBC`；Claude.ai Pro／Max／Team；Enterprise 可辨識，但目前不提供 `/usage`；實驗性輪詢 |
 | Codex | 相容性基準 `0.144.1`；可確認為官方 `codex-cli x.y.z` 的三段式正式版本都會先實測；direct-source lease 只接受 `OpenAI OpCo, LLC` 簽署且通過官方 installer layout ACL 的實體 EXE；實驗性 `app-server` 串接 |
 | Grok | 相容性基準 `1.0.3`；可信任的官方版本即使版號不同或無法解析，仍先測試 ACP 通訊；只接受預設安裝位置、`X.AI LLC` 簽章並直接鎖定官方原始 EXE；實驗性多帳號串接 |
