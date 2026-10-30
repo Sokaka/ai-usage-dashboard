@@ -68,7 +68,7 @@ public sealed class InternalPackageInvariantsTests
 			Path.Combine(repositoryRoot, "global.json")));
 		JsonElement sdk = document.RootElement.GetProperty("sdk");
 
-		Assert.Equal("8.0.426", sdk.GetProperty("version").GetString());
+		Assert.Equal("8.0.427", sdk.GetProperty("version").GetString());
 		Assert.Equal("disable", sdk.GetProperty("rollForward").GetString());
 		Assert.False(sdk.GetProperty("allowPrerelease").GetBoolean());
 	}
@@ -170,8 +170,8 @@ public sealed class InternalPackageInvariantsTests
 	{
 		string script = ReadPublishScript();
 
-		Assert.Contains("$requiredSdkVersion = '8.0.426'", script);
-		Assert.Contains("$selfContainedRuntimeVersion = '8.0.32'", script);
+		Assert.Contains("$requiredSdkVersion = '8.0.427'", script);
+		Assert.Contains("$selfContainedRuntimeVersion = '8.0.33'", script);
 		Assert.Contains("Push-Location -LiteralPath $repositoryRoot", script);
 		Assert.Contains("& dotnet --version", script);
 		Assert.DoesNotContain("$LASTEXITCODE = 0", script);

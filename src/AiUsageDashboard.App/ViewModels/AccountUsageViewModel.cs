@@ -1972,7 +1972,10 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 	private void ApplyMetrics(UsageSnapshot snapshot)
 	{
 		_usageSummarySnapshot = snapshot;
-		UsageMetric? primaryMetric = snapshot.Metrics.FirstOrDefault();
+		UsageMetric[] metrics = UsageMetricPresentation.GetVisibleMetrics(
+			Provider,
+			snapshot.Metrics).ToArray();
+		UsageMetric? primaryMetric = metrics.FirstOrDefault();
 
 		if (primaryMetric is null)
 		{
@@ -1993,7 +1996,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			details.Add($"重置 {primaryMetric.ResetsAt.Value.ToLocalTime():MM/dd HH:mm}");
 		}
 
-		UsageMetric? secondaryMetric = snapshot.Metrics.Skip(1).FirstOrDefault();
+		UsageMetric? secondaryMetric = metrics.Skip(1).FirstOrDefault();
 
 		if (secondaryMetric is not null)
 		{
@@ -2006,7 +2009,9 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 
 	private void ProjectUsageMetrics(UsageSnapshot snapshot)
 	{
-		IEnumerable<UsageMetric> metrics = snapshot.Metrics;
+		IEnumerable<UsageMetric> metrics = UsageMetricPresentation.GetVisibleMetrics(
+			Provider,
+			snapshot.Metrics);
 
 		if (IsAntigravity &&
 			(snapshot.RecoveryAction == UsageRecoveryAction.RevalidateUsage))
@@ -2525,8 +2530,14 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			return UiText.Translate(_secondaryText);
 		}
 
-		if ((_usageSummarySnapshot is not UsageSnapshot snapshot) ||
-			(snapshot.Metrics.FirstOrDefault() is not UsageMetric primary))
+		if (_usageSummarySnapshot is not UsageSnapshot snapshot)
+		{
+			return UiText.Translate(_secondaryText);
+		}
+		UsageMetric[] metrics = UsageMetricPresentation.GetVisibleMetrics(
+			Provider,
+			snapshot.Metrics).ToArray();
+		if (metrics.FirstOrDefault() is not UsageMetric primary)
 		{
 			return UiText.Translate(_secondaryText);
 		}
@@ -2538,7 +2549,7 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 			rawParts.Add(rawReset);
 			localizedParts.Add(UiText.Translate(rawReset));
 		}
-		if (snapshot.Metrics.Skip(1).FirstOrDefault() is UsageMetric secondary)
+		if (metrics.Skip(1).FirstOrDefault() is UsageMetric secondary)
 		{
 			rawParts.Add($"{secondary.Label} {secondary.DisplayValue}");
 			localizedParts.Add($"{UsageMetricPresentation.GetDisplayLabel(secondary)} {UiText.Translate(secondary.DisplayValue)}");
