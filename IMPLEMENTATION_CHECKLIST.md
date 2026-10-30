@@ -8,13 +8,13 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.22 / sequence 1036`。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；目前正式版本為 `1.0.23 / sequence 1037`。
 
-### Claude 空白 5 小時用量顯示（1.0.23 候選準備）
+### Claude 空白 5 小時用量顯示（1.0.23 已發布）
 
 - [x] Claude 5 小時用量為 0%，且沒有重置時間或重置說明時，隱藏該列；摘要採相同規則，保留週額度、原始 snapshot、快取與排序資料。
 - [x] 新增 16 個合成回歸案例；App 與 Updater 內附 runtime 固定為 `8.0.33`、SDK `8.0.427`，元件原約及來源同步核對。
-- [ ] 本版同 source Windows CI、完整測試、候選封裝／簽署／凍結及正式匿名下載驗簽；實際結果將回填 [1.0.23 版本說明](docs/releases/1.0.23.md)。
+- [x] 本版同 source Windows CI、完整測試、候選封裝／簽署／凍結及正式匿名下載驗簽完成；實際結果見 [1.0.23 版本說明](docs/releases/1.0.23.md)。
 - [ ] 本版正式成品的五平台真人 CLI、安裝／一鍵更新、維護副本交接與 UI／無障礙驗收；不沿用前版結果。
 
 ### AGY Argon 群組相容性（1.0.22 已發布）
@@ -197,7 +197,21 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 
 ## 目前正式版本
 
-`1.0.22 / sequence 1036` 已沿用同一組凍結候選正式公開。[v1.0.22 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.22) 現為 stable／latest；六件成品資料見 [1.0.22 版本說明](docs/releases/1.0.22.md)。
+`1.0.23 / sequence 1037` 已沿用同一組凍結候選正式公開。[v1.0.23 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.23) 現為 stable／latest；六件成品資料見 [1.0.23 版本說明](docs/releases/1.0.23.md)。
+
+[source `9316a9aa47e05795bc15d81bc257644a9f627089`](https://github.com/Sokaka/ai-usage-dashboard/commit/9316a9aa47e05795bc15d81bc257644a9f627089)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41140484403) run `41140484403` attempt `1`，Release ID `429564376`。App 與 Updater 均為 `1.0.23`，由同一 source 重新建置；SDK `8.0.427`、內附 runtime `8.0.33`，沒有沿用舊 Updater。
+
+- [x] [同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41139739515)：Release 建置 0 warnings／errors，完整測試 4,693 passed／0 failed／0 skipped；production line coverage 74.97%（50,262／67,046，門檻 70%）。
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41140484403)：Release 建置 0 warnings／errors，完整測試 4,693 passed／0 failed／0 skipped；production line coverage 74.97%（50,262／67,046，門檻 70%）。
+- [x] 六件原凍結成品已透過無 token／cookie 的 client 匿名下載；Release／latest／tag source、asset ID／名稱／大小／SHA256、三份 canonical sidecar、production public trust feed 簽章及 latest feed bytes 均核對通過。六件合計 `107016159` bytes；沒有重建、重簽或替換資產。
+- [x] 凍結 App、ClaudeCapture 與 Updater 的實際 `--export-licenses` 分別通過 14、7、14 份文件核對；元件版本、原文 SHA256、manifest 與 acceptance digest 格式均相符。App runtime configuration 直接讀回的 .NETCore 與 WindowsDesktop 均為 `8.0.33`。此離線匯出不包含條款接受／拒絕及安裝驗收。
+- [ ] 本版尚未執行五個 provider 的真人登入、用量查詢與背景刷新；乾淨 Windows 初裝、既有標準安裝的一鍵線上更新、維護副本交接、UI／無障礙亦待驗。合成回歸、建置、授權匯出與下載驗簽不代替這些實機驗收。
+
+逐平台狀態見 [1.0.23 CLI 表](docs/CLI_COMPATIBILITY.md#1023)。
+
+### 1.0.22 歷史正式版
+
+`1.0.22 / sequence 1036` 已沿用同一組凍結候選正式公開。[v1.0.22 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.22) 公開時為 stable／latest；六件成品資料見 [1.0.22 版本說明](docs/releases/1.0.22.md)。
 
 [source `5d2051a52c84eefe631ad025fb4bc0028e02cb30`](https://github.com/Sokaka/ai-usage-dashboard/commit/5d2051a52c84eefe631ad025fb4bc0028e02cb30)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/39900394124/attempts/1) run `39900394124` attempt `1`，Release ID `421452495`。App 與 Updater 均為 `1.0.22`，由同一 source 重新建置；SDK `8.0.426`、內附 runtime `8.0.32`，沒有沿用舊 Updater。
 

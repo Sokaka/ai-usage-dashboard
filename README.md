@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#requirements"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="Project code licensed under MIT"></a>
-  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.22-0078D4" alt="Current stable version 1.0.22"></a>
+  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.23-0078D4" alt="Current stable version 1.0.23"></a>
 </p>
 
 <p align="center">
@@ -39,11 +39,11 @@ exports and imports. Detailed guides and release notes are in Traditional Chines
 
 ## Current release
 
-The current stable version is **`1.0.22`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.22) · [Release notes](docs/releases/1.0.22.md)
+The current stable version is **`1.0.23`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.23) · [Release notes](docs/releases/1.0.23.md)
 
-This release fixes AGY usage failures when Antigravity returns the new Argon group.
-Cards continue to show the original four usage windows, with existing safety checks in place.
-The bundled .NET runtime is updated to `8.0.32`; CLI version requirements remain unchanged.
+Claude cards now hide the 5-hour row when usage is 0% and no reset information is provided.
+Weekly quotas and rows with usage or reset information remain visible.
+The bundled .NET runtime is updated to `8.0.33`; CLI version requirements remain unchanged.
 
 On the first upgrade through the old Updater `1.0.16`, its completion message may still be in Chinese.
 The new Updater uses your selected language; see the [upgrade notes](docs/releases/1.0.18.md#升級).
@@ -109,8 +109,8 @@ Choose a download from the current version's GitHub Release:
    `app\AiUsageDashboard.App.exe`.
    Do not download GitHub's automatically generated **Source code** ZIP.
 
-For App `1.0.22`, the portable ZIP is `AiUsageDashboard-1.0.22-win-x64.zip`.
-The standard Updater is `AiUsageDashboard-Updater-1.0.22-win-x64.exe`, rebuilt with the updated .NET runtime.
+For App `1.0.23`, the portable ZIP is `AiUsageDashboard-1.0.23-win-x64.zip`.
+The standard Updater is `AiUsageDashboard-Updater-1.0.23-win-x64.exe`, rebuilt with the updated .NET runtime.
 Use the actual filenames listed on the Release page; the Updater version can differ from the app version.
 
 Follow [Installation and first launch](使用說明.md#安裝與第一次啟動), read and accept the applicable terms,
