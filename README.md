@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#requirements"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="Project code licensed under MIT"></a>
-  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.24-0078D4" alt="Current stable version 1.0.24"></a>
+  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.25-0078D4" alt="Current stable version 1.0.25"></a>
 </p>
 
 <p align="center">
@@ -39,11 +39,12 @@ exports and imports. Detailed guides and release notes are in Traditional Chines
 
 ## Current release
 
-The current stable version is **`1.0.24`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.24) · [Release notes](docs/releases/1.0.24.md)
+The current stable version is **`1.0.25`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.25) · [Release notes](docs/releases/1.0.25.md)
 
-Claude Max cards show `ultra` when that card's local plan metadata explicitly reports 20x.
-5x, missing or unreadable metadata keeps `max`; subscription binding and CLI requirements are unchanged.
-App `1.0.24` reuses the original `1.0.23` Updater; both include .NET runtime `8.0.33`.
+Claude cards now accept valid weekly-only usage responses. When the 5-hour quota is missing,
+Ultra cards hide that row; other or unknown plans show **Not provided**, without inventing 0% usage.
+Weekly usage remains visible. Account binding and CLI requirements are unchanged.
+App `1.0.25` reuses the original `1.0.23` Updater; both include .NET runtime `8.0.33`.
 
 On the first upgrade through the old Updater `1.0.16`, its completion message may still be in Chinese.
 The new Updater uses your selected language; see the [upgrade notes](docs/releases/1.0.18.md#升級).
@@ -109,7 +110,7 @@ Choose a download from the current version's GitHub Release:
    `app\AiUsageDashboard.App.exe`.
    Do not download GitHub's automatically generated **Source code** ZIP.
 
-For App `1.0.24`, the portable ZIP is `AiUsageDashboard-1.0.24-win-x64.zip`.
+For App `1.0.25`, the portable ZIP is `AiUsageDashboard-1.0.25-win-x64.zip`.
 The standard Updater is `AiUsageDashboard-Updater-1.0.23-win-x64.exe`, copied unchanged from Release `v1.0.23`.
 Use the actual filenames listed on the Release page; the Updater version can differ from the app version.
 
