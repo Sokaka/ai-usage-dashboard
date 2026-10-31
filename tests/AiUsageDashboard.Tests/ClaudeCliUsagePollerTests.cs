@@ -82,16 +82,34 @@ public sealed class ClaudeCliUsagePollerTests
 		""";
 
 	[Theory]
-	[InlineData("max")]
-	[InlineData("team")]
+	[InlineData("max", null, null)]
+	[InlineData("max", "default_claude_max_5x", "max")]
+	[InlineData("max", "default_claude_max_20x", "ultra")]
+	[InlineData("max", "unknown", null)]
+	[InlineData("team", "default_claude_max_20x", null)]
 	public async Task PollAsync_WithSafeZeroTurnResult_ReturnsUsageText(
-		string subscriptionType)
+		string subscriptionType,
+		string? rateLimitTier,
+		string? expectedDisplayPlan)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = Path.Combine(temporaryDirectory.Path, "claude.exe");
 		string configDirectory = Path.Combine(temporaryDirectory.Path, "config");
 		await File.WriteAllTextAsync(executablePath, string.Empty);
 		Directory.CreateDirectory(configDirectory);
+		if (rateLimitTier is not null)
+		{
+			await File.WriteAllTextAsync(
+				Path.Combine(configDirectory, ".credentials.json"),
+				JsonSerializer.Serialize(new
+				{
+					claudeAiOauth = new
+					{
+						subscriptionType,
+						rateLimitTier
+					}
+				}));
+		}
 		List<ProcessStartInfo> capturedStartInfos = new();
 		DateTimeOffset observedAt = new(2026, 7, 15, 2, 30, 0, TimeSpan.Zero);
 		ClaudeCliUsagePoller poller = new(
@@ -116,6 +134,7 @@ public sealed class ClaudeCliUsagePollerTests
 			Assert.IsType<ClaudeSubscriptionContext>(result.SubscriptionContext);
 		Assert.Equal("org-123", subscriptionContext.SubscriptionScopeIdentity);
 		Assert.Equal(subscriptionType, subscriptionContext.PlanTier);
+		Assert.Equal(expectedDisplayPlan, result.PlanDisplayName);
 		Assert.Equal(
 			SubscriptionVerificationState.Verified,
 			subscriptionContext.VerificationState);

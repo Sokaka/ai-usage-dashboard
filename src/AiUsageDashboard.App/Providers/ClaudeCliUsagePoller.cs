@@ -984,11 +984,16 @@ internal sealed class ClaudeCliUsagePoller :
 
 		await ClearSafetyFailureAsync(accountId, safetyState)
 			.ConfigureAwait(false);
+		string? planDisplayName = await ClaudePlanMetadataReader.ReadDisplayPlanAsync(
+			configDirectory,
+			subscriptionContext,
+			cancellationToken).ConfigureAwait(false);
 		return pollResult with
 		{
 			AccountIdentity = accountIdentity,
 			VersionEvidence = versionEvidence,
-			SubscriptionContext = subscriptionContext
+			SubscriptionContext = subscriptionContext,
+			PlanDisplayName = planDisplayName
 		};
 	}
 

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 
 using AiUsageDashboard.App.Persistence;
 using AiUsageDashboard.App.Providers;
+using AiUsageDashboard.App.ViewModels;
 using AiUsageDashboard.Core.Models;
 using AiUsageDashboard.Core.Providers;
 using AiUsageDashboard.Core.Refreshing;
@@ -30,12 +31,14 @@ public sealed class ClaudeUsageProviderTests
 		internal FakeClaudeUsagePoller(
 			string output,
 			DateTimeOffset observedAt,
-			ClaudeSubscriptionContext subscriptionContext)
+			ClaudeSubscriptionContext subscriptionContext,
+			string? planDisplayName = null)
 			: this((_, _) => Task.FromResult(
 				new ClaudeUsagePollResult(
 					output,
 					observedAt,
-					SubscriptionContext: subscriptionContext)))
+					SubscriptionContext: subscriptionContext,
+					PlanDisplayName: planDisplayName)))
 		{
 		}
 
@@ -453,15 +456,21 @@ public sealed class ClaudeUsageProviderTests
 	}
 
 	[Theory]
-	[InlineData("max")]
-	[InlineData("team")]
+	[InlineData("max", null, "max")]
+	[InlineData("max", "max", "max")]
+	[InlineData("max", "ultra", "ultra")]
+	[InlineData("max", "unknown", "max")]
+	[InlineData("team", null, "team")]
+	[InlineData("team", "ultra", "team")]
 	public async Task GetUsageAsync_WithMatchingPrivateBinding_ReturnsVerifiedOpaqueSubscriptionContext(
-		string planTier)
+		string planTier,
+		string? planDisplayName,
+		string expectedDisplayPlan)
 	{
 		DateTimeOffset now = new(2026, 8, 29, 3, 0, 0, TimeSpan.Zero);
 		(AccountProfile account, ClaudeAccountBinding binding,
 			ClaudeSubscriptionContext context) = CreatePrivateBindingFixture(planTier);
-		FakeClaudeUsagePoller poller = new(UsageOutput, now, context);
+		FakeClaudeUsagePoller poller = new(UsageOutput, now, context, planDisplayName);
 		FakeClaudeAccountBindingStore bindingStore = new(binding);
 		FakeUsageProvider fallback = new((profile, _) => Task.FromResult(
 			CreateFallbackSnapshot(profile, now)));
@@ -490,7 +499,9 @@ public sealed class ClaudeUsageProviderTests
 		Assert.Equal(
 			context.SubscriptionScopeDisplayName,
 			snapshot.SubscriptionScopeDisplayName);
-		Assert.Equal(context.PlanTier, snapshot.PlanTier);
+		Assert.Equal(expectedDisplayPlan, snapshot.PlanTier);
+		Assert.Equal(planTier, context.PlanTier);
+		Assert.True(binding.MatchesEntitlement(context));
 		Assert.Equal(
 			SubscriptionVerificationState.Verified,
 			snapshot.SubscriptionVerificationState);
@@ -501,6 +512,19 @@ public sealed class ClaudeUsageProviderTests
 			new[] { publicBindingIdentity },
 			poller.ExpectedPublicBindingIdentities);
 		Assert.Equal(0, fallback.CallCount);
+
+		using TemporaryDirectory temporaryDirectory = new();
+		JsonUsageSnapshotStore snapshotStore = new(
+			(_, _) => Path.Combine(temporaryDirectory.Path, "usage.json"),
+			new FakeTimeProvider(now));
+		await snapshotStore.SaveAsync(snapshot);
+		UsageSnapshot cachedSnapshot = Assert.IsType<UsageSnapshot>(
+			await snapshotStore.LoadAsync(account));
+		AccountUsageViewModel viewModel = new(account, canManage: true);
+		viewModel.ApplySnapshot(cachedSnapshot);
+		Assert.Equal(expectedDisplayPlan, cachedSnapshot.PlanTier);
+		Assert.Equal(expectedDisplayPlan, viewModel.SubscriptionPlanDisplayText);
+		Assert.Contains($" · {expectedDisplayPlan}", viewModel.AccountHeaderText);
 	}
 
 	[Fact]

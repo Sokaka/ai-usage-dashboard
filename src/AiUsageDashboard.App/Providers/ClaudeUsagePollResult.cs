@@ -5,4 +5,5 @@ internal sealed record ClaudeUsagePollResult(
 	DateTimeOffset ObservedAt,
 	string? AccountIdentity = null,
 	CliVersionEvidence? VersionEvidence = null,
-	ClaudeSubscriptionContext? SubscriptionContext = null);
+	ClaudeSubscriptionContext? SubscriptionContext = null,
+	string? PlanDisplayName = null);
