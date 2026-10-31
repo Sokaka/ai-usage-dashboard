@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.23-0078D4" alt="目前正式版本 1.0.23"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.24-0078D4" alt="目前正式版本 1.0.24"></a>
 </p>
 
 <p align="center">
@@ -33,10 +33,10 @@
 
 ## 目前版本
 
-目前正式版本為 **`1.0.23`**。[下載最新版](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.23) · [版本說明](docs/releases/1.0.23.md)
+目前正式版本為 **`1.0.24`**。[下載最新版](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.24) · [版本說明](docs/releases/1.0.24.md)
 
-Claude 的 5 小時用量為 0%，且沒有重置資訊時，卡片會隱藏該列；週用量及有用量或重置資訊的項目仍顯示。
-內附 .NET runtime 更新至 `8.0.33`，CLI 版本要求維持不變。
+Claude 原始方案為 Max，且同卡本機 metadata 明確為 20x 時顯示 `ultra`；5x、未知或無法讀取時維持 `max`。
+App `1.0.24` 沿用 `1.0.23` Updater；內附 runtime 維持 `8.0.33`，原始訂閱分類、帳號綁定與 CLI 版本要求不變。
 
 第一次透過舊 `1.0.16` Updater 升級時，完成提示仍可能是中文；新版接手後使用所選語系，見[升級說明](docs/releases/1.0.18.md#升級)。
 
@@ -83,7 +83,7 @@ Claude 的 5 小時用量為 0%，且沒有重置資訊時，卡片會隱藏該�
 | **一般安裝：Updater** | `AiUsageDashboard-Updater-<version>-win-x64.exe` | Updater 也能首次安裝。以一般使用者權限執行，安裝後從開始選單搜尋 **AI Usage**；保留 Updater 供日後更新。 |
 | **免安裝：完整 ZIP** | `AiUsageDashboard-<version>-win-x64.zip` | 完整解壓到新資料夾後，執行其中的 App；不要下載 GitHub 自動產生的 Source code ZIP。 |
 
-App `1.0.23` 的免安裝檔為 `AiUsageDashboard-1.0.23-win-x64.zip`；一般安裝使用 `AiUsageDashboard-Updater-1.0.23-win-x64.exe`，本版已搭配更新的 .NET runtime 重新建置。請依 Release 上的實際檔名下載。
+App `1.0.24` 的免安裝檔為 `AiUsageDashboard-1.0.24-win-x64.zip`；一般安裝沿用 `AiUsageDashboard-Updater-1.0.23-win-x64.exe` 的原始 bytes。請依 Release 上的實際檔名下載。
 
 依[安裝與第一次啟動](使用說明.md#安裝與第一次啟動)操作、閱讀並接受適用條款，再新增帳號，透過服務的官方登入流程完成連接。
 

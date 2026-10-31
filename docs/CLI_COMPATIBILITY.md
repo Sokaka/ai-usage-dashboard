@@ -1,8 +1,8 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.23` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.23` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.24` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.24` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
-本版修正 Claude 空白 5 小時用量的顯示並更新內附 runtime，CLI 版本要求維持不變；逐平台狀態見 [1.0.23](#1023)，正式版本與下載資訊見 [README](../README.md#current-release)。不沿用前版的實測結果。
+本版修正 Claude Max／Ultra 方案名稱顯示，CLI 版本要求維持不變；逐平台狀態見 [1.0.24](#1024)，正式版本與下載資訊見 [README](../README.md#current-release)。不沿用前版的實測結果。
 
 ## 版本要求
 
@@ -27,7 +27,7 @@
 
 ### 1.0.24
 
-本版正在準備候選，尚未公開。Claude Max 20x 的卡片名稱顯示為 `ultra`，5x／未知倍率維持 `max`；原始訂閱分類、綁定及 CLI 版本要求不變。App 為 `1.0.24`，預計沿用 `1.0.23` Updater；SDK `8.0.427`、內附 runtime `8.0.33`。本次結果見 [1.0.24 版本說明](releases/1.0.24.md)，不沿用歷史成品的真人實測。
+本表對應已公開的 `1.0.24 / sequence 1038`；[App source `0668f8a65cb4ac2464947ebe354a34c90792112f`](https://github.com/Sokaka/ai-usage-dashboard/commit/0668f8a65cb4ac2464947ebe354a34c90792112f)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41152381531/attempts/1) run `41152381531` attempt `1`，Release ID `429628482`。App 為 `1.0.24`；Updater 沿用 [v1.0.23](releases/1.0.23.md) 的 `1.0.23` 原始 bytes，[Updater source `9316a9aa47e05795bc15d81bc257644a9f627089`](https://github.com/Sokaka/ai-usage-dashboard/commit/9316a9aa47e05795bc15d81bc257644a9f627089)。SDK `8.0.427`、內附 runtime `8.0.33`。 原始訂閱分類、綁定及 CLI 版本要求不變。完整建置、沿用與下載驗簽結果見 [1.0.24 版本說明](releases/1.0.24.md)。
 
 | 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
 | --- | --- | --- | --- |
@@ -37,7 +37,7 @@
 | Grok | 未以本版成品實測 | 未驗證 | 未驗證 |
 | Antigravity | 未以本版成品實測 | 未驗證 | 未驗證 |
 
-本版不執行真實帳號的登入或查詢。App 一般使用、背景刷新、乾淨 Windows 初裝、前一正式版一鍵更新及 UI／無障礙仍待驗。
+本輪驗證未執行真人登入或用量查詢。App 一般使用、背景刷新、乾淨 Windows 初裝、前一正式版一鍵更新、維護副本核對及 UI／無障礙仍待驗；合成回歸與公開下載驗簽不代替真人驗收。
 
 ### 1.0.23
 
