@@ -1974,7 +1974,8 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		_usageSummarySnapshot = snapshot;
 		UsageMetric[] metrics = UsageMetricPresentation.GetVisibleMetrics(
 			Provider,
-			snapshot.Metrics).ToArray();
+			snapshot.Metrics,
+			snapshot.PlanTier).ToArray();
 		UsageMetric? primaryMetric = metrics.FirstOrDefault();
 
 		if (primaryMetric is null)
@@ -2011,7 +2012,8 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 	{
 		IEnumerable<UsageMetric> metrics = UsageMetricPresentation.GetVisibleMetrics(
 			Provider,
-			snapshot.Metrics);
+			snapshot.Metrics,
+			snapshot.PlanTier);
 
 		if (IsAntigravity &&
 			(snapshot.RecoveryAction == UsageRecoveryAction.RevalidateUsage))
@@ -2536,7 +2538,8 @@ public sealed class AccountUsageViewModel : INotifyPropertyChanged
 		}
 		UsageMetric[] metrics = UsageMetricPresentation.GetVisibleMetrics(
 			Provider,
-			snapshot.Metrics).ToArray();
+			snapshot.Metrics,
+			snapshot.PlanTier).ToArray();
 		if (metrics.FirstOrDefault() is not UsageMetric primary)
 		{
 			return UiText.Translate(_secondaryText);

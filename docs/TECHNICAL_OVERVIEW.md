@@ -361,7 +361,9 @@ Claude 的驗證與綁定保留 `auth status` 的原始 `subscriptionType`。用
 
 這項執行後檢查只能偵測異常的模型呼叫（invocation），無法撤銷第一次異常呼叫可能已產生的額度（quota）或費用。`/usage` 回傳的是人類可讀文字，不是具版本的機器可讀額度格式（machine-readable quota schema），因此此功能維持實驗標示；CLI 文案或最外層結果格式（result envelope）改變時，解析器會停止採用結果。
 
-Claude 卡片在 5 小時用量為 0%、`ResetsAt` 為空且沒有 `ResetDisplayValue` 時，隱藏該列；週額度、非零用量與已有重置資訊的項目仍顯示。卡片摘要與用量列採相同規則，原始 snapshot、快取與排序資料維持原樣；舊快取與 status line 備用來源也適用。這是顯示規則，不以缺少時間判定方案或保證沒有 5 小時限制；來源提供但無法解析的時間也可能呈現為空值。
+Claude 用量文字仍要求合法的 all-models 週額度，但允許來源不回傳 session／5 小時額度；其他格式、百分比、重複值與零 token／cost 檢查維持不變。解析器只建立來源實際回傳的 metric。
+
+卡片有真實週用量但沒有 5 小時 metric 時，`ultra` 不顯示該列；其他或未知方案會在顯示層補上「未提供」（Not provided），`UsedPercent=null`。這個 placeholder 不寫入原始 snapshot 或快取，也不參與原始額度排序。卡片摘要與用量列採相同規則，Ready／Stale、舊快取及語系切換皆適用。來源已回傳 5 小時用量時沿用原規則：0%、`ResetsAt` 為空且沒有 `ResetDisplayValue` 時隱藏；非零或已有重置資訊時保留。缺少或無法解析重置時間不作為 Ultra 的判定依據。
 
 新版不再提供狀態列設定（status line setup）或手動 CLI 入口。既有擷取輔助程式與備用讀取方式只為相容舊設定。擷取資料只保存允許清單內的格式版本、Claude Code 版本、模型識別、擷取時間、`HasCurrentUsage` 狀態與兩個額度週期；不保存工作目錄、逐字稿路徑、session ID、費用、原始 context token 或完整 JSON input。
 

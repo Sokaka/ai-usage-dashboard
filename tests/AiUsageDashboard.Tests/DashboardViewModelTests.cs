@@ -8038,7 +8038,12 @@ public sealed class DashboardViewModelTests
 		Assert.True(account.RequiresClaudeQuotaRiskConsent);
 		Assert.True(account.ShowClaudeDefaultConnectionAction);
 		Assert.Equal("確認 Claude 用量讀取", account.ClaudeAccountActionText);
-		Assert.Single(account.UsageMetrics);
+		Assert.Equal(2, account.UsageMetrics.Count);
+		Assert.Equal("未提供", Assert.Single(account.UsageMetrics,
+			metric => metric.Key == "claude.rate_limit.five_hour").DisplayValue);
+		Assert.Equal("舊資料 90%", Assert.Single(account.UsageMetrics,
+			metric => metric.Key == "weekly").DisplayValue);
+		Assert.Single(cachedSnapshot.Metrics);
 	}
 
 	[Fact]
