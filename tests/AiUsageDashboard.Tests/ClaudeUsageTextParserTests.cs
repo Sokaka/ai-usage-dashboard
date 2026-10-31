@@ -243,6 +243,97 @@ public sealed class ClaudeUsageTextParserTests
 			new DateTimeOffset(2026, 7, 15, 2, 0, 0, TimeSpan.Zero)));
 	}
 
+	[Fact]
+	public void Parse_WithWeeklyQuotasAndNoSession_ReturnsOnlyReportedWeeklyMetrics()
+	{
+		const string output = """
+			You are currently using your subscription to power your Claude Code usage
+
+			Current week (Fable): 47% used · resets Nov 4, 1am (UTC)
+			Current week (all models): 31% used · resets Nov 3, 1am (UTC)
+			""";
+
+		ClaudeUsageTextParser.Result result = ClaudeUsageTextParser.Parse(
+			output,
+			new DateTimeOffset(2026, 10, 31, 1, 0, 0, TimeSpan.Zero));
+
+		Assert.False(result.IsStale);
+		Assert.Collection(
+			result.Metrics,
+			metric => AssertMetric(
+				metric,
+				"claude.rate_limit.seven_day.all_models",
+				"週用量（所有模型）",
+				31,
+				new DateTimeOffset(2026, 11, 3, 1, 0, 0, TimeSpan.Zero)),
+			metric =>
+			{
+				Assert.StartsWith(
+					"claude.rate_limit.seven_day.bucket.",
+					metric.Key,
+					StringComparison.Ordinal);
+				Assert.Equal("週用量（Fable）", metric.Label);
+				Assert.Equal(47, metric.UsedPercent);
+				Assert.Equal(
+					new DateTimeOffset(2026, 11, 4, 1, 0, 0, TimeSpan.Zero),
+					metric.ResetsAt);
+			});
+		Assert.DoesNotContain(
+			result.Metrics,
+			metric => metric.Key == "claude.rate_limit.five_hour");
+	}
+
+	[Theory]
+	[InlineData("")]
+	[InlineData("Current session: 20% used · resets Oct 31, 3am (UTC)")]
+	public void Parse_WithoutAllModelsWeekQuota_FailsClosed(string sessionLine)
+	{
+		string output = $"""
+			You are currently using your subscription to power your Claude Code usage
+
+			{sessionLine}
+			Current week (Fable): 47% used · resets Nov 4, 1am (UTC)
+			""";
+
+		Assert.Throws<InvalidDataException>(() => ClaudeUsageTextParser.Parse(
+			output,
+			new DateTimeOffset(2026, 10, 31, 1, 0, 0, TimeSpan.Zero)));
+	}
+
+	[Theory]
+	[InlineData("Current week (Fable): 101% used · resets Nov 4, 1am (UTC)")]
+	[InlineData("Current week (Fable): 1.5% used · resets Nov 4, 1am (UTC)")]
+	[InlineData("Current week (Fable): 0% used - resets Nov 4, 1am (UTC)")]
+	[InlineData("Current week (Fable): 1% used")]
+	public void Parse_WithoutSessionAndWithMalformedWeeklyQuota_FailsClosed(string weeklyLine)
+	{
+		string output = $"""
+			You are currently using your subscription to power your Claude Code usage
+
+			Current week (all models): 31% used · resets Nov 3, 1am (UTC)
+			{weeklyLine}
+			""";
+
+		Assert.Throws<InvalidDataException>(() => ClaudeUsageTextParser.Parse(
+			output,
+			new DateTimeOffset(2026, 10, 31, 1, 0, 0, TimeSpan.Zero)));
+	}
+
+	[Fact]
+	public void Parse_WithoutSessionAndWithConflictingWeeklyQuotas_FailsClosed()
+	{
+		const string output = """
+			You are currently using your subscription to power your Claude Code usage
+
+			Current week (all models): 31% used · resets Nov 3, 1am (UTC)
+			Current week (all models): 32% used · resets Nov 3, 1am (UTC)
+			""";
+
+		Assert.Throws<InvalidDataException>(() => ClaudeUsageTextParser.Parse(
+			output,
+			new DateTimeOffset(2026, 10, 31, 1, 0, 0, TimeSpan.Zero)));
+	}
+
 	private static void AssertMetric(
 		UsageMetric metric,
 		string key,

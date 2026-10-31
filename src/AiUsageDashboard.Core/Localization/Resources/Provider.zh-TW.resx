@@ -214,7 +214,7 @@
 		<value>Claude `/usage` 缺少文字結果。</value>
 	</data>
 	<data name="Message068" xml:space="preserve">
-		<value>Claude `/usage` 缺少核心 session／week quota。</value>
+		<value>Claude `/usage` 缺少核心 week quota。</value>
 	</data>
 	<data name="Message069" xml:space="preserve">
 		<value>Claude `/usage` 非零 quota 缺少 reset time。</value>

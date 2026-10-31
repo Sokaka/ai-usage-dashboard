@@ -214,7 +214,7 @@
 		<value>Claude `/usage` is missing its text result.</value>
 	</data>
 	<data name="Message068" xml:space="preserve">
-		<value>Claude `/usage` is missing the core session/week quotas.</value>
+		<value>Claude `/usage` is missing the core week quota.</value>
 	</data>
 	<data name="Message069" xml:space="preserve">
 		<value>A nonzero Claude `/usage` quota is missing its reset time.</value>

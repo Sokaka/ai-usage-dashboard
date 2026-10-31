@@ -147,20 +147,21 @@ internal static class ClaudeUsageTextParser
 			}
 		}
 
-		if (!parsedQuotas.ContainsKey("claude.rate_limit.five_hour") ||
-			!parsedQuotas.ContainsKey("claude.rate_limit.seven_day.all_models"))
+		if (!parsedQuotas.ContainsKey("claude.rate_limit.seven_day.all_models"))
 		{
-			throw new InvalidDataException("Claude `/usage` 缺少核心 session／week quota。");
+			throw new InvalidDataException("Claude `/usage` 缺少核心 week quota。");
 		}
 
 		TimeSpan pastGrace = isStale ? StaleResultGrace : FreshResultGrace;
 		IEnumerable<ParsedQuota> orderedQuotas = new[]
 		{
-			parsedQuotas["claude.rate_limit.five_hour"],
-			parsedQuotas["claude.rate_limit.seven_day.all_models"]
-		}.Concat(parsedQuotas.Values.Where(quota =>
-			(quota.Key != "claude.rate_limit.five_hour") &&
-			(quota.Key != "claude.rate_limit.seven_day.all_models")));
+			"claude.rate_limit.five_hour",
+			"claude.rate_limit.seven_day.all_models"
+		}.Where(parsedQuotas.ContainsKey)
+			.Select(key => parsedQuotas[key])
+			.Concat(parsedQuotas.Values.Where(quota =>
+				(quota.Key != "claude.rate_limit.five_hour") &&
+				(quota.Key != "claude.rate_limit.seven_day.all_models")));
 		IReadOnlyList<UsageMetric> metrics = orderedQuotas
 			.Select(quota => new UsageMetric(
 				quota.Key,

@@ -1781,4 +1781,7 @@
   <data name="UnknownImportLanguage" xml:space="preserve">
     <value>匯入檔包含未知的語系設定。</value>
   </data>
+  <data name="NotProvided" xml:space="preserve">
+    <value>未提供</value>
+  </data>
 </root>
