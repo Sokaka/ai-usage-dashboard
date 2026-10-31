@@ -458,7 +458,10 @@ internal sealed class ClaudeUsageProvider : IUsageProvider,
 					subscriptionContext?.AccountIdentity,
 				SubscriptionScopeDisplayName:
 					subscriptionContext?.SubscriptionScopeDisplayName,
-				PlanTier: subscriptionContext?.PlanTier,
+				PlanTier: (subscriptionContext?.PlanTier == "max") &&
+					(pollResult.PlanDisplayName == "ultra")
+						? pollResult.PlanDisplayName
+						: subscriptionContext?.PlanTier,
 				SubscriptionVerificationState:
 					subscriptionContext is null
 						? SubscriptionVerificationState.Unverified

@@ -323,6 +323,10 @@ claude -p /usage
 
 Claude CLI 暫時不存在時，帳號專用設定與憑證不會被刪除；安裝或更新後會自動重試。
 
+Claude 的驗證與綁定保留 `auth status` 的原始 `subscriptionType`。用量通過安全檢查後，若原始方案為 `max`，`ClaudePlanMetadataReader` 才會在同一張卡片的帳號作業鎖內，選取該 `CLAUDE_CONFIG_DIR/.credentials.json` 的 `claudeAiOauth.subscriptionType` 與 `rateLimitTier` 作為可缺省的顯示補充。檔案內方案同為 `max` 且倍率精確為 `default_claude_max_20x` 時，snapshot 的方案顯示文字為 `ultra`；`default_claude_max_5x` 顯示 `max`。缺檔、無法讀取、格式不符、重複欄位或未知倍率都退回原始方案，不改變用量與 binding，也不沿用前次倍率。
+
+此讀取只採用同卡本機 metadata，不額外執行 CLI 或發送 API 請求，也不是獨立的即時訂閱驗證。reader 限制檔案大小與 JSON 深度，拒絕重新導向路徑；token 等其他欄位直接跳過，不解碼為字串、不寫入 snapshot 或診斷，讀取緩衝區使用後清零。snapshot 沿用既有可選 `planTier` 欄位保存顯示文字，舊快取與原始 `max` 綁定不需遷移。
+
 ### 額度安全機制
 
 只有下列條件全部成立時，AI Usage 才接受背景查詢結果：
@@ -367,7 +371,7 @@ Anthropic 的身分驗證政策不允許第三方開發者代表使用者提供 
 
 現行政策同時說明，若產品遵守 `Commercial Terms`、執行 Anthropic 發布且未修改的 Claude Code 執行檔、不移除內建身分驗證方式，並由每位終端使用者以自己的憑證驗證及直接付費，終端使用者仍可在該產品中登入 Claude Code。
 
-AI Usage 不收集 Claude 憑證，登入交由 Anthropic 官方流程。直接鎖定未修改的官方原始 EXE；來源 ACL 不符時才建立位元完全相同、已驗證的受保護副本；但文件核對不能代替合約或法律判定。
+Claude 的登入與憑證保存交由 Anthropic 官方流程；AI Usage 只選取同卡憑證檔內的非機密方案 metadata，token 欄位直接跳過，不解碼為字串或保存。直接鎖定未修改的官方原始 EXE；來源 ACL 不符時才建立位元完全相同、已驗證的受保護副本；但文件核對不能代替合約或法律判定。
 
 Claude 的產品整合條款適用與 child-process 隔離是否構成限制內建 auth 仍有不確定性，保留至發布者最後決策；不因個人作品或風險同意而視為已獲許可。保留官方 binary、`--claudeai`、`CLAUDE_CONFIG_DIR`、官方登入及使用者自己的直接計費。各使用者仍須另外接受查詢可能產生用量與費用的風險；詳見 [發布流程](../RELEASING.md)。
 

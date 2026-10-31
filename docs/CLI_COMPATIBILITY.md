@@ -25,6 +25,20 @@
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同版成品官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
 
+### 1.0.24
+
+本版正在準備候選，尚未公開。Claude Max 20x 的卡片名稱顯示為 `ultra`，5x／未知倍率維持 `max`；原始訂閱分類、綁定及 CLI 版本要求不變。App 為 `1.0.24`，預計沿用 `1.0.23` Updater；SDK `8.0.427`、內附 runtime `8.0.33`。本次結果見 [1.0.24 版本說明](releases/1.0.24.md)，不沿用歷史成品的真人實測。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本版成品實測 | 未驗證 | 未驗證 |
+| Codex | 未以本版成品實測 | 未驗證 | 未驗證 |
+| GitHub Copilot | 未以本版成品實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
+| Grok | 未以本版成品實測 | 未驗證 | 未驗證 |
+| Antigravity | 未以本版成品實測 | 未驗證 | 未驗證 |
+
+本版不執行真實帳號的登入或查詢。App 一般使用、背景刷新、乾淨 Windows 初裝、前一正式版一鍵更新及 UI／無障礙仍待驗。
+
 ### 1.0.23
 
 本表對應已公開的 `1.0.23 / sequence 1037`；[source `9316a9aa47e05795bc15d81bc257644a9f627089`](https://github.com/Sokaka/ai-usage-dashboard/commit/9316a9aa47e05795bc15d81bc257644a9f627089)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41140484403) run `41140484403` attempt `1`，Release ID `429564376`。App 與 Updater 均為 `1.0.23`，由同一 source 重新建置；SDK `8.0.427`、內附 runtime `8.0.33`，沒有沿用舊 Updater。 CLI 版本要求維持不變。完整建置、凍結與下載驗簽結果見 [1.0.23 版本說明](releases/1.0.23.md)。
