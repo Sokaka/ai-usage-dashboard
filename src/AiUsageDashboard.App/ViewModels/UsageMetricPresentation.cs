@@ -6,7 +6,10 @@ internal static class UsageMetricPresentation
 {
 	internal const string CodexResetCreditsKey = "codex:rate_limit_reset_credits";
 
+	private const string ClaudeFiveHourUsageKey = "claude.rate_limit.five_hour";
+	private const string ClaudeUltraPlanTier = "ultra";
 	private const string FiveHourUsageLabel = "5小時用量";
+	private const string UnavailableUsageValue = "未提供";
 	private const string WeeklyUsageLabel = "週用量";
 	private const int FiveHourWindowSortOrder = 0;
 	private const int WeeklyWindowSortOrder = 1;
@@ -118,15 +121,35 @@ internal static class UsageMetricPresentation
 
 	internal static IEnumerable<UsageMetric> GetVisibleMetrics(
 		ProviderKind provider,
-		IEnumerable<UsageMetric> metrics)
+		IEnumerable<UsageMetric> metrics,
+		string? planTier = null)
 	{
 		ArgumentNullException.ThrowIfNull(metrics);
-		return provider == ProviderKind.Claude
-			? metrics.Where(metric => !IsFiveHour(metric) ||
-				(metric.UsedPercent != 0) ||
-				(metric.ResetsAt is not null) ||
-				!string.IsNullOrWhiteSpace(metric.ResetDisplayValue))
-			: metrics;
+
+		if (provider != ProviderKind.Claude)
+		{
+			return metrics;
+		}
+
+		UsageMetric[] reportedMetrics = metrics.ToArray();
+		IEnumerable<UsageMetric> visibleMetrics = reportedMetrics.Where(metric =>
+			!IsFiveHour(metric) ||
+			(metric.UsedPercent != 0) ||
+			(metric.ResetsAt is not null) ||
+			!string.IsNullOrWhiteSpace(metric.ResetDisplayValue));
+
+		if (!reportedMetrics.Any(IsWeekly) ||
+			reportedMetrics.Any(IsFiveHour) ||
+			string.Equals(planTier, ClaudeUltraPlanTier, StringComparison.OrdinalIgnoreCase))
+		{
+			return visibleMetrics;
+		}
+
+		return visibleMetrics.Prepend(new UsageMetric(
+			ClaudeFiveHourUsageKey,
+			FiveHourUsageLabel,
+			UsedPercent: null,
+			DisplayValue: UnavailableUsageValue));
 	}
 
 	internal static IOrderedEnumerable<UsageMetric> OrderMetrics(
@@ -156,7 +179,7 @@ internal static class UsageMetricPresentation
 				"codex:codex:",
 				StringComparison.OrdinalIgnoreCase) => 0,
 			_ when metric.Key == CodexResetCreditsKey => 5,
-			"claude.rate_limit.five_hour" => 0,
+			ClaudeFiveHourUsageKey => 0,
 			"claude.rate_limit.seven_day.all_models" => 1,
 			_ when metric.Key.StartsWith(
 				"claude.rate_limit.seven_day.bucket.",

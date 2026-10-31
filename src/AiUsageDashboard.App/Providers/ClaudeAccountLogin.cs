@@ -298,7 +298,8 @@ internal sealed class ClaudeAccountLogin : IClaudeAccountLogin
 		try
 		{
 			subscriptionContext = ClaudeCliUsagePoller.ParseSubscriptionContext(
-				statusResult.StandardOutput);
+				statusResult.StandardOutput,
+				configDirectory);
 		}
 		catch (ClaudeUsageNotConfiguredException exception) when (
 			exception.IsAccountIdentityUnavailable)

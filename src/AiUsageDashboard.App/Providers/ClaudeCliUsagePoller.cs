@@ -575,7 +575,9 @@ internal sealed class ClaudeCliUsagePoller :
 
 		try
 		{
-			context = ParseSubscriptionContext(authResult.StandardOutput);
+			context = ParseSubscriptionContext(
+				authResult.StandardOutput,
+				commandContext.ConfigDirectory);
 		}
 		catch (ClaudeUsageNotConfiguredException)
 		{
@@ -818,7 +820,8 @@ internal sealed class ClaudeCliUsagePoller :
 		try
 		{
 			subscriptionContext = ParseSubscriptionContext(
-				authResult.StandardOutput);
+				authResult.StandardOutput,
+				configDirectory);
 		}
 		catch (ClaudeUsageNotConfiguredException)
 		{
@@ -1383,6 +1386,34 @@ internal sealed class ClaudeCliUsagePoller :
 					[SubscriptionScopeUnavailableDataKey] = true
 				}
 			};
+		}
+	}
+
+	internal static ClaudeSubscriptionContext ParseSubscriptionContext(
+		string standardOutput,
+		string configDirectory)
+	{
+		ClaudeSubscriptionContext context = ParseSubscriptionContext(standardOutput);
+
+		try
+		{
+			string planTier = ClaudePlanTierReader.Read(configDirectory, context);
+			return context with { PlanTier = planTier };
+		}
+		catch (Exception exception) when (
+			exception is IOException or UnauthorizedAccessException)
+		{
+			AppDiagnosticWriteResult diagnostic = AppDiagnostics.TryWrite(
+				"claude-plan-metadata",
+				$"result=unavailable;error_type={exception.GetType().Name}",
+				exception);
+			if (!diagnostic.WasWritten)
+			{
+				Trace.TraceWarning(
+					"Claude 方案 metadata 無法讀取，診斷紀錄亦無法寫入；保留已確認的訂閱分類。");
+			}
+
+			return context;
 		}
 	}
 

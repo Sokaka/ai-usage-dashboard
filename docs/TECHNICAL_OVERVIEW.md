@@ -90,7 +90,7 @@ presentation／排程 cache 寫在 `%LOCALAPPDATA%\AiUsageDashboard\update-check
 
 | 服務 | 資料來源 | 串接限制 | 資料來源的狀態 |
 | --- | --- | --- | --- |
-| Claude | Claude Code `/usage`；必要時改讀既有 status line 的 `rate_limits` | 只對 Claude.ai Pro／Max／Team 執行 `/usage`；Enterprise 僅辨識訂閱資訊，不執行 `/usage`、無法顯示用量 | 官方命令的實驗性背景查詢；status line 由官方事件觸發 |
+| Claude | Claude Code `/usage`；必要時改讀既有 status line 的 `rate_limits` | 只對 Claude.ai Pro／Max（含 Ultra）／Team 執行 `/usage`；Enterprise 僅辨識訂閱資訊，不執行 `/usage`、無法顯示用量 | 官方命令的實驗性背景查詢；status line 由官方事件觸發 |
 | Codex | `codex app-server` 的 `account/read`、`account/rateLimits/read` | 只接受 ChatGPT account，登入及查詢都在帳號專用目錄內執行 | 官方、實驗性本機介面 |
 | Grok | Grok Build CLI ACP stdio 的 `x.ai/billing`、`x.ai/auth/info`；舊 `_x.ai/*` namespace 相容 | 每張卡片使用獨立設定；只有通過來源檢查的官方 CLI 才能執行 | 通過簽章與路徑驗證的官方本機 CLI；實驗性 ACP |
 | GitHub Copilot | 官方 `GitHub.Copilot.SDK` 1.0.11 的 Experimental `account.getQuota`；使用本機官方 Copilot CLI | 只支援不同的 `github.com` 帳號；每張卡片使用自己的 token | 官方 SDK／CLI 的 Experimental 介面 |
@@ -237,7 +237,7 @@ Copilot 卡片的 ID、暱稱與順序會保留，但帳號綁定與登入 token
 
 ### 帳號隔離與連接
 
-Claude 採使用者明確啟用、優先在背景執行 `/usage` 查詢的本機實驗方案。`2.1.169` 同時供排查故障時比對，也是 `--safe-mode` 的功能下限；更高的標準三段版本不會只因精確版號不同而被拒絕。每張可顯示用量的帳號卡片使用獨立的 Claude.ai Pro、Max 或 Team 登入與設定目錄：
+Claude 採使用者明確啟用、優先在背景執行 `/usage` 查詢的本機實驗方案。`2.1.169` 同時供排查故障時比對，也是 `--safe-mode` 的功能下限；更高的標準三段版本不會只因精確版號不同而被拒絕。每張可顯示用量的帳號卡片使用獨立的 Claude.ai Pro、Max（含 Ultra）或 Team 登入與設定目錄：
 
 ```text
 %LOCALAPPDATA%\AiUsageDashboard\claude\<account-id>\config
@@ -308,9 +308,13 @@ claude -p /usage
 
 - 執行檔身分可確認為 Claude Code，版本是格式固定的三段版本，且不低於 `2.1.169` 功能下限。
 - `auth status --json` 顯示已登入。
-- 登入方式為 `claude.ai`、`firstParty`；方案為 Pro、Max 或 Team 時才執行 `/usage`。Enterprise 可辨識訂閱資訊，但目前不執行 `/usage`，也無法顯示用量。
+- 登入方式為 `claude.ai`、`firstParty`；方案為 Pro、Max（含 Ultra）或 Team 時才執行 `/usage`。Enterprise 可辨識訂閱資訊，但目前不執行 `/usage`，也無法顯示用量。
 
 Claude CLI 暫時不存在時，帳號專用設定與憑證不會被刪除；安裝或更新後會自動重試。
+
+`auth status` 的 `subscriptionType=max` 不區分 5x 與 20x。AI Usage 在確認登入狀態後，只讀取該卡片 `CLAUDE_CONFIG_DIR/.claude.json` 的 `oauthAccount` 方案 metadata；`emailAddress` 與 `organizationUuid` 必須符合剛驗證的帳號及組織，且 `organizationType=claude_max`，才將 `organizationRateLimitTier=default_claude_max_20x` 顯示為 `ultra`。5x 保留 `max`；缺少、未知或不符的 metadata 不推定 Ultra。此讀取不存取 `.credentials.json`、不增加 CLI／網路呼叫，也不以暱稱判斷方案；檔案受大小與 reparse point 檢查。讀取或格式失敗會記錄不含原始設定內容的診斷，沿用已確認的粗分類。
+
+方案細分只影響顯示，不改變帳號／組織的 entitlement key、private binding 或快取格式；既有 `max` 快取仍可載入，待下一次正常查詢更新方案。[Ultra 官方說明](https://support.claude.com/en/articles/17728952-what-is-the-ultra-plan)確認原 Max 20x 已改名，已驗證 Ultra 帳號沒有 5 小時限制；仍回傳 5 小時用量的帳號繼續按來源顯示。
 
 ### 額度安全機制
 
@@ -345,7 +349,9 @@ Claude CLI 暫時不存在時，帳號專用設定與憑證不會被刪除；安
 
 這項執行後檢查只能偵測異常的模型呼叫（invocation），無法撤銷第一次異常呼叫可能已產生的額度（quota）或費用。`/usage` 回傳的是人類可讀文字，不是具版本的機器可讀額度格式（machine-readable quota schema），因此此功能維持實驗標示；CLI 文案或最外層結果格式（result envelope）改變時，解析器會停止採用結果。
 
-Claude 卡片在 5 小時用量為 0%、`ResetsAt` 為空且沒有 `ResetDisplayValue` 時，隱藏該列；週額度、非零用量與已有重置資訊的項目仍顯示。卡片摘要與用量列採相同規則，原始 snapshot、快取與排序資料維持原樣；舊快取與 status line 備用來源也適用。這是顯示規則，不以缺少時間判定方案或保證沒有 5 小時限制；來源提供但無法解析的時間也可能呈現為空值。
+Claude 用量文字仍要求合法的 all-models 週額度，但允許來源不回傳 session／5 小時額度；其他格式、百分比、重複值與零 token／cost 檢查維持不變。解析器只建立來源實際回傳的 metric。
+
+卡片有真實週用量但沒有 5 小時 metric 時，`ultra` 不顯示該列；其他或未知方案會在顯示層補上「未提供」，`UsedPercent=null`。這個 placeholder 不寫入原始 snapshot 或快取，也不參與原始額度排序。卡片摘要與用量列採相同規則，Ready／Stale 及舊快取皆適用。來源已回傳 5 小時用量時沿用原規則：0%、`ResetsAt` 為空且沒有 `ResetDisplayValue` 時隱藏；非零或已有重置資訊時保留。缺少或無法解析重置時間不作為 Ultra 的判定依據。
 
 新版不再提供狀態列設定（status line setup）或手動 CLI 入口。既有擷取輔助程式與備用讀取方式只為相容舊設定。擷取資料只保存允許清單內的格式版本、Claude Code 版本、模型識別、擷取時間、`HasCurrentUsage` 狀態與兩個額度週期；不保存工作目錄、逐字稿路徑、session ID、費用、原始 context token 或完整 JSON input。
 
