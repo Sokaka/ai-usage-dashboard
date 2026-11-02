@@ -19,7 +19,7 @@ public sealed class ClaudeUsagePresentationTests
 	[InlineData("five_hour", SnapshotStatus.Stale)]
 	[InlineData("claude.five_hour", SnapshotStatus.Ready)]
 	[InlineData("claude.five_hour", SnapshotStatus.Stale)]
-	public void ApplySnapshot_EmptyClaudeSessionWithoutReset_HidesSessionAndPreservesSnapshot(
+	public void ApplySnapshot_EmptyUltraSessionWithoutReset_HidesSessionAndPreservesSnapshot(
 		string sessionKey,
 		SnapshotStatus status)
 	{
@@ -32,7 +32,7 @@ public sealed class ClaudeUsagePresentationTests
 				"seven_day", "週用量（所有模型）", 30, "已使用 30%",
 				ObservedAt.AddDays(3)),
 			new UsageMetric("fable", "週用量（Fable）", 0, "已使用 0%")
-		}) with { Status = status };
+		}) with { Status = status, PlanTier = "ultra" };
 
 		viewModel.ApplySnapshot(snapshot);
 
@@ -53,6 +53,66 @@ public sealed class ClaudeUsagePresentationTests
 		Assert.Equal(snapshot, viewModel.CurrentSnapshot);
 	}
 
+	[Theory]
+	[InlineData("claude.rate_limit.five_hour", "team", SnapshotStatus.Ready)]
+	[InlineData("claude.rate_limit.five_hour", "team", SnapshotStatus.Stale)]
+	[InlineData("five_hour", "max", SnapshotStatus.Ready)]
+	[InlineData("five_hour", "max", SnapshotStatus.Stale)]
+	[InlineData("claude.five_hour", "pro", SnapshotStatus.Ready)]
+	[InlineData("claude.five_hour", "pro", SnapshotStatus.Stale)]
+	[InlineData("claude.rate_limit.five_hour", null, SnapshotStatus.Ready)]
+	[InlineData("claude.rate_limit.five_hour", null, SnapshotStatus.Stale)]
+	[InlineData("five_hour", "unknown", SnapshotStatus.Ready)]
+	[InlineData("five_hour", "unknown", SnapshotStatus.Stale)]
+	public void ApplySnapshot_EmptyNonUltraSessionWithoutReset_KeepsSessionAndPreservesSnapshot(
+		string sessionKey,
+		string? planTier,
+		SnapshotStatus status)
+	{
+		AccountProfile account = CreateProfile(ProviderKind.Claude);
+		AccountUsageViewModel viewModel = new(account, canManage: true);
+		UsageMetric session = new(sessionKey, "5小時用量", 0, "已使用 0%");
+		UsageMetric weekly = new(
+			"seven_day", "週用量（所有模型）", 30, "已使用 30%",
+			ObservedAt.AddDays(3));
+		UsageSnapshot snapshot = CreateSnapshot(account, new[] { session, weekly }) with
+		{
+			Status = status,
+			PlanTier = planTier
+		};
+
+		viewModel.ApplySnapshot(snapshot);
+
+		Assert.Equal(snapshot, viewModel.CurrentSnapshot);
+		Assert.Equal(new[] { session, weekly }, snapshot.Metrics);
+		Assert.Equal(new[] { sessionKey, weekly.Key },
+			viewModel.UsageMetrics.Select(metric => metric.Key));
+		UsageMetricViewModel sessionViewModel = viewModel.UsageMetrics[0];
+		Assert.Equal("5小時用量", sessionViewModel.Label);
+		Assert.Equal("已使用 0%", sessionViewModel.DisplayValue);
+		Assert.True(sessionViewModel.HasUsageBar);
+		Assert.True(sessionViewModel.HasResetText);
+		Assert.Equal("未提供重置時間", sessionViewModel.ResetText);
+		Assert.Equal("已使用 0%", viewModel.PrimaryText);
+		Assert.Equal(0, viewModel.UsedPercent);
+
+		viewModel.SetUsageDisplayMode(UsageDisplayMode.Remaining);
+
+		Assert.Equal(new[] { "剩餘 100%", "剩餘 70%" },
+			viewModel.UsageMetrics.Select(metric => metric.DisplayValue));
+		Assert.Equal("未提供重置時間", viewModel.UsageMetrics[0].ResetText);
+		Assert.Equal(snapshot, viewModel.CurrentSnapshot);
+		Assert.Same(session, snapshot.Metrics[0]);
+		Assert.Equal(0, session.UsedPercent);
+		Assert.Null(session.ResetsAt);
+		Assert.Null(session.ResetDisplayValue);
+
+		viewModel.SetUsageDisplayMode(UsageDisplayMode.Used);
+
+		Assert.Equal(new[] { "已使用 0%", "已使用 30%" },
+			viewModel.UsageMetrics.Select(metric => metric.DisplayValue));
+	}
+
 	[Fact]
 	public void ApplySnapshot_HiddenClaudeSession_LocalizesVisibleSummaryInEnglish()
 	{
@@ -65,7 +125,7 @@ public sealed class ClaudeUsagePresentationTests
 			new UsageMetric("five_hour", "5小時用量", 0, "已使用 0%"),
 			new UsageMetric("seven_day", "週用量（所有模型）", 30, "已使用 30%", reset),
 			new UsageMetric("fable", "週用量（Fable）", 0, "已使用 0%")
-		});
+		}) with { PlanTier = "ultra" };
 
 		viewModel.ApplySnapshot(snapshot);
 
@@ -127,8 +187,19 @@ public sealed class ClaudeUsagePresentationTests
 		Assert.Equal("five_hour", Assert.Single(viewModel.UsageMetrics).Key);
 	}
 
-	[Fact]
-	public void ApplySnapshot_OnlyEmptyClaudeSession_DoesNotShowSessionInFallback()
+	[Theory]
+	[InlineData("ultra", SnapshotStatus.Ready, false)]
+	[InlineData("ultra", SnapshotStatus.Stale, false)]
+	[InlineData("team", SnapshotStatus.Ready, true)]
+	[InlineData("team", SnapshotStatus.Stale, true)]
+	[InlineData("max", SnapshotStatus.Ready, true)]
+	[InlineData("pro", SnapshotStatus.Stale, true)]
+	[InlineData(null, SnapshotStatus.Ready, true)]
+	[InlineData("unknown", SnapshotStatus.Stale, true)]
+	public void ApplySnapshot_OnlyEmptyClaudeSession_UsesPlanTierToKeepSession(
+		string? planTier,
+		SnapshotStatus status,
+		bool keepsSession)
 	{
 		AccountProfile account = CreateProfile(ProviderKind.Claude);
 		AccountUsageViewModel viewModel = new(account, canManage: true);
@@ -136,16 +207,38 @@ public sealed class ClaudeUsagePresentationTests
 		viewModel.ApplySnapshot(CreateSnapshot(account, new[]
 		{
 			new UsageMetric("five_hour", "5小時用量", 0, "已使用 0%")
-		}));
+		}) with { PlanTier = planTier, Status = status });
 
-		Assert.True(viewModel.HasNoUsageMetrics);
-		Assert.Equal("已連接", viewModel.PrimaryText);
-		Assert.DoesNotContain("5小時", viewModel.SecondaryText, StringComparison.Ordinal);
+		Assert.Equal(!keepsSession, viewModel.HasNoUsageMetrics);
+		Assert.Equal(keepsSession ? "已使用 0%" : "已連接", viewModel.PrimaryText);
+
+		if (keepsSession)
+		{
+			UsageMetricViewModel session = Assert.Single(viewModel.UsageMetrics);
+			Assert.Equal("five_hour", session.Key);
+			Assert.True(session.HasUsageBar);
+			Assert.True(session.HasResetText);
+			Assert.Equal("未提供重置時間", session.ResetText);
+
+			viewModel.SetUsageDisplayMode(UsageDisplayMode.Remaining);
+
+			Assert.Equal("剩餘 100%", Assert.Single(viewModel.UsageMetrics).DisplayValue);
+		}
+		else
+		{
+			Assert.Empty(viewModel.UsageMetrics);
+			Assert.DoesNotContain("5小時", viewModel.SecondaryText, StringComparison.Ordinal);
+		}
+
 		Assert.Single(Assert.IsType<UsageSnapshot>(viewModel.CurrentSnapshot).Metrics);
 	}
 
-	[Fact]
-	public void ApplySnapshot_ParsedUsageWithoutSessionReset_ShowsWeeklyQuotas()
+	[Theory]
+	[InlineData("ultra", false)]
+	[InlineData("team", true)]
+	public void ApplySnapshot_ParsedUsageWithoutSessionReset_PreservesQuotasByPlanTier(
+		string planTier,
+		bool keepsSession)
 	{
 		const string output = """
 			You are currently using your subscription to power your Claude Code usage
@@ -157,16 +250,25 @@ public sealed class ClaudeUsagePresentationTests
 		AccountProfile account = CreateProfile(ProviderKind.Claude);
 		AccountUsageViewModel viewModel = new(account, canManage: true);
 
-		viewModel.ApplySnapshot(CreateSnapshot(account, result.Metrics));
+		viewModel.ApplySnapshot(CreateSnapshot(account, result.Metrics) with
+		{
+			PlanTier = planTier
+		});
 
 		Assert.Equal(3, result.Metrics.Count);
-		Assert.Equal(new[] { "週用量 · 所有模型", "週用量 · Fable" },
+		string[] expectedLabels = keepsSession
+			? new[] { "5小時用量", "週用量 · 所有模型", "週用量 · Fable" }
+			: new[] { "週用量 · 所有模型", "週用量 · Fable" };
+		Assert.Equal(expectedLabels,
 			viewModel.UsageMetrics.Select(metric => metric.Label));
 	}
 
 	[Theory]
 	[InlineData("ultra", SnapshotStatus.Ready, false)]
 	[InlineData("ultra", SnapshotStatus.Stale, false)]
+	[InlineData("ULTRA", SnapshotStatus.Ready, false)]
+	[InlineData("team", SnapshotStatus.Ready, true)]
+	[InlineData("team", SnapshotStatus.Stale, true)]
 	[InlineData("max", SnapshotStatus.Ready, true)]
 	[InlineData("max", SnapshotStatus.Stale, true)]
 	[InlineData("pro", SnapshotStatus.Ready, true)]
@@ -228,9 +330,11 @@ public sealed class ClaudeUsagePresentationTests
 	}
 
 	[Theory]
+	[InlineData("team")]
 	[InlineData("max")]
 	[InlineData("pro")]
 	[InlineData(null)]
+	[InlineData("unknown")]
 	public void GetVisibleMetrics_ClaudeMissingSession_DoesNotInventUsagePercentage(
 		string? planTier)
 	{
@@ -250,12 +354,16 @@ public sealed class ClaudeUsagePresentationTests
 	}
 
 	[Theory]
-	[InlineData("ultra")]
-	[InlineData("max")]
-	[InlineData("pro")]
-	[InlineData(null)]
+	[InlineData("ultra", false)]
+	[InlineData("ULTRA", false)]
+	[InlineData("team", true)]
+	[InlineData("max", true)]
+	[InlineData("pro", true)]
+	[InlineData(null, true)]
+	[InlineData("unknown", true)]
 	public void GetVisibleMetrics_ReportedEmptyClaudeSession_DoesNotAddPlaceholder(
-		string? planTier)
+		string? planTier,
+		bool keepsSession)
 	{
 		UsageMetric weekly = new(
 			"seven_day", "週用量", 30, "已使用 30%", ObservedAt.AddDays(3));
@@ -265,26 +373,45 @@ public sealed class ClaudeUsagePresentationTests
 			weekly
 		};
 
-		IEnumerable<UsageMetric> visibleMetrics = UsageMetricPresentation.GetVisibleMetrics(
-			ProviderKind.Claude, reportedMetrics, planTier);
+		UsageMetric[] visibleMetrics = UsageMetricPresentation.GetVisibleMetrics(
+			ProviderKind.Claude, reportedMetrics, planTier).ToArray();
 
-		Assert.Same(weekly, Assert.Single(visibleMetrics));
+		Assert.Equal(keepsSession ? 2 : 1, visibleMetrics.Length);
+		Assert.Same(weekly, visibleMetrics[^1]);
+
+		if (keepsSession)
+		{
+			Assert.Same(reportedMetrics[0], visibleMetrics[0]);
+			Assert.Equal(0, visibleMetrics[0].UsedPercent);
+			Assert.Equal("已使用 0%", visibleMetrics[0].DisplayValue);
+		}
+
 		Assert.Equal(2, reportedMetrics.Length);
 	}
 
 	[Theory]
-	[InlineData("ultra")]
-	[InlineData("max")]
-	[InlineData(null)]
+	[InlineData("ultra", SnapshotStatus.Ready)]
+	[InlineData("ultra", SnapshotStatus.Stale)]
+	[InlineData("team", SnapshotStatus.Ready)]
+	[InlineData("team", SnapshotStatus.Stale)]
+	[InlineData("team", SnapshotStatus.NotConfigured)]
+	[InlineData("team", SnapshotStatus.Error)]
+	[InlineData("max", SnapshotStatus.Ready)]
+	[InlineData("pro", SnapshotStatus.Stale)]
+	[InlineData(null, SnapshotStatus.Ready)]
+	[InlineData(null, SnapshotStatus.Unsupported)]
+	[InlineData("unknown", SnapshotStatus.Stale)]
 	public void ApplySnapshot_ClaudeWithoutMetrics_DoesNotAddSessionPlaceholder(
-		string? planTier)
+		string? planTier,
+		SnapshotStatus status)
 	{
 		AccountProfile account = CreateProfile(ProviderKind.Claude);
 		AccountUsageViewModel viewModel = new(account, canManage: true);
 
 		viewModel.ApplySnapshot(CreateSnapshot(account, Array.Empty<UsageMetric>()) with
 		{
-			PlanTier = planTier
+			PlanTier = planTier,
+			Status = status
 		});
 
 		Assert.True(viewModel.HasNoUsageMetrics);
@@ -293,22 +420,59 @@ public sealed class ClaudeUsagePresentationTests
 	}
 
 	[Theory]
-	[InlineData("quota")]
-	[InlineData("usage")]
-	public void ApplySnapshot_ClaudeWithOnlyGenericQuota_DoesNotAddSessionPlaceholder(
-		string metricKey)
+	[InlineData("quota", "ultra", SnapshotStatus.Ready, false)]
+	[InlineData("usage", "ultra", SnapshotStatus.Stale, false)]
+	[InlineData("quota", "team", SnapshotStatus.Ready, true)]
+	[InlineData("usage", "team", SnapshotStatus.Stale, true)]
+	[InlineData("quota", "max", SnapshotStatus.Ready, true)]
+	[InlineData("usage", "max", SnapshotStatus.Stale, true)]
+	[InlineData("quota", "pro", SnapshotStatus.Ready, true)]
+	[InlineData("usage", "pro", SnapshotStatus.Stale, true)]
+	[InlineData("quota", null, SnapshotStatus.Ready, true)]
+	[InlineData("usage", null, SnapshotStatus.Stale, true)]
+	[InlineData("quota", "unknown", SnapshotStatus.Ready, true)]
+	[InlineData("usage", "unknown", SnapshotStatus.Stale, true)]
+	public void ApplySnapshot_ClaudeWithOnlyGenericQuota_UsesPlanTierForSessionPlaceholder(
+		string metricKey,
+		string? planTier,
+		SnapshotStatus status,
+		bool showsUnavailableSession)
 	{
 		AccountProfile account = CreateProfile(ProviderKind.Claude);
 		AccountUsageViewModel viewModel = new(account, canManage: true);
 		UsageMetric quota = new(metricKey, "用量", 37, "已使用 37%");
-		UsageSnapshot snapshot = CreateSnapshot(account, new[] { quota });
+		UsageSnapshot snapshot = CreateSnapshot(account, new[] { quota }) with
+		{
+			Status = status,
+			PlanTier = planTier
+		};
 
 		viewModel.ApplySnapshot(snapshot);
 
-		Assert.Equal(metricKey, Assert.Single(viewModel.UsageMetrics).Key);
-		Assert.Equal("已使用 37%", viewModel.PrimaryText);
-		Assert.Equal(37, viewModel.UsedPercent);
-		Assert.DoesNotContain("5小時", viewModel.SecondaryText, StringComparison.Ordinal);
+		Assert.Equal(showsUnavailableSession ? 2 : 1, viewModel.UsageMetrics.Count);
+		UsageMetricViewModel quotaViewModel = Assert.Single(viewModel.UsageMetrics,
+			metric => metric.Key == metricKey);
+		Assert.Equal("已使用 37%", quotaViewModel.DisplayValue);
+		Assert.True(quotaViewModel.HasUsageBar);
+		Assert.Equal(showsUnavailableSession ? "未提供" : "已使用 37%",
+			viewModel.PrimaryText);
+
+		if (showsUnavailableSession)
+		{
+			UsageMetricViewModel session = viewModel.UsageMetrics[0];
+			Assert.Equal("claude.rate_limit.five_hour", session.Key);
+			Assert.Equal("未提供", session.DisplayValue);
+			Assert.False(session.HasUsageBar);
+			Assert.False(session.HasResetText);
+		}
+
+		viewModel.SetUsageDisplayMode(UsageDisplayMode.Remaining);
+
+		Assert.Equal("剩餘 63%", Assert.Single(viewModel.UsageMetrics,
+			metric => metric.Key == metricKey).DisplayValue);
+		Assert.Equal(showsUnavailableSession ? "未提供" : "剩餘 63%",
+			viewModel.UsageMetrics[0].DisplayValue);
+		Assert.Equal(snapshot, viewModel.CurrentSnapshot);
 		Assert.Same(quota, Assert.Single(snapshot.Metrics));
 	}
 
@@ -384,6 +548,51 @@ public sealed class ClaudeUsagePresentationTests
 				viewModel.UsageMetrics[showsUnavailableSession ? 1 : 0].Label);
 			Assert.Equal(snapshot, viewModel.CurrentSnapshot);
 			Assert.Equal(2, snapshot.Metrics.Count);
+		}
+	}
+
+	[Theory]
+	[InlineData(SnapshotStatus.Ready)]
+	[InlineData(SnapshotStatus.Stale)]
+	public void ApplySnapshot_EmptyTeamSession_LocalizesUsageAndMissingResetAcrossLanguageChanges(
+		SnapshotStatus status)
+	{
+		AccountProfile account = CreateProfile(ProviderKind.Claude);
+		AccountUsageViewModel viewModel = new(account, canManage: true);
+		UsageMetric session = new("five_hour", "5小時用量", 0, "已使用 0%");
+		UsageMetric weekly = new(
+			"seven_day", "週用量（所有模型）", 30, "已使用 30%", ObservedAt.AddDays(3));
+		UsageSnapshot snapshot = CreateSnapshot(account, new[] { session, weekly }) with
+		{
+			PlanTier = "team",
+			Status = status
+		};
+		viewModel.ApplySnapshot(snapshot);
+
+		foreach (AppLanguage language in new[]
+		{
+			AppLanguage.English,
+			AppLanguage.TraditionalChinese,
+			AppLanguage.English
+		})
+		{
+			using IDisposable languageScope = UiText.UseLanguage(language);
+			viewModel.RefreshLocalizedPresentation();
+			bool isEnglish = language == AppLanguage.English;
+			Assert.Equal(2, viewModel.UsageMetrics.Count);
+			UsageMetricViewModel sessionViewModel = viewModel.UsageMetrics[0];
+			Assert.Equal(session.Key, sessionViewModel.Key);
+			Assert.Equal(isEnglish ? "5-hour usage" : "5小時用量", sessionViewModel.Label);
+			Assert.Equal(isEnglish ? "Used 0%" : "已使用 0%", sessionViewModel.DisplayValue);
+			Assert.Equal(isEnglish ? "Used 0%" : "已使用 0%", viewModel.PrimaryText);
+			Assert.True(sessionViewModel.HasUsageBar);
+			Assert.True(sessionViewModel.HasResetText);
+			Assert.Equal(isEnglish ? "Reset time not provided" : "未提供重置時間", sessionViewModel.ResetText);
+			Assert.Equal(snapshot, viewModel.CurrentSnapshot);
+			Assert.Same(session, snapshot.Metrics[0]);
+			Assert.Equal(0, session.UsedPercent);
+			Assert.Null(session.ResetsAt);
+			Assert.Null(session.ResetDisplayValue);
 		}
 	}
 
