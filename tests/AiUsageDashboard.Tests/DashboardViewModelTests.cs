@@ -8540,15 +8540,26 @@ public sealed class DashboardViewModelTests
 			dashboardPreferencesStore: preferencesStore);
 		await viewModel.InitializeAsync();
 		await viewModel.RefreshUsageAsync();
+		AccountUsageViewModel accountViewModel = Assert.Single(viewModel.Accounts);
+		UsageSnapshot snapshotBeforeToggle = Assert.IsType<UsageSnapshot>(
+			accountViewModel.CurrentSnapshot);
 
 		await Assert.ThrowsAsync<IOException>(
 			() => viewModel.ToggleUsageDisplayModeAsync());
 
 		Assert.Equal(UsageDisplayMode.Used, viewModel.DisplayMode);
-		Assert.Equal(
-			"已使用 25%",
-			Assert.Single(Assert.Single(viewModel.Accounts).UsageMetrics)
-				.DisplayValue);
+		UsageMetricViewModel quota = Assert.Single(accountViewModel.UsageMetrics,
+			metric => metric.Key == "quota");
+		Assert.Equal("已使用 25%", quota.DisplayValue);
+		Assert.Equal(25, quota.DisplayPercent);
+		Assert.True(quota.HasUsageBar);
+		UsageMetricViewModel session = Assert.Single(accountViewModel.UsageMetrics,
+			metric => metric.Key == "claude.rate_limit.five_hour");
+		Assert.Equal("未提供", session.DisplayValue);
+		Assert.False(session.HasUsageBar);
+		Assert.Same(snapshotBeforeToggle, accountViewModel.CurrentSnapshot);
+		Assert.Equal("quota", Assert.Single(snapshotBeforeToggle.Metrics).Key);
+		Assert.Equal(25, Assert.Single(snapshotBeforeToggle.Metrics).UsedPercent);
 		Assert.Empty(preferencesStore.SavedDisplayModes);
 	}
 
@@ -13204,7 +13215,12 @@ public sealed class DashboardViewModelTests
 		await viewModel.RefreshUsageAsync();
 
 		AccountUsageViewModel account = Assert.Single(viewModel.Accounts);
-		Assert.Equal("已使用 45%", Assert.Single(account.UsageMetrics).DisplayValue);
+		UsageMetricViewModel historical = Assert.Single(account.UsageMetrics,
+			metric => metric.Key == "historical");
+		Assert.Equal("已使用 45%", historical.DisplayValue);
+		Assert.Equal(45, historical.UsedPercent);
+		UsageSnapshot currentSnapshot = Assert.IsType<UsageSnapshot>(account.CurrentSnapshot);
+		Assert.Same(Assert.Single(verifiedCache.Metrics), Assert.Single(currentSnapshot.Metrics));
 		Assert.Equal(
 			SubscriptionVerificationState.UsageUnavailable,
 			account.CurrentSnapshot?.SubscriptionVerificationState);
@@ -14173,7 +14189,13 @@ public sealed class DashboardViewModelTests
 		Assert.StartsWith("檢查完成：舊資料 1", viewModel.LastRefreshText);
 		AccountUsageViewModel accountViewModel = Assert.Single(viewModel.Accounts);
 		Assert.Equal(AccountStatusKind.Stale, accountViewModel.StatusKind);
-		Assert.Equal(37, accountViewModel.UsedPercent);
+		UsageMetricViewModel staleUsage = Assert.Single(accountViewModel.UsageMetrics,
+			metric => metric.Key == "test");
+		Assert.Equal(37, staleUsage.UsedPercent);
+		Assert.Equal("已使用 37%", staleUsage.DisplayValue);
+		UsageSnapshot staleSnapshot = Assert.IsType<UsageSnapshot>(accountViewModel.CurrentSnapshot);
+		Assert.Equal("test", Assert.Single(staleSnapshot.Metrics).Key);
+		Assert.Equal(37, Assert.Single(staleSnapshot.Metrics).UsedPercent);
 	}
 
 	[Fact]
@@ -14248,7 +14270,13 @@ public sealed class DashboardViewModelTests
 
 		Assert.Equal(2, refreshCoordinator.InvalidatedAccountIds.Count);
 		Assert.Equal(2, refreshCoordinator.RefreshRequests.Count);
-		Assert.Equal(20, account.UsedPercent);
+		UsageMetricViewModel latestUsage = Assert.Single(account.UsageMetrics,
+			metric => metric.Key == "test");
+		Assert.Equal(20, latestUsage.UsedPercent);
+		Assert.Equal("已使用 20%", latestUsage.DisplayValue);
+		UsageSnapshot latestSnapshot = Assert.IsType<UsageSnapshot>(account.CurrentSnapshot);
+		Assert.Equal("test", Assert.Single(latestSnapshot.Metrics).Key);
+		Assert.Equal(20, Assert.Single(latestSnapshot.Metrics).UsedPercent);
 		Assert.Equal(AccountStatusKind.Ready, account.StatusKind);
 	}
 
