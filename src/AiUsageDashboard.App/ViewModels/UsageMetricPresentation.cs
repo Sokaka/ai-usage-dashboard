@@ -138,20 +138,21 @@ internal static class UsageMetricPresentation
 		}
 
 		UsageMetric[] reportedMetrics = metrics.ToArray();
-		IEnumerable<UsageMetric> visibleMetrics = reportedMetrics.Where(metric =>
-			!IsFiveHour(metric) ||
-			(metric.UsedPercent != 0) ||
-			(metric.ResetsAt is not null) ||
-			!string.IsNullOrWhiteSpace(metric.ResetDisplayValue));
-
-		if (!reportedMetrics.Any(IsWeekly) ||
-			reportedMetrics.Any(IsFiveHour) ||
-			string.Equals(planTier, ClaudeUltraPlanTier, StringComparison.OrdinalIgnoreCase))
+		if (string.Equals(planTier, ClaudeUltraPlanTier, StringComparison.OrdinalIgnoreCase))
 		{
-			return visibleMetrics;
+			return reportedMetrics.Where(metric =>
+				!IsFiveHour(metric) ||
+				(metric.UsedPercent != 0) ||
+				(metric.ResetsAt is not null) ||
+				!string.IsNullOrWhiteSpace(metric.ResetDisplayValue));
 		}
 
-		return visibleMetrics.Prepend(new UsageMetric(
+		if ((reportedMetrics.Length == 0) || reportedMetrics.Any(IsFiveHour))
+		{
+			return reportedMetrics;
+		}
+
+		return reportedMetrics.Prepend(new UsageMetric(
 			ClaudeFiveHourUsageKey,
 			FiveHourUsageLabel,
 			UsedPercent: null,
