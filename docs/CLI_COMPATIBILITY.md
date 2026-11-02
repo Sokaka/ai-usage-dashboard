@@ -1,8 +1,8 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.25` 正式版本的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.25` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.26` 的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.26` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
-本版修正 Claude 只有週用量及缺少 5 小時用量時的顯示，CLI 版本要求維持不變；逐平台狀態見 [1.0.25](#1025)，正式版本與下載資訊見 [README](../README.md#current-release)。不沿用前版的實測結果。
+本版修正 Claude 非 Ultra 卡片的 5 小時用量列顯示，CLI 版本要求維持不變；逐平台狀態見 [1.0.26](#1026)，發布狀態與下載資訊見 [README](../README.md#current-release)。不沿用前版的實測結果。
 
 ## 版本要求
 
@@ -24,6 +24,24 @@
 ## 實測紀錄
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同版成品官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
+
+### 1.0.26
+
+本表對應 `1.0.26 / sequence 1040`，發布狀態：已正式公開為 stable／latest，沿用同一組凍結成品。[App source `204526e868acf85b9018e2991e95a16f0ab88705`](https://github.com/Sokaka/ai-usage-dashboard/commit/204526e868acf85b9018e2991e95a16f0ab88705)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41376341387/attempts/1) run `41376341387` attempt `1`，Release ID `431005985`。App 為 `1.0.26`；Updater 沿用前版 `1.0.25` 交付、最初由 `v1.0.23` 發布的 `1.0.23` Updater 原始 bytes，未重新建置、重簽或替換，[Updater source `9316a9aa47e05795bc15d81bc257644a9f627089`](https://github.com/Sokaka/ai-usage-dashboard/commit/9316a9aa47e05795bc15d81bc257644a9f627089)。SDK `8.0.427`、內附 runtime `8.0.33`。 CLI 版本要求維持不變；完整結果見 [1.0.26 版本說明](releases/1.0.26.md)。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本版成品實測 | 未驗證 | 未驗證 |
+| Codex | 未以本版成品實測 | 未驗證 | 未驗證 |
+| GitHub Copilot | 未以本版成品實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
+| Grok | 未以本版成品實測 | 未驗證 | 未驗證 |
+| Antigravity | 未以本版成品實測 | 未驗證 | 未驗證 |
+
+- Claude 卡片已有用量資料時，非 Ultra 方案均保留 5 小時用量列：缺值顯示「未提供／Not provided」，來源回傳 0% 時保留，缺少重置資訊時顯示「未提供重置時間／Reset time not provided」。
+- Ultra 維持原顯示條件；完全沒有用量資料時不補列。週用量、原始 snapshot／快取、帳號綁定與安全檢查維持；不增加 CLI／API 查詢。
+- 合成回歸涵蓋非 Ultra 方案（Team／Max／Pro／未知）缺少或回傳 0% 的 5 小時用量、Ultra 原顯示規則、只有一般用量資料、完全無用量資料、Ready／Stale、中英往返切換、已使用／剩餘切換，以及原始 snapshot／metric 保留與其他 provider 不受影響。 本機結果：首次完整測試 4,828 passed／1 failed／0 skipped；多卡刷新測試仍用摘要百分比等待實際 metric，新增缺值提示列後造成逾時。修正為按 metric 核對後，Release 建置 0 warnings／errors，完整測試 4,829 passed／0 failed／0 skipped；同 source CI：Release 建置 0 warnings／errors，完整測試 4,829 passed／0 failed／0 skipped；正式匿名下載驗簽：六件原凍結成品及 latest feed 已透過無 token／cookie 的 client 匿名下載並核對通過。
+
+本版尚未執行五個 provider 的真人登入、用量查詢與背景刷新；乾淨 Windows 初裝、前一正式版一鍵線上更新、維護副本核對、實際 UI／無障礙亦待驗。合成回歸、建置、授權匯出與下載驗簽不代替這些實機驗收。
 
 ### 1.0.25
 
