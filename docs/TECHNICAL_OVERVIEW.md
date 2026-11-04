@@ -339,6 +339,7 @@ Claude 的驗證與綁定保留 `auth status` 的原始 `subscriptionType`。用
 - 結果可省略 `local_command` 與 `result_index`；若有提供，必須分別為 `usage` 與數值 0。其他 turn／token／cost 檢查仍須全部通過。
 - 結果可省略 `safety_stops`；若有提供，必須是數值 0。非零 `safety_stops` 會停止自動查詢，要求人工重新驗證；舊版未提供此欄位時仍可讀取。
 - `fast_mode_*` 只當作有長度上限的狀態附加資料；新增狀態值不影響零 turn／token／cost 判定，也不會單獨觸發安全停止標記。
+- 結果可包含 [`credential_expires_at`](https://github.com/anthropics/claude-agent-sdk-typescript/releases/tag/v0.3.318) 登入到期 metadata；省略時仍相容舊版，有提供時須為可解析且帶時區的 ISO 8601 時間字串。允許過去日期、UTC 與明確時區偏移，不以此欄判定登入有效性、額度或重置時間，也不寫入用量 snapshot／快取。其他未知欄位及用量安全檢查維持原有規則。
 
 暫時性安全驗證失敗不會要求使用者處理。處理方式如下：
 
