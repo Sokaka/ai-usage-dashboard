@@ -136,6 +136,7 @@ internal sealed class ClaudeCliUsagePoller :
 			"session_id",
 			"uuid",
 			"stop_reason",
+			"credential_expires_at",
 			"terminal_reason",
 			"fast_mode_state",
 			"fast_mode_disabled_reason",
@@ -1434,6 +1435,7 @@ internal sealed class ClaudeCliUsagePoller :
 				"session_id",
 				MaximumSessionIdLength) ||
 			!HasOptionalUuidProperty(root, "uuid") ||
+			!HasOptionalTimestampProperty(root, "credential_expires_at") ||
 			!HasOptionalNullProperty(root, "stop_reason") ||
 			!HasOptionalStringValue(root, "terminal_reason", "completed") ||
 			!HasOptionalBoundedNonEmptyStringProperty(
@@ -1914,6 +1916,29 @@ internal sealed class ClaudeCliUsagePoller :
 
 		return (property.ValueKind == JsonValueKind.String) &&
 			Guid.TryParseExact(property.GetString(), "D", out _);
+	}
+
+	private static bool HasOptionalTimestampProperty(
+		JsonElement element,
+		string propertyName)
+	{
+		if (!element.TryGetProperty(propertyName, out JsonElement property))
+		{
+			return true;
+		}
+
+		if ((property.ValueKind != JsonValueKind.String) ||
+			!property.TryGetDateTimeOffset(out _))
+		{
+			return false;
+		}
+
+		string timestamp = property.GetString() ?? string.Empty;
+		int timeSeparatorIndex = timestamp.IndexOf('T');
+		return (timeSeparatorIndex >= 0) &&
+			(timestamp.EndsWith('Z') ||
+				(timestamp.LastIndexOf('+') > timeSeparatorIndex) ||
+				(timestamp.LastIndexOf('-') > timeSeparatorIndex));
 	}
 
 	private static bool ContainsOnlyProperties(
