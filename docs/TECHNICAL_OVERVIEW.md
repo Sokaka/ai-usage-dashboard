@@ -327,6 +327,7 @@ Claude CLI 暫時不存在時，帳號專用設定與憑證不會被刪除；安
 - `usage` 欄位符合已驗證的資料格式（schema）；出現未知欄位或型別變更時會停止採用結果。
 - 結果可省略 `local_command` 與 `result_index`；若有提供，必須分別為 `usage` 與數值 0。其他 turn／token／cost 檢查仍須全部通過。
 - `fast_mode_*` 只當作有長度上限的狀態附加資料；新增狀態值不影響零 turn／token／cost 判定，也不會單獨觸發安全停止標記。
+- 結果可包含 [`credential_expires_at`](https://github.com/anthropics/claude-agent-sdk-typescript/releases/tag/v0.3.318) 登入到期 metadata；省略時仍相容舊版，有提供時須為可解析且帶時區的 ISO 8601 時間字串。允許過去日期、UTC 與明確時區偏移，不以此欄判定登入有效性、額度或重置時間，也不寫入用量 snapshot／快取。其他未知欄位及用量安全檢查維持原有規則。
 
 暫時性安全驗證失敗不會要求使用者處理。處理方式如下：
 

@@ -105,6 +105,120 @@ public sealed class ClaudeCliUsageCompatibilityTests
 	}
 
 	[Theory]
+	[InlineData("2026-12-01T00:00:00.000Z")]
+	[InlineData("1999-01-01T00:00:00Z")]
+	[InlineData("2026-12-01T08:00:00+08:00")]
+	[InlineData("2026-11-30T17:00:00-07:00")]
+	[InlineData("2026-12-01T00:00:00Z")]
+	[InlineData("2026-12-01T00:00:00.1234567Z")]
+	public void ParseSafeResult_WithCredentialExpiryTimestamp_ReturnsUsage(
+		string credentialExpiresAt)
+	{
+		JsonObject root = CreateResult();
+		root["credential_expires_at"] = credentialExpiresAt;
+
+		ClaudeUsagePollResult result = ClaudeCliUsagePoller.ParseSafeResult(
+			root.ToJsonString(),
+			ObservedAt);
+
+		Assert.Equal(UsageText, result.Output);
+		Assert.Equal(ObservedAt, result.ObservedAt);
+	}
+
+	[Fact]
+	public void ParseSafeResult_WithoutCredentialExpiryTimestamp_ReturnsUsage()
+	{
+		JsonObject root = CreateResult();
+		Assert.False(root.ContainsKey("credential_expires_at"));
+
+		ClaudeUsagePollResult result = ClaudeCliUsagePoller.ParseSafeResult(
+			root.ToJsonString(),
+			ObservedAt);
+
+		Assert.Equal(UsageText, result.Output);
+		Assert.Equal(ObservedAt, result.ObservedAt);
+	}
+
+	[Theory]
+	[InlineData("null")]
+	[InlineData("0")]
+	[InlineData("false")]
+	[InlineData("{}")]
+	[InlineData("[]")]
+	[InlineData("\"\"")]
+	[InlineData("\"not-a-date\"")]
+	[InlineData("\"2026-11-04\"")]
+	[InlineData("\"2026-11-04T12:00:00\"")]
+	[InlineData("\"2026-13-04T12:00:00Z\"")]
+	[InlineData("\"2026-02-30T12:00:00Z\"")]
+	[InlineData("\"2026-11-04T25:00:00Z\"")]
+	[InlineData("\"2026-11-04T12:00:00+25:00\"")]
+	[InlineData("\" 2026-11-04T12:00:00Z\"")]
+	[InlineData("\"2026-11-04T12:00:00Z \"")]
+	public void ParseSafeResult_WithInvalidCredentialExpiryTimestamp_RejectsResult(
+		string invalidValueJson)
+	{
+		JsonObject root = CreateResult();
+		root["credential_expires_at"] = JsonNode.Parse(invalidValueJson);
+
+		Assert.Throws<InvalidDataException>(() =>
+			ClaudeCliUsagePoller.ParseSafeResult(root.ToJsonString(), ObservedAt));
+	}
+
+	[Theory]
+	[InlineData("\"2026-12-01T00:00:00.000Z\"")]
+	[InlineData("\"2027-01-01T00:00:00.000Z\"")]
+	[InlineData("null")]
+	public void ParseSafeResult_WithDuplicateCredentialExpiryTimestamp_RejectsResult(
+		string duplicateValueJson)
+	{
+		JsonObject root = CreateResultWithCredentialExpiry();
+		string json = root.ToJsonString().Insert(
+			1,
+			$"\"credential_expires_at\":{duplicateValueJson},");
+
+		Assert.Throws<InvalidDataException>(() =>
+			ClaudeCliUsagePoller.ParseSafeResult(json, ObservedAt));
+	}
+
+	[Theory]
+	[InlineData("num_turns", "1")]
+	[InlineData("total_cost_usd", "0.01")]
+	[InlineData("queued_turn_count", "1")]
+	[InlineData("modelUsage", "{\"model\":{\"inputTokens\":1}}")]
+	[InlineData("subagent_stats", "{\"spawned\":1}")]
+	[InlineData("permission_denials", "[{}]")]
+	[InlineData("unknown_activity", "0")]
+	[InlineData("local_command", "\"status\"")]
+	[InlineData("is_error", "true")]
+	[InlineData("result_index", "1")]
+	public void ParseSafeResult_WithCredentialExpiryAndUnsafeMetadata_RejectsResult(
+		string propertyName,
+		string invalidValueJson)
+	{
+		JsonObject root = CreateResultWithCredentialExpiry();
+		root[propertyName] = JsonNode.Parse(invalidValueJson);
+
+		Assert.Throws<InvalidDataException>(() =>
+			ClaudeCliUsagePoller.ParseSafeResult(root.ToJsonString(), ObservedAt));
+	}
+
+	[Theory]
+	[InlineData("input_tokens")]
+	[InlineData("output_tokens")]
+	[InlineData("cache_creation_input_tokens")]
+	[InlineData("cache_read_input_tokens")]
+	public void ParseSafeResult_WithCredentialExpiryAndNonZeroTokens_RejectsResult(
+		string tokenPropertyName)
+	{
+		JsonObject root = CreateResultWithCredentialExpiry();
+		GetUsage(root)[tokenPropertyName] = 1;
+
+		Assert.Throws<InvalidDataException>(() =>
+			ClaudeCliUsagePoller.ParseSafeResult(root.ToJsonString(), ObservedAt));
+	}
+
+	[Theory]
 	[InlineData("local_command")]
 	[InlineData("result_index")]
 	public void ParseSafeResult_WithOneCommandMetadataFieldAbsent_ReturnsUsage(
@@ -193,19 +307,23 @@ public sealed class ClaudeCliUsageCompatibilityTests
 	}
 
 	[Theory]
-	[InlineData("2.1.268", true)]
-	[InlineData("2.1.267", false)]
-	[InlineData("2.1.169", false)]
+	[InlineData("2.1.318", true, true)]
+	[InlineData("2.1.268", true, false)]
+	[InlineData("2.1.267", false, false)]
+	[InlineData("2.1.169", false, false)]
 	public async Task PollAsync_WithNewOrLegacyEnvelope_ReturnsUsage(
 		string version,
-		bool includesCommandMetadata)
+		bool includesCommandMetadata,
+		bool includesCredentialExpiry)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = Path.Combine(temporaryDirectory.Path, "claude.exe");
 		string configDirectory = Path.Combine(temporaryDirectory.Path, "config");
 		await File.WriteAllTextAsync(executablePath, string.Empty);
 		Directory.CreateDirectory(configDirectory);
-		JsonObject root = CreateResult();
+		JsonObject root = includesCredentialExpiry
+			? CreateResultWithCredentialExpiry()
+			: CreateResult();
 
 		if (!includesCommandMetadata)
 		{
@@ -260,5 +378,19 @@ public sealed class ClaudeCliUsageCompatibilityTests
 		return JsonNode.Parse(Claude21268ResultJson)?.AsObject() ??
 			throw new InvalidOperationException(
 				"Claude 2.1.268 compatibility fixture must be a JSON object.");
+	}
+
+	private static JsonObject CreateResultWithCredentialExpiry()
+	{
+		JsonObject root = CreateResult();
+		root["credential_expires_at"] = "2026-12-01T00:00:00.000Z";
+		return root;
+	}
+
+	private static JsonObject GetUsage(JsonObject result)
+	{
+		return result["usage"]?.AsObject() ??
+			throw new InvalidOperationException(
+				"Claude 2.1.268 compatibility fixture must contain usage.");
 	}
 }
