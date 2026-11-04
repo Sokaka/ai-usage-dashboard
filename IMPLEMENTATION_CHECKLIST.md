@@ -1,6 +1,6 @@
 # 實作與驗證清單
 
-更新日期：2026-11-02
+更新日期：2026-11-04
 
 讀者：負責 AI Usage Dashboard 開發、測試與交付的人員。本文只列現況、驗證界線與尚待工作。
 
@@ -8,7 +8,15 @@
 
 ## 目前 source
 
-標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；本次 `1.0.26 / sequence 1040` 發布狀態：已正式公開為 stable／latest，沿用同一組凍結成品。
+標準安裝提供開始選單捷徑；浮窗與系統匣提供「關於 AI Usage」，可查看及複製完整版本、開啟使用說明與 Releases／問題回報入口。README 包含合成畫面預覽與安裝方式對照，並提供支援、安全回報文件及 Issue 表單。這些公開入口與首輪 Copilot 訂閱解析修正始於正式版本 `1.0.3 / sequence 1017`；本次 `1.0.27 / sequence 1041` 修正 Claude Code 登入到期 metadata 相容性，已沿用同一組凍結成品正式公開為 stable／latest。
+
+### Claude Code 2.1.318 登入到期 metadata 相容性（1.0.27）
+
+- [x] 接受可省略、可解析且帶時區的 `credential_expires_at`，不以此欄決定登入有效性、額度或重置時間；原有用量安全檢查與 snapshot／快取格式維持。
+- [x] 合成回歸涵蓋合法／非法 metadata、過去日期、UTC／offset／小數秒格式、缺省、重複欄位、非零活動及新舊回應；候選前本機定向合成回歸 114 passed／0 failed／0 skipped；此紀錄不表示本機完整測試、coverage 或成品實機驗收通過。
+- [x] [同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41819614241/attempts/1)：Release 建置 0 warnings／errors，完整測試 4,869 passed／0 failed／0 skipped；production line coverage 75.01%（50,388／67,175，門檻 70%）。
+- [x] 候選、Updater 沿用檢查、授權匯出與正式匿名下載驗簽均通過；見 [1.0.27 版本說明](docs/releases/1.0.27.md)。
+- [ ] 本版尚未執行五個 provider 的真人登入、用量查詢與背景刷新；乾淨 Windows 初裝、前一正式版一鍵線上更新、維護副本核對、實際 UI／無障礙亦待驗。合成回歸、建置、授權匯出與下載驗簽不代替這些實機驗收。
 
 ### Claude 非 Ultra 5 小時用量列（1.0.26）
 
@@ -224,6 +232,21 @@ CLI 來源須通過官方身分及受保護副本檢查，缺少或不符時保�
 上述公開入口及 Copilot 相容性修正已在 `1.0.3` 凍結，真人 CLI 登入／用量驗收仍暫緩；歷史候選的成品與驗收只適用於各自 source，不代替目前正式版本的結果。
 
 ## 目前正式版本
+
+`1.0.27 / sequence 1041` 已沿用同一組凍結成品正式公開為 stable／latest。[v1.0.27 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.27)；六件成品資料見 [1.0.27 版本說明](docs/releases/1.0.27.md)。
+
+[App source `e927c6992baf5599b91256d8dceb79750e0d4ed3`](https://github.com/Sokaka/ai-usage-dashboard/commit/e927c6992baf5599b91256d8dceb79750e0d4ed3)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41820057716/attempts/1) run `41820057716` attempt `1`，Release ID `433825923`。Updater 沿用前版 `1.0.26` 交付的 `1.0.23` Updater 原始 bytes，未重新建置、重簽或替換；[Updater source `9316a9aa47e05795bc15d81bc257644a9f627089`](https://github.com/Sokaka/ai-usage-dashboard/commit/9316a9aa47e05795bc15d81bc257644a9f627089)。SDK 固定為 `8.0.427`、內附 runtime 為 `8.0.33`。
+
+- [x] 候選前本機定向合成回歸 114 passed／0 failed／0 skipped；此紀錄不表示本機完整測試、coverage 或成品實機驗收通過。
+- [x] [同 source Windows CI](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41819614241/attempts/1)：Release 建置 0 warnings／errors，完整測試 4,869 passed／0 failed／0 skipped；production line coverage 75.01%（50,388／67,175，門檻 70%）。
+- [x] [候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41820057716/attempts/1)：Release 建置 0 warnings／errors，完整測試 4,869 passed／0 failed／0 skipped；production line coverage 75.01%（50,388／67,175，門檻 70%）；同一 run／attempt 完成建置、Updater 原 bytes 沿用檢查、簽署、六件凍結與 draft 匿名不可讀核對。
+- [x] 六件原凍結成品及 latest feed 已由無 token／cookie 的 client 匿名下載；Release／latest／tag source、六件 asset ID／名稱／大小／SHA256、三份 canonical sidecar、production public trust feed 簽章及 latest feed bytes 均核對通過；六件合計 `107018781` bytes。
+- [x] 凍結 App／ClaudeCapture／沿用 Updater 的離線 `--export-licenses`，元件版本、原文 SHA256、各自 source manifest 與 acceptance digest 格式核對通過。App 的 .NETCore 與 WindowsDesktop 均為 `8.0.33`；App／ClaudeCapture ProductVersion 為 `1.0.27+e927c6992baf5599b91256d8dceb79750e0d4ed3`，Updater 為 `1.0.23+9316a9aa47e05795bc15d81bc257644a9f627089`。離線匯出不包含條款接受／拒絕及安裝驗收。
+- [ ] 本版尚未執行五個 provider 的真人登入、用量查詢與背景刷新；乾淨 Windows 初裝、前一正式版一鍵線上更新、維護副本核對、實際 UI／無障礙亦待驗。合成回歸、建置、授權匯出與下載驗簽不代替這些實機驗收。
+
+逐平台狀態見 [1.0.27 CLI 表](docs/CLI_COMPATIBILITY.md#1027)。
+
+### 1.0.26 歷史正式版
 
 `1.0.26 / sequence 1040` 發布狀態：已正式公開為 stable／latest，沿用同一組凍結成品。[v1.0.26 GitHub Release](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.26)；六件成品資料見 [1.0.26 版本說明](docs/releases/1.0.26.md)。
 

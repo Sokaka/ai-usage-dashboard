@@ -1,8 +1,8 @@
 # CLI 相容性
 
-本文件列出 AI Usage `1.0.26` 的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.26` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
+本文件列出 AI Usage `1.0.27` 的 CLI 版本要求及實測狀態，並保留歷史版本紀錄。本版的 Copilot 使用本機官方 CLI，主包不隨附第三方 CLI。`1.0.27` 尚未以同一組成品完成五個平台的真人登入與用量查詢；先前版本的受控查證只列在對應歷史表。一般安裝與帳號設定請見[使用說明](../使用說明.md)。
 
-本版修正 Claude 非 Ultra 卡片的 5 小時用量列顯示，CLI 版本要求維持不變；逐平台狀態見 [1.0.26](#1026)，發布狀態與下載資訊見 [README](../README.md#current-release)。不沿用前版的實測結果。
+本版修正 Claude Code `2.1.318` 登入到期 metadata 的用量回應相容性，CLI 版本要求維持不變；逐平台狀態見 [1.0.27](#1027)，發布狀態與下載資訊見 [README](../README.md#current-release)。不沿用前版的實測結果。
 
 ## 版本要求
 
@@ -24,6 +24,22 @@
 ## 實測紀錄
 
 `未驗證` 或 `待驗證` 表示尚無可追溯的同版成品官方 CLI 登入與用量實測紀錄，不代表已知不相容。安裝測試、離線授權匯出及模擬回應不能代填真人實測結果。
+
+### 1.0.27
+
+本表對應 `1.0.27 / sequence 1041`；已正式公開為 stable／latest，沿用同一組凍結成品。[App source `e927c6992baf5599b91256d8dceb79750e0d4ed3`](https://github.com/Sokaka/ai-usage-dashboard/commit/e927c6992baf5599b91256d8dceb79750e0d4ed3)；[候選 workflow](https://github.com/Sokaka/ai-usage-dashboard/actions/runs/41820057716/attempts/1) run `41820057716` attempt `1`，Release ID `433825923`。Updater 沿用前版 `1.0.26` 交付的 `1.0.23` Updater 原始 bytes，未重新建置、重簽或替換；[Updater source `9316a9aa47e05795bc15d81bc257644a9f627089`](https://github.com/Sokaka/ai-usage-dashboard/commit/9316a9aa47e05795bc15d81bc257644a9f627089)。SDK 固定為 `8.0.427`、內附 runtime 為 `8.0.33`。CLI 版本要求維持不變；完整結果見 [1.0.27 版本說明](releases/1.0.27.md)。
+
+| 平台 | CLI 版本紀錄 | 真人登入 | 用量查詢 |
+| --- | --- | --- | --- |
+| Claude | 未以本版成品實測 | 未驗證 | 未驗證 |
+| Codex | 未以本版成品實測 | 未驗證 | 未驗證 |
+| GitHub Copilot | 未以本版成品實測；App 固定 SDK `1.0.11` | 未驗證 | 未驗證 |
+| Grok | 未以本版成品實測 | 未驗證 | 未驗證 |
+| Antigravity | 未以本版成品實測 | 未驗證 | 未驗證 |
+
+合成回歸涵蓋 `credential_expires_at` 缺省、合法時區時間、過去日期、錯誤型別與日期、重複欄位，以及加入 metadata 後仍拒絕非零用量及不安全欄位。保留 `safety_stops`、`fallback_credit: null` 與舊版回應格式；這些合成案例不表示 Claude Code `2.1.318` 已完成真人驗收。
+
+本版尚未執行五個 provider 的真人登入、用量查詢與背景刷新；乾淨 Windows 初裝、前一正式版一鍵線上更新、維護副本核對、實際 UI／無障礙亦待驗。合成回歸、建置、授權匯出與下載驗簽不代替這些實機驗收。
 
 ### 1.0.26
 
