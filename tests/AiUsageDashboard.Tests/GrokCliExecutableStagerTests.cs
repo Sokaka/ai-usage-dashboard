@@ -11,9 +11,14 @@ public sealed class GrokCliExecutableStagerTests
 {
 	private const string ExactSignerSubject =
 		"CN=X.AI LLC, O=X.AI LLC, L=Palo Alto, S=California, C=US";
+	private const string CurrentSignerSubject =
+		"CN=X Corp., O=X Corp., L=Bastrop, S=Texas, C=US";
 
-	[Fact]
-	public void Stage_WithTrustedSource_CreatesContentAddressedCopy()
+	[Theory]
+	[InlineData(ExactSignerSubject)]
+	[InlineData(CurrentSignerSubject)]
+	public void Stage_WithTrustedSource_CreatesContentAddressedCopy(
+		string signerSubject)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(
@@ -28,7 +33,7 @@ public sealed class GrokCliExecutableStagerTests
 			path =>
 			{
 				inspectedPaths.Add(path);
-				return CreateTrustedSignature();
+				return CreateTrustedSignature(signerSubject);
 			});
 
 		using WindowsOfficialCliExecutableLease lease = stager.Stage(sourcePath);
@@ -64,7 +69,7 @@ public sealed class GrokCliExecutableStagerTests
 	}
 
 	[Fact]
-	public void Stage_WhenOfficialSourceChanges_RetainsCurrentAndPreviousCopies()
+	public void Stage_WhenOfficialSourceUpdatesToCurrentSigner_RetainsCurrentAndPreviousCopies()
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(
@@ -73,9 +78,17 @@ public sealed class GrokCliExecutableStagerTests
 		string trustedRoot = Path.Combine(
 			temporaryDirectory.Path,
 			"trusted");
+		List<string> inspectedSignerSubjects = new();
 		using GrokCliExecutableStager stager = CreateStager(
 			trustedRoot,
-			_ => CreateTrustedSignature());
+			path =>
+			{
+				string signerSubject = File.ReadAllBytes(path)[2] == 0x01
+					? ExactSignerSubject
+					: CurrentSignerSubject;
+				inspectedSignerSubjects.Add(signerSubject);
+				return CreateTrustedSignature(signerSubject);
+			});
 
 		string firstStagedPath;
 
@@ -95,6 +108,17 @@ public sealed class GrokCliExecutableStagerTests
 		Assert.Equal(
 			File.ReadAllBytes(sourcePath),
 			File.ReadAllBytes(secondStagedPath));
+		Assert.Equal(
+			new[]
+			{
+				ExactSignerSubject,
+				ExactSignerSubject,
+				ExactSignerSubject,
+				CurrentSignerSubject,
+				CurrentSignerSubject,
+				CurrentSignerSubject
+			},
+			inspectedSignerSubjects);
 	}
 
 	[Fact]
@@ -642,8 +666,21 @@ public sealed class GrokCliExecutableStagerTests
 			await firstStage.WaitAsync(TimeSpan.FromSeconds(5));
 	}
 
-	[Fact]
-	public void Stage_WithUntrustedSourceSigner_RejectsWithoutCreatingTemporaryFile()
+	[Theory]
+	[InlineData("CN=Unknown", 0)]
+	[InlineData(ExactSignerSubject, 1)]
+	[InlineData(CurrentSignerSubject, 1)]
+	[InlineData("CN=X.AI LLC Malware, O=X.AI LLC", 0)]
+	[InlineData("CN=X Corp. Malware, O=X Corp.", 0)]
+	[InlineData("CN=Other, O=\"Acme, CN=X.AI LLC\"", 0)]
+	[InlineData("CN=Other, O=\"Acme, CN=X Corp.\"", 0)]
+	[InlineData("CN=X.AI LLC+OU=Engineering, O=X.AI LLC", 0)]
+	[InlineData("CN=X Corp.+OU=Engineering, O=X Corp.", 0)]
+	[InlineData("O=X.AI LLC", 0)]
+	[InlineData("O=X Corp.", 0)]
+	public void Stage_WithUntrustedSourceSigner_RejectsWithoutCreatingTemporaryFile(
+		string signerSubject,
+		int winVerifyTrustStatus)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(
@@ -654,10 +691,7 @@ public sealed class GrokCliExecutableStagerTests
 			"trusted");
 		using GrokCliExecutableStager stager = CreateStager(
 			trustedRoot,
-			_ => new WindowsAuthenticodeInspection(
-				WinVerifyTrustStatus: 0,
-				SignerSubject: "CN=Unknown",
-				SignerThumbprint: new string('B', 40)));
+			_ => CreateUntrustedSignature(signerSubject, winVerifyTrustStatus));
 
 		Assert.Throws<GrokCliUntrustedException>(() =>
 		{
@@ -668,8 +702,13 @@ public sealed class GrokCliExecutableStagerTests
 		Assert.Empty(Directory.EnumerateFiles(trustedRoot));
 	}
 
-	[Fact]
-	public void Stage_WithUntrustedTemporarySigner_RejectsAndCleansTemporaryFile()
+	[Theory]
+	[InlineData("CN=Unknown", 0)]
+	[InlineData(ExactSignerSubject, 1)]
+	[InlineData(CurrentSignerSubject, 1)]
+	public void Stage_WithUntrustedTemporarySigner_RejectsAndCleansTemporaryFile(
+		string signerSubject,
+		int winVerifyTrustStatus)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(
@@ -690,7 +729,7 @@ public sealed class GrokCliExecutableStagerTests
 				{
 					temporaryPath = path;
 					Assert.True(File.Exists(temporaryPath));
-					return CreateUntrustedSignature();
+					return CreateUntrustedSignature(signerSubject, winVerifyTrustStatus);
 				}
 
 				return CreateTrustedSignature();
@@ -712,8 +751,13 @@ public sealed class GrokCliExecutableStagerTests
 		Assert.Empty(Directory.EnumerateFiles(trustedRoot));
 	}
 
-	[Fact]
-	public void Stage_WithUntrustedFinalSigner_RejectsFinalCopy()
+	[Theory]
+	[InlineData("CN=Unknown", 0)]
+	[InlineData(ExactSignerSubject, 1)]
+	[InlineData(CurrentSignerSubject, 1)]
+	public void Stage_WithUntrustedFinalSigner_RejectsFinalCopy(
+		string signerSubject,
+		int winVerifyTrustStatus)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(
@@ -729,7 +773,7 @@ public sealed class GrokCliExecutableStagerTests
 			{
 				inspectedPaths.Add(path);
 				return inspectedPaths.Count == 3
-					? CreateUntrustedSignature()
+					? CreateUntrustedSignature(signerSubject, winVerifyTrustStatus)
 					: CreateTrustedSignature();
 			});
 
@@ -965,9 +1009,9 @@ public sealed class GrokCliExecutableStagerTests
 		string sourcePath = CreateSource(
 			temporaryDirectory,
 			[0x4D, 0x5A, 0x01, 0x02]);
-		string volumeRoot = Path.GetPathRoot(Environment.SystemDirectory) ??
+		string volumeRoot = Path.GetPathRoot(temporaryDirectory.Path) ??
 			throw new InvalidOperationException(
-				"The Windows system drive is unavailable.");
+				"The temporary directory drive is unavailable.");
 		string parentPath = Path.Combine(
 			volumeRoot,
 			$"AiUsageDashboard.GrokCliAclTests.{Guid.NewGuid():N}");
@@ -1057,19 +1101,22 @@ public sealed class GrokCliExecutableStagerTests
 		return sourcePath;
 	}
 
-	private static WindowsAuthenticodeInspection CreateTrustedSignature()
+	private static WindowsAuthenticodeInspection CreateTrustedSignature(
+		string signerSubject = ExactSignerSubject)
 	{
 		return new WindowsAuthenticodeInspection(
 			WinVerifyTrustStatus: 0,
-			SignerSubject: ExactSignerSubject,
+			SignerSubject: signerSubject,
 			SignerThumbprint: new string('A', 40));
 	}
 
-	private static WindowsAuthenticodeInspection CreateUntrustedSignature()
+	private static WindowsAuthenticodeInspection CreateUntrustedSignature(
+		string signerSubject = "CN=Unknown",
+		int winVerifyTrustStatus = 0)
 	{
 		return new WindowsAuthenticodeInspection(
-			WinVerifyTrustStatus: 0,
-			SignerSubject: "CN=Unknown",
+			WinVerifyTrustStatus: winVerifyTrustStatus,
+			SignerSubject: signerSubject,
 			SignerThumbprint: new string('B', 40));
 	}
 }

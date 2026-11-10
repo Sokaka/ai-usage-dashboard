@@ -70,15 +70,20 @@ public sealed class GrokCliExecutableValidatorTests
 
 	private const string ExactSignerSubject =
 		"CN=X.AI LLC, O=X.AI LLC, L=Palo Alto, S=California, C=US";
+	private const string CurrentSignerSubject =
+		"CN=X Corp., O=X Corp., L=Bastrop, S=Texas, C=US";
 
-	[Fact]
-	public async Task Validate_WithExactSignerAndReferenceVersion_ReturnsEvidence()
+	[Theory]
+	[InlineData(ExactSignerSubject)]
+	[InlineData(CurrentSignerSubject)]
+	public async Task Validate_WithExactSignerAndReferenceVersion_ReturnsEvidence(
+		string signerSubject)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = CreateExecutable(temporaryDirectory);
 		GrokCliExecutableValidator validator = CreateValidator(
 			executablePath,
-			ExactSignerSubject,
+			signerSubject,
 			new GrokExecutableVersion(1, 0, 3));
 
 		using GrokValidatedExecutable result =
@@ -139,34 +144,44 @@ public sealed class GrokCliExecutableValidatorTests
 		Assert.True(result.ExecutableLease?.IsProtected);
 	}
 
-	[Fact]
-	public async Task Validate_WithUnverifiedNewerVersion_ReturnsEvidence()
+	[Theory]
+	[InlineData(ExactSignerSubject, 0, 77)]
+	[InlineData(CurrentSignerSubject, 0, 77)]
+	[InlineData(ExactSignerSubject, 1, 0)]
+	[InlineData(CurrentSignerSubject, 1, 0)]
+	public async Task Validate_WithUnverifiedNewerVersion_ReturnsEvidence(
+		string signerSubject,
+		int minor,
+		int patch)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = CreateExecutable(temporaryDirectory);
 		GrokCliExecutableValidator validator = CreateValidator(
 			executablePath,
-			ExactSignerSubject,
-			new GrokExecutableVersion(1, 1, 0));
+			signerSubject,
+			new GrokExecutableVersion(1, minor, patch));
 
 		using GrokValidatedExecutable result =
 			await validator.ValidateAsync(executablePath);
 
 		Assert.Equal(Path.GetFullPath(executablePath), result.ExecutablePath);
-		Assert.Equal("1.1.0", result.VersionEvidence.DetectedVersion);
+		Assert.Equal($"1.{minor}.{patch}", result.VersionEvidence.DetectedVersion);
 		Assert.Equal(
 			CliVersionDisposition.UnverifiedAllowed,
 			result.VersionEvidence.Disposition);
 	}
 
-	[Fact]
-	public async Task Validate_WithUnverifiedOlderVersion_ReturnsEvidence()
+	[Theory]
+	[InlineData(ExactSignerSubject)]
+	[InlineData(CurrentSignerSubject)]
+	public async Task Validate_WithUnverifiedOlderVersion_ReturnsEvidence(
+		string signerSubject)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string executablePath = CreateExecutable(temporaryDirectory);
 		GrokCliExecutableValidator validator = CreateValidator(
 			executablePath,
-			ExactSignerSubject,
+			signerSubject,
 			new GrokExecutableVersion(1, 0, 2));
 
 		using GrokValidatedExecutable result =
@@ -288,7 +303,13 @@ public sealed class GrokCliExecutableValidatorTests
 	[Theory]
 	[InlineData("CN=X.AI LLC Malware, O=X.AI LLC, C=US")]
 	[InlineData("CN=Not X.AI LLC, O=X.AI LLC, C=US")]
+	[InlineData("CN=X Corp. Malware, O=X Corp., C=US")]
+	[InlineData("CN=Not X Corp., O=X Corp., C=US")]
+	[InlineData("CN=Other, O=\"Acme, CN=X Corp.\"")]
+	[InlineData("CN=X.AI LLC+OU=Engineering, O=X.AI LLC")]
+	[InlineData("CN=X Corp.+OU=Engineering, O=X Corp.")]
 	[InlineData("O=X.AI LLC, C=US")]
+	[InlineData("O=X Corp., C=US")]
 	[InlineData("")]
 	public async Task Validate_WithSimilarOrMissingSignerName_RejectsExecutable(
 		string signerSubject)
@@ -302,6 +323,28 @@ public sealed class GrokCliExecutableValidatorTests
 
 		await Assert.ThrowsAsync<GrokCliUntrustedException>(
 			() => validator.ValidateAsync(executablePath));
+	}
+
+	[Theory]
+	[InlineData(ExactSignerSubject)]
+	[InlineData(CurrentSignerSubject)]
+	public async Task Validate_WithExpectedSignerAndInvalidTrust_RejectsBeforeVersionProbe(
+		string signerSubject)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string executablePath = CreateExecutable(temporaryDirectory);
+		FakeVersionProbe probe = new(new GrokExecutableVersion(1, 0, 77));
+		GrokCliExecutableValidator validator = CreateValidator(
+			executablePath,
+			signerSubject,
+			version: null,
+			probe: probe,
+			winVerifyTrustStatus: 1);
+
+		await Assert.ThrowsAsync<GrokCliUntrustedException>(
+			() => validator.ValidateAsync(executablePath));
+
+		Assert.Equal(0, probe.CallCount);
 	}
 
 	[Fact]
@@ -326,6 +369,9 @@ public sealed class GrokCliExecutableValidatorTests
 	[InlineData("CN=X.AI LLC, O=X.AI LLC")]
 	[InlineData("O=X.AI LLC, CN=\"X.AI LLC\", C=US")]
 	[InlineData("cn=x.ai llc, O=X.AI LLC")]
+	[InlineData(CurrentSignerSubject)]
+	[InlineData("O=X Corp., CN=\"X Corp.\", C=US")]
+	[InlineData("cn=x corp., O=X Corp.")]
 	public void HasExpectedSigner_WithExactCommonName_AcceptsDistinguishedName(
 		string signerSubject)
 	{
@@ -334,9 +380,15 @@ public sealed class GrokCliExecutableValidatorTests
 
 	[Theory]
 	[InlineData("CN=Other, O=\"Acme, CN=X.AI LLC\"")]
+	[InlineData("CN=Other, O=\"Acme, CN=X Corp.\"")]
 	[InlineData("CN=X.AI LLC Malware, O=X.AI LLC")]
+	[InlineData("CN=X Corp. Malware, O=X Corp.")]
 	[InlineData("CN=X.AI, O=X.AI LLC")]
+	[InlineData("CN=X Corp, O=X Corp.")]
+	[InlineData("CN=X.AI LLC+OU=Engineering, O=X.AI LLC")]
+	[InlineData("CN=X Corp.+OU=Engineering, O=X Corp.")]
 	[InlineData("O=X.AI LLC")]
+	[InlineData("O=X Corp.")]
 	[InlineData(null)]
 	public void HasExpectedSigner_WithoutExactCommonName_RejectsDistinguishedName(
 		string? signerSubject)
@@ -366,12 +418,13 @@ public sealed class GrokCliExecutableValidatorTests
 		string executablePath,
 		string signerSubject,
 		GrokExecutableVersion? version,
-		FakeVersionProbe? probe = null)
+		FakeVersionProbe? probe = null,
+		int winVerifyTrustStatus = 0)
 	{
 		return new GrokCliExecutableValidator(
 			() => executablePath,
 			_ => new WindowsAuthenticodeInspection(
-				WinVerifyTrustStatus: 0,
+				WinVerifyTrustStatus: winVerifyTrustStatus,
 				SignerSubject: signerSubject,
 				SignerThumbprint: new string('A', 40)),
 			_ => version,

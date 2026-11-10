@@ -61,7 +61,8 @@ internal sealed class GrokCliExecutableStager :
 			isPathAclSafe,
 			isRootAclSafe,
 			tryPrepareTrustedRoot,
-			tryProtectFile);
+			tryProtectFile,
+			GrokCliExecutableValidator.HasExpectedSigner);
 	}
 
 	public WindowsOfficialCliExecutableLease Stage(
@@ -83,7 +84,7 @@ internal sealed class GrokCliExecutableStager :
 				WindowsOfficialCliExecutableStagingFailureReason.InvalidSignature)
 		{
 			throw new GrokCliUntrustedException(
-				"Grok Build CLI 未通過 X.AI LLC 官方簽章驗證。");
+				"Grok Build CLI 未通過受信任的官方簽章驗證。");
 		}
 		catch (WindowsOfficialCliExecutableStagingException)
 		{

@@ -222,7 +222,7 @@ internal sealed class WindowsOfficialCliExecutableStager : IDisposable
 	private const int CopyBufferSize = 1024 * 1024;
 	private static readonly TimeSpan TemporaryFileRetentionAge =
 		TimeSpan.FromHours(1);
-	private readonly string _expectedSignerCommonName;
+	private readonly Func<string?, bool> _hasExpectedSigner;
 	private readonly Func<string, WindowsAuthenticodeInspection> _inspectSignature;
 	private readonly Func<string, bool> _isCanonicalNonReparseFile;
 	private readonly Func<string, bool> _isFixedDrivePath;
@@ -253,12 +253,16 @@ internal sealed class WindowsOfficialCliExecutableStager : IDisposable
 		Func<string, string, bool> isPathAclSafe,
 		Func<string, string, bool> isRootAclSafe,
 		Func<string, bool> tryPrepareTrustedRoot,
-		Func<string, bool> tryProtectFile)
+		Func<string, bool> tryProtectFile,
+		Func<string?, bool>? hasExpectedSigner = null)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(expectedSignerCommonName);
 		ArgumentException.ThrowIfNullOrWhiteSpace(stagedFilePrefix);
 		ArgumentException.ThrowIfNullOrWhiteSpace(temporaryFilePrefix);
-		_expectedSignerCommonName = expectedSignerCommonName;
+		_hasExpectedSigner = hasExpectedSigner ??
+			(signerSubject => WindowsOfficialCliExecutableValidator.HasExpectedSigner(
+				signerSubject,
+				expectedSignerCommonName));
 		_stagedFilePrefix = stagedFilePrefix;
 		_temporaryFilePrefix = temporaryFilePrefix;
 		_trustedRootResolver = trustedRootResolver ??
@@ -812,9 +816,7 @@ internal sealed class WindowsOfficialCliExecutableStager : IDisposable
 		}
 
 		if ((signature.WinVerifyTrustStatus != 0) ||
-			!WindowsOfficialCliExecutableValidator.HasExpectedSigner(
-				signature.SignerSubject,
-				_expectedSignerCommonName))
+			!_hasExpectedSigner(signature.SignerSubject))
 		{
 			throw new WindowsOfficialCliExecutableStagingException(
 				WindowsOfficialCliExecutableStagingFailureReason.InvalidSignature,
