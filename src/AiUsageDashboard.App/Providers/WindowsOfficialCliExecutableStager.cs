@@ -225,7 +225,7 @@ internal sealed class WindowsOfficialCliExecutableStager : IDisposable
 	}
 
 	internal const long MaximumExecutableSizeBytes = 512L * 1024 * 1024;
-	private readonly string _expectedSignerCommonName;
+	private readonly Func<string?, bool> _hasExpectedSigner;
 	private readonly Func<string, WindowsAuthenticodeInspection> _inspectSignature;
 	private readonly Func<string, bool> _isCanonicalNonReparseFile;
 	private readonly Func<string, bool> _isFixedDrivePath;
@@ -242,10 +242,14 @@ internal sealed class WindowsOfficialCliExecutableStager : IDisposable
 		Func<string, bool> isFixedDrivePath,
 		Func<string, bool> isPathAclSafe,
 		Func<FileStream, WindowsOfficialCliExecutableTrustStamp>?
-			readTrustStamp = null)
+			readTrustStamp = null,
+		Func<string?, bool>? hasExpectedSigner = null)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(expectedSignerCommonName);
-		_expectedSignerCommonName = expectedSignerCommonName;
+		_hasExpectedSigner = hasExpectedSigner ??
+			(signerSubject => WindowsOfficialCliExecutableValidator.HasExpectedSigner(
+				signerSubject,
+				expectedSignerCommonName));
 		_inspectSignature = inspectSignature ??
 			throw new ArgumentNullException(nameof(inspectSignature));
 		_isCanonicalNonReparseFile = isCanonicalNonReparseFile ??
@@ -452,9 +456,7 @@ internal sealed class WindowsOfficialCliExecutableStager : IDisposable
 	private void EnsureExpectedSigner(WindowsAuthenticodeInspection signature)
 	{
 		if ((signature.WinVerifyTrustStatus != 0) ||
-			!WindowsOfficialCliExecutableValidator.HasExpectedSigner(
-				signature.SignerSubject,
-				_expectedSignerCommonName))
+			!_hasExpectedSigner(signature.SignerSubject))
 		{
 			throw new WindowsOfficialCliExecutableStagingException(
 				WindowsOfficialCliExecutableStagingFailureReason.InvalidSignature,
