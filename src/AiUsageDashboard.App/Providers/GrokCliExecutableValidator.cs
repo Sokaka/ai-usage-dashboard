@@ -64,6 +64,7 @@ internal sealed class GrokCliExecutableValidator : IGrokCliExecutableValidator
 
 	private const int MaximumConcurrentInspections = 2;
 	private const string ExpectedSignerName = "X.AI LLC";
+	private const string CurrentSignerName = "X Corp.";
 	private static readonly SemaphoreSlim InspectionGate = new(
 		MaximumConcurrentInspections,
 		MaximumConcurrentInspections);
@@ -300,7 +301,7 @@ internal sealed class GrokCliExecutableValidator : IGrokCliExecutableValidator
 				if ((signature.WinVerifyTrustStatus != 0) ||
 					!HasExpectedSigner(signature.SignerSubject))
 				{
-					throw new GrokCliUntrustedException("Grok Build CLI 未通過 X.AI LLC 官方簽章驗證。");
+					throw new GrokCliUntrustedException("Grok Build CLI 未通過受信任的官方簽章驗證。");
 				}
 			}
 
@@ -376,9 +377,12 @@ internal sealed class GrokCliExecutableValidator : IGrokCliExecutableValidator
 
 	internal static bool HasExpectedSigner(string? signerSubject)
 	{
-		return WindowsOfficialCliExecutableValidator.HasExpectedSigner(
+		return (WindowsOfficialCliExecutableValidator.HasExpectedSigner(
 			signerSubject,
-			ExpectedSignerName);
+			ExpectedSignerName)) ||
+			(WindowsOfficialCliExecutableValidator.HasExpectedSigner(
+				signerSubject,
+				CurrentSignerName));
 	}
 
 	internal static bool IsCanonicalNonReparseFile(string absolutePath)

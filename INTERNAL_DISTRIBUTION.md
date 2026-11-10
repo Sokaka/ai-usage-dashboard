@@ -13,7 +13,7 @@
 | AI Usage | 有版本編號、自帶執行環境的 Windows x64 套件；目前使用 .NET 8.0.33，僅支援至 2026-11-10 |
 | Claude | 相容性基準 `2.1.169`；官方 Claude Code `>=2.1.169` 才有需要的 `--safe-mode`；來源 ACL 安全時直接執行官方原始 EXE，否則執行經驗證的受保護副本；簽署者須為 `Anthropic, PBC`；Claude.ai Pro／Max／Team；Enterprise 可辨識，但目前不提供 `/usage`；實驗性輪詢 |
 | Codex | 相容性基準 `0.144.1`；可確認為官方 `codex-cli x.y.z` 的三段式正式版本都會先實測；direct-source lease 只接受 `OpenAI OpCo, LLC` 簽署且通過官方 installer layout ACL 的實體 EXE；實驗性 `app-server` 串接 |
-| Grok | 相容性基準 `1.0.3`；可信任的官方版本即使版號不同或無法解析，仍先測試 ACP 通訊；只接受預設安裝位置、`X.AI LLC` 簽章並直接鎖定官方原始 EXE；實驗性多帳號串接 |
+| Grok | 相容性基準 `1.0.3`；可信任的官方版本即使版號不同或無法解析，仍先測試 ACP 通訊；只接受預設安裝位置、`X.AI LLC` 或 `X Corp.` 的有效簽章並直接鎖定官方原始 EXE；實驗性多帳號串接 |
 | GitHub Copilot | 使用本機官方 CLI 三段式正式版 `>=1.0.79` 且 `<2.0.0`；基準 `1.0.79`，App 固定 `GitHub.Copilot.SDK` `1.0.11`；核對 `GitHub, Inc.` 簽章與 ProductName，執行目前使用者的受保護副本；只支援不同的 `github.com` 帳號，每張卡片分開保存登入資料 |
 | AGY | 相容性基準 `1.1.11`；Windows 10 1809 以上；production 只執行官方用量輸出功能（official print），限 `1.1.11 <= version < 2.0.0` 的正式版本，並核對 Google 簽章 |
 
@@ -33,7 +33,7 @@ Claude 會嘗試清理自己建立的過期暫存副本，正常情況保留目�
 
 Copilot 仍執行目前使用者的受保護副本；來源、版本與帳號隔離規則見[技術總覽](docs/TECHNICAL_OVERVIEW.md#本機-cli-來源與版本)。
 
-Grok 只接受 `%USERPROFILE%\.grok\bin\grok.exe`，發行者必須為 `X.AI LLC`。AGY 每次執行前都要重新確認官方路徑、版本、Google 簽章與檔案狀態；官方來源驗證失敗時不得改走舊版相容流程。不要從其他電腦複製服務執行檔、帳號目錄或登入資料，也不要用 `PATH` 或替代檔案繞過檢查。
+Grok 只接受 `%USERPROFILE%\.grok\bin\grok.exe`，發行者 Common Name 必須精確符合 `X.AI LLC` 或 `X Corp.`，且 Windows 簽章驗證必須成功。AGY 每次執行前都要重新確認官方路徑、版本、Google 簽章與檔案狀態；官方來源驗證失敗時不得改走舊版相容流程。不要從其他電腦複製服務執行檔、帳號目錄或登入資料，也不要用 `PATH` 或替代檔案繞過檢查。
 
 執行環境期限依照官方 [.NET 支援政策](https://dotnet.microsoft.com/en-us/platform/support/policy)。請在期限前完成移轉，並確認新的 .NET 執行環境仍在支援期。套件自帶的執行環境一旦超出支援期限，就不會繼續取得修正。
 
@@ -391,7 +391,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - [ ] Claude：拒絕風險提示時，不得開始登入或呼叫 `/usage`。接受後完成登入並進入 **可用**，記錄 `turns`、`tokens` 與 `cost` 都是零。
 - [ ] Codex：確認程式只執行通過路徑、大小、`OpenAI OpCo, LLC` 簽章與官方 installer layout ACL 檢查的已鎖定原始 EXE。完成官方登入後，確認帳號、方案與所有預期的用量週期，且不建立 turn。
 - [ ] Codex：登入或查詢結束前不得解除原始 EXE 的鎖。模擬無法確認子程序已結束後，所有 Codex 啟動都須停止到 App 重新啟動；正常的 `validation-v1\probe-<guid>` 測試目錄則應自動清理。
-- [ ] Grok：確認只接受 `%USERPROFILE%\.grok\bin\grok.exe`，並通過路徑、大小、`X.AI LLC` 簽章與權限檢查。版本不同於 `1.0.3` 時仍要先實測，不得只因版號不同而拒絕。
+- [ ] Grok：確認只接受 `%USERPROFILE%\.grok\bin\grok.exe`，並通過路徑、大小、`X.AI LLC` 或 `X Corp.` 的有效簽章與權限檢查。版本不同於 `1.0.3` 時仍要先實測，不得只因版號不同而拒絕。
 - [ ] Grok：完成登入並確認每週用量與重置時間。更新官方 CLI、從系統匣結束再重開後，應重新驗證並鎖定更新後的官方原始 EXE，且不再次開啟登入。無法確認子程序已結束時，後續操作須停止到 App 重新啟動。
 - [ ] 受保護副本清理：更新 Claude fallback 來源與 Copilot，確認正常只保留目前與前一個有效副本。使用中、來源可疑或刪除失敗的檔案不得強制刪除；問題排除後才於下次更新清理。副本目錄不得開放給其他一般使用者；舊版 Claude／Codex／Grok 隔離目錄保持原狀。
 - [ ] Grok 多帳號：用已綁定的同一帳號連接第二張卡片時，必須拒絕且不改變第一張卡。改用另一個帳號後，兩張卡的登入、連接狀態、快取、重新啟動及手動更新都應彼此隔離。移除其中一張後，其本機目錄應消失，另一張仍可更新。
@@ -434,7 +434,7 @@ AiUsageDashboard.Updater.exe uninstall --confirm
 - Claude／Codex CLI 遺失或不相容：先記錄偵測版本與完整原始錯誤。版本差異只是可能原因；若官方來源、簽章與必要功能都合格，先重新啟動 AI Usage，讓程式重新驗證並鎖定官方原始 EXE；Claude 來源 ACL 不符時才準備受保護 fallback 副本。再對照候選版試用紀錄，不得手動複製受保護執行檔或放寬目錄權限；既有帳號識別會保留。
 - GitHub Copilot CLI 缺少或不符：依[官方文件](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli)安裝或更新，建議 WinGet 標準安裝；來源也可為標準 npm 安裝或 `PATH` 可解析的真正官方 `copilot.exe`。AI Usage 不執行 `.cmd`／`.ps1` wrapper、不退回舊 App bundle；卡片及 token 保留，修正 CLI 後重試，不先重新登入。精確來源與版本規則見[技術總覽](docs/TECHNICAL_OVERVIEW.md#本機-cli-來源與版本)。
 - GitHub Copilot 要求重新連接：只重新連接受影響的卡片。若移除卡片後仍顯示清理警告，保持 AI Usage 開啟以完成背景重試；不要手動批次刪除 Windows Credential Manager 項目。
-- Grok CLI 遺失或來源不受信任：只能從 xAI 官方來源安裝到 `%USERPROFILE%\.grok\bin\grok.exe`。重新啟動 AI Usage，讓程式重新鎖定並驗證官方原始 EXE，並確認 `X.AI LLC` 簽章與路徑檢查通過。`1.0.3` 是相容性基準；不得只因版本不同而要求降版，也不得用 `PATH`、手動複製或替代執行檔繞過檢查。
+- Grok CLI 遺失或來源不受信任：只能從 xAI 官方來源安裝到 `%USERPROFILE%\.grok\bin\grok.exe`。重新啟動 AI Usage，讓程式重新鎖定並驗證官方原始 EXE，並確認 `X.AI LLC` 或 `X Corp.` 的有效簽章與路徑檢查通過。`1.0.3` 是相容性基準；不得只因版本不同而要求降版，也不得用 `PATH`、手動複製或替代執行檔繞過檢查。
 - 服務暫時失敗：稍後重試；畫面會保留上次正常的用量資料。
 - 明確的登入驗證失敗：只重新連接受影響的帳號。
 - Grok 連接中斷：先重新啟動 AI Usage。若待處理紀錄已保存 `LoginCompleted`，程式會用新取得的帳號資料驗證後接續；否則卡片會要求重新連接。不要手動複製、編輯或刪除連接／待處理檔案。

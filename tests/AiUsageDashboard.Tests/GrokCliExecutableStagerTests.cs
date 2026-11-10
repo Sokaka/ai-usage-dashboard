@@ -7,9 +7,14 @@ public sealed class GrokCliExecutableStagerTests
 {
 	private const string ExactSignerSubject =
 		"CN=X.AI LLC, O=X.AI LLC, L=Palo Alto, S=California, C=US";
+	private const string CurrentSignerSubject =
+		"CN=X Corp., O=X Corp., L=Bastrop, S=Texas, C=US";
 
-	[Fact]
-	public void Stage_WithTrustedSource_ReturnsProtectedLeaseForSamePath()
+	[Theory]
+	[InlineData(ExactSignerSubject)]
+	[InlineData(CurrentSignerSubject)]
+	public void Stage_WithTrustedSource_ReturnsProtectedLeaseForSamePath(
+		string signerSubject)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(temporaryDirectory);
@@ -17,7 +22,7 @@ public sealed class GrokCliExecutableStagerTests
 		using GrokCliExecutableStager stager = CreateStager(path =>
 		{
 			inspectedPaths.Add(path);
-			return CreateTrustedSignature();
+			return CreateTrustedSignature(signerSubject);
 		});
 
 		using WindowsOfficialCliExecutableLease lease = stager.Stage(sourcePath);
@@ -29,8 +34,11 @@ public sealed class GrokCliExecutableStagerTests
 			temporaryDirectory.Path));
 	}
 
-	[Fact]
-	public void Stage_EachAcquisition_RevalidatesSignature()
+	[Theory]
+	[InlineData(ExactSignerSubject)]
+	[InlineData(CurrentSignerSubject)]
+	public void Stage_EachAcquisition_RevalidatesSignature(
+		string signerSubject)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(temporaryDirectory);
@@ -38,7 +46,7 @@ public sealed class GrokCliExecutableStagerTests
 		using GrokCliExecutableStager stager = CreateStager(_ =>
 		{
 			inspectionCount++;
-			return CreateTrustedSignature();
+			return CreateTrustedSignature(signerSubject);
 		});
 
 		using (WindowsOfficialCliExecutableLease lease = stager.Stage(sourcePath))
@@ -52,8 +60,11 @@ public sealed class GrokCliExecutableStagerTests
 		Assert.Equal(2, inspectionCount);
 	}
 
-	[Fact]
-	public void Stage_PerformsSignatureInspectionWhileSourceIsLocked()
+	[Theory]
+	[InlineData(ExactSignerSubject)]
+	[InlineData(CurrentSignerSubject)]
+	public void Stage_PerformsSignatureInspectionWhileSourceIsLocked(
+		string signerSubject)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(temporaryDirectory);
@@ -61,7 +72,7 @@ public sealed class GrokCliExecutableStagerTests
 		{
 			Assert.Equal(Path.GetFullPath(sourcePath), path);
 			AssertWriteAndDeleteBlocked(path);
-			return CreateTrustedSignature();
+			return CreateTrustedSignature(signerSubject);
 		});
 
 		using WindowsOfficialCliExecutableLease lease = stager.Stage(sourcePath);
@@ -69,13 +80,16 @@ public sealed class GrokCliExecutableStagerTests
 		Assert.True(lease.IsProtected);
 	}
 
-	[Fact]
-	public void ProtectedLease_BlocksWriteAndDeleteUntilLastDuplicateIsDisposed()
+	[Theory]
+	[InlineData(ExactSignerSubject)]
+	[InlineData(CurrentSignerSubject)]
+	public void ProtectedLease_BlocksWriteAndDeleteUntilLastDuplicateIsDisposed(
+		string signerSubject)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(temporaryDirectory);
 		using GrokCliExecutableStager stager = CreateStager(
-			_ => CreateTrustedSignature());
+			_ => CreateTrustedSignature(signerSubject));
 		WindowsOfficialCliExecutableLease lease = stager.Stage(sourcePath);
 		WindowsOfficialCliExecutableLease duplicate = lease.Duplicate();
 
@@ -100,10 +114,16 @@ public sealed class GrokCliExecutableStagerTests
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(temporaryDirectory);
 		int inspectionCount = 0;
-		using GrokCliExecutableStager stager = CreateStager(_ =>
+		List<string> inspectedSignerSubjects = new();
+		using GrokCliExecutableStager stager = CreateStager(path =>
 		{
 			inspectionCount++;
-			return CreateTrustedSignature();
+			AssertWriteAndDeleteBlocked(path);
+			string signerSubject = File.ReadAllBytes(path)[2] == 0x01
+				? ExactSignerSubject
+				: CurrentSignerSubject;
+			inspectedSignerSubjects.Add(signerSubject);
+			return CreateTrustedSignature(signerSubject);
 		});
 
 		using (WindowsOfficialCliExecutableLease lease = stager.Stage(sourcePath))
@@ -116,7 +136,10 @@ public sealed class GrokCliExecutableStagerTests
 		using WindowsOfficialCliExecutableLease updatedLease =
 			stager.Stage(sourcePath);
 		Assert.Equal(Path.GetFullPath(sourcePath), updatedLease.ExecutablePath);
+		Assert.True(updatedLease.IsProtected);
+		AssertWriteAndDeleteBlocked(sourcePath);
 		Assert.Equal(2, inspectionCount);
+		Assert.Equal([ExactSignerSubject, CurrentSignerSubject], inspectedSignerSubjects);
 	}
 
 	[Fact]
@@ -146,15 +169,27 @@ public sealed class GrokCliExecutableStagerTests
 			isPathAclSafe: _ => true);
 	}
 
-	[Fact]
-	public void Stage_WithUnexpectedSigner_FailsClosed()
+	[Theory]
+	[InlineData("CN=Unexpected Publisher")]
+	[InlineData("CN=X.AI LLC Malware, O=X.AI LLC")]
+	[InlineData("CN=Not X.AI LLC, O=X.AI LLC")]
+	[InlineData("CN=X Corp. Malware, O=X Corp.")]
+	[InlineData("CN=Not X Corp., O=X Corp.")]
+	[InlineData("CN=Other, O=\"Acme, CN=X.AI LLC\"")]
+	[InlineData("CN=Other, O=\"Acme, CN=X Corp.\"")]
+	[InlineData("CN=X.AI LLC+OU=Engineering, O=X.AI LLC")]
+	[InlineData("CN=X Corp.+OU=Engineering, O=X Corp.")]
+	[InlineData("O=X.AI LLC")]
+	[InlineData("O=X Corp.")]
+	[InlineData("")]
+	public void Stage_WithUnexpectedSigner_FailsClosed(string signerSubject)
 	{
 		using TemporaryDirectory temporaryDirectory = new();
 		string sourcePath = CreateSource(temporaryDirectory);
 		using GrokCliExecutableStager stager = CreateStager(_ =>
 			new WindowsAuthenticodeInspection(
 				WinVerifyTrustStatus: 0,
-				SignerSubject: "CN=Unexpected Publisher",
+				SignerSubject: signerSubject,
 				SignerThumbprint: new string('B', 40)));
 
 		Assert.Throws<GrokCliUntrustedException>(() =>
@@ -162,6 +197,31 @@ public sealed class GrokCliExecutableStagerTests
 			using WindowsOfficialCliExecutableLease lease =
 				stager.Stage(sourcePath);
 		});
+	}
+
+	[Theory]
+	[InlineData(ExactSignerSubject, 1)]
+	[InlineData(CurrentSignerSubject, 1)]
+	[InlineData(ExactSignerSubject, -1)]
+	[InlineData(CurrentSignerSubject, -1)]
+	public void Stage_WithExpectedSignerAndInvalidTrust_FailsClosed(
+		string signerSubject,
+		int winVerifyTrustStatus)
+	{
+		using TemporaryDirectory temporaryDirectory = new();
+		string sourcePath = CreateSource(temporaryDirectory);
+		using GrokCliExecutableStager stager = CreateStager(_ =>
+			new WindowsAuthenticodeInspection(
+				WinVerifyTrustStatus: winVerifyTrustStatus,
+				SignerSubject: signerSubject,
+				SignerThumbprint: new string('B', 40)));
+
+		Assert.Throws<GrokCliUntrustedException>(() =>
+		{
+			using WindowsOfficialCliExecutableLease lease =
+				stager.Stage(sourcePath);
+		});
+		File.WriteAllBytes(sourcePath, [0x4D, 0x5A, 0x03]);
 	}
 
 	[Fact]
@@ -401,11 +461,12 @@ public sealed class GrokCliExecutableStagerTests
 		return sourcePath;
 	}
 
-	private static WindowsAuthenticodeInspection CreateTrustedSignature()
+	private static WindowsAuthenticodeInspection CreateTrustedSignature(
+		string signerSubject = ExactSignerSubject)
 	{
 		return new WindowsAuthenticodeInspection(
 			WinVerifyTrustStatus: 0,
-			SignerSubject: ExactSignerSubject,
+			SignerSubject: signerSubject,
 			SignerThumbprint: new string('A', 40));
 	}
 }

@@ -127,7 +127,7 @@ Copilot 只在使用者明確連接時，透過受控的官方 CLI 網頁登入�
 | Claude | `2.1.169` | 格式固定的三段版本 `>=2.1.169` | `<2.1.169` 缺少目前命令參數（argv）所需的 `--safe-mode` 功能；產品身分、來源、簽章與路徑仍須通過 |
 | Codex | `0.144.1` | 可辨識為 `codex-cli x.y.z` 的非零三段版本 | 無法確認產品、版號、執行檔來源或程序能安全隔離時停止 |
 | GitHub Copilot | SDK `1.0.11`；CLI 基準 `1.0.79` | 本機官方 CLI 的三段式正式版 `>=1.0.79` 且 `<2.0.0` | 核對 `GitHub, Inc.` Authenticode 與 ProductName，再執行受保護副本；只接受 `github.com` 與每張卡片明確提供的 token；帳號主體或額度驗證失敗時停止採用，訂閱資訊失敗另行提示 |
-| Grok | `1.0.3` | 通過來源驗證的官方執行檔；版號不同或無法解析都可進行 ACP 初始交握（handshake） | 只接受固定預設路徑、固定磁碟、所有上層路徑都不是 reparse point、安全 ACL、通過 WinVerifyTrust，且簽署者必須精確符合程式固定的 `X.AI LLC` |
+| Grok | `1.0.3` | 通過來源驗證的官方執行檔；版號不同或無法解析都可進行 ACP 初始交握（handshake） | 只接受固定預設路徑、固定磁碟、所有上層路徑都不是 reparse point、安全 ACL、通過 WinVerifyTrust，且簽署者 Common Name 必須精確符合 `X.AI LLC` 或 `X Corp.` |
 | AGY | `1.1.11` | 標準三段穩定版 `1.1.11 <= version < 2.0.0` | `<1.1.11` 缺少官方 print mode 功能；`>=2.0.0`、預發行格式（prerelease）與非標準版本格式一律在執行前拒絕，因為執行後無法撤回可能影響 |
 
 表中的「排查問題時的比較版本」只供本版排查故障時比對，不是允許版本清單，也不表示候選版本已用該精確版本完成試用測試。
@@ -452,7 +452,7 @@ Grok 每張帳號卡片都有獨立的 `GROK_HOME`、空白工作目錄、OAuth 
 %LOCALAPPDATA%\AiUsageDashboard\grok\<account-id>\home
 ```
 
-AI Usage 不從 `PATH` 接受任意 `grok.exe`，只解析目前 Windows 使用者預設安裝位置 `%USERPROFILE%\.grok\bin\grok.exe`。來源必須通過固定磁碟、無 reparse point、安全 ACL、大小與簽章檢查，且簽章者為 `X.AI LLC`。登入與背景查詢直接執行同一個已驗證且鎖定的官方原始 EXE，不建立可執行副本。
+AI Usage 不從 `PATH` 接受任意 `grok.exe`，只解析目前 Windows 使用者預設安裝位置 `%USERPROFILE%\.grok\bin\grok.exe`。來源必須通過固定磁碟、無 reparse point、安全 ACL、大小與簽章檢查，且簽章者 Common Name 精確符合 `X.AI LLC` 或 `X Corp.`；兩者都必須通過 Windows 簽章驗證，不接受近似名稱。登入與背景查詢直接執行同一個已驗證且鎖定的官方原始 EXE，不建立可執行副本。
 
 `1.0.3` 是相容性基準，不是最低允許版本。版本探查接受單行的 `grok x.y.z (commit)`，也接受同格式加上精確的 ` [stable]` 尾綴；其他尾綴不推測版號。可信任執行檔的版號不同或無法解析時，仍會啟動 ACP，再以實際的初始交握、方法與資料格式判斷是否相容。任一來源檢查失敗時都會停止，並引導安裝或更新官方 CLI。
 
