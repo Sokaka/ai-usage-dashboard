@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#環境需求"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="自有程式碼採 MIT 授權"></a>
-  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.27-0078D4" alt="目前正式版本 1.0.27"></a>
+  <a href="#目前版本"><img src="https://img.shields.io/badge/Status-v1.0.28-0078D4" alt="目前正式版本 1.0.28"></a>
 </p>
 
 <p align="center">
@@ -33,10 +33,10 @@
 
 ## 目前版本
 
-目前正式版本為 **`1.0.27`**。[下載最新版](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.27) · [版本說明](docs/releases/1.0.27.md)
+目前正式版本為 **`1.0.28`**。[下載最新版](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.28) · [版本說明](docs/releases/1.0.28.md)
 
-修正 Claude Code `2.1.318` 在用量回應加入登入到期資訊後，卡片持續保留舊資料的相容性問題。既有連接、用量安全檢查及 5 小時／週用量顯示規則維持。
-App `1.0.27` 沿用前版 `1.0.26` 交付的 `1.0.23` Updater 原始 bytes，未重新建置、重簽或替換；內附 runtime 為 `8.0.33`。
+修正新版 Grok CLI 使用 `X Corp.` 簽章者後，被誤判為需要安裝或更新的問題。同時接受 `X Corp.` 與原有 `X.AI LLC` 的精確 CN，仍要求有效 Authenticode 簽章，並保留官方來源、路徑、ACL、檔案鎖定及帳號綁定檢查。
+App `1.0.28` 沿用前版 `1.0.27` 交付的 `1.0.23` Updater 原始 bytes，未重新建置、重簽或替換；內附 runtime 為 `8.0.33`。
 
 第一次透過舊 `1.0.16` Updater 升級時，完成提示仍可能是中文；新版接手後使用所選語系，見[升級說明](docs/releases/1.0.18.md#升級)。
 
@@ -83,7 +83,7 @@ App `1.0.27` 沿用前版 `1.0.26` 交付的 `1.0.23` Updater 原始 bytes，未
 | **一般安裝：Updater** | `AiUsageDashboard-Updater-<version>-win-x64.exe` | Updater 也能首次安裝。以一般使用者權限執行，安裝後從開始選單搜尋 **AI Usage**；保留 Updater 供日後更新。 |
 | **免安裝：完整 ZIP** | `AiUsageDashboard-<version>-win-x64.zip` | 完整解壓到新資料夾後，執行其中的 App；不要下載 GitHub 自動產生的 Source code ZIP。 |
 
-App `1.0.27` 的免安裝檔為 `AiUsageDashboard-1.0.27-win-x64.zip`；一般安裝沿用 `AiUsageDashboard-Updater-1.0.23-win-x64.exe` 的原始 bytes。請依 Release 上的實際檔名下載。
+App `1.0.28` 的免安裝檔為 `AiUsageDashboard-1.0.28-win-x64.zip`；一般安裝沿用 `AiUsageDashboard-Updater-1.0.23-win-x64.exe` 的原始 bytes。請依 Release 上的實際檔名下載。
 
 依[安裝與第一次啟動](使用說明.md#安裝與第一次啟動)操作、閱讀並接受適用條款，再新增帳號，透過服務的官方登入流程完成連接。
 

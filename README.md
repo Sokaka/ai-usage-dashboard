@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#requirements"><img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows x64"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-MIT-green" alt="Project code licensed under MIT"></a>
-  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.27-0078D4" alt="Current stable version 1.0.27"></a>
+  <a href="#current-release"><img src="https://img.shields.io/badge/Status-v1.0.28-0078D4" alt="Current stable version 1.0.28"></a>
 </p>
 
 <p align="center">
@@ -39,12 +39,12 @@ exports and imports. Detailed guides and release notes are in Traditional Chines
 
 ## Current release
 
-The current stable version is **`1.0.27`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.27) · [Release notes](docs/releases/1.0.27.md)
+The current stable version is **`1.0.28`**. [Download](https://github.com/Sokaka/ai-usage-dashboard/releases/tag/v1.0.28) · [Release notes](docs/releases/1.0.28.md)
 
-This release fixes Claude usage checks when Claude Code `2.1.318` includes sign-in
-expiry information in its response. Account connections, quota safety checks and
-5-hour and weekly usage display rules are unchanged.
-App `1.0.27` reuses the signed `1.0.23` Updater bytes distributed with `1.0.26`; bundled runtime: 8.0.33.
+This release fixes Grok CLI detection when the official signer is `X Corp.`.
+The original `X.AI LLC` signer remains supported. Valid Authenticode signatures,
+exact signer names, official sources and account isolation are still required.
+App `1.0.28` reuses the signed `1.0.23` Updater bytes distributed with `1.0.27`; bundled runtime: 8.0.33.
 
 On the first upgrade through the old Updater `1.0.16`, its completion message may still be in Chinese.
 The new Updater uses your selected language; see the [upgrade notes](docs/releases/1.0.18.md#升級).
@@ -110,8 +110,8 @@ Choose a download from the current version's GitHub Release:
    `app\AiUsageDashboard.App.exe`.
    Do not download GitHub's automatically generated **Source code** ZIP.
 
-For App `1.0.27`, the portable ZIP is `AiUsageDashboard-1.0.27-win-x64.zip`.
-The standard Updater is `AiUsageDashboard-Updater-1.0.23-win-x64.exe`, copied unchanged from the Updater distributed with `v1.0.26`.
+For App `1.0.28`, the portable ZIP is `AiUsageDashboard-1.0.28-win-x64.zip`.
+The standard Updater is `AiUsageDashboard-Updater-1.0.23-win-x64.exe`, copied unchanged from the Updater distributed with `v1.0.27`.
 Use the actual filenames listed on the Release page; the Updater version can differ from the app version.
 
 Follow [Installation and first launch](使用說明.md#安裝與第一次啟動), read and accept the applicable terms,
